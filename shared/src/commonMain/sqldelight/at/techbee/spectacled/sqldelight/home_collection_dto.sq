@@ -1,0 +1,45 @@
+CREATE TABLE HomeCollectionDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    principalId INTEGER NOT NULL REFERENCES PrincipalDto(id) ON DELETE CASCADE,
+    url TEXT NOT NULL UNIQUE,
+    calDavPrivileges TEXT   -- e.g. write, bind, unbind,...
+);
+
+getAllHomeCollections:
+SELECT * FROM HomeCollectionDto;
+
+getHomeCollectionsByPrincipal:
+SELECT * FROM HomeCollectionDto WHERE principalId = ?;
+
+getHomeCollectionsByUrl:
+SELECT * FROM HomeCollectionDto WHERE url = ?;
+
+getHomeCollectionsById:
+SELECT * FROM HomeCollectionDto WHERE id = ?;
+
+
+updateHomeCollection:
+UPDATE HomeCollectionDto
+SET
+    principalId = (SELECT PrincipalDto.id FROM PrincipalDto WHERE PrincipalDto.principalUrl = :principalUrl),
+    url = :url,
+    calDavPrivileges = :calDavPrivileges
+WHERE
+    url = :url
+;
+
+insertHomeCollection:
+INSERT OR IGNORE INTO
+    HomeCollectionDto (
+        principalId,
+        url,
+        calDavPrivileges
+    )
+VALUES (
+    (SELECT PrincipalDto.id FROM PrincipalDto WHERE PrincipalDto.principalUrl = :principalUrl),
+        :url,
+        :calDavPrivileges
+        )
+;
+
+

@@ -1,0 +1,97 @@
+CREATE TABLE CalendarDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    homeCollectionId INTEGER NOT NULL REFERENCES HomeCollectionDto(id) ON DELETE CASCADE,
+    url TEXT NOT NULL UNIQUE ,
+    displayName TEXT,
+    calendarDescription TEXT,
+    color INTEGER,
+    ctag TEXT,                -- for CalDAV-Sync
+    supportedComponents TEXT,   -- e.g. "VEVENT,VJOURNAL"
+    calDavPrivileges TEXT,    -- e.g. write, bind, unbind,...
+    calendarSyncStatus TEXT,
+    syncToken TEXT
+);
+
+getAllCalendars:
+SELECT * FROM CalendarDto;
+
+getCalendarsByHomeCollection:
+SELECT * FROM CalendarDto WHERE homeCollectionId = ?;
+
+getCalendarById:
+SELECT * FROM CalendarDto WHERE id = ?;
+
+getCalendarsByIds:
+SELECT * FROM CalendarDto WHERE id IN ?;
+
+getCalendarByUrl:
+SELECT * FROM CalendarDto WHERE url = ?;
+
+getCalendarsForPrincipalUrl:
+SELECT CalendarDto.* FROM CalendarDto
+INNER JOIN HomeCollectionDto ON HomeCollectionDto.id = CalendarDto.homeCollectionId
+INNER JOIN PrincipalDto ON PrincipalDto.id = HomeCollectionDto.principalId
+WHERE PrincipalDto.principalUrl = :principalUrl;
+
+updateCalendar:
+UPDATE CalendarDto
+SET
+    homeCollectionId = (SELECT HomeCollectionDto.id FROM HomeCollectionDto WHERE HomeCollectionDto.url = :homeCollectionUrl),
+    url = :url,
+    displayName = :displayName,
+    calendarDescription = :calendarDescription,
+    color = :color,
+    ctag = :ctag,
+    supportedComponents = :supportedComponents,
+    calDavPrivileges = :calDavPrivileges,
+    calendarSyncStatus = :calendarSyncStatus,
+    syncToken = :syncToken
+WHERE
+    url = :url
+;
+
+
+insertCalendar:
+INSERT OR IGNORE INTO
+    CalendarDto (
+        homeCollectionId,
+        url,
+        displayName,
+        calendarDescription,
+        color,
+        ctag,
+        supportedComponents,
+        calDavPrivileges,
+        calendarSyncStatus,
+        syncToken
+    )
+VALUES (
+        (SELECT HomeCollectionDto.id FROM HomeCollectionDto WHERE HomeCollectionDto.url = :homeCollectionUrl),
+        :url,
+        :displayName,
+        :calendarDescription,
+        :color,
+        :ctag,
+        :supportedComponents,
+        :calDavPrivileges,
+        :calendarSyncStatus,
+        :syncToken
+);
+
+
+updateColor:
+UPDATE CalendarDto SET color = ? WHERE id = ?;
+
+updateCalendarSyncStatus:
+UPDATE
+   CalendarDto
+SET
+   calendarSyncStatus = :calendarSyncStatus,
+   syncToken = :syncToken
+WHERE
+   id = :id;
+
+
+
+delete:
+DELETE FROM CalendarDto WHERE id = ?;

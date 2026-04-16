@@ -1,0 +1,155 @@
+package at.techbee.spectacled.screens.note.presentation.notedetails.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.NewLabel
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.create_category
+import spectacled.shared.generated.resources.search_add_category
+import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.category
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NoteDetailsCategorySelectionBottomSheet(
+    allCategories: List<String>,
+    initiallySelectedCategories: List<String>,
+    onCategoriesChanged: (List<String>) -> Unit,
+    onDismiss: () -> Unit
+    ) {
+
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val selectedCategories = remember(initiallySelectedCategories) { mutableStateListOf(*initiallySelectedCategories.toTypedArray()) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    BottomSheetWithMenu(
+        onDismiss = { onDismiss() }
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth().padding(8.dp)
+        ) {
+
+            Text(
+                text = stringResource(Res.string.category),
+                style = MaterialTheme.typography.titleLarge
+            )
+
+            TextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text(stringResource(Res.string.search_add_category)) },
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            if (searchQuery.isNotBlank()) {
+                                selectedCategories.add(searchQuery)
+                                searchQuery = ""
+                                onCategoriesChanged(selectedCategories.distinct())
+                            }
+                            keyboardController?.hide()
+                        },
+                        enabled = searchQuery.isNotBlank(),
+                        content = { Icon(Icons.Outlined.NewLabel, stringResource(Res.string.create_category)) }
+                    )
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    autoCorrectEnabled = false,
+                    capitalization = KeyboardCapitalization.Words,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (searchQuery.isNotBlank()) {
+                            selectedCategories.add(searchQuery)
+                            searchQuery = ""
+                            onCategoriesChanged(selectedCategories.distinct())
+                        }
+                    }
+                ),
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
+            )
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(8.dp).fillMaxWidth().verticalScroll(rememberScrollState())
+            ) {
+                allCategories
+                    .toMutableSet()
+                    .apply { addAll(selectedCategories) }
+                    .sorted()
+                    .forEach { category ->
+                        FilterChip(
+                            selected = selectedCategories.contains(category),
+                            onClick = {
+                                if (selectedCategories.contains(category))
+                                    selectedCategories.remove(category)
+                                else
+                                    selectedCategories.add(category)
+                                onCategoriesChanged(selectedCategories.distinct())
+                            },
+                            label = { Text(category) },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category)) }
+                        )
+                    }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+private fun NoteDetailsCategorySelectionBottomSheet_Preview() {
+    NoteDetailsCategorySelectionBottomSheet(
+        allCategories = listOf("Category 5", "Category 1", "Category 2", "Category 3", "Category 4"),
+        initiallySelectedCategories = listOf("Category 2"),
+        onCategoriesChanged = { },
+        onDismiss = { }
+    )
+}

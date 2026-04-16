@@ -1,0 +1,124 @@
+<resources>
+    <string name="copyright_info" translatable="false">© Techbee e.U.</string>
+
+    <string name="app_name2">CalDAV Notes</string>
+    <string name="notes">Notes</string>
+    <string name="journals">Journals</string>
+
+    <string name="about">About</string>
+    <string name="about_release_notes">Release Notes</string>
+    <string name="about_libraries">Libraries</string>
+    <string name="about_contributors">Contributors</string>
+    <string name="more_on_github">More on GitHub.com</string>
+    <string name="terms_conditions">Terms &amp; Conditions</string>
+    <string name="close">Close</string>
+
+    <string name="edit">Edit</string>
+    <string name="done">Done</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="restore">Restore</string>
+
+    <string name="menu">Menu</string>
+    <string name="accounts">Accounts</string>
+    <string name="folders">Folders</string>
+    <string name="folder">Folder</string>
+    <string name="open_foldername">Open %1$s</string>
+    <string name="add_account">Add account</string>
+    <string name="remove_account">Remove account</string>
+    <string name="create_folder">Create folder</string>
+    <string name="update_folder">Update folder</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="show_hide_password">Show/hide password</string>
+    <string name="update_passowrd_button">Update</string>
+    <string name="update_password">Update password</string>
+    <string name="no_notes_found_in_this_folder">No notes found in this folder</string>
+    <string name="no_matching_notes_found">No matching notes found</string>
+    <string name="no_summary_description">No summary/description</string>
+    <string name="categories">Categories</string>
+    <string name="read_only">Read only</string>
+    <string name="sync_problem">Sync problem</string>
+    <string name="sync_conflict_detected">Sync conflict detected</string>
+    <string name="refresh">Refresh</string>
+    <string name="retry">Retry</string>
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="clear_selection">Clear selection</string>
+    <string name="x_selected">%1$d selected</string>
+    <string name="select_all">Select all</string>
+    <string name="select_multiple">Select multiple</string>
+    <string name="show_error_details">Show error details</string>
+
+    <string name="grouping_last_x_hours">Last %1$d hours</string>
+    <string name="grouping_last_x_days">Last %1$d days</string>
+    <string name="grouping_last_year">Last year</string>
+    <string name="grouping_older">Older</string>
+    <string name="trashbin">Trashbin</string>
+
+    <string name="search_in_notes">Search in notes</string>
+    <string name="add_note">Add note</string>
+
+    <string name="sort_ascending">Ascending</string>
+    <string name="sort_descending">Descending</string>
+    <string name="created">Created</string>
+    <string name="last_modified">Last modified</string>
+    <string name="summary">Summary</string>
+    <string name="description">Description</string>
+    <string name="color">Color</string>
+    <string name="no_color">No color</string>
+    <string name="recent_colors">Recent colors</string>
+    <string name="more_colors">More colors</string>
+    <string name="update_color">Update color</string>
+    <string name="category">Category</string>
+    <string name="create_category">Create "%1$s"</string>
+    <string name="search_add_category">Search/add category</string>
+    <string name="delete">Delete</string>
+    <string name="remove">Remove</string>
+    <string name="remove_account_x">Remove account "%1$s"?</string>
+    <string name="remove_account_warning">Are you sure you want to remove this account? This will remove the account with all its folders.</string>
+    <string name="delete_folder_x">Remove folder "%1$s"?</string>
+    <string name="delete_folder_warning">Are you sure you want to remove this folder? This will also remove the folder from your account.</string>
+    <string name="warning_operation_cannot_be_undone">Warning: This operation cannot be undone!</string>
+    <string name="note_deleted">Note deleted</string>
+    <string name="folder_deleted">Folder deleted</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+    <string name="copy_created">Copy created</string>
+    <string name="unexpected_error_occurred">An unexpected error occurred</string>
+    <string name="credentials_not_found">Credentials not found</string>
+    <string name="entry_restored">Restored</string>
+    <string name="entry_copy">Copy</string>
+    <string name="entry_successfully_saved">Entry successfully saved</string>
+    <string name="entry_deleted">Entry deleted</string>
+
+    <string name="sync_conflict_entry_modified_while_server_modified">This entry has been modified locally while it was modified on the server.</string>
+    <string name="sync_conflict_entry_deleted_while_server_modified">This entry has been deleted locally while it was modified on the server.</string>
+    <string name="sync_conflict_entry_modified_while_server_deleted">This entry has been modified locally while it was deleted on the server.</string>
+    <string name="sync_conflict_keep_local_changes">Keep local changes</string>
+    <string name="sync_conflict_load_server_changes">Load server changes</string>
+    <string name="sync_conflict_delete_local_entry">Delete local entry</string>
+
+    <string name="add_time">Add time</string>
+    <string name="no_time">No time</string>
+    <string name="no_timezone">no timezone</string>
+
+    <string name="delete_note_x">Delete note "%1$s"?</string>
+    <string name="delete_note_warning">Are you sure you want to delete this note?</string>
+    <string name="delete_selected">Delete selected</string>
+    <string name="delete_selected_warning">Are you sure you want to delete the selected %1$d entry/entries?</string>
+    <string name="share">Share</string>
+    <string name="send_as_email">Send as E-Mail</string>
+
+    <string name="create_copy">Create a copy</string>
+    <string name="copy_to_clipboard">Copy to clipboard</string>
+
+    <string name="drag_and_drop">Drag &amp; drop</string>
+
+    <string name="back">Back</string>
+    <string name="more">More</string>
+
+    <string name="view_list">List</string>
+    <string name="view_grid">Grid</string>
+    <string name="drag_handle">Drag handle</string>
+
+</resources>

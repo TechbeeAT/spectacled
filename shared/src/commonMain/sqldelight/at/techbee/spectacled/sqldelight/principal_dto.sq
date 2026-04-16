@@ -1,0 +1,50 @@
+CREATE TABLE PrincipalDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    principalUrl TEXT NOT NULL UNIQUE,
+    displayName TEXT,
+    calendarUserAddressSet TEXT
+);
+
+getAllPrincipals:
+SELECT * FROM PrincipalDto;
+
+getPrincipalByUrl:
+SELECT * FROM PrincipalDto WHERE principalUrl = ?;
+
+getPrincipalById:
+SELECT * FROM PrincipalDto WHERE id = ?;
+
+getPrincipalForCalendar:
+SELECT PrincipalDto.*
+FROM PrincipalDto
+INNER JOIN HomeCollectionDto ON PrincipalDto.id = HomeCollectionDto.principalId
+INNER JOIN CalendarDto ON HomeCollectionDto.id = CalendarDto.homeCollectionId
+WHERE CalendarDto.id = ?;
+
+
+updatePrincipal:
+UPDATE
+    PrincipalDto
+SET
+    displayName = :displayName,
+    calendarUserAddressSet = :calendarUserAddressSet
+WHERE
+    principalUrl = :principalUrl;
+
+
+insertPrincipal:
+INSERT OR IGNORE INTO
+    PrincipalDto (
+        principalUrl,
+        displayName,
+        calendarUserAddressSet
+    )
+VALUES (
+    :principalUrl,
+    :displayName,
+    :calendarUserAddressSet
+    );
+
+
+delete:
+DELETE FROM PrincipalDto WHERE id = ?;

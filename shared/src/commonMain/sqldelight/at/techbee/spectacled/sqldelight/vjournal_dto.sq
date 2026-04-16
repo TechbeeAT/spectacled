@@ -1,0 +1,119 @@
+CREATE TABLE VjournalDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    calendarId INTEGER NOT NULL REFERENCES CalendarDto(id) ON DELETE CASCADE,
+    uid TEXT NOT NULL UNIQUE,
+    summary TEXT,
+    description TEXT,
+    dtstart TEXT,
+    dtStartTimeZone TEXT,
+    dtstamp TEXT,
+    color INTEGER,
+    sequence INTEGER,
+    categories TEXT,
+    created TEXT,
+    lastModified TEXT,
+    extraProperties TEXT,
+    orderNo INTEGER,
+    syncState TEXT,
+    etag TEXT,
+    href TEXT
+);
+
+getJournalsByCalendar:
+SELECT * FROM VjournalDto WHERE calendarId = ?;
+
+getDirtyJournalsByCalendar:
+SELECT * FROM VjournalDto WHERE calendarId = ? AND syncState NOT IN ('SYNCED', 'REMOTE_DELETED_LOCAL_TRASHBIN');
+
+getDeletedDeltaHrefs:
+SELECT VjournalDto.href FROM VjournalDto  WHERE calendarId = ? AND href NOT IN ? AND syncState != 'REMOTE_DELETED_LOCAL_TRASHBIN' AND href NOT NULL;
+
+getJournalByUid:
+SELECT * FROM VjournalDto WHERE uid = ?;
+
+getJournalById:
+SELECT * FROM VjournalDto WHERE id = ?;
+
+getJournalsByHrefs:
+SELECT * FROM VjournalDto WHERE href IN ?;
+
+getJournalByHref:
+SELECT * FROM VjournalDto WHERE href = ?;
+
+getAllColors:
+SELECT DISTINCT color FROM VjournalDto WHERE color IS NOT NULL ORDER BY lastModified DESC;
+
+getAllCategories:
+SELECT DISTINCT categories FROM VjournalDto WHERE categories IS NOT NULL ORDER BY lastModified DESC;
+
+insertVjournal:
+INSERT OR IGNORE INTO VjournalDto (
+    calendarId,
+    uid,
+    summary,
+    description,
+    dtstart,
+    dtStartTimeZone,
+    dtstamp,
+    color,
+    sequence,
+    categories,
+    created,
+    lastModified,
+    extraProperties,
+    syncState,
+    etag,
+    href
+)
+VALUES (
+    :calendarId,
+    :uid,
+    :summary,
+    :description,
+    :dtstart,
+    :dtStartTimeZone,
+    :dtstamp,
+    :color,
+    :sequence,
+    :categories,
+    :created,
+    :lastModified,
+    :extraProperties,
+    :syncState,
+    :etag,
+    :href
+);
+
+updateVjournal:
+UPDATE
+    VjournalDto
+SET
+    calendarId = :calendarId,
+    uid = :uid,
+    summary = :summary,
+    description = :description,
+    dtstart = :dtstart,
+    dtStartTimeZone = :dtStartTimeZone,
+    dtstamp = :dtstamp,
+    color = :color,
+    sequence = :sequence,
+    categories = :categories,
+    created = :created,
+    lastModified = :lastModified,
+    extraProperties = :extraProperties,
+    syncState = :syncState,
+    etag = :etag,
+    href = :href
+WHERE uid = :uid;
+
+deleteTrashed:
+DELETE FROM VjournalDto WHERE lastModified < :cutOffTimestamp AND syncState = 'REMOTE_DELETED_LOCAL_TRASHBIN';
+
+markAsDeleted:
+UPDATE VjournalDto SET syncState = 'LOCAL_DELETED' WHERE id IN ?;
+
+updateColor:
+UPDATE VjournalDto SET color = :newColor WHERE id IN :ids;
+
+updateOrderNo:
+UPDATE VjournalDto SET orderNo = :orderNo WHERE id = :id;
