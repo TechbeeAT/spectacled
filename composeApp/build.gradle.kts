@@ -12,7 +12,7 @@ plugins {
 
 kotlin {
     // Android target configured via androidLibrary block (replaces androidTarget + android{})
-    androidLibrary {
+    android {
         namespace = "at.techbee.spectacled.composeapp"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
