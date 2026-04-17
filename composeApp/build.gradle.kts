@@ -119,7 +119,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "at.techbee.spectacled"
-            packageVersion = "1.0.0"
+            packageVersion = libs.versions.appVersionString.get()
         }
     }
 }

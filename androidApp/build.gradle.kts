@@ -13,8 +13,8 @@ android {
         applicationId = "at.techbee.spectacled"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = libs.versions.appBuildNumber.get().toInt()
+        versionName = libs.versions.appVersionString.get()
     }
     packaging {
         resources {

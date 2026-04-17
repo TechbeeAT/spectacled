@@ -1,4 +1,6 @@
-﻿import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+﻿import com.codingfeline.buildkonfig.compiler.FieldSpec
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -9,6 +11,7 @@ plugins {
 
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.buildKonfig)
 }
 
 kotlin {
@@ -102,6 +105,9 @@ kotlin {
             implementation(libs.androidx.work.runtime.ktx)
             // safe storage
             implementation(libs.ksafe)
+            
+            // Required for rendering Compose Previews in Android Studio
+            implementation(libs.compose.uiTooling)
         }
 
         jvmMain.dependencies {
@@ -131,6 +137,15 @@ kotlin {
     }
 }
 
+buildkonfig {
+    packageName = "at.techbee.spectacled.shared"
+    defaultConfigs {
+        buildConfigField(STRING, "APP_VERSION_STRING", libs.versions.appVersionString.get())
+        buildConfigField(FieldSpec.Type.INT, "APP_BUILD_NUMBER", libs.versions.appBuildNumber.get())
+        buildConfigField(STRING, "APP_VERSION_CODENAME", libs.versions.appVersionCodename.get())
+    }
+}
+
 sqldelight {
     databases {
         create("SpectacledDatabase") {
@@ -138,4 +153,32 @@ sqldelight {
             generateAsync.set(true)
         }
     }
+}
+
+// Task to sync version strings to iOS xcconfig
+tasks.register("syncIosVersion") {
+    val configFile = file("../iosApp/Configuration/Config.xcconfig")
+    val versionInt = libs.versions.appBuildNumber.get()
+    val versionString = libs.versions.appVersionString.get()
+
+    doLast {
+        if (configFile.exists()) {
+            val lines = configFile.readLines().map { line ->
+                when {
+                    line.startsWith("CURRENT_PROJECT_VERSION=") -> "CURRENT_PROJECT_VERSION=$versionInt"
+                    line.startsWith("MARKETING_VERSION=") -> "MARKETING_VERSION=$versionString"
+                    else -> line
+                }
+            }
+            configFile.writeText(lines.joinToString("\n"))
+            println("iOS versions synced: Build $versionInt, Marketing $versionString")
+        } else {
+            println("Warning: iOS config file not found at ${configFile.absolutePath}")
+        }
+    }
+}
+
+// Ensure version sync runs during build
+tasks.matching { it.name.contains("build", ignoreCase = true) }.configureEach {
+    dependsOn("syncIosVersion")
 }

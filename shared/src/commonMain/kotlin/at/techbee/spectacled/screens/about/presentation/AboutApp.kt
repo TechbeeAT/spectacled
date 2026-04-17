@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.shared.BuildKonfig
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.copyright_info
 import spectacled.shared.generated.resources.logo_techbee_svg
@@ -82,11 +83,15 @@ fun AboutApp() {
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Version xyz",
+                text = "Version: ${BuildKonfig.APP_VERSION_STRING}",
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
-                text = "Codename: Love is all around",
+                text = "Build: ${BuildKonfig.APP_BUILD_NUMBER}",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = "Codename: ${BuildKonfig.APP_VERSION_CODENAME}",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
