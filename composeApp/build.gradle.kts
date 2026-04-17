@@ -35,19 +35,13 @@ kotlin {
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
-            isStatic = true
+            //isStatic = true
+            export(projects.shared)
             linkerOpts.add("-lsqlite3")
         }
     }
 
     jvm()
-    /*
-    jvm {
-        mainRun {
-            mainClass.set("at.techbee.spectacled.MainKt")   // delete if further tests are ok
-        }
-    }
-     */
     
     js {
         outputModuleName = "composeApp"
@@ -90,7 +84,7 @@ kotlin {
     
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.shared)
+            api(projects.shared)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -122,7 +116,6 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "at.techbee.spectacled.MainKt"
-
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "at.techbee.spectacled"

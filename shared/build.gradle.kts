@@ -41,17 +41,6 @@ kotlin {
     
     sourceSets {
         commonMain.dependencies {
-            // put your Multiplatform dependencies here
-
-            /*
-            implementation(libs.runtime)
-            implementation(libs.foundation)
-            implementation(libs.material3)
-            implementation(libs.ui)
-            implementation(libs.components.resources)
-            implementation(libs.ui.tooling.preview)
-
-             */
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -100,7 +89,6 @@ kotlin {
             implementation(libs.reorderable)
 
             implementation(libs.sql.delight.coroutines.extensions)
-
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
