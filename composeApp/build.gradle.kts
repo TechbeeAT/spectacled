@@ -40,12 +40,14 @@ kotlin {
         }
     }
 
-    
+    jvm()
+    /*
     jvm {
         mainRun {
-            mainClass.set("at.techbee.spectacled.MainKt")
+            mainClass.set("at.techbee.spectacled.MainKt")   // delete if further tests are ok
         }
     }
+     */
     
     js {
         outputModuleName = "composeApp"
