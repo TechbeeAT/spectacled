@@ -27,6 +27,7 @@ import io.github.aakira.napier.Napier
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.dsl.koinConfiguration
 import kotlin.time.ExperimentalTime
 
 
@@ -35,11 +36,10 @@ import kotlin.time.ExperimentalTime
 @Preview
 fun App() {
 
-    Napier.base(DebugAntilog())  // enables Napier logging for all platforms
+    Napier.base(DebugAntilog())  // enables Napier logging for all platforms//onNavigate = { navController.navigate(it) }
+    //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
     KoinApplication(
-        application = {
-            modules(sharedModule)
-        }
+        configuration = koinConfiguration(declaration = { modules(sharedModule) })
     ) {
 
         AppTheme {
@@ -103,14 +103,14 @@ fun App() {
                             noteDetailsViewModel = noteDetailsViewModel,
                             onNavigateUp = { navController.popBackStack() }
                             /*
-                            onNavigate = { route ->
-                                navController.navigate(route) {
-                                    popUpTo<Route.NoteList> {
-                                        inclusive = false
+                                onNavigate = { route ->
+                                    navController.navigate(route) {
+                                        popUpTo<Route.NoteList> {
+                                            inclusive = false
+                                        }
                                     }
                                 }
-                            }
-                            */
+                                */
                         )
                     }
 
