@@ -1,6 +1,6 @@
 package at.techbee.spectacled.screens.core
 
-import at.techbee.caldavnotes.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime

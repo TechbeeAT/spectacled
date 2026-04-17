@@ -34,9 +34,12 @@ actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
     }
 
     actual override fun schedulePeriodic() {
-        window.addEventListener("focus") {
-            requestImmediate()
-        }
+        window.addEventListener(
+            type = "focus",
+            callback = {
+                requestImmediate()
+            }
+        )
     }
 
     actual override fun cancel() { /* nothing to cancel */ }
