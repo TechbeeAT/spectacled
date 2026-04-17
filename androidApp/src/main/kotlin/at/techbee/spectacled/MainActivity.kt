@@ -16,7 +16,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-
         startKoin {
             // Log Koin logs to the Android logger
             androidLogger()
@@ -27,13 +26,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            App()
+            NotesApp()
         }
     }
 }
 
 @Preview
 @Composable
-fun AppAndroidPreview() {
-    App()
+fun NotesAppAndroidPreview() {
+    NotesApp()
 }
