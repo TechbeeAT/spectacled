@@ -16,6 +16,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         log.info("App did finish launching")
 
+        // Registration must happen before didFinishLaunchingWithOptions returns
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: bGAppRefreshTaskRequestIdentifier,
             using: nil
@@ -27,8 +28,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func scheduleFromSwiftUI() {
-        // scheduling in SwiftUI should only be done when the app scene moved to background
-        // this function is called from iOSApp.swift when exactly this happens
+        // Called when app moves to background
         schedule()
     }
 
@@ -43,14 +43,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         iOSSyncEntryPoint.runBackgroundSync {
             log.info("Kotlin sync finished")
 
-            self.schedule()   // ✅ schedule NEXT here only
+            self.schedule()   // Schedule the next one
             task.setTaskCompleted(success: true)
         }
     }
 
 
     private func schedule() {
-        BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: bGAppRefreshTaskRequestIdentifier)
+        // Removing cancel() as it can sometimes cause Code 1 errors if followed immediately by submit()
+        // BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: bGAppRefreshTaskRequestIdentifier)
 
         log.info("Scheduling next sync")
         let request = BGAppRefreshTaskRequest(identifier: bGAppRefreshTaskRequestIdentifier)
@@ -61,6 +62,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             try BGTaskScheduler.shared.submit(request)
             log.debug("Scheduled BG refresh for earliest \(String(describing: request.earliestBeginDate), privacy: .public)")
         } catch {
+            // Note: If you still see Code 1 here on a Simulator, it's a known Simulator limitation.
             log.error("Failed to schedule BG refresh: \(String(describing: error), privacy: .public)")
         }
     }

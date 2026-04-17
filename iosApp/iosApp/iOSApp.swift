@@ -10,8 +10,11 @@ struct iOSApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView().onAppear() {
-                appDelegate.scheduleFromSwiftUI()   // schedule for the first time
+            ContentView()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .background {
+                appDelegate.scheduleFromSwiftUI()
             }
         }
     }
