@@ -7,10 +7,14 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import at.techbee.spectacled.SpectacledVariant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-actual class DatabaseDriverFactory(private val context: Context) {
+actual class DatabaseDriverFactory(
+    private val context: Context,
+    val spectacledVariant: SpectacledVariant
+) {
 
     companion object {
         private var driver: SqlDriver? = null
@@ -24,7 +28,7 @@ actual class DatabaseDriverFactory(private val context: Context) {
             driver ?: AndroidSqliteDriver(
                 schema = schema.synchronous(),
                 context = context,
-                name = DATABASE_NAME,
+                name = spectacledVariant.dbName,
                 callback = object : AndroidSqliteDriver.Callback(schema.synchronous()) {
 
                     override fun onConfigure(db: SupportSQLiteDatabase) {

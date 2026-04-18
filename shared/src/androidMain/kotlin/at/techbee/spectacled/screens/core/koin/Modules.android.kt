@@ -9,7 +9,7 @@ import org.koin.dsl.module
 
 actual val platformModule = module {
     factory { PlatformShareManager(androidContext()) }
-    single { DatabaseDriverFactory(androidContext()) }
+    single { DatabaseDriverFactory(androidContext(), get()) }
     single { PlatformCredentialStore(androidContext()) }
     single { PlatformSyncTrigger(androidContext()) }
 }

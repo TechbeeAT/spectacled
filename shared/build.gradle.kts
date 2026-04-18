@@ -146,6 +146,7 @@ buildkonfig {
     }
 }
 
+
 sqldelight {
     databases {
         create("SpectacledDatabase") {
@@ -154,6 +155,7 @@ sqldelight {
         }
     }
 }
+
 
 // Task to sync version strings to iOS xcconfig
 tasks.register("syncIosVersion") {
@@ -182,3 +184,4 @@ tasks.register("syncIosVersion") {
 tasks.matching { it.name.contains("build", ignoreCase = true) }.configureEach {
     dependsOn("syncIosVersion")
 }
+

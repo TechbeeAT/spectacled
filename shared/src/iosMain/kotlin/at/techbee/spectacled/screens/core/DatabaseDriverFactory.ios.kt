@@ -5,20 +5,23 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
+import at.techbee.spectacled.SpectacledVariant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 
-actual class DatabaseDriverFactory {
+actual class DatabaseDriverFactory(val spectacledVariant: SpectacledVariant) {
 
     companion object {
         private var driver: SqlDriver? = null
         private val mutex = Mutex()
     }
 
-    actual suspend fun provideDbDriver(schema: SqlSchema<QueryResult.AsyncValue<Unit>>): SqlDriver {
+    actual suspend fun provideDbDriver(
+        schema: SqlSchema<QueryResult.AsyncValue<Unit>>
+    ): SqlDriver {
         return mutex.withLock {
-            driver ?: NativeSqliteDriver(schema.synchronous(), DATABASE_NAME).also {
+            driver ?: NativeSqliteDriver(schema.synchronous(), spectacledVariant.dbName).also {
                 driver = it
                 it.execute(null, "PRAGMA foreign_keys=ON;", 0)
             }

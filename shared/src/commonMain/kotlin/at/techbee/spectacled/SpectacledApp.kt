@@ -29,10 +29,15 @@ import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
+import org.koin.dsl.module
 import kotlin.time.ExperimentalTime
 
 
-enum class SpectacledVariant { JOURNALS, NOTES, TASKS }
+enum class SpectacledVariant(val dbName: String) {
+    JOURNALS("spectacled_journals.db"),
+    NOTES("spectacled_notes.db"),
+    TASKS("spectacled_tasks.db");
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
@@ -42,7 +47,12 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
     Napier.base(DebugAntilog())  // enables Napier logging for all platforms//onNavigate = { navController.navigate(it) }
     //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
     KoinApplication(
-        configuration = koinConfiguration(declaration = { modules(sharedModule) })
+        configuration = koinConfiguration(declaration = {
+            modules(
+                module { single { spectacledVariant } },
+                sharedModule,
+            )
+        })
     ) {
 
         AppTheme {
