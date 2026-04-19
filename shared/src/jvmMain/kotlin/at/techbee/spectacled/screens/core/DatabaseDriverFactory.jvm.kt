@@ -6,6 +6,7 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.db.SpectacledDatabase
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
@@ -14,15 +15,15 @@ import java.io.File
 actual class DatabaseDriverFactory(val spectacledVariant: SpectacledVariant) {
 
     companion object {
-        private var driver: SqlDriver? = null
+        private var database: SpectacledDatabase? = null
         private val mutex = Mutex()
     }
 
-    actual suspend fun provideDbDriver(
+    actual suspend fun provideDatabase(
         schema: SqlSchema<QueryResult.AsyncValue<Unit>>
-    ): SqlDriver {
+    ): SpectacledDatabase {
         return mutex.withLock {
-            driver ?: run {
+            database ?: run {
                 val dbFile = File(System.getProperty("user.home"), ".spectacled/${spectacledVariant.dbName}")
                 val newDriver = JdbcSqliteDriver("jdbc:sqlite:${dbFile.absolutePath}")
 
@@ -31,7 +32,11 @@ actual class DatabaseDriverFactory(val spectacledVariant: SpectacledVariant) {
                     schema.synchronous().create(newDriver).await()
                     newDriver.execute(null, "PRAGMA foreign_keys=ON;", 0)
                 }
-                newDriver.also { driver = it }
+                SpectacledDatabase(newDriver).also { db ->
+                    // 🔥 FORCE DB OPEN HERE
+                    db.calendar_dtoQueries.getAllCalendars().executeAsList()
+                    database = db
+                }
             }
         }
     }

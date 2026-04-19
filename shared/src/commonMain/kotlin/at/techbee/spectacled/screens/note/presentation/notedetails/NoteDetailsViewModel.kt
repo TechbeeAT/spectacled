@@ -47,32 +47,21 @@ class NoteDetailsViewModel(
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger
 ): ViewModel() {
-
-    private var database: SpectacledDatabase? = null
-
+    
     val allCategories = mutableSetOf<String>()
     val allColors = mutableSetOf<Color>()
 
     private var _state by mutableStateOf(NoteDetailsState())
     val state: NoteDetailsState get() = _state
+    
+    private lateinit var database: SpectacledDatabase
+    private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
     init {
-
         viewModelScope.launch {
-            Napier.d("Database initializing")
-            database = SpectacledDatabase(databaseDriverFactory.provideDbDriver(SpectacledDatabase.Schema))
-            Napier.d("Database initialized")
+            database = getDatabase()
 
-            database?.let {
-                val unsplitCategories = it.vjournal_dtoQueries.getAllCategories().awaitAsList()
-                unsplitCategories.forEach { category ->
-                    allCategories.addAll(category.split(","))
-                }
-                allColors.addAll(it.vjournal_dtoQueries.getAllColors().awaitAsList().map { color -> Color(color) })
-            }
-        }
-
-        viewModelScope.launch {
+            launch {
             snapshotFlow { state.note } // snapshotFlow tracks reads of the note and emits on change
                 .debounce(500L) // Wait for 500ms pause in typing
                 .distinctUntilChanged { old, new -> old.lastModified == new.lastModified } // Only save if last modified changed
@@ -80,24 +69,33 @@ class NoteDetailsViewModel(
                     if(!state.isLoading && state.note.calendarId != 0L && state.note.syncState != SyncState.SYNCED)
                         saveNote(state.note.syncState)
                 }
+                }
         }
     }
 
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     fun load(noteId: Long) {
-        viewModelScope.launch {
-            database?.let {
-                val note = it.vjournal_dtoQueries.getJournalById(noteId).awaitAsOneOrNull()?.toDomain() ?: return@launch
-                val calendar = it.calendar_dtoQueries.getCalendarById(note.calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
-                _state = _state.copy(
-                    note = note,
-                    originalNote = note,
-                    calendar = calendar,
-                    isLoading = false,
-                    navigateUp = false
-                )
+        viewModelScope.launch {
+
+            val unsplitCategories = database.vjournal_dtoQueries.getAllCategories().awaitAsList()
+            unsplitCategories.forEach { category ->
+                allCategories.addAll(category.split(","))
             }
+            allColors.addAll(database.vjournal_dtoQueries.getAllColors().awaitAsList().map { color -> Color(color) })
+
+
+            val note = database.vjournal_dtoQueries.getJournalById(noteId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+            val calendar = database.calendar_dtoQueries.getCalendarById(note.calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+
+            _state = _state.copy(
+                note = note,
+                originalNote = note,
+                calendar = calendar,
+                isLoading = false,
+                navigateUp = false
+            )
+
         }
     }
 
@@ -106,7 +104,7 @@ class NoteDetailsViewModel(
     fun loadNew(calendarId: Long) {
         viewModelScope.launch {
             val newNote = Note(calendarId = calendarId)
-            val calendar = database!!.calendar_dtoQueries.getCalendarById(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+            val calendar = database.calendar_dtoQueries.getCalendarById(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
             _state = _state.copy(
                 note = newNote,
@@ -124,32 +122,30 @@ class NoteDetailsViewModel(
     fun loadCopy(noteIdToCopy: Long, isRestoredCopy: Boolean = false) {
         viewModelScope.launch {
             //saveNote(false)
-            database?.let {
-                val originalNote = it.vjournal_dtoQueries.getJournalById(noteIdToCopy).awaitAsOneOrNull()?.toDomain()
-                if(originalNote == null) {
-                    _state = _state.copy(
-                        snackbarText = getString(Res.string.unexpected_error_occurred),
-                        isLoading = false,
-                        navigateUp = true
-                    )
-                    return@let
-                }
-                val copiedNote = Note(
-                    calendarId = originalNote.calendarId,
-                    summary = originalNote.summary + if(isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${getString(Res.string.entry_copy)})",
-                    description = originalNote.description,
-                    dtStart = originalNote.dtStart,
-                    categories = originalNote.categories,
-                    color = originalNote.color,
-                    extraProperties = originalNote.extraProperties
-                )
+            val originalNote = database.vjournal_dtoQueries.getJournalById(noteIdToCopy).awaitAsOneOrNull()?.toDomain()
+            if(originalNote == null) {
                 _state = _state.copy(
-                    note = copiedNote,
-                    originalNote = copiedNote,
+                    snackbarText = getString(Res.string.unexpected_error_occurred),
                     isLoading = false,
-                    navigateUp = false
+                    navigateUp = true
                 )
+                return@launch
             }
+            val copiedNote = Note(
+                calendarId = originalNote.calendarId,
+                summary = originalNote.summary + if(isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${getString(Res.string.entry_copy)})",
+                description = originalNote.description,
+                dtStart = originalNote.dtStart,
+                categories = originalNote.categories,
+                color = originalNote.color,
+                extraProperties = originalNote.extraProperties
+            )
+            _state = _state.copy(
+                note = copiedNote,
+                originalNote = copiedNote,
+                isLoading = false,
+                navigateUp = false
+            )
         }
     }
 
@@ -294,7 +290,7 @@ class NoteDetailsViewModel(
             navigateUp = navigateUp
         )
 
-        viewModelScope.launch { database!!.insertOrUpdateNote(_state.note) }
+        viewModelScope.launch { database.insertOrUpdateNote(_state.note) }
         Napier.d("Note saved")
     }
 
@@ -310,16 +306,16 @@ class NoteDetailsViewModel(
 
         viewModelScope.launch {
             try {
-                val calendar = database?.calendar_dtoQueries?.getCalendarById(_state.note.calendarId)?.awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
-                val homeCollection = database?.home_collection_dtoQueries?.getHomeCollectionsById(calendar.homeCollectionId)?.awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
-                val principal = database?.principal_dtoQueries?.getPrincipalById(homeCollection.principalId)?.awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
+                val calendar = database.calendar_dtoQueries.getCalendarById(_state.note.calendarId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
+                val homeCollection = database.home_collection_dtoQueries.getHomeCollectionsById(calendar.homeCollectionId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
+                val principal = database.principal_dtoQueries.getPrincipalById(homeCollection.principalId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
 
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
                 val client = HttpClientFactory.create(getPlatformEngine(), credentials.username, credentials.password)
 
                 //database!!.insertOrUpdateNote(_state.note)
-                SyncCoordinator(database!!, client).pushDirtyNote(_state.note, calendar)
-                val processedNote = database?.vjournal_dtoQueries?.getJournalByUid(_state.note.uid)?.awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
+                SyncCoordinator(database, client).pushDirtyNote(_state.note, calendar)
+                val processedNote = database.vjournal_dtoQueries.getJournalByUid(_state.note.uid).awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
 
                 when(processedNote.syncState) {
                     SyncState.LOCAL_MODIFIED, SyncState.SYNCED -> {

@@ -20,7 +20,6 @@ import at.techbee.spectacled.screens.note.domain.Note
 import at.techbee.spectacled.screens.note.presentation.notelist.datastructures.ListGrouping
 import at.techbee.spectacled.screens.note.presentation.notelist.datastructures.ListLayout
 import at.techbee.spectacled.screens.note.presentation.notelist.datastructures.ListSortedBy
-import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
@@ -37,14 +36,11 @@ class NoteListViewModel(
     val state by _state
     val dragAndDropList = mutableStateListOf<Note>()
 
-    private var database: SpectacledDatabase? = null
+    private lateinit var database: SpectacledDatabase
+    private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
     init {
-        viewModelScope.launch {
-            Napier.d("Database initializing")
-            database = SpectacledDatabase(databaseDriverFactory.provideDbDriver(SpectacledDatabase.Schema))
-            Napier.d("Database initialized")
-        }
+        viewModelScope.launch { database = getDatabase() }
     }
 
     fun load(calendarId: Long) {
@@ -62,56 +58,57 @@ class NoteListViewModel(
 
         viewModelScope.launch {
             try {
-                database?.let {
 
+                val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+                val credentials = credentialStore.load(principal.principalUrl)
 
-                    val principal = it.principal_dtoQueries.getPrincipalForCalendar(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@let
-                    val credentials = credentialStore.load(principal.principalUrl)
+                _state.value = _state.value.copy(
+                    principal = principal,
+                    credentials = credentials
+                )
 
-                    _state.value = _state.value.copy(
-                        principal = principal,
-                        credentials = credentials
-                    )
-
-                    launch {
-                        it
-                            .calendar_dtoQueries.getCalendarById(calendarId)
-                            .asFlow()
-                            .collect { calendarFlow ->
-                                val emittedCalendar = calendarFlow.awaitAsOneOrNull()?.toDomain() ?: return@collect
-                                _state.value = _state.value.copy(
-                                    calendar = emittedCalendar
-                                )
-                            }
-                    }
-
-                    launch {
-                        it
-                            .vjournal_dtoQueries.getJournalsByCalendar(state.calendar.id)
-                            .asFlow()
-                            .collect { journalsFlow ->
-                                val emittedNotes = journalsFlow.awaitAsList().map { vjournalDto -> vjournalDto.toDomain() }
-                                _state.value = _state.value.copy(
-                                    notes = emittedNotes,
-                                    isRefreshing = false,
-                                    errorMessage = null,
-                                    navigateUp = false,
-                                    snackbarText = null
-                                )
-                                updateList()
-                                dragAndDropList.apply {
-                                    clear()
-                                    addAll(emittedNotes.filter { emitted -> !emitted.syncState.isDeletedState() })
-                                    sortBy { note -> note.orderNo }
-                                }
-                            }
-                    }
-                }
+                launch { observeCalendar(calendarId) }
+                launch { observeNotes() }
 
             } catch (_: NullPointerException) {
                 _state.value = _state.value.copy(navigateUp = true, isRefreshing = false)
             }
         }
+    }
+
+    private suspend fun observeCalendar(calendarId: Long) {
+        database
+            .calendar_dtoQueries.getCalendarById(calendarId)
+            .asFlow()
+            .collect { calendarFlow ->
+                val emittedCalendar = calendarFlow.awaitAsOneOrNull()?.toDomain() ?: return@collect
+                _state.value = _state.value.copy(
+                    calendar = emittedCalendar
+                )
+            }
+
+    }
+
+    private suspend fun observeNotes() {
+        database
+            .vjournal_dtoQueries.getJournalsByCalendar(state.calendar.id)
+            .asFlow()
+            .collect { journalsFlow ->
+                val emittedNotes = journalsFlow.awaitAsList().map { vjournalDto -> vjournalDto.toDomain() }
+                _state.value = _state.value.copy(
+                    notes = emittedNotes,
+                    isRefreshing = false,
+                    errorMessage = null,
+                    navigateUp = false,
+                    snackbarText = null
+                )
+                updateList()
+                dragAndDropList.apply {
+                    clear()
+                    addAll(emittedNotes.filter { emitted -> !emitted.syncState.isDeletedState() })
+                    sortBy { note -> note.orderNo }
+                }
+            }
     }
 
 
@@ -182,7 +179,7 @@ class NoteListViewModel(
 
     private fun onDeleteSelectedItems() {
         viewModelScope.launch {
-            _state.value.multiselectItems?.let { database!!.vjournal_dtoQueries.markAsDeleted(it) }
+            _state.value.multiselectItems?.let { database.vjournal_dtoQueries.markAsDeleted(it) }
             platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
             _state.value = _state.value.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false)
         }
@@ -190,7 +187,7 @@ class NoteListViewModel(
 
     private fun onUpdateColorOfSelectedItems(color: Color?) {
         viewModelScope.launch {
-            _state.value.multiselectItems?.let { database!!.vjournal_dtoQueries.updateColor( if(color == Color.Unspecified) null else color?.toArgb()?.toLong(), it) }
+            _state.value.multiselectItems?.let { database.vjournal_dtoQueries.updateColor( if(color == Color.Unspecified) null else color?.toArgb()?.toLong(), it) }
             platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
             //_state.value = _state.value.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false)
         }
@@ -231,9 +228,9 @@ class NoteListViewModel(
 
     private fun onPersistOrderNo() {
         viewModelScope.launch {
-            database!!.vjournal_dtoQueries.transaction {
+            database.vjournal_dtoQueries.transaction {
                 dragAndDropList.forEachIndexed { index, note ->
-                    database!!.vjournal_dtoQueries.updateOrderNo(index.toLong(), note.id)
+                    database.vjournal_dtoQueries.updateOrderNo(index.toLong(), note.id)
                 }
             }
         }

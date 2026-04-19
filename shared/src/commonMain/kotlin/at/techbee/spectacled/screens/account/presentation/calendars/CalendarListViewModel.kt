@@ -52,47 +52,41 @@ class CalendarListViewModel(
     val state by _state
 
     private lateinit var database: SpectacledDatabase
+    private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
     init {
         viewModelScope.launch {
-            Napier.d("Database initializing")
-            database = SpectacledDatabase(databaseDriverFactory.provideDbDriver(SpectacledDatabase.Schema))
-            Napier.d("Database initialized")
+            database = getDatabase()
+            launch { observePrincipals() }
+            launch { observeHomeCollections() }
+            launch { observeCalendars() }
+        }
+    }
 
-            launch {
-                Napier.d("Observing principals")
-                database.principal_dtoQueries.getAllPrincipals().asFlow().collect {
-                    _state.value = _state.value.copy(
-                        principals = it.awaitAsList().map { principalDto -> principalDto.toDomain() }
-                    )
-                }
-            }
+    private suspend fun observePrincipals() {
+        Napier.d("Observing principals")
+        database.principal_dtoQueries.getAllPrincipals().asFlow().collect {
+            _state.value = _state.value.copy(
+                principals = it.awaitAsList().map { principalDto -> principalDto.toDomain() }
+            )
+        }
+    }
 
-            launch {
-                Napier.d("Observing homeCollections")
-                database.home_collection_dtoQueries.getAllHomeCollections().asFlow().collect {
-                    _state.value = _state.value.copy(
-                        homeCollections = it.awaitAsList().map { homeCollectionDto -> homeCollectionDto.toDomain() }
-                    )
-                }
-            }
+    private suspend fun observeHomeCollections() {
+        Napier.d("Observing homeCollections")
+        database.home_collection_dtoQueries.getAllHomeCollections().asFlow().collect {
+            _state.value = _state.value.copy(
+                homeCollections = it.awaitAsList().map { homeCollectionDto -> homeCollectionDto.toDomain() }
+            )
+        }
+    }
 
-            launch {
-                Napier.d("Observing calendars")
-                database.calendar_dtoQueries.getAllCalendars().asFlow().collect {
-                    _state.value = _state.value.copy(
-                        calendars = it.awaitAsList().map { calendarDto -> calendarDto.toDomain() }
-                    )
-                }
-            }
-            // Not loading single notes here, list can stay empty
-
-                /* single notes are not relevant here, list can stay empty
-                calendars.forEach { calendar ->
-                    calendar.notes = notes.filter { it.calendarId == calendar.id }
-                }
-
-                 */
+    private suspend fun observeCalendars() {
+        Napier.d("Observing calendars")
+        database.calendar_dtoQueries.getAllCalendars().asFlow().collect {
+            _state.value = _state.value.copy(
+                calendars = it.awaitAsList().map { calendarDto -> calendarDto.toDomain() }
+            )
         }
     }
 

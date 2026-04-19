@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core
 
+import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,19 +22,22 @@ actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
 
     actual override fun requestImmediate() {
         scope.launch {
-            SyncCoordinator.syncAllPrincipals(databaseDriverFactory, credentialStore)
+            val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
+            SyncCoordinator.syncAllPrincipals(database, credentialStore)
         }
     }
 
     actual override fun requestImmediate(calendarIds: List<Long>) {
         scope.launch {
-            SyncCoordinator.syncSpecificCalendars(calendarIds, databaseDriverFactory, credentialStore)
+            val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
+            SyncCoordinator.syncSpecificCalendars(calendarIds, database, credentialStore)
         }
     }
 
     actual override fun requestImmediatePush(calendarId: Long) {
         scope.launch {
-            SyncCoordinator.pushLocalChanges(calendarId, databaseDriverFactory, credentialStore)
+            val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
+            SyncCoordinator.pushLocalChanges(calendarId, database, credentialStore)
         }
     }
 

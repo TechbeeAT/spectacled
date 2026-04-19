@@ -1,9 +1,9 @@
 package at.techbee.spectacled.screens.core
 
 import app.cash.sqldelight.db.QueryResult
-import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.worker.WebWorkerDriver
+import at.techbee.spectacled.db.SpectacledDatabase
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,16 +17,16 @@ fun jsWorker(): Worker =
 actual class DatabaseDriverFactory {
 
     companion object {
-        private var driver: SqlDriver? = null
+        private var database: SpectacledDatabase? = null
         private val mutex = Mutex()
     }
 
-    actual suspend fun provideDbDriver(
+    actual suspend fun provideDatabase(
         schema: SqlSchema<QueryResult.AsyncValue<Unit>>
-    ): SqlDriver {
+    ): SpectacledDatabase {
 
         return mutex.withLock {
-            driver ?: run {
+            database ?: run {
                 Napier.d("Creating WebWorker Driver")
                 val d = WebWorkerDriver(jsWorker())
                 Napier.d("Awaiting schema creation")
@@ -35,8 +35,7 @@ actual class DatabaseDriverFactory {
                 d.execute(null, "PRAGMA foreign_keys=ON;", 0)
 
                 Napier.d("Driver fully initialized")
-                driver = d
-                d
+                SpectacledDatabase(d)
             }
         }
     }

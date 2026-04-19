@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -68,16 +69,17 @@ class SyncWorker(appContext: Context, params: WorkerParameters) : CoroutineWorke
 
         val targetCalendarIds = inputData.getLongArray(WORKER_TARGET_CALENDAR_IDS)?.toList()
         val pushOnly = inputData.getBoolean(WORKER_PUSH_ONLY, false)
+        val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
         if (targetCalendarIds.isNullOrEmpty()) {
             // Default behavior: Sync everything
-            SyncCoordinator.syncAllPrincipals(databaseDriverFactory, credentialStore)
+            SyncCoordinator.syncAllPrincipals(database, credentialStore)
         } else if(pushOnly && targetCalendarIds.size == 1) {
-            SyncCoordinator.pushLocalChanges(targetCalendarIds.first(), databaseDriverFactory, credentialStore)
+            SyncCoordinator.pushLocalChanges(targetCalendarIds.first(), database, credentialStore)
         } else {
             SyncCoordinator.syncSpecificCalendars(
                 targetCalendarIds,
-                databaseDriverFactory,
+                database,
                 credentialStore
             )
         }

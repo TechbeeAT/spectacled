@@ -50,12 +50,9 @@ class SyncCoordinator(
 
         @OptIn(ExperimentalTime::class)
         suspend fun syncAllPrincipals(
-            databaseDriverFactory: DatabaseDriverFactory,
+            database: SpectacledDatabase,
             credentialStore: CredentialStore
         ) {
-
-            val database = SpectacledDatabase(databaseDriverFactory.provideDbDriver(SpectacledDatabase.Schema))
-
             database.principal_dtoQueries.getAllPrincipals().awaitAsList().map { it.toDomain() }.forEach { principal ->
                 val credentials = credentialStore.load(principal.principalUrl)
                 val client = HttpClientFactory.create(getPlatformEngine(), credentials?.username, credentials?.password)
@@ -75,11 +72,9 @@ class SyncCoordinator(
 
         suspend fun syncSpecificCalendars(
             calendarIds: List<Long>,
-            databaseDriverFactory: DatabaseDriverFactory,
+            database: SpectacledDatabase,
             credentialStore: CredentialStore
         ) {
-
-            val database = SpectacledDatabase(databaseDriverFactory.provideDbDriver(SpectacledDatabase.Schema))
             database.calendar_dtoQueries.getCalendarsByIds(calendarIds).awaitAsList().map { it.toDomain() }.forEach { calendar ->
 
                 val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendar.id).awaitAsOne().toDomain()
@@ -91,10 +86,9 @@ class SyncCoordinator(
 
         suspend fun pushLocalChanges(
             calendarId: Long,
-            databaseDriverFactory: DatabaseDriverFactory,
+            database: SpectacledDatabase,
             credentialStore: CredentialStore
         ) {
-            val database = SpectacledDatabase(databaseDriverFactory.provideDbDriver(SpectacledDatabase.Schema))
             val calendar = database.calendar_dtoQueries.getCalendarById(calendarId).awaitAsOne().toDomain()
             val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendar.id).awaitAsOne().toDomain()
             val credentials = credentialStore.load(principal.principalUrl)
