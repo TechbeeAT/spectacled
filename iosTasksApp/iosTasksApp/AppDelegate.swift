@@ -1,14 +1,14 @@
 import UIKit
 import BackgroundTasks
-import ComposeJournalsApp
+import ComposeTasksApp
 import os
 
-private let log = Logger(subsystem: "at.techbee.spectacled", category: "AppDelegate")
+private let log = Logger(subsystem: "at.techbee.spectacled.tasks", category: "AppDelegate")
 
 class AppDelegate: NSObject, UIApplicationDelegate {
 
     private let iOSSyncEntryPoint = IOSSyncEntryPoint.shared
-    private let bGAppRefreshTaskRequestIdentifier = "at.techbee.spectacled.sync"
+    private let bGAppRefreshTaskRequestIdentifier = "at.techbee.spectacled.tasks.sync"
 
     func application(
         _ application: UIApplication,

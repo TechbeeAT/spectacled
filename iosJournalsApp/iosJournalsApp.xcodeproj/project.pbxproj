@@ -11,22 +11,22 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B4E5EB70B00C598DD14A5343 /* Exceptions for "iosApp" folder in "iosApp" target */ = {
+		B4E5EB70B00C598DD14A5343 /* Exceptions for "iosJournalsApp" folder in "iosJournalsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 6A1B65F6CA24A667CA678A53 /* iosApp */;
+			target = 6A1B65F6CA24A667CA678A53 /* iosJournalsApp */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		34562D81B6190134E8033C88 /* iosApp */ = {
+		34562D81B6190134E8033C88 /* iosJournalsApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				B4E5EB70B00C598DD14A5343 /* Exceptions for "iosApp" folder in "iosApp" target */,
+				B4E5EB70B00C598DD14A5343 /* Exceptions for "iosJournalsApp" folder in "iosJournalsApp" target */,
 			);
-			path = iosApp;
+			path = iosJournalsApp;
 			sourceTree = "<group>";
 		};
 		C9129247ED447EC5384B5812 /* Configuration */ = {
@@ -59,7 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				C9129247ED447EC5384B5812 /* Configuration */,
-				34562D81B6190134E8033C88 /* iosApp */,
+				34562D81B6190134E8033C88 /* iosJournalsApp */,
 				987D042A10365E46A9EC9500 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -67,9 +67,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		6A1B65F6CA24A667CA678A53 /* iosApp */ = {
+		6A1B65F6CA24A667CA678A53 /* iosJournalsApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5334B739B43D27232869588C /* Build configuration list for PBXNativeTarget "iosApp" */;
+			buildConfigurationList = 5334B739B43D27232869588C /* Build configuration list for PBXNativeTarget "iosJournalsApp" */;
 			buildPhases = (
 				925CAD74B17CE0BB8A783DFF /* Compile Kotlin Framework */,
 				B216B7EB41A7A90D86977086 /* Sources */,
@@ -81,12 +81,12 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				34562D81B6190134E8033C88 /* iosApp */,
+				34562D81B6190134E8033C88 /* iosJournalsApp */,
 			);
-			name = iosApp;
+			name = iosJournalsApp;
 			packageProductDependencies = (
 			);
-			productName = iosApp;
+			productName = iosJournalsApp;
 			productReference = 09B66F19DCDDC655FFD79211 /* spectacled.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -105,7 +105,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 4600DA8E29DC926E9BF3A810 /* Build configuration list for PBXProject "iosApp" */;
+			buildConfigurationList = 4600DA8E29DC926E9BF3A810 /* Build configuration list for PBXProject "iosJournalsApp" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -119,7 +119,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				6A1B65F6CA24A667CA678A53 /* iosApp */,
+				6A1B65F6CA24A667CA678A53 /* iosJournalsApp */,
 			);
 		};
 /* End PBXProject section */
@@ -176,11 +176,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"iosJournalsApp/Preview Content\"";
 				DEVELOPMENT_TEAM = CQ24D5B7LP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_FILE = iosJournalsApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = spectacled;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -331,11 +331,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"iosJournalsApp/Preview Content\"";
 				DEVELOPMENT_TEAM = CQ24D5B7LP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_FILE = iosJournalsApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = spectacled;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -357,7 +357,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4600DA8E29DC926E9BF3A810 /* Build configuration list for PBXProject "iosApp" */ = {
+		4600DA8E29DC926E9BF3A810 /* Build configuration list for PBXProject "iosJournalsApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5DC1A52DF64B3AD5F5DC0D47 /* Debug */,
@@ -366,7 +366,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5334B739B43D27232869588C /* Build configuration list for PBXNativeTarget "iosApp" */ = {
+		5334B739B43D27232869588C /* Build configuration list for PBXNativeTarget "iosJournalsApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FDDB34AEA6B4C2E38E21BA92 /* Debug */,

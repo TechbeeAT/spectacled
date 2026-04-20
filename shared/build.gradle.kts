@@ -159,23 +159,26 @@ sqldelight {
 
 // Task to sync version strings to iOS xcconfig
 tasks.register("syncIosVersion") {
-    val configFile = file("../iosApp/Configuration/Config.xcconfig")
+    val iosApps = listOf("iosApp", "iosJournalsApp", "iosNotesApp", "iosTasksApp")
     val versionInt = libs.versions.appBuildNumber.get()
     val versionString = libs.versions.appVersionString.get()
 
     doLast {
-        if (configFile.exists()) {
-            val lines = configFile.readLines().map { line ->
-                when {
-                    line.startsWith("CURRENT_PROJECT_VERSION=") -> "CURRENT_PROJECT_VERSION=$versionInt"
-                    line.startsWith("MARKETING_VERSION=") -> "MARKETING_VERSION=$versionString"
-                    else -> line
+        iosApps.forEach { appDir ->
+            val configFile = file("../$appDir/Configuration/Config.xcconfig")
+            if (configFile.exists()) {
+                val lines = configFile.readLines().map { line ->
+                    when {
+                        line.startsWith("CURRENT_PROJECT_VERSION=") -> "CURRENT_PROJECT_VERSION=$versionInt"
+                        line.startsWith("MARKETING_VERSION=") -> "MARKETING_VERSION=$versionString"
+                        else -> line
+                    }
                 }
+                configFile.writeText(lines.joinToString("\n"))
+                println("iOS versions synced for $appDir: Build $versionInt, Marketing $versionString")
+            } else {
+                println("Warning: iOS config file not found for $appDir at ${configFile.absolutePath}")
             }
-            configFile.writeText(lines.joinToString("\n"))
-            println("iOS versions synced: Build $versionInt, Marketing $versionString")
-        } else {
-            println("Warning: iOS config file not found at ${configFile.absolutePath}")
         }
     }
 }
@@ -184,4 +187,3 @@ tasks.register("syncIosVersion") {
 tasks.matching { it.name.contains("build", ignoreCase = true) }.configureEach {
     dependsOn("syncIosVersion")
 }
-
