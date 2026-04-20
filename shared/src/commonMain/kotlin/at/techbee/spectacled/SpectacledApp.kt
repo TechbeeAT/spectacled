@@ -25,18 +25,23 @@ import at.techbee.spectacled.screens.note.presentation.notelist.NoteListViewMode
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
 import org.koin.dsl.module
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.app_name_spectacled_journals
+import spectacled.shared.generated.resources.app_name_spectacled_notes
+import spectacled.shared.generated.resources.app_name_spectacled_tasks
 import kotlin.time.ExperimentalTime
 
 
-enum class SpectacledVariant(val dbName: String) {
-    JOURNALS("spectacled_journals.db"),
-    NOTES("spectacled_notes.db"),
-    TASKS("spectacled_tasks.db");
+enum class SpectacledVariant(val dbName: String, val appNameStringRes: StringResource) {
+    JOURNALS("spectacled_journals.db", Res.string.app_name_spectacled_journals),
+    NOTES("spectacled_notes.db", Res.string.app_name_spectacled_notes),
+    TASKS("spectacled_tasks.db", Res.string.app_name_spectacled_tasks);
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
