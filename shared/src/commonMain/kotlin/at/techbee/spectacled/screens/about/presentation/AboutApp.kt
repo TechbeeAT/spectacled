@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.shared.BuildKonfig
 import spectacled.shared.generated.resources.Res
@@ -38,12 +39,14 @@ import spectacled.shared.generated.resources.spectacled_notes_svg
 import spectacled.shared.generated.resources.spectacled_notes_xml
 import spectacled.shared.generated.resources.terms_conditions
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 
 @Composable
-fun AboutApp() {
+fun AboutApp(
+    spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>()
+) {
 
     val uriHandler = LocalUriHandler.current
-
 
     SelectionContainer {
 
@@ -77,7 +80,7 @@ fun AboutApp() {
             }
 
             Text(
-                text = "spectacled Notes",
+                text = stringResource(spectacledVariant.appNameStringRes),
                 modifier = Modifier.padding(top = 32.dp, bottom = 16.dp),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
@@ -185,5 +188,5 @@ fun AboutApp() {
 @Composable
 fun AboutApp_Preview(
 ) {
-    AboutApp()
+    AboutApp(spectacledVariant = SpectacledVariant.JOURNALS)
 }

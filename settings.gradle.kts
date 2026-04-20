@@ -33,7 +33,15 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
-include(":androidApp")
-include(":composeApp")
+include(":androidNotesApp")
+include(":composeNotesApp")
+include(":androidJournalsApp")
+include(":composeJournalsApp")
+include(":androidTasksApp")
+include(":composeTasksApp")
 include(":server")
 include(":shared")
+
+include(":iosJournalsApp")
+include(":iosNotesApp")
+include(":iosTasksApp")

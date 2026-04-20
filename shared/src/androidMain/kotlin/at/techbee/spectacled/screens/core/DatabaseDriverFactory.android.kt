@@ -7,24 +7,29 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.db.SpectacledDatabase
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-actual class DatabaseDriverFactory(private val context: Context) {
+actual class DatabaseDriverFactory(
+    private val context: Context,
+    val spectacledVariant: SpectacledVariant
+) {
 
     companion object {
-        private var driver: SqlDriver? = null
         private val mutex = Mutex()
+        private var database: SpectacledDatabase? = null
     }
 
-    actual suspend fun provideDbDriver(
+    actual suspend fun provideDatabase(
         schema: SqlSchema<QueryResult.AsyncValue<Unit>>
-    ): SqlDriver {
+    ): SpectacledDatabase {
         return mutex.withLock {
-            driver ?: AndroidSqliteDriver(
+            database?: SpectacledDatabase(AndroidSqliteDriver(
                 schema = schema.synchronous(),
-                context = context,
-                name = DATABASE_NAME,
+                context = context.applicationContext,
+                name = spectacledVariant.dbName,
                 callback = object : AndroidSqliteDriver.Callback(schema.synchronous()) {
 
                     override fun onConfigure(db: SupportSQLiteDatabase) {
@@ -37,7 +42,11 @@ actual class DatabaseDriverFactory(private val context: Context) {
                         db.enableWriteAheadLogging()
                     }
                 }
-            ).also { driver = it }
+            )).also { db ->
+                // 🔥 FORCE DB OPEN HERE
+                db.calendar_dtoQueries.getAllCalendars().executeAsList()
+                database = db
+            }
         }
     }
 }

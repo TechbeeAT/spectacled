@@ -1,7 +1,10 @@
 <resources>
     <string name="copyright_info" translatable="false">© Techbee e.U.</string>
 
-    <string name="app_name2">CalDAV Notes</string>
+    <string name="app_name_spectacled_journals">spectacled Journals</string>
+    <string name="app_name_spectacled_notes">spectacled Notes</string>
+    <string name="app_name_spectacled_tasks">spectacled Tasks</string>
+
     <string name="notes">Notes</string>
     <string name="journals">Journals</string>
 

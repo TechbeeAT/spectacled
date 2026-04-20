@@ -25,14 +25,24 @@ import at.techbee.spectacled.screens.note.presentation.notelist.NoteListViewMode
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
+import org.koin.dsl.module
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.app_name_spectacled_journals
+import spectacled.shared.generated.resources.app_name_spectacled_notes
+import spectacled.shared.generated.resources.app_name_spectacled_tasks
 import kotlin.time.ExperimentalTime
 
 
-enum class SpectacledVariant { JOURNALS, NOTES, TASKS }
+enum class SpectacledVariant(val dbName: String, val appNameStringRes: StringResource) {
+    JOURNALS("spectacled_journals.db", Res.string.app_name_spectacled_journals),
+    NOTES("spectacled_notes.db", Res.string.app_name_spectacled_notes),
+    TASKS("spectacled_tasks.db", Res.string.app_name_spectacled_tasks);
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
@@ -42,7 +52,12 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
     Napier.base(DebugAntilog())  // enables Napier logging for all platforms//onNavigate = { navController.navigate(it) }
     //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
     KoinApplication(
-        configuration = koinConfiguration(declaration = { modules(sharedModule) })
+        configuration = koinConfiguration(declaration = {
+            modules(
+                module { single { spectacledVariant } },
+                sharedModule,
+            )
+        })
     ) {
 
         AppTheme {
