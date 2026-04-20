@@ -3,12 +3,12 @@ import BackgroundTasks
 import ComposeJournalsApp
 import os
 
-private let log = Logger(subsystem: "at.techbee.spectacled", category: "AppDelegate")
+private let log = Logger(subsystem: "at.techbee.spectacled.journals", category: "AppDelegate")
 
 class AppDelegate: NSObject, UIApplicationDelegate {
 
     private let iOSSyncEntryPoint = IOSSyncEntryPoint.shared
-    private let bGAppRefreshTaskRequestIdentifier = "at.techbee.spectacled.sync"
+    private let bGAppRefreshTaskRequestIdentifier = "at.techbee.spectacled.journals.sync"
 
     func application(
         _ application: UIApplication,

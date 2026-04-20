@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct iOSApp: App {
+struct iOSTasksApp: App {
 
     @UIApplicationDelegateAdaptor(AppDelegate.self)
     var appDelegate

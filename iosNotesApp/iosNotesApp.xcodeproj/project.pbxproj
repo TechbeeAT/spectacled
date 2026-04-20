@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		09B66F19DCDDC655FFD79211 /* spectacled.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = spectacled.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		19B66F19DCDDC655FFD79211 /* iosNotesApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosNotesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B4E5EB70B00C598DD14A5343 /* Exceptions for "iosApp" folder in "iosApp" target */ = {
+		C7E5EB70B00C598DD14A5343 /* Exceptions for "iosNotesApp" folder in "iosNotesApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 6A1B65F6CA24A667CA678A53 /* iosApp */;
+			target = 7A1B65F6CA24A667CA678A53 /* iosNotesApp */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		34562D81B6190134E8033C88 /* iosApp */ = {
+		44562D81B6190134E8033C88 /* iosNotesApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				B4E5EB70B00C598DD14A5343 /* Exceptions for "iosApp" folder in "iosApp" target */,
+				C7E5EB70B00C598DD14A5343 /* Exceptions for "iosNotesApp" folder in "iosNotesApp" target */,
 			);
-			path = iosApp;
+			path = iosNotesApp;
 			sourceTree = "<group>";
 		};
 		C9129247ED447EC5384B5812 /* Configuration */ = {
@@ -50,7 +50,7 @@
 		987D042A10365E46A9EC9500 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				09B66F19DCDDC655FFD79211 /* spectacled.app */,
+				19B66F19DCDDC655FFD79211 /* iosNotesApp.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -59,7 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				C9129247ED447EC5384B5812 /* Configuration */,
-				34562D81B6190134E8033C88 /* iosApp */,
+				44562D81B6190134E8033C88 /* iosNotesApp */,
 				987D042A10365E46A9EC9500 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -67,9 +67,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		6A1B65F6CA24A667CA678A53 /* iosApp */ = {
+		7A1B65F6CA24A667CA678A53 /* iosNotesApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5334B739B43D27232869588C /* Build configuration list for PBXNativeTarget "iosApp" */;
+			buildConfigurationList = 5334B739B43D27232869588D /* Build configuration list for PBXNativeTarget "iosNotesApp" */;
 			buildPhases = (
 				925CAD74B17CE0BB8A783DFF /* Compile Kotlin Framework */,
 				B216B7EB41A7A90D86977086 /* Sources */,
@@ -81,31 +81,31 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				34562D81B6190134E8033C88 /* iosApp */,
+				44562D81B6190134E8033C88 /* iosNotesApp */,
 			);
-			name = iosApp;
+			name = iosNotesApp;
 			packageProductDependencies = (
 			);
-			productName = iosApp;
-			productReference = 09B66F19DCDDC655FFD79211 /* spectacled.app */;
+			productName = iosNotesApp;
+			productReference = 19B66F19DCDDC655FFD79211 /* iosNotesApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		051256A1630C2C96B8B5C7D6 /* Project object */ = {
+		071256A1630C2C96B8B5C7D6 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
-					6A1B65F6CA24A667CA678A53 = {
+					7A1B65F6CA24A667CA678A53 = {
 						CreatedOnToolsVersion = 16.2;
 					};
 				};
 			};
-			buildConfigurationList = 4600DA8E29DC926E9BF3A810 /* Build configuration list for PBXProject "iosApp" */;
+			buildConfigurationList = 4600DA8E29DC926E9BF3A811 /* Build configuration list for PBXProject "iosNotesApp" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -119,7 +119,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				6A1B65F6CA24A667CA678A53 /* iosApp */,
+				7A1B65F6CA24A667CA678A53 /* iosNotesApp */,
 			);
 		};
 /* End PBXProject section */
@@ -152,7 +152,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\n\n# Robust JAVA_HOME detection for Xcode build phases\nif [ -z \"$JAVA_HOME\" ]; then\n  if [ -x \"/usr/libexec/java_home\" ]; then\n    export JAVA_HOME=$(/usr/libexec/java_home)\n  fi\nfi\n\nif [ -z \"$JAVA_HOME\" ] || [ ! -d \"$JAVA_HOME\" ]; then\n    for studio_path in \"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" \"/Applications/Android Studio.app/Contents/jre/Contents/Home\" \"$HOME/Applications/Android Studio.app/Contents/jbr/Contents/Home\" \"/Applications/Android Studio Preview.app/Contents/jbr/Contents/Home\"; do\n        if [ -d \"$studio_path\" ]; then\n            export JAVA_HOME=\"$studio_path\"\n            break\n        fi\n    done\nfi\n\nif [ -n \"$JAVA_HOME\" ]; then\n    export PATH=\"$JAVA_HOME/bin:$PATH\"\nfi\n\ncd \"$SRCROOT/..\"\n./gradlew :composeJournalsApp:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\n\n# Robust JAVA_HOME detection for Xcode build phases\nif [ -z \"$JAVA_HOME\" ]; then\n  if [ -x \"/usr/libexec/java_home\" ]; then\n    export JAVA_HOME=$(/usr/libexec/java_home)\n  fi\nfi\n\nif [ -z \"$JAVA_HOME\" ] || [ ! -d \"$JAVA_HOME\" ]; then\n    for studio_path in \"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" \"/Applications/Android Studio.app/Contents/jre/Contents/Home\" \"$HOME/Applications/Android Studio.app/Contents/jbr/Contents/Home\" \"/Applications/Android Studio Preview.app/Contents/jbr/Contents/Home\"; do\n        if [ -d \"$studio_path\" ]; then\n            export JAVA_HOME=\"$studio_path\"\n            break\n        fi\n    done\nfi\n\nif [ -n \"$JAVA_HOME\" ]; then\n    export PATH=\"$JAVA_HOME/bin:$PATH\"\nfi\n\ncd \"$SRCROOT/..\"\n./gradlew :composeNotesApp:embedAndSignAppleFrameworkForXcode\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -176,11 +176,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"iosNotesApp/Preview Content\"";
 				DEVELOPMENT_TEAM = CQ24D5B7LP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_FILE = iosNotesApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = spectacled;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -331,12 +331,12 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"iosNotesApp/Preview Content\"";
 				DEVELOPMENT_TEAM = CQ24D5B7LP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = iosApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = spectacled;
+				INFOPLIST_FILE = iosNotesApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "spectacled Notes";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -357,7 +357,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4600DA8E29DC926E9BF3A810 /* Build configuration list for PBXProject "iosApp" */ = {
+		4600DA8E29DC926E9BF3A811 /* Build configuration list for PBXProject "iosNotesApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5DC1A52DF64B3AD5F5DC0D47 /* Debug */,
@@ -366,7 +366,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5334B739B43D27232869588C /* Build configuration list for PBXNativeTarget "iosApp" */ = {
+		5334B739B43D27232869588D /* Build configuration list for PBXNativeTarget "iosNotesApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FDDB34AEA6B4C2E38E21BA92 /* Debug */,
@@ -377,5 +377,5 @@
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 051256A1630C2C96B8B5C7D6 /* Project object */;
+	rootObject = 071256A1630C2C96B8B5C7D6 /* Project object */;
 }

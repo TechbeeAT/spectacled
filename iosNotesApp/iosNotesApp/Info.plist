@@ -4,7 +4,7 @@
     <dict>
         <key>BGTaskSchedulerPermittedIdentifiers</key>
         <array>
-            <string>at.techbee.spectacled.sync</string>
+            <string>at.techbee.spectacled.notes.sync</string>
         </array>
         <key>CADisableMinimumFrameDurationOnPhone</key>
         <true/>
