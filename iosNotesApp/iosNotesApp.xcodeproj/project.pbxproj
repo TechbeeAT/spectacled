@@ -6,30 +6,44 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildRule section */
+		77779B082F965D4A00CC81CC /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			fileType = text.plist;
+			inputFiles = (
+			);
+			isEditable = 1;
+			outputFiles = (
+			);
+			script = "# builtin-copyPlist\n";
+		};
+/* End PBXBuildRule section */
+
 /* Begin PBXFileReference section */
-		19B66F19DCDDC655FFD79211 /* iosNotesApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosNotesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		77776F19DCDDC655FFD79211 /* iosNotesApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosNotesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		C7E5EB70B00C598DD14A5343 /* Exceptions for "iosNotesApp" folder in "iosNotesApp" target */ = {
+		7777EB70B00C598DD14A5343 /* Exceptions for "iosNotesApp" folder in "iosNotesApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 7A1B65F6CA24A667CA678A53 /* iosNotesApp */;
+			target = 777765F6CA24A667CA678A53 /* iosNotesApp */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		44562D81B6190134E8033C88 /* iosNotesApp */ = {
+		77772D81B6190134E8033C88 /* iosNotesApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				C7E5EB70B00C598DD14A5343 /* Exceptions for "iosNotesApp" folder in "iosNotesApp" target */,
+				7777EB70B00C598DD14A5343 /* Exceptions for "iosNotesApp" folder in "iosNotesApp" target */,
 			);
 			path = iosNotesApp;
 			sourceTree = "<group>";
 		};
-		C9129247ED447EC5384B5812 /* Configuration */ = {
+		77779247ED447EC5384B5812 /* Configuration */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Configuration;
 			sourceTree = "<group>";
@@ -37,7 +51,7 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		93EF5C07A7BAFFA9B62C96B4 /* Frameworks */ = {
+		77775C07A7BAFFA9B62C96B4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -47,85 +61,86 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		987D042A10365E46A9EC9500 /* Products */ = {
+		7777042A10365E46A9EC9500 /* NotesProducts */ = {
 			isa = PBXGroup;
 			children = (
-				19B66F19DCDDC655FFD79211 /* iosNotesApp.app */,
+				77776F19DCDDC655FFD79211 /* iosNotesApp.app */,
 			);
-			name = Products;
+			name = NotesProducts;
 			sourceTree = "<group>";
 		};
-		CE4EF2A86DC907439BC59DCD = {
+		7777F2A86DC907439BC59DCD = {
 			isa = PBXGroup;
 			children = (
-				C9129247ED447EC5384B5812 /* Configuration */,
-				44562D81B6190134E8033C88 /* iosNotesApp */,
-				987D042A10365E46A9EC9500 /* Products */,
+				77779247ED447EC5384B5812 /* Configuration */,
+				77772D81B6190134E8033C88 /* iosNotesApp */,
+				7777042A10365E46A9EC9500 /* NotesProducts */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		7A1B65F6CA24A667CA678A53 /* iosNotesApp */ = {
+		777765F6CA24A667CA678A53 /* iosNotesApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5334B739B43D27232869588D /* Build configuration list for PBXNativeTarget "iosNotesApp" */;
+			buildConfigurationList = 7777B739B43D27232869588D /* Build configuration list for PBXNativeTarget "iosNotesApp" */;
 			buildPhases = (
-				925CAD74B17CE0BB8A783DFF /* Compile Kotlin Framework */,
-				B216B7EB41A7A90D86977086 /* Sources */,
-				93EF5C07A7BAFFA9B62C96B4 /* Frameworks */,
-				9F72A5A509851E0F004BA44C /* Resources */,
+				7777AD74B17CE0BB8A783DFF /* Compile Kotlin Framework */,
+				7777B7EB41A7A90D86977086 /* Sources */,
+				77775C07A7BAFFA9B62C96B4 /* Frameworks */,
+				7777A5A509851E0F004BA44C /* Resources */,
 			);
 			buildRules = (
+				77779B082F965D4A00CC81CC /* PBXBuildRule */,
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				44562D81B6190134E8033C88 /* iosNotesApp */,
+				77772D81B6190134E8033C88 /* iosNotesApp */,
 			);
 			name = iosNotesApp;
 			packageProductDependencies = (
 			);
 			productName = iosNotesApp;
-			productReference = 19B66F19DCDDC655FFD79211 /* iosNotesApp.app */;
+			productReference = 77776F19DCDDC655FFD79211 /* iosNotesApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		071256A1630C2C96B8B5C7D6 /* Project object */ = {
+		777756A1630C2C96B8B5C7D6 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
-					7A1B65F6CA24A667CA678A53 = {
+					777765F6CA24A667CA678A53 = {
 						CreatedOnToolsVersion = 16.2;
 					};
 				};
 			};
-			buildConfigurationList = 4600DA8E29DC926E9BF3A811 /* Build configuration list for PBXProject "iosNotesApp" */;
+			buildConfigurationList = 7777DA8E29DC926E9BF3A811 /* Build configuration list for PBXProject "iosNotesApp" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = CE4EF2A86DC907439BC59DCD;
+			mainGroup = 7777F2A86DC907439BC59DCD;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 987D042A10365E46A9EC9500 /* Products */;
+			productRefGroup = 7777042A10365E46A9EC9500 /* NotesProducts */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				7A1B65F6CA24A667CA678A53 /* iosNotesApp */,
+				777765F6CA24A667CA678A53 /* iosNotesApp */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		9F72A5A509851E0F004BA44C /* Resources */ = {
+		7777A5A509851E0F004BA44C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +150,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		925CAD74B17CE0BB8A783DFF /* Compile Kotlin Framework */ = {
+		7777AD74B17CE0BB8A783DFF /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -157,7 +172,7 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		B216B7EB41A7A90D86977086 /* Sources */ = {
+		7777B7EB41A7A90D86977086 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -167,7 +182,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		2FEF3B4EA5AA6F60B8F74995 /* Release */ = {
+		77773B4EA5AA6F60B8F74995 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = arm64;
@@ -183,9 +198,7 @@
 				INFOPLIST_FILE = iosNotesApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = spectacled;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -199,9 +212,9 @@
 			};
 			name = Release;
 		};
-		5DC1A52DF64B3AD5F5DC0D47 /* Debug */ = {
+		7777A52DF64B3AD5F5DC0D47 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = C9129247ED447EC5384B5812 /* Configuration */;
+			baseConfigurationReferenceAnchor = 77779247ED447EC5384B5812 /* Configuration */;
 			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -264,9 +277,9 @@
 			};
 			name = Debug;
 		};
-		C8620CFBCA1CEE7E9B64009E /* Release */ = {
+		77770CFBCA1CEE7E9B64009E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = C9129247ED447EC5384B5812 /* Configuration */;
+			baseConfigurationReferenceAnchor = 77779247ED447EC5384B5812 /* Configuration */;
 			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -322,7 +335,7 @@
 			};
 			name = Release;
 		};
-		FDDB34AEA6B4C2E38E21BA92 /* Debug */ = {
+		777734AEA6B4C2E38E21BA92 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = arm64;
@@ -336,11 +349,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosNotesApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "spectacled Notes";
+				INFOPLIST_KEY_CFBundleDisplayName = spectacled;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -357,25 +368,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4600DA8E29DC926E9BF3A811 /* Build configuration list for PBXProject "iosNotesApp" */ = {
+		7777DA8E29DC926E9BF3A811 /* Build configuration list for PBXProject "iosNotesApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5DC1A52DF64B3AD5F5DC0D47 /* Debug */,
-				C8620CFBCA1CEE7E9B64009E /* Release */,
+				7777A52DF64B3AD5F5DC0D47 /* Debug */,
+				77770CFBCA1CEE7E9B64009E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5334B739B43D27232869588D /* Build configuration list for PBXNativeTarget "iosNotesApp" */ = {
+		7777B739B43D27232869588D /* Build configuration list for PBXNativeTarget "iosNotesApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				FDDB34AEA6B4C2E38E21BA92 /* Debug */,
-				2FEF3B4EA5AA6F60B8F74995 /* Release */,
+				777734AEA6B4C2E38E21BA92 /* Debug */,
+				77773B4EA5AA6F60B8F74995 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 071256A1630C2C96B8B5C7D6 /* Project object */;
+	rootObject = 777756A1630C2C96B8B5C7D6 /* Project object */;
 }

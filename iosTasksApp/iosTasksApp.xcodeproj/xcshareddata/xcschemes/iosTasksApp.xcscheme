@@ -7,7 +7,7 @@
             buildForRunning = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8A1B65F6CA24A667CA678A53"
+               BlueprintIdentifier = "888865F6CA24A667CA678A53"
                BuildableName = "iosTasksApp.app"
                BlueprintName = "iosTasksApp"
                ReferencedContainer = "container:iosTasksApp.xcodeproj">
@@ -22,7 +22,7 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8A1B65F6CA24A667CA678A53"
+            BlueprintIdentifier = "888865F6CA24A667CA678A53"
             BuildableName = "iosTasksApp.app"
             BlueprintName = "iosTasksApp"
             ReferencedContainer = "container:iosTasksApp.xcodeproj">
