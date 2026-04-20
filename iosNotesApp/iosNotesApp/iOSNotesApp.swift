@@ -12,7 +12,7 @@ struct iOSNotesApp: App {
         WindowGroup {
             ContentView()
         }
-        .onChange(of: scenePhase) { newPhase in
+        .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .background {
                 appDelegate.scheduleFromSwiftUI()
             }
