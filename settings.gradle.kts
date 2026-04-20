@@ -41,3 +41,7 @@ include(":androidTasksApp")
 include(":composeTasksApp")
 include(":server")
 include(":shared")
+
+include(":iosJournalsApp")
+include(":iosNotesApp")
+include(":iosTasksApp")

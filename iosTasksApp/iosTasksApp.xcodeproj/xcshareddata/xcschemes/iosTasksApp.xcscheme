@@ -14,7 +14,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "888865F6CA24A667CA678A53"
-               BuildableName = "iosTasksApp.app"
+               BuildableName = "spectacledTasks.app"
                BlueprintName = "iosTasksApp"
                ReferencedContainer = "container:iosTasksApp.xcodeproj">
             </BuildableReference>
@@ -43,7 +43,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "888865F6CA24A667CA678A53"
-            BuildableName = "iosTasksApp.app"
+            BuildableName = "spectacledTasks.app"
             BlueprintName = "iosTasksApp"
             ReferencedContainer = "container:iosTasksApp.xcodeproj">
          </BuildableReference>

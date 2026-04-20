@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		88886F19DCDDC655FFD79211 /* iosTasksApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosTasksApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		88886F19DCDDC655FFD79211 /* spectacledTasks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = spectacledTasks.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -50,7 +50,7 @@
 		8888042A10365E46A9EC9500 /* TasksProducts */ = {
 			isa = PBXGroup;
 			children = (
-				88886F19DCDDC655FFD79211 /* iosTasksApp.app */,
+				88886F19DCDDC655FFD79211 /* spectacledTasks.app */,
 			);
 			name = TasksProducts;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosTasksApp;
-			productReference = 88886F19DCDDC655FFD79211 /* iosTasksApp.app */;
+			productReference = 88886F19DCDDC655FFD79211 /* spectacledTasks.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -251,6 +251,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.2;
+				PRODUCT_BUNDLE_IDENTIFIER = at.techbee.spectacled.tasks;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -283,6 +284,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.2;
+				PRODUCT_BUNDLE_IDENTIFIER = at.techbee.spectacled.tasks;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
