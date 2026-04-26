@@ -7,8 +7,8 @@ import at.techbee.spectacled.screens.core.data.ics.KnownIcsParamName
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsPropertyName
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
-import at.techbee.spectacled.screens.note.domain.Note
-import at.techbee.spectacled.screens.note.domain.SyncState
+import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
+import at.techbee.spectacled.screens.icalentry.domain.SyncState
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -142,7 +142,7 @@ fun parseIcsDateTime(
 
 
 
-fun parseVJournalBlock(lines: List<String>): Note? {
+fun parseVJournalBlock(lines: List<String>): IcalEntry? {
 
     val knownProps = mutableMapOf<String, IcsProperty>()
     val extraProps = mutableListOf<RawIcsProperty>()
@@ -172,7 +172,7 @@ fun parseVJournalBlock(lines: List<String>): Note? {
     val categories = knownProps[KnownIcsPropertyName.CATEGORIES.propertyName]?.value?.split(',') ?: emptyList()
 
 
-    return Note(
+    return IcalEntry(
         uid = uid,
         summary = knownProps[KnownIcsPropertyName.SUMMARY.propertyName]?.value,
         description = knownProps[KnownIcsPropertyName.DESCRIPTION.propertyName]?.value,
@@ -212,7 +212,7 @@ fun extractComponents(
     return components
 }
 
-fun parseVJournals(ics: String): List<Note> {
+fun parseVJournals(ics: String): List<IcalEntry> {
     val lines = unfoldLines(ics)
 
     val journalBlocks = extractComponents(lines, CalendarComponent.VJOURNAL)

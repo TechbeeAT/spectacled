@@ -8,8 +8,8 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.mapper.ics.parseVJournals
 import at.techbee.spectacled.screens.core.mapper.ics.serializeVCalendar
-import at.techbee.spectacled.screens.note.domain.Note
-import at.techbee.spectacled.screens.note.domain.SyncState
+import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
+import at.techbee.spectacled.screens.icalentry.domain.SyncState
 import io.ktor.client.HttpClient
 import io.ktor.client.request.accept
 import io.ktor.client.request.delete
@@ -30,11 +30,9 @@ import io.ktor.http.isSuccess
 import io.ktor.http.takeFrom
 import io.ktor.http.withCharset
 import io.ktor.utils.io.charsets.Charsets
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encodeToString
 import nl.adaptivity.xmlutil.serialization.XmlParsingException
 import nl.adaptivity.xmlutil.xmlStreaming
-import kotlin.text.get
 import kotlin.uuid.ExperimentalUuidApi
 
 
@@ -441,7 +439,7 @@ suspend fun fetchSingleEntryMultiplatform(
         }
 
         try {
-            val notes = mutableListOf<Note>()
+            val icalEntries = mutableListOf<IcalEntry>()
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
@@ -449,14 +447,14 @@ suspend fun fetchSingleEntryMultiplatform(
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
                     if(propStat.status == "HTTP/1.1 200 OK") {
-                        val parsedNotes = propStat.prop.calendarData?.let { parseVJournals(it) } ?: return@forEach
+                        val parsedIcalEntries = propStat.prop.calendarData?.let { parseVJournals(it) } ?: return@forEach
                         val href = URLBuilder(calendar.url).takeFrom(response.href).build()
-                        parsedNotes.forEach { notes.add(it.copy(etag = propStat.prop.getETag, href = href)) }
+                        parsedIcalEntries.forEach { icalEntries.add(it.copy(etag = propStat.prop.getETag, href = href)) }
                     }
                 }
             }
             println("--- End of Calendar Data ---")
-            return MultigetResourceResult.Success(notes)
+            return MultigetResourceResult.Success(icalEntries)
 
         } catch (e: XmlParsingException) {
             println("Parsing failed: ${e.message}")
@@ -730,17 +728,17 @@ suspend fun deleteCalendarMultiplatform(
 suspend fun putResourceMultiplatform(
     client: HttpClient,
     calendar: Calendar,
-    note: Note
+    icalEntry: IcalEntry
 ): PutResourceResult {
 
-    val href = Url(calendar.url.toString().trimEnd('/')+"/"+note.uid+".ics")
+    val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
 
     client.put(href) {
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
-        setBody(serializeVCalendar(note))
+        setBody(serializeVCalendar(icalEntry))
         headers.apply {
-            if(note.etag != null)    // send etag or * if a new entry should be created
-                append(HttpHeaders.IfMatch, note.etag)     // update
+            if(icalEntry.etag != null)    // send etag or * if a new entry should be created
+                append(HttpHeaders.IfMatch, icalEntry.etag)     // update
             else
                 append(HttpHeaders.IfNoneMatch, "*")       // insert
         }
@@ -748,7 +746,7 @@ suspend fun putResourceMultiplatform(
 
         return when(response.status.value) {
             in 200 .. 299 -> PutResourceResult.Success(
-                note.copy(
+                icalEntry.copy(
                     etag = response.headers[HttpHeaders.ETag],
                     href = href,
                     syncState = SyncState.SYNCED
@@ -767,14 +765,14 @@ suspend fun putResourceMultiplatform(
 suspend fun deleteResourceMultiplatform(
     client: HttpClient,
     calendar: Calendar,
-    note: Note
+    icalEntry: IcalEntry
 ): DeleteResourceResult {
 
-    val href = Url(calendar.url.toString().trimEnd('/')+"/"+note.uid+".ics")
+    val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
 
     client.delete(href) {
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
-        headers.append(HttpHeaders.IfMatch, note.etag?:"*")
+        headers.append(HttpHeaders.IfMatch, icalEntry.etag?:"*")
     }.let { response ->
 
         return when(response.status.value) {
@@ -790,25 +788,25 @@ suspend fun deleteResourceMultiplatform(
 suspend fun getResourceMultiplatform(
     client: HttpClient,
     calendar: Calendar,
-    note: Note
+    icalEntry: IcalEntry
 ): GetResourceResult {
 
-    val href = Url(calendar.url.toString().trimEnd('/')+"/"+note.uid+".ics")
+    val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
 
     client.get(href) {
-        headers.append(HttpHeaders.IfNoneMatch, note.etag?:"*")
+        headers.append(HttpHeaders.IfNoneMatch, icalEntry.etag?:"*")
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
     }.let { response ->
         if(response.status.isSuccess()) {
-            val remoteNote = parseVJournals(response.bodyAsText()).firstOrNull() ?: return GetResourceResult.Failed(response.status, "An unknown error occurred.", "${response.status.description} ${response.status.value}")
-            val updatedNote = remoteNote.copy(
-                id = note.id,
-                calendarId = note.calendarId,
+            val remoteIcalEntry = parseVJournals(response.bodyAsText()).firstOrNull() ?: return GetResourceResult.Failed(response.status, "An unknown error occurred.", "${response.status.description} ${response.status.value}")
+            val updatedIcalEntry = remoteIcalEntry.copy(
+                id = icalEntry.id,
+                calendarId = icalEntry.calendarId,
                 etag = response.headers[HttpHeaders.ETag],
                 href = href,
                 syncState = SyncState.SYNCED
             )
-            return GetResourceResult.Success(updatedNote)
+            return GetResourceResult.Success(updatedIcalEntry)
         } else if(response.status == HttpStatusCode.NotFound) {
             return GetResourceResult.NotFound
         } else {

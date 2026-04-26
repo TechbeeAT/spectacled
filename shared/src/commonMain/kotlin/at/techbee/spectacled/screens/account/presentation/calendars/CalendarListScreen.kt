@@ -34,7 +34,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.Route
-import at.techbee.spectacled.screens.Route.NoteList
+import at.techbee.spectacled.screens.Route.IcalEntryList
 import at.techbee.spectacled.screens.about.presentation.AboutBottomSheet
 import at.techbee.spectacled.screens.account.presentation.calendars.components.AddPrincipalBottomSheet
 import at.techbee.spectacled.screens.account.presentation.calendars.components.CalendarCard
@@ -253,7 +253,7 @@ fun CalendarListScreenRoot(
                 state = state,
                 onAction = { action ->
                     when (action) {
-                        is CalendarListAction.OnCalendarClicked -> onNavigate(NoteList(action.calendarId))
+                        is CalendarListAction.OnCalendarClicked -> onNavigate(IcalEntryList(action.calendarId))
                         else -> viewModel.onAction(action)
                     }
                 },

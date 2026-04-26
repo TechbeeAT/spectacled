@@ -18,10 +18,10 @@ import at.techbee.spectacled.screens.account.presentation.calendars.CalendarList
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.AppPreferences
 import at.techbee.spectacled.screens.core.koin.sharedModule
-import at.techbee.spectacled.screens.note.presentation.notedetails.NoteDetailsScreenRoot
-import at.techbee.spectacled.screens.note.presentation.notedetails.NoteDetailsViewModel
-import at.techbee.spectacled.screens.note.presentation.notelist.NoteListScreenRoot
-import at.techbee.spectacled.screens.note.presentation.notelist.NoteListViewModel
+import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsScreenRoot
+import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsViewModel
+import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.IcalEntryListScreenRoot
+import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.IcalEntryListViewModel
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
@@ -73,7 +73,7 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                 syncTrigger.requestImmediate()
             }
 
-            val noteListViewModel = koinViewModel<NoteListViewModel>()
+            val icalEntryListViewModel = koinViewModel<IcalEntryListViewModel>()
             val calendarListViewModel = koinViewModel<CalendarListViewModel>()
 
             NavHost(
@@ -89,36 +89,36 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                         )
                     }
 
-                    composable<Route.NoteList>(
+                    composable<Route.IcalEntryList>(
                         enterTransition = { slideInHorizontally { fullWidth -> fullWidth } },
                         exitTransition = { slideOutHorizontally { fullWidth -> -fullWidth } },
                         popEnterTransition = { slideInHorizontally { fullWidth -> -fullWidth } },
                         popExitTransition = { slideOutHorizontally { fullWidth -> fullWidth } }
                     ) { args ->
 
-                        val calendarId = args.toRoute<Route.NoteList>().calendarId
+                        val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
 
                         LaunchedEffect(calendarId) {
-                            noteListViewModel.load(calendarId)
+                            icalEntryListViewModel.load(calendarId)
                         }
 
-                        NoteListScreenRoot(
-                            noteListViewModel = noteListViewModel,
+                        IcalEntryListScreenRoot(
+                            icalEntryListViewModel = icalEntryListViewModel,
                             onNavigate = { route -> navController.navigate(route) },
                             onNavigateUp = { navController.popBackStack() }
                         )
                     }
 
-                    composable<Route.NoteDetails> { args ->
-                        val noteId = args.toRoute<Route.NoteDetails>().noteId
-                        val noteDetailsViewModel: NoteDetailsViewModel = koinViewModel<NoteDetailsViewModel>()
+                    composable<Route.IcalEntryDetails> { args ->
+                        val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
+                        val icalEntryDetailsViewModel: IcalEntryDetailsViewModel = koinViewModel<IcalEntryDetailsViewModel>()
 
-                        LaunchedEffect(noteId) {
-                            noteDetailsViewModel.load(noteId)
+                        LaunchedEffect(icalEntryId) {
+                            icalEntryDetailsViewModel.load(icalEntryId)
                         }
 
-                        NoteDetailsScreenRoot(
-                            noteDetailsViewModel = noteDetailsViewModel,
+                        IcalEntryDetailsScreenRoot(
+                            icalEntryDetailsViewModel = icalEntryDetailsViewModel,
                             onNavigateUp = { navController.popBackStack() }
                             /*
                                 onNavigate = { route ->
@@ -132,21 +132,21 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                         )
                     }
 
-                    composable<Route.AddNote> { args ->
-                        val copyFromId = args.toRoute<Route.AddNote>().copyFromId
-                        val calendarId = args.toRoute<Route.AddNote>().calendarId
+                    composable<Route.AddICalEntry> { args ->
+                        val copyFromId = args.toRoute<Route.AddICalEntry>().copyFromId
+                        val calendarId = args.toRoute<Route.AddICalEntry>().calendarId
 
-                        val noteDetailsViewModel: NoteDetailsViewModel = koinViewModel<NoteDetailsViewModel>()
+                        val icalEntryDetailsViewModel: IcalEntryDetailsViewModel = koinViewModel<IcalEntryDetailsViewModel>()
 
                         LaunchedEffect(copyFromId, calendarId) {
                             if (copyFromId != null)
-                                noteDetailsViewModel.loadCopy(copyFromId)
+                                icalEntryDetailsViewModel.loadCopy(copyFromId)
                             else
-                                noteDetailsViewModel.loadNew(calendarId)
+                                icalEntryDetailsViewModel.loadNew(calendarId)
                         }
 
-                        NoteDetailsScreenRoot(
-                            noteDetailsViewModel = noteDetailsViewModel,
+                        IcalEntryDetailsScreenRoot(
+                            icalEntryDetailsViewModel = icalEntryDetailsViewModel,
                             onNavigateUp = { navController.popBackStack() }
                             //onNavigate = { navController.navigate(it) }
                         )
@@ -156,7 +156,7 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
 
             LaunchedEffect(Unit) {
                 appPreferences.lastUsedCalendarId?.let { lastUsedCalendarId ->
-                    navController.navigate(Route.NoteList(lastUsedCalendarId))
+                    navController.navigate(Route.IcalEntryList(lastUsedCalendarId))
                 }
             }
         }

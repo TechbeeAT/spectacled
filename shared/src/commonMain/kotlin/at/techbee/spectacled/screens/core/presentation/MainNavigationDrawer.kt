@@ -95,9 +95,9 @@ fun MainNavigationDrawer(
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Outlined.NoteAlt, stringResource(Res.string.notes)) },
                     label = { Text(stringResource(Res.string.notes)) },
-                    selected = currentDestination is Route.NoteList,
+                    selected = currentDestination is Route.IcalEntryList,
                     onClick = {
-                        onNavigate(Route.NoteList(0L))
+                        onNavigate(Route.IcalEntryList(0L))
                     },
                     //modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
@@ -219,7 +219,7 @@ fun JtxNavigationDrawerMenu_Preview() {
     MaterialTheme {
         MainNavigationDrawer(
             drawerState = DrawerState(DrawerValue.Open),
-            currentDestination = Route.NoteList(0L),
+            currentDestination = Route.IcalEntryList(0L),
             onNavigate = {},
             paddingValues = PaddingValues()
         ) {}

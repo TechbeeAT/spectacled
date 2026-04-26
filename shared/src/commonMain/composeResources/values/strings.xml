@@ -36,8 +36,8 @@
     <string name="show_hide_password">Show/hide password</string>
     <string name="update_passowrd_button">Update</string>
     <string name="update_password">Update password</string>
-    <string name="no_notes_found_in_this_folder">No notes found in this folder</string>
-    <string name="no_matching_notes_found">No matching notes found</string>
+    <string name="no_entries_found_in_this_folder">No entries found in this folder</string>
+    <string name="no_matching_entries_found">No matching entries found</string>
     <string name="no_summary_description">No summary/description</string>
     <string name="categories">Categories</string>
     <string name="read_only">Read only</string>
@@ -59,8 +59,8 @@
     <string name="grouping_older">Older</string>
     <string name="trashbin">Trashbin</string>
 
-    <string name="search_in_notes">Search in notes</string>
-    <string name="add_note">Add note</string>
+    <string name="search">Search...</string>
+    <string name="add_entry">Add entry</string>
 
     <string name="sort_ascending">Ascending</string>
     <string name="sort_descending">Descending</string>
@@ -83,7 +83,6 @@
     <string name="delete_folder_x">Remove folder "%1$s"?</string>
     <string name="delete_folder_warning">Are you sure you want to remove this folder? This will also remove the folder from your account.</string>
     <string name="warning_operation_cannot_be_undone">Warning: This operation cannot be undone!</string>
-    <string name="note_deleted">Note deleted</string>
     <string name="folder_deleted">Folder deleted</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="copy_created">Copy created</string>
@@ -105,8 +104,8 @@
     <string name="no_time">No time</string>
     <string name="no_timezone">no timezone</string>
 
-    <string name="delete_note_x">Delete note "%1$s"?</string>
-    <string name="delete_note_warning">Are you sure you want to delete this note?</string>
+    <string name="delete_entry_x">Delete entry "%1$s"?</string>
+    <string name="delete_entry_warning">Are you sure you want to delete this entry?</string>
     <string name="delete_selected">Delete selected</string>
     <string name="delete_selected_warning">Are you sure you want to delete the selected %1$d entry/entries?</string>
     <string name="share">Share</string>
