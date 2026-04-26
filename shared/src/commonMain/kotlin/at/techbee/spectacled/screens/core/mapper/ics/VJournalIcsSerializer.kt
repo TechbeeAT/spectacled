@@ -3,7 +3,7 @@ package at.techbee.spectacled.screens.core.mapper.ics
 import androidx.compose.ui.graphics.toArgb
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsPropertyName
-import at.techbee.spectacled.screens.note.domain.Note
+import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
@@ -88,21 +88,21 @@ fun formatIcsDateTime(icsDateTime: IcsDateTime?): Pair<String, String?>? {
 }
 
 
-fun serializeVCalendar(note: Note) = serializeVCalendar(listOf(note))
+fun serializeVCalendar(icalEntry: IcalEntry) = serializeVCalendar(listOf(icalEntry))
 
-fun serializeVCalendar(notes: List<Note>): String {
+fun serializeVCalendar(icalEntries: List<IcalEntry>): String {
     val lines = mutableListOf<String>()
 
     lines += "BEGIN:VCALENDAR"
     lines += "VERSION:2.0"
     lines += "PRODID:-//Techbee e.U.//CalDAV Notes 1.0//EN"
 
-    collectTimeZones(notes).forEach { tz ->
+    collectTimeZones(icalEntries).forEach { tz ->
         lines += generateVTimeZone(tz)
     }
 
-    notes.forEach { note ->
-        lines += serializeVJournal(note)
+    icalEntries.forEach { icalEntry ->
+        lines += serializeVJournal(icalEntry)
             .split("\r\n")
     }
 
@@ -112,42 +112,42 @@ fun serializeVCalendar(notes: List<Note>): String {
 }
 
 
-fun serializeVJournal(note: Note): String {
+fun serializeVJournal(icalEntry: IcalEntry): String {
     val lines = mutableListOf<String>()
 
     lines += "BEGIN:VJOURNAL"
-    lines += "${KnownIcsPropertyName.UID.propertyName}:${escapeIcsValue(note.uid)}"
+    lines += "${KnownIcsPropertyName.UID.propertyName}:${escapeIcsValue(icalEntry.uid)}"
 
-    note.dtStart?.let { icsDateTime ->
+    icalEntry.dtStart?.let { icsDateTime ->
         formatIcsDateTime(icsDateTime)?.let { (value, param) ->
             val paramPart = param?.let { ";$it" } ?: ""
             lines += "${KnownIcsPropertyName.DTSTART.propertyName}$paramPart:$value"
         }
     }
-    note.created.let { icsDateTime ->
+    icalEntry.created.let { icsDateTime ->
         formatIcsDateTime(icsDateTime)?.let { (value, _) ->
             lines += "${KnownIcsPropertyName.CREATED.propertyName}:$value"
         }
     }
-    note.lastModified?.let {
+    icalEntry.lastModified?.let {
         formatIcsDateTime(it)?.let { (value, _) ->
             lines += "${KnownIcsPropertyName.LASTMODIFIED.propertyName}:$value"
         }
     }
 
-    note.dtstamp.let {
+    icalEntry.dtstamp.let {
         formatIcsDateTime(it)?.let { (value, _) ->
             lines += "${KnownIcsPropertyName.DTSTAMP.propertyName}:$value"
         }
     }
-    note.summary?.let { lines += "${KnownIcsPropertyName.SUMMARY.propertyName}:${escapeIcsValue(it)}" }
-    note.description?.let { lines += "${KnownIcsPropertyName.DESCRIPTION.propertyName}:${escapeIcsValue(it)}" }
-    note.color?.let { lines += "${KnownIcsPropertyName.COLOR.propertyName}:${it.toArgb()}" }
-    if(note.categories.isNotEmpty())
-        note.categories.let { lines += "${KnownIcsPropertyName.CATEGORIES.propertyName}:${it.joinToString(",")}" }
-    note.sequence?.let { lines += "${KnownIcsPropertyName.SEQUENCE.propertyName}:${it}" }
+    icalEntry.summary?.let { lines += "${KnownIcsPropertyName.SUMMARY.propertyName}:${escapeIcsValue(it)}" }
+    icalEntry.description?.let { lines += "${KnownIcsPropertyName.DESCRIPTION.propertyName}:${escapeIcsValue(it)}" }
+    icalEntry.color?.let { lines += "${KnownIcsPropertyName.COLOR.propertyName}:${it.toArgb()}" }
+    if(icalEntry.categories.isNotEmpty())
+        icalEntry.categories.let { lines += "${KnownIcsPropertyName.CATEGORIES.propertyName}:${it.joinToString(",")}" }
+    icalEntry.sequence?.let { lines += "${KnownIcsPropertyName.SEQUENCE.propertyName}:${it}" }
 
-    note.extraProperties.forEach {
+    icalEntry.extraProperties.forEach {
         lines += it.unfoldedLine
     }
 
@@ -156,10 +156,10 @@ fun serializeVJournal(note: Note): String {
     return lines.joinToString("\r\n", transform = ::foldIcsLine)
 }
 
-private fun collectTimeZones(notes: List<Note>): Set<TimeZone> =
+private fun collectTimeZones(icalEntries: List<IcalEntry>): Set<TimeZone> =
     buildSet {
-        notes.forEach { note ->
-            note.dtStart?.timeZone?.let { add(it) }
+        icalEntries.forEach { icalEntry ->
+            icalEntry.dtStart?.timeZone?.let { add(it) }
         }
     }.filter { it != TimeZone.UTC }.toSet()
 

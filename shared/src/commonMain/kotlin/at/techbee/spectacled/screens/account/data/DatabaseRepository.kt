@@ -6,7 +6,7 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
-import at.techbee.spectacled.screens.note.domain.Note
+import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import io.ktor.http.Url
 import kotlin.time.ExperimentalTime
 
@@ -93,47 +93,47 @@ suspend fun SpectacledDatabase.upsertCalendar(calendar: Calendar, homeCollection
 }
 
 @OptIn(ExperimentalTime::class)
-suspend fun SpectacledDatabase.insertOrUpdateNote(note: Note) {
-    val noteDto = note.toDto()
+suspend fun SpectacledDatabase.insertOrUpdateIcalEntry(icalEntry: IcalEntry) {
+    val icalEntryDto = icalEntry.toDto()
 
     vjournal_dtoQueries.transaction {
         // first update, if the UID doesn't exist, this is ignored
         vjournal_dtoQueries.updateVjournal(
-            calendarId = noteDto.calendarId,
-            uid = noteDto.uid,
-            summary = noteDto.summary,
-            description = noteDto.description,
-            dtstart = noteDto.dtstart,
-            dtStartTimeZone = noteDto.dtStartTimeZone,
-            dtstamp = noteDto.dtstamp,
-            color = noteDto.color,
-            sequence = noteDto.sequence,
-            categories = noteDto.categories,
-            created = noteDto.created,
-            lastModified = noteDto.lastModified,
-            extraProperties = noteDto.extraProperties,
-            syncState = noteDto.syncState,
-            etag = noteDto.etag,
-            href = noteDto.href
+            calendarId = icalEntryDto.calendarId,
+            uid = icalEntryDto.uid,
+            summary = icalEntryDto.summary,
+            description = icalEntryDto.description,
+            dtstart = icalEntryDto.dtstart,
+            dtStartTimeZone = icalEntryDto.dtStartTimeZone,
+            dtstamp = icalEntryDto.dtstamp,
+            color = icalEntryDto.color,
+            sequence = icalEntryDto.sequence,
+            categories = icalEntryDto.categories,
+            created = icalEntryDto.created,
+            lastModified = icalEntryDto.lastModified,
+            extraProperties = icalEntryDto.extraProperties,
+            syncState = icalEntryDto.syncState,
+            etag = icalEntryDto.etag,
+            href = icalEntryDto.href
         )
         // insert, but if the UID exists, it will be ignored
         vjournal_dtoQueries.insertVjournal(
-            calendarId = noteDto.calendarId,
-            uid = noteDto.uid,
-            summary = noteDto.summary,
-            description = noteDto.description,
-            dtstart = noteDto.dtstart,
-            dtStartTimeZone = noteDto.dtStartTimeZone,
-            dtstamp = noteDto.dtstamp,
-            color = noteDto.color,
-            sequence = noteDto.sequence,
-            categories = noteDto.categories,
-            created = noteDto.created,
-            lastModified = noteDto.lastModified,
-            extraProperties = noteDto.extraProperties,
-            syncState = noteDto.syncState,
-            etag = noteDto.etag,
-            href = noteDto.href
+            calendarId = icalEntryDto.calendarId,
+            uid = icalEntryDto.uid,
+            summary = icalEntryDto.summary,
+            description = icalEntryDto.description,
+            dtstart = icalEntryDto.dtstart,
+            dtStartTimeZone = icalEntryDto.dtStartTimeZone,
+            dtstamp = icalEntryDto.dtstamp,
+            color = icalEntryDto.color,
+            sequence = icalEntryDto.sequence,
+            categories = icalEntryDto.categories,
+            created = icalEntryDto.created,
+            lastModified = icalEntryDto.lastModified,
+            extraProperties = icalEntryDto.extraProperties,
+            syncState = icalEntryDto.syncState,
+            etag = icalEntryDto.etag,
+            href = icalEntryDto.href
         )
     }
 }

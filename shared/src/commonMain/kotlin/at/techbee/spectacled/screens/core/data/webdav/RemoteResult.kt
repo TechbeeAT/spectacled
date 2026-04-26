@@ -4,7 +4,7 @@ import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
-import at.techbee.spectacled.screens.note.domain.Note
+import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 
@@ -38,7 +38,7 @@ sealed class MultigetResourceHrefETagResult {
 }
 
 sealed class MultigetResourceResult {
-    data class Success(val notes: List<Note>) : MultigetResourceResult()
+    data class Success(val icalEntries: List<IcalEntry>) : MultigetResourceResult()
     data object NotFound : MultigetResourceResult()
     data object NotAuthorized : MultigetResourceResult()
     data class Failed(val status: HttpStatusCode, val message: String, val details: String? = null) : MultigetResourceResult()
@@ -73,13 +73,13 @@ sealed class DeleteResourceResult {
 }
 
 sealed class GetResourceResult {
-    data class Success(val note: Note) : GetResourceResult()
+    data class Success(val icalEntry: IcalEntry) : GetResourceResult()
     data object NotFound : GetResourceResult()
     data class Failed(val status: HttpStatusCode, val message: String, val details: String? = null) : GetResourceResult()
 }
 
 sealed class PutResourceResult {
-    data class Success(val note: Note) : PutResourceResult()
+    data class Success(val icalEntry: IcalEntry) : PutResourceResult()
     data object Conflict : PutResourceResult()
     data object NotFound : PutResourceResult()
     data class Failed(val status: HttpStatusCode, val message: String, val details: String? = null) : PutResourceResult()

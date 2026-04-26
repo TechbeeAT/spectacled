@@ -4,7 +4,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import at.techbee.spectacled.db.SpectacledDatabase
-import at.techbee.spectacled.screens.account.data.insertOrUpdateNote
+import at.techbee.spectacled.screens.account.data.insertOrUpdateIcalEntry
 import at.techbee.spectacled.screens.core.data.CredentialStore
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
@@ -26,8 +26,8 @@ import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
-import at.techbee.spectacled.screens.note.domain.Note
-import at.techbee.spectacled.screens.note.domain.SyncState
+import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
+import at.techbee.spectacled.screens.icalentry.domain.SyncState
 import io.ktor.client.HttpClient
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException
@@ -100,16 +100,16 @@ class SyncCoordinator(
 
     private suspend fun syncCalendar(calendar: Calendar) = sync(calendar, null)
 
-    suspend fun pushDirtyNote(dirtyNote: Note, calendar: Calendar) = sync(calendar, dirtyNote)
+    suspend fun pushDirtyIcalEntry(dirtyIcalEntry: IcalEntry, calendar: Calendar) = sync(calendar, dirtyIcalEntry)
 
     private suspend fun sync(
         calendar: Calendar,
-        dirtyNote: Note? = null   // if null all calendar is synchronized, otherwise only the dirtyNote is pushed
+        dirtyIcalEntry: IcalEntry? = null   // if null all calendar is synchronized, otherwise only the dirtyIcalEntry is pushed
     ) {
 
         try {
-            if (dirtyNote != null) {
-                pushSingleLocalChange(dirtyNote, calendar)
+            if (dirtyIcalEntry != null) {
+                pushSingleLocalChange(dirtyIcalEntry, calendar)
                 return
             }
 
@@ -314,37 +314,37 @@ class SyncCoordinator(
 
     private suspend fun upsertLocalByHrefs(calendar: Calendar, href: Url, eTag: String?) {
 
-        val localNote = database.vjournal_dtoQueries.getJournalByHref(href.toString()).awaitAsOneOrNull()?.toDomain()
+        val localIcalEntry = database.vjournal_dtoQueries.getJournalByHref(href.toString()).awaitAsOneOrNull()?.toDomain()
 
-        if (localNote?.href != null && localNote.etag == eTag)
+        if (localIcalEntry?.href != null && localIcalEntry.etag == eTag)
             return    // no eTag change, we skip
 
-        val serverNote = when (val fetchSingleResult = fetchSingleEntryMultiplatform(client, calendar, href)) {
+        val serverIcalEntry = when (val fetchSingleResult = fetchSingleEntryMultiplatform(client, calendar, href)) {
             is MultigetResourceResult.Failed -> return   // skip failed entries
             MultigetResourceResult.NotAuthorized -> return   // skip failed entries
             MultigetResourceResult.NotFound -> return   // skip failed entries
-            is MultigetResourceResult.Success -> fetchSingleResult.notes.firstOrNull() ?: return
+            is MultigetResourceResult.Success -> fetchSingleResult.icalEntries.firstOrNull() ?: return
         }
 
-        if (localNote?.href == null) {     // Local note doesn't exist, we insert
-            database.insertOrUpdateNote(serverNote.copy(calendarId = calendar.id, syncState = SyncState.SYNCED))
-        } else {    //Local note exists, but eTag is different. It is unchanged locally, but was changed on the server.
+        if (localIcalEntry?.href == null) {     // Local IcalEntry doesn't exist, we insert
+            database.insertOrUpdateIcalEntry(serverIcalEntry.copy(calendarId = calendar.id, syncState = SyncState.SYNCED))
+        } else {    //Local IcalEntry exists, but eTag is different. It is unchanged locally, but was changed on the server.
 
-            when (localNote.syncState) {
+            when (localIcalEntry.syncState) {
                 SyncState.SYNCED, SyncState.USER_DECIDED_SERVER_WINS ->
-                    database.insertOrUpdateNote(serverNote.copy(id = localNote.id, calendarId = calendar.id, syncState = SyncState.SYNCED))
+                    database.insertOrUpdateIcalEntry(serverIcalEntry.copy(id = localIcalEntry.id, calendarId = calendar.id, syncState = SyncState.SYNCED))
 
                 SyncState.LOCAL_MODIFIED ->
-                    database.insertOrUpdateNote(localNote.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
+                    database.insertOrUpdateIcalEntry(localIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
 
                 SyncState.LOCAL_DELETED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN ->
-                    database.insertOrUpdateNote(localNote.copy(syncState = SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED))
+                    database.insertOrUpdateIcalEntry(localIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED))
 
                 SyncState.USER_DECIDED_CLIENT_WINS ->
-                    database.insertOrUpdateNote(
-                        localNote.copy(
+                    database.insertOrUpdateIcalEntry(
+                        localIcalEntry.copy(
                             syncState = SyncState.LOCAL_MODIFIED,
-                            etag = serverNote.etag
+                            etag = serverIcalEntry.etag
                         )
                     )    // etag updated, push local changes after
 
@@ -358,30 +358,30 @@ class SyncCoordinator(
     private suspend fun removeLocalByHrefs(hrefs: List<String>) {
         database.transaction {
 
-            val deletedNotes = database.vjournal_dtoQueries.getJournalsByHrefs(hrefs).awaitAsList().map { it.toDomain() }
+            val deletedIcalEntry = database.vjournal_dtoQueries.getJournalsByHrefs(hrefs).awaitAsList().map { it.toDomain() }
 
-            deletedNotes.forEach { deletedNote ->
+            deletedIcalEntry.forEach { deletedIcalEntry ->
 
-                when (deletedNote.syncState) {
+                when (deletedIcalEntry.syncState) {
                     SyncState.LOCAL_DELETED, SyncState.SYNCED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN ->
-                        database.insertOrUpdateNote(deletedNote.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                        database.insertOrUpdateIcalEntry(deletedIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
 
                     SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.USER_DECIDED_SERVER_WINS ->
                         // conflict1, but now it's also deleted on the server, we can delete it now
                         // conflict2, user decided to keep remote changes (delete), we can delete it now
-                        database.insertOrUpdateNote(deletedNote.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                        database.insertOrUpdateIcalEntry(deletedIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
 
                     SyncState.LOCAL_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED ->
-                        database.insertOrUpdateNote(deletedNote.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
+                        database.insertOrUpdateIcalEntry(deletedIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
 
                     SyncState.USER_DECIDED_CLIENT_WINS ->
-                        database.insertOrUpdateNote(
-                            deletedNote.copy(
+                        database.insertOrUpdateIcalEntry(
+                            deletedIcalEntry.copy(
                                 syncState = SyncState.LOCAL_MODIFIED,
                                 href = null,
                                 etag = null
                             )
-                        )  // treat like a new note
+                        )  // treat like a new entry
                 }
             }
         }
@@ -392,37 +392,37 @@ class SyncCoordinator(
         calendar: Calendar
     ) {
 
-        val dirtyNotes = database.vjournal_dtoQueries.getDirtyJournalsByCalendar(calendar.id).awaitAsList().map { it.toDomain() }
+        val dirtyIcalEntries = database.vjournal_dtoQueries.getDirtyJournalsByCalendar(calendar.id).awaitAsList().map { it.toDomain() }
 
-        dirtyNotes.forEach { dirtyNote ->
-            pushSingleLocalChange(dirtyNote, calendar)
+        dirtyIcalEntries.forEach { dirtyIcalEntry ->
+            pushSingleLocalChange(dirtyIcalEntry, calendar)
         }
     }
 
 
-    private suspend fun pushSingleLocalChange(dirtyNote: Note, calendar: Calendar) {
+    private suspend fun pushSingleLocalChange(dirtyIcalEntry: IcalEntry, calendar: Calendar) {
 
-        when (dirtyNote.syncState) {
-            // synchronized notes shouldn't even be returned by the query, do nothing
+        when (dirtyIcalEntry.syncState) {
+            // synchronized entries shouldn't even be returned by the query, do nothing
             SyncState.SYNCED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN -> Unit // do nothing
 
             SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED -> Unit // do nothing, conflicts need to be resolved by user
 
             SyncState.LOCAL_MODIFIED -> {
-                val insertOrUpdateNoteResult = putResourceMultiplatform(client, calendar, dirtyNote)
-                when (insertOrUpdateNoteResult) {
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
-                        val conflictingServerNoteResult = getResourceMultiplatform(client, calendar, dirtyNote)
-                        when (conflictingServerNoteResult) {
+                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                        when (conflictingServerIcalEntryResult) {
 
                             is GetResourceResult.Failed -> Unit   // failed will be kept for another retry TODO: Review if this is sufficient in future
 
                             // Resource wasn't found, deleted on server
-                            GetResourceResult.NotFound -> database.insertOrUpdateNote(dirtyNote.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
+                            GetResourceResult.NotFound -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
 
                             // A newer version exists
-                            is GetResourceResult.Success -> database.insertOrUpdateNote(dirtyNote.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
+                            is GetResourceResult.Success -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
                         }
                     }
 
@@ -430,13 +430,13 @@ class SyncCoordinator(
                     is PutResourceResult.Failed -> Unit   // leave for retry // TODO: Review in future, maybe store info why it failed
 
                     // The entry was deleted in the meantime, we also delete it locally
-                    PutResourceResult.NotFound -> database.insertOrUpdateNote(dirtyNote.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
+                    PutResourceResult.NotFound -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
 
                     // The locally modified entry was successfully pushed to the server, we just update the local entry as synced and store the new eTag
-                    is PutResourceResult.Success -> database.insertOrUpdateNote(
-                        dirtyNote.copy(
-                            etag = insertOrUpdateNoteResult.note.etag,
-                            href = insertOrUpdateNoteResult.note.href,
+                    is PutResourceResult.Success -> database.insertOrUpdateIcalEntry(
+                        dirtyIcalEntry.copy(
+                            etag = insertOrUpdateIcalEntryResult.icalEntry.etag,
+                            href = insertOrUpdateIcalEntryResult.icalEntry.href,
                             syncState = SyncState.SYNCED
                         )
                     )
@@ -444,31 +444,31 @@ class SyncCoordinator(
             }
 
 
-            // note was locally modified, we put and see if there's a conflict
+            // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_CLIENT_WINS -> {
-                val insertOrUpdateNoteResult = putResourceMultiplatform(client, calendar, dirtyNote)
-                when (insertOrUpdateNoteResult) {
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
-                        val conflictingServerNoteResult = getResourceMultiplatform(client, calendar, dirtyNote)
-                        when (conflictingServerNoteResult) {
+                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                        when (conflictingServerIcalEntryResult) {
 
                             // failed will be kept for another retry TODO: Review if this is sufficient in future
                             is GetResourceResult.Failed -> Unit   // Retry
 
                             // Resource wasn't found, deleted on server
                             GetResourceResult.NotFound -> {
-                                val clientNote = dirtyNote.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
-                                database.insertOrUpdateNote(clientNote)
-                                pushSingleLocalChange(clientNote, calendar)
+                                val clientIcalEntry = dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
+                                database.insertOrUpdateIcalEntry(clientIcalEntry)
+                                pushSingleLocalChange(clientIcalEntry, calendar)
                             }
 
                             // The new entry was fetched, we overwrite the local changes, server wins
                             is GetResourceResult.Success -> {
-                                val clientNote =
-                                    dirtyNote.copy(syncState = SyncState.LOCAL_MODIFIED, etag = conflictingServerNoteResult.note.etag)
-                                database.insertOrUpdateNote(clientNote)
-                                pushSingleLocalChange(clientNote, calendar)
+                                val clientIcalEntry =
+                                    dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = conflictingServerIcalEntryResult.icalEntry.etag)
+                                database.insertOrUpdateIcalEntry(clientIcalEntry)
+                                pushSingleLocalChange(clientIcalEntry, calendar)
                             }
                         }
                     }
@@ -478,40 +478,40 @@ class SyncCoordinator(
 
                     // The entry was deleted in the meantime, we also delete it locally
                     PutResourceResult.NotFound -> {
-                        val clientNote = dirtyNote.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
-                        database.insertOrUpdateNote(clientNote)
-                        pushSingleLocalChange(clientNote, calendar)
+                        val clientIcalEntry = dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
+                        database.insertOrUpdateIcalEntry(clientIcalEntry)
+                        pushSingleLocalChange(clientIcalEntry, calendar)
                     }
 
                     // The locally modified entry was successfully pushed to the server, we just update the local entry as synced and store the new eTag
                     is PutResourceResult.Success ->
-                        database.insertOrUpdateNote(
-                            dirtyNote.copy(
-                                etag = insertOrUpdateNoteResult.note.etag,
-                                href = insertOrUpdateNoteResult.note.href,
+                        database.insertOrUpdateIcalEntry(
+                            dirtyIcalEntry.copy(
+                                etag = insertOrUpdateIcalEntryResult.icalEntry.etag,
+                                href = insertOrUpdateIcalEntryResult.icalEntry.href,
                                 syncState = SyncState.SYNCED
                             )
                         )
                 }
             }
 
-            // note was locally modified, we put and see if there's a conflict
+            // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_SERVER_WINS -> {   //TODO!!
-                val conflictingServerNoteResult = getResourceMultiplatform(client, calendar, dirtyNote)
-                when (conflictingServerNoteResult) {
+                val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                when (conflictingServerIcalEntryResult) {
 
                     // failed will be kept for another retry TODO: Review if this is sufficient in future
                     is GetResourceResult.Failed -> Unit   // Retry
 
                     // Resource wasn't found, deleted on server, we delete as user decided to keep server version
-                    GetResourceResult.NotFound -> database.insertOrUpdateNote(dirtyNote.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                    GetResourceResult.NotFound -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
 
                     // The new entry was fetched, we overwrite the local changes, server wins
                     is GetResourceResult.Success -> {
-                        database.insertOrUpdateNote(
-                            conflictingServerNoteResult.note.copy(
-                                id = dirtyNote.id,
-                                calendarId = dirtyNote.calendarId,
+                        database.insertOrUpdateIcalEntry(
+                            conflictingServerIcalEntryResult.icalEntry.copy(
+                                id = dirtyIcalEntry.id,
+                                calendarId = dirtyIcalEntry.calendarId,
                                 syncState = SyncState.SYNCED
                             )
                         )
@@ -520,29 +520,29 @@ class SyncCoordinator(
             }
 
             SyncState.LOCAL_DELETED -> {
-                val deleteResourceResult = deleteResourceMultiplatform(client, calendar, dirtyNote)
+                val deleteResourceResult = deleteResourceMultiplatform(client, calendar, dirtyIcalEntry)
                 when (deleteResourceResult) {
 
                     // The entry was already deleted or successfully deleted on the server. We delete it locally.
                     DeleteResourceResult.AlreadyDeleted, DeleteResourceResult.Success ->
-                        database.insertOrUpdateNote(dirtyNote.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                        database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
 
                     // There was a conflict, the resourcew as changed on the server, we discard the local delete and update the entry instead
                     // TODO: Review in future
                     DeleteResourceResult.Conflict -> {
-                        val conflictingServerNoteResult = getResourceMultiplatform(client, calendar, dirtyNote)
-                        when (conflictingServerNoteResult) {
+                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                        when (conflictingServerIcalEntryResult) {
 
                             // failed will be kept for another retry TODO: Review if this is sufficient in future
                             is GetResourceResult.Failed -> Unit   // Retry
 
                             // Resource wasn't found, we delete the local copy, this should have been Success though
-                            GetResourceResult.NotFound -> database.insertOrUpdateNote(dirtyNote.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                            GetResourceResult.NotFound -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
 
                             // The new entry was fetched
                             is GetResourceResult.Success -> {
-                                // server returns updated note
-                                database.insertOrUpdateNote(dirtyNote.copy(syncState = SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED))
+                                // server returns updated entry
+                                database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED))
                             }
                         }
                     }
