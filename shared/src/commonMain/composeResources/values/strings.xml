@@ -66,6 +66,7 @@
     <string name="sort_descending">Descending</string>
     <string name="created">Created</string>
     <string name="last_modified">Last modified</string>
+    <string name="date">Date</string>
     <string name="summary">Summary</string>
     <string name="description">Description</string>
     <string name="color">Color</string>

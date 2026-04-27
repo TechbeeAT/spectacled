@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.DragIndicator
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -34,6 +35,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.presentation.SpecialRoundedCard
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.domain.SyncState
@@ -125,10 +128,29 @@ fun IcalEntryListItem(
                             modifier = Modifier.fillMaxWidth()
                         )
 
+                    icalEntry.dtStart?.let {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Schedule,
+                                contentDescription = "Time",
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = PlatformInstantFormatter(it).formatLocalizedTime(),
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
 
                     AnimatedVisibility (icalEntry.categories.isNotEmpty() || icalEntry.syncState.isConflictState()) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             if(icalEntry.categories.isNotEmpty()) {
@@ -143,8 +165,7 @@ fun IcalEntryListItem(
                                     style = MaterialTheme.typography.labelSmall,
                                     fontStyle = FontStyle.Italic,
                                     maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(4.dp)
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
@@ -241,6 +262,20 @@ private fun IcalEntryListItem_middle_Preview_no_summary_and_description() {
                 Icon(Icons.Outlined.DragIndicator, null)
             }
         }
+    )
+}
+
+@OptIn(ExperimentalTime::class)
+@Preview
+@Composable
+private fun IcalEntryListItem_withTime_Preview() {
+    IcalEntryListItem(
+        icalEntry = IcalEntry.getSampleIcalEntry().copy(dtStart = IcsDateTime.now()),
+        isFirst = true,
+        isLast = false,
+        isSelected = false,
+        onClick = {},
+        onLongClick = {}
     )
 }
 

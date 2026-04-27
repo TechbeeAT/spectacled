@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
@@ -55,6 +56,7 @@ import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datast
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import at.techbee.spectacled.theme.getThemeForColoredSurfaces
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_selection
 import spectacled.shared.generated.resources.delete_selected
@@ -79,7 +81,8 @@ fun IcalEntryListTopBar(
     multiselectItems: List<Long>?,
     onSurfaceTint: Color,
     onAction: (IcalEntryListAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>()
 ) {
 
     var sortedByDropdownExpanded by remember { mutableStateOf(false) }
@@ -198,29 +201,30 @@ fun IcalEntryListTopBar(
                             expanded = sortedByDropdownExpanded,
                             onDismissRequest = { sortedByDropdownExpanded = false }
                         ) {
-                            ListSortedBy.entries.forEach { newSortedBy ->
+                            ListSortedBy.entriesFor(spectacledVariant).forEach { sortedByOption ->
+
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            text = stringResource(newSortedBy.displayName),
+                                            text = stringResource(sortedByOption.displayName),
                                             color = onSurfaceTint
                                         )
                                     },
                                     onClick = {
                                         // toggle ascending if the same item is selected again
-                                        if (listSortedBy.name == newSortedBy.name && listSortedBy != ListSortedBy.DRAGANDDROP)
-                                            onAction(IcalEntryListAction.OnSortedByChanged(newSortedBy, !sortedAscending))
+                                        if (listSortedBy.name == sortedByOption.name && listSortedBy != ListSortedBy.DRAGANDDROP)
+                                            onAction(IcalEntryListAction.OnSortedByChanged(sortedByOption, !sortedAscending))
                                         else
-                                            onAction(IcalEntryListAction.OnSortedByChanged(newSortedBy, true))
+                                            onAction(IcalEntryListAction.OnSortedByChanged(sortedByOption, true))
                                     },
                                     trailingIcon = {
-                                        if (listSortedBy.name == newSortedBy.name && sortedAscending)
+                                        if (listSortedBy.name == sortedByOption.name && sortedAscending)
                                             Icon(
                                                 imageVector = Icons.Default.ArrowCircleDown,
                                                 contentDescription = stringResource(Res.string.sort_ascending),
                                                 tint = onSurfaceTint
                                             )
-                                        else if (listSortedBy.name == newSortedBy.name)
+                                        else if (listSortedBy.name == sortedByOption.name)
                                             Icon(
                                                 imageVector = Icons.Outlined.ArrowCircleUp,
                                                 contentDescription = stringResource(Res.string.sort_descending),
@@ -231,23 +235,27 @@ fun IcalEntryListTopBar(
                             }
                         }
                     }
-                    TextButton(
-                        onClick = {
-                            onAction(
-                                IcalEntryListAction.OnViewModeChanged(
-                                    when (listLayout) {
-                                        ListLayout.LIST -> ListLayout.STAGGERED_GRID
-                                        ListLayout.STAGGERED_GRID -> ListLayout.LIST
-                                    }
+
+                    // No staggered grid option for Journals
+                    if(spectacledVariant != SpectacledVariant.JOURNALS) {
+                        TextButton(
+                            onClick = {
+                                onAction(
+                                    IcalEntryListAction.OnViewModeChanged(
+                                        when (listLayout) {
+                                            ListLayout.LIST -> ListLayout.STAGGERED_GRID
+                                            ListLayout.STAGGERED_GRID -> ListLayout.LIST
+                                        }
+                                    )
                                 )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = listLayout.displayIcon,
+                                contentDescription = stringResource(listLayout.displayName),
+                                tint = onSurfaceTint
                             )
                         }
-                    ) {
-                        Icon(
-                            imageVector = listLayout.displayIcon,
-                            contentDescription = stringResource(listLayout.displayName),
-                            tint = onSurfaceTint
-                        )
                     }
 
                     if (getPlatform().platform == Platforms.DESKTOP || getPlatform().platform == Platforms.WASM) {
@@ -320,7 +328,8 @@ private fun IcalEntrySearchBar_Preview() {
                 isSearchBarExpanded = false,
                 multiselectItems = null,
                 onSurfaceTint = Color.Unspecified,
-                onAction = {}
+                onAction = {},
+                spectacledVariant = SpectacledVariant.NOTES
             )
         }
     }
@@ -340,7 +349,8 @@ private fun IcalEntrySearchBar_blue_Preview() {
                 isSearchBarExpanded = true,
                 multiselectItems = null,
                 onSurfaceTint = getContentColorForColoredSurfaces(Color.Blue),
-                onAction = {}
+                onAction = {},
+                spectacledVariant = SpectacledVariant.NOTES
             )
         }
     }
@@ -362,7 +372,8 @@ private fun IcalEntrySearchBar_Multiselect_Preview() {
                 isSearchBarExpanded = false,
                 multiselectItems = listOf(1, 2, 3),
                 onSurfaceTint = Color.Unspecified,
-                onAction = {}
+                onAction = {},
+                spectacledVariant = SpectacledVariant.NOTES
             )
         }
     }
@@ -382,7 +393,8 @@ private fun IcalEntrySearchBar_yellow_Multiselect_Preview() {
                 isSearchBarExpanded = true,
                 multiselectItems = emptyList(),
                 onSurfaceTint = getContentColorForColoredSurfaces(Color.Yellow),
-                onAction = {}
+                onAction = {},
+                spectacledVariant = SpectacledVariant.NOTES
             )
         }
     }
@@ -406,7 +418,8 @@ private fun IcalEntrySearchBar_sync_in_progress_Preview() {
                 isSearchBarExpanded = false,
                 multiselectItems = null,
                 onSurfaceTint = Color.Unspecified,
-                onAction = {}
+                onAction = {},
+                spectacledVariant = SpectacledVariant.NOTES
             )
         }
     }

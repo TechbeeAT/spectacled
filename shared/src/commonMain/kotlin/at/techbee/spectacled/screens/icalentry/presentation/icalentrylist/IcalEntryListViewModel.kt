@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
@@ -29,7 +30,8 @@ class IcalEntryListViewModel(
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
-    private val appPreferences: AppPreferences
+    private val appPreferences: AppPreferences,
+    private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
     private val _state = mutableStateOf(IcalEntryListState())
@@ -49,9 +51,17 @@ class IcalEntryListViewModel(
             errorMessage = null,
             navigateUp = false,
             snackbarText = null,
-            listSortedBy = appPreferences.listSortedBy?: ListSortedBy.CREATED,
+            listSortedBy = when {
+                appPreferences.listSortedBy != null -> appPreferences.listSortedBy!!
+                spectacledVariant == SpectacledVariant.JOURNALS -> ListSortedBy.DATE
+                else -> ListSortedBy.CREATED
+            },
             listSortedByAscending = appPreferences.listSortedByAscending,
-            listLayout = appPreferences.listLayout?: ListLayout.STAGGERED_GRID
+            listLayout = when {
+                appPreferences.listLayout != null -> appPreferences.listLayout!!
+                spectacledVariant == SpectacledVariant.JOURNALS -> ListLayout.LIST
+                else -> ListLayout.STAGGERED_GRID
+            }
         )
 
         appPreferences.lastUsedCalendarId = calendarId

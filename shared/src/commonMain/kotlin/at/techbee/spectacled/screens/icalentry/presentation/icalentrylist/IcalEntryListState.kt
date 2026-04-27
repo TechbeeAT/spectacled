@@ -84,6 +84,7 @@ data class IcalEntryListState(
             when (listSortedBy) {
                 ListSortedBy.CREATED -> it.created.instant.toEpochMilliseconds()
                 ListSortedBy.LAST_MODIFIED -> it.lastModified?.instant?.toEpochMilliseconds()
+                ListSortedBy.DATE -> it.dtStart?.instant?.toEpochMilliseconds()
                 ListSortedBy.SUMMARY -> it.summary?.uppercase() ?: ""
                 ListSortedBy.DRAGANDDROP -> it.orderNo?:-1
             }
@@ -97,6 +98,7 @@ data class IcalEntryListState(
             when (listSortedBy) {
                 ListSortedBy.CREATED -> ListGrouping.getGrouping(it.created.instant)
                 ListSortedBy.LAST_MODIFIED -> ListGrouping.getGrouping(it.lastModified?.instant ?: it.created.instant)
+                ListSortedBy.DATE -> ListGrouping.GROUP_NONE
                 ListSortedBy.SUMMARY -> ListGrouping.GROUP_NONE
                 ListSortedBy.DRAGANDDROP -> ListGrouping.GROUP_NONE
             }

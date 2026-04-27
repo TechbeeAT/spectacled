@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.account.data.insertOrUpdateIcalEntry
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
@@ -23,6 +24,12 @@ import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.domain.SyncState
+import io.github.aakira.napier.Napier
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.entry_copy
@@ -31,12 +38,6 @@ import spectacled.shared.generated.resources.entry_restored
 import spectacled.shared.generated.resources.entry_successfully_saved
 import spectacled.shared.generated.resources.sync_conflict_detected
 import spectacled.shared.generated.resources.unexpected_error_occurred
-import io.github.aakira.napier.Napier
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -45,7 +46,8 @@ import kotlin.uuid.ExperimentalUuidApi
 class IcalEntryDetailsViewModel(
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
-    private val platformSyncTrigger: PlatformSyncTrigger
+    private val platformSyncTrigger: PlatformSyncTrigger,
+    private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
     
     val allCategories = mutableSetOf<String>()
@@ -102,8 +104,12 @@ class IcalEntryDetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     fun loadNew(calendarId: Long) {
+
         viewModelScope.launch {
-            val newIcalEntry = IcalEntry(calendarId = calendarId)
+            val newIcalEntry = IcalEntry(
+                calendarId = calendarId,
+                dtStart = if(spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null
+            )
             val calendar = database.calendar_dtoQueries.getCalendarById(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
             _state = _state.copy(
@@ -115,7 +121,6 @@ class IcalEntryDetailsViewModel(
                 navigateUp = false
             )
         }
-
     }
 
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
