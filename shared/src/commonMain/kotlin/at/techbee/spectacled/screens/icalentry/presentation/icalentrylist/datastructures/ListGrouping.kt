@@ -2,7 +2,6 @@ package at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datas
 
 import org.jetbrains.compose.resources.StringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.date
 import spectacled.shared.generated.resources.grouping_last_x_days
 import spectacled.shared.generated.resources.grouping_last_x_hours
 import spectacled.shared.generated.resources.grouping_last_year

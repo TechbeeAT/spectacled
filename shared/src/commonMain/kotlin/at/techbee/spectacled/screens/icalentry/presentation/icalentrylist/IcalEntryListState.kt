@@ -10,7 +10,6 @@ import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datast
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 import io.ktor.http.Url
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 data class IcalEntryListState(
     val icalEntries: List<IcalEntry> = emptyList(),
