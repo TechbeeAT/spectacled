@@ -72,8 +72,8 @@ class IcalEntryListViewModel(
         viewModelScope.launch {
             try {
 
-                val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
-                val credentials = credentialStore.load(principal.principalUrl)
+                val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendarId).awaitAsOneOrNull()?.toDomain() ?: throw NullPointerException("Principal not found")
+                val credentials = credentialStore.load(principal.principalUrl) ?: throw NullPointerException("Credentials not found")
 
                 _state.value = _state.value.copy(
                     principal = principal,
@@ -148,7 +148,11 @@ class IcalEntryListViewModel(
             is IcalEntryListAction.OnSearchBarExpanded -> {
                 _state.value = _state.value.copy(isSearchBarExpanded = action.isExpanded)
             }
-            is IcalEntryListAction.OnNavigateUp -> _state.value = _state.value.copy(navigateUp = action.navigateUp)
+            is IcalEntryListAction.OnNavigateUp -> {
+                if(action.navigateUp)
+                    appPreferences.lastUsedCalendarId = null // reset lastUsedCalendarId
+                _state.value = _state.value.copy(navigateUp = action.navigateUp)
+            }
             is IcalEntryListAction.OnUpdateSnackbar -> { _state.value = _state.value.copy(snackbarText = action.message) }
             IcalEntryListAction.OnToggleShowDeletedItems -> { _state.value = _state.value.copy(showDeletedItems = !_state.value.showDeletedItems) }
             is IcalEntryListAction.OnToggleMultiselectItem -> toggleMultiselectItem(action.icalEntryId)
