@@ -39,6 +39,8 @@ import io.ktor.http.Url
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 
 class SyncCoordinator(
@@ -60,8 +62,12 @@ class SyncCoordinator(
                     .getCalendarsForPrincipalUrl(principal.principalUrl.toString())
                     .awaitAsList()
                     .map { it.toDomain() }
-                    .forEach { calendar ->
-                        SyncCoordinator(database, client).syncCalendar(calendar)
+                    .let { calendars ->
+                        coroutineScope {
+                            calendars.forEach { calendar ->
+                                launch { SyncCoordinator(database, client).syncCalendar(calendar) }
+                            }
+                        }
                     }
             }
 
@@ -75,12 +81,17 @@ class SyncCoordinator(
             database: SpectacledDatabase,
             credentialStore: CredentialStore
         ) {
-            database.calendar_dtoQueries.getCalendarsByIds(calendarIds).awaitAsList().map { it.toDomain() }.forEach { calendar ->
+            val calendars = database.calendar_dtoQueries.getCalendarsByIds(calendarIds).awaitAsList().map { it.toDomain() }
 
-                val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendar.id).awaitAsOne().toDomain()
-                val credentials = credentialStore.load(principal.principalUrl)
-                val client = HttpClientFactory.create(getPlatformEngine(), credentials?.username, credentials?.password)
-                SyncCoordinator(database, client).syncCalendar(calendar)
+            coroutineScope {
+                calendars.forEach { calendar ->
+                    launch {
+                        val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendar.id).awaitAsOne().toDomain()
+                        val credentials = credentialStore.load(principal.principalUrl)
+                        val client = HttpClientFactory.create(getPlatformEngine(), credentials?.username, credentials?.password)
+                        SyncCoordinator(database, client).syncCalendar(calendar)
+                    }
+                }
             }
         }
 
