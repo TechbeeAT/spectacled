@@ -10,7 +10,8 @@ const val LAST_USED_CALENDAR_ID = "last_used_calendar_id"
 const val LIST_SORTED_BY = "list_sorted_by"
 const val LIST_SORTED_BY_ASCENDING = "list_sorted_by_ascending"
 const val LIST_LAYOUT = "list_layout"
-const val LIST_EXPANDED_SECTIONS = "list_expanded_sections"
+const val LIST_COLLAPSED_SECTIONS = "list_collapsed_sections"
+const val LIST_COLLAPSED_DAYS = "list_collapsed_days"
 
 
 class AppPreferences(private val settings: Settings) {
@@ -53,13 +54,19 @@ class AppPreferences(private val settings: Settings) {
             else settings.putString(LIST_LAYOUT, value.name)
         }
 
-    var listExpandedSections: Set<ListGrouping>
-        get() = settings.getStringOrNull(LIST_EXPANDED_SECTIONS)
-            ?.split(",")
+    var listCollapsedSections: Set<ListGrouping>
+        get() = settings.getStringOrNull(LIST_COLLAPSED_SECTIONS)
+            ?.split("|")
             ?.mapNotNull { ListGrouping.entries.find { listGrouping -> listGrouping.name == it } }
             ?.toSet()
-            ?: ListGrouping.entries.toSet()
-        set(value) = settings.putString(LIST_EXPANDED_SECTIONS, value.map { it.name }.joinToString(","))
+            ?: emptySet()
+        set(value) = settings.putString(LIST_COLLAPSED_SECTIONS, value.joinToString("|") { it.name })
+
+    var listCollapsedDays: Set<String>
+        get() = settings.getStringOrNull(LIST_COLLAPSED_DAYS)
+            ?.split("|")?.toSet() ?: emptySet()
+        set(value) = settings.putString(LIST_COLLAPSED_DAYS, value.joinToString("|"))
+
 
     var listTrashbinExpanded: Boolean
         get() = settings.getBoolean("list_trashbin_expanded", defaultValue = false)

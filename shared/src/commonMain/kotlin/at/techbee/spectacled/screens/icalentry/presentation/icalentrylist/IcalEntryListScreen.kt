@@ -65,8 +65,11 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
+import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.CustomBottomSnackbarHost
@@ -472,6 +475,72 @@ fun IcalEntryListScreen(
                             )
                         }
                     }
+                } else if(state.listSortedBy == ListSortedBy.DATE) {
+                    val groupedByDay = state.displayMap[ListGrouping.GROUP_NONE]
+                        ?.groupBy { PlatformInstantFormatter(it.dtStart ?: IcsDateTime.now()).formatLocalizedDate() } ?: return@LazyVerticalStaggeredGrid
+                    groupedByDay.keys.forEach { dayGroup ->
+                        if (groupedByDay[dayGroup].isNullOrEmpty())
+                            return@forEach
+
+                        item(span = StaggeredGridItemSpan.FullLine) {
+                            TextButton(
+                                onClick = {
+                                    onAction(IcalEntryListAction.OnToggleDayGroupingExpanded(dayGroup))
+                                },
+                                colors = ButtonDefaults.textButtonColors().copy(contentColor = LocalContentColor.current),
+                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp, start = 8.dp, end = 8.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = dayGroup,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Crossfade(dayGroup in state.listCollapsedDayGroups) {
+                                        if (it)
+                                            Icon(Icons.Outlined.ExpandLess, stringResource(Res.string.expand))
+                                        else
+                                            Icon(Icons.Outlined.ExpandMore, stringResource(Res.string.collapse))
+                                    }
+                                }
+                            }
+                        }
+
+                        if (dayGroup !in state.listCollapsedDayGroups) {
+                            itemsIndexed(
+                                items = groupedByDay[dayGroup]!!,
+                                key = { _, icalEntry -> icalEntry.uid }
+                            ) { index, icalEntry ->
+
+                                IcalEntryListItem(
+                                    icalEntry = icalEntry,
+                                    isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
+                                    isLast = (state.listLayout == ListLayout.LIST && index == groupedByDay[dayGroup]!!.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
+                                    isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
+                                    onClick = {
+                                        if (state.multiselectItems == null)
+                                            onAction(IcalEntryListAction.OnIcalEntryClicked(icalEntry.id))
+                                        else
+                                            onAction(IcalEntryListAction.OnToggleMultiselectItem(icalEntry.id))
+                                    },
+                                    onLongClick = { onAction(IcalEntryListAction.OnToggleMultiselectItem(icalEntry.id)) },
+                                    modifier = Modifier
+                                        .widthIn(max = 700.dp)
+                                        .heightIn(min = 50.dp)
+                                        .animateItem()
+                                )
+
+                            }
+                        }
+                    }
+
                 } else {
                     // No drag and drop. We build the grouped list based on the map
 
@@ -503,11 +572,12 @@ fun IcalEntryListScreen(
                                                     else
                                                         stringResource(grouping.stringRes),
                                                 style = MaterialTheme.typography.headlineSmall,
+                                                fontSize = 20.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Spacer(modifier = Modifier.weight(1f))
-                                            Crossfade(grouping in state.listExpandedSections) {
-                                                if (!it)
+                                            Crossfade(grouping in state.listCollapsedListGroupings) {
+                                                if (it)
                                                     Icon(Icons.Outlined.ExpandLess, stringResource(Res.string.expand))
                                                 else
                                                     Icon(Icons.Outlined.ExpandMore, stringResource(Res.string.collapse))
@@ -517,8 +587,8 @@ fun IcalEntryListScreen(
                                 }
                             }
 
-                            if (grouping in state.listExpandedSections) {
-                                itemsIndexed(state.displayMap[grouping]!!, key = { _, note -> note.uid }) { index, note ->
+                            if (grouping !in state.listCollapsedListGroupings) {
+                                itemsIndexed(state.displayMap[grouping]!!, key = { _, icalEntry -> icalEntry.uid }) { index, note ->
 
                                         IcalEntryListItem(
                                             icalEntry = note,

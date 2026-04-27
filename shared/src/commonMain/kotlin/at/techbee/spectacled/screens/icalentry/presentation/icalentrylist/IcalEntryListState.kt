@@ -10,6 +10,7 @@ import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datast
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 import io.ktor.http.Url
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 data class IcalEntryListState(
     val icalEntries: List<IcalEntry> = emptyList(),
@@ -50,7 +51,8 @@ data class IcalEntryListState(
     val showDeleteSelectedItemsDialog: Boolean = false,
     val showUpdateColorOfSelectedBottomSheet: Boolean = false,
 
-    val listExpandedSections: Set<ListGrouping> = ListGrouping.entries.toSet(),
+    val listCollapsedListGroupings: Set<ListGrouping> = emptySet(),
+    val listCollapsedDayGroups: Set<String> = emptySet(),
     val listTrashbinExpanded: Boolean = false
 ) {
 

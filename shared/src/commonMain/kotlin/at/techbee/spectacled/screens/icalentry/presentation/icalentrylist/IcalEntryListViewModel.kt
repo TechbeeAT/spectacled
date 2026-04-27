@@ -61,7 +61,10 @@ class IcalEntryListViewModel(
                 appPreferences.listLayout != null -> appPreferences.listLayout!!
                 spectacledVariant == SpectacledVariant.JOURNALS -> ListLayout.LIST
                 else -> ListLayout.STAGGERED_GRID
-            }
+            },
+            listCollapsedListGroupings = appPreferences.listCollapsedSections,
+            listCollapsedDayGroups = appPreferences.listCollapsedDays,
+            listTrashbinExpanded = appPreferences.listTrashbinExpanded
         )
 
         appPreferences.lastUsedCalendarId = calendarId
@@ -155,6 +158,7 @@ class IcalEntryListViewModel(
             is IcalEntryListAction.OnUpdateOrderNo -> onUpdateOrderNo(action.fromIndex, action.toIndex)
             IcalEntryListAction.OnPersistOrderNo -> onPersistOrderNo()
             is IcalEntryListAction.OnToggleListGroupingExpanded -> onToggleListGroupingExpanded(action.listGrouping)
+            is IcalEntryListAction.OnToggleDayGroupingExpanded -> onToggleDayGroupingExpanded(action.listDayGroup)
             IcalEntryListAction.OnToggleListTrashbinExpanded -> onToggleTrashbinExpanded()
             is IcalEntryListAction.OnShowUpdateColorOfSelectedBottomSheet -> {
                 _state.value = if(action.show)
@@ -248,12 +252,22 @@ class IcalEntryListViewModel(
 
     private fun onToggleListGroupingExpanded(listGrouping: ListGrouping) {
         _state.value = _state.value.copy(
-            listExpandedSections = if(state.listExpandedSections.contains(listGrouping))
-                state.listExpandedSections.minus(listGrouping)
+            listCollapsedListGroupings = if(state.listCollapsedListGroupings.contains(listGrouping))
+                state.listCollapsedListGroupings.minus(listGrouping)
             else
-                state.listExpandedSections.plus(listGrouping)
+                state.listCollapsedListGroupings.plus(listGrouping)
         )
-        appPreferences.listExpandedSections = state.listExpandedSections
+        appPreferences.listCollapsedSections = state.listCollapsedListGroupings
+    }
+
+    private fun onToggleDayGroupingExpanded(listDayGrouping: String) {
+        _state.value = _state.value.copy(
+            listCollapsedDayGroups = if(state.listCollapsedDayGroups.contains(listDayGrouping))
+                state.listCollapsedDayGroups.minus(listDayGrouping)
+            else
+                state.listCollapsedDayGroups.plus(listDayGrouping)
+        )
+        appPreferences.listCollapsedDays = state.listCollapsedDayGroups
     }
 
     private fun onToggleTrashbinExpanded() {
