@@ -60,7 +60,7 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
         })
     ) {
 
-        AppTheme {
+        AppTheme(spectacledVariant = spectacledVariant) {
 
             val navController = rememberNavController()
             //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm

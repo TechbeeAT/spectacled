@@ -31,7 +31,9 @@ import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsAction
-import at.techbee.spectacled.theme.AppTheme
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.copied_to_clipboard
 import spectacled.shared.generated.resources.copy_to_clipboard
@@ -41,9 +43,6 @@ import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.last_modified
 import spectacled.shared.generated.resources.send_as_email
 import spectacled.shared.generated.resources.share
-import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -174,12 +173,12 @@ fun IcalEntryDetailsMoreBottomSheet(
 @Preview
 @Composable
 fun IcalEntryDetailsMoreBottomSheetPreview() {
-    AppTheme {
+    MaterialTheme {
         IcalEntryDetailsMoreBottomSheet(
             onAction = {},
             icalEntry = IcalEntry.getSampleIcalEntry(),
             canWriteContent = true,
-            shareManager = object: ShareManager {
+            shareManager = object : ShareManager {
                 override fun share(content: ShareContent) {
                     println("Sharing: $content")
                 }
@@ -191,12 +190,12 @@ fun IcalEntryDetailsMoreBottomSheetPreview() {
 @Preview
 @Composable
 fun IcalEntryDetailsMoreBottomSheet_ReadOnly_Preview() {
-    AppTheme {
+    MaterialTheme {
         IcalEntryDetailsMoreBottomSheet(
             onAction = {},
             icalEntry = IcalEntry.getSampleIcalEntry(),
             canWriteContent = false,
-            shareManager = object: ShareManager {
+            shareManager = object : ShareManager {
                 override fun share(content: ShareContent) {
                     println("Sharing: $content")
                 }

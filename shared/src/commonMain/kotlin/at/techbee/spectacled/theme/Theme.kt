@@ -3,12 +3,11 @@ package at.techbee.spectacled.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import at.techbee.spectacled.SpectacledVariant
 
+/*
 val lightScheme = lightColorScheme(
     primary = primaryLight,
     onPrimary = onPrimaryLight,
@@ -84,6 +83,7 @@ val darkScheme = darkColorScheme(
     surfaceContainerHigh = surfaceContainerHighDark,
     surfaceContainerHighest = surfaceContainerHighestDark,
 )
+
 
 private val mediumContrastLightColorScheme = lightColorScheme(
     primary = primaryLightMediumContrast,
@@ -237,6 +237,8 @@ private val highContrastDarkColorScheme = darkColorScheme(
     surfaceContainerHighest = surfaceContainerHighestDarkHighContrast,
 )
 
+
+
 @Immutable
 data class ColorFamily(
     val color: Color,
@@ -248,6 +250,8 @@ data class ColorFamily(
 val unspecified_scheme = ColorFamily(
     Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
 )
+
+ */
 
 @Composable
 fun getThemeForColoredSurfaces(surfaceColor: Color?): ColorScheme =
@@ -284,5 +288,6 @@ expect fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
+    spectacledVariant: SpectacledVariant,
     content: @Composable() () -> Unit
 )

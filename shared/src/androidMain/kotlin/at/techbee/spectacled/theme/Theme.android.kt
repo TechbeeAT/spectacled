@@ -6,11 +6,13 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import at.techbee.spectacled.SpectacledVariant
 
 @Composable
 actual fun AppTheme(
     darkTheme: Boolean,
     dynamicColor: Boolean,
+    spectacledVariant: SpectacledVariant,
     content: @Composable (() -> Unit)
 ) {
     val colorScheme = when {
@@ -18,8 +20,11 @@ actual fun AppTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> darkScheme
-        else -> lightScheme
+        else -> when(spectacledVariant) {
+            SpectacledVariant.JOURNALS -> if (darkTheme) darkJournalsScheme else lightJournalsScheme
+            SpectacledVariant.NOTES -> if (darkTheme) darkNotesScheme else lightNotesScheme
+            SpectacledVariant.TASKS -> if (darkTheme) darkTasksScheme else lightTasksScheme
+        }
     }
 
     MaterialTheme(
