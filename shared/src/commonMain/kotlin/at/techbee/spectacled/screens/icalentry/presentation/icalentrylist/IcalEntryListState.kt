@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.icalentry.presentation.icalentrylist
 
 import androidx.compose.ui.graphics.Color
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.Principal
@@ -53,7 +54,9 @@ data class IcalEntryListState(
 
     val listCollapsedListGroupings: Set<ListGrouping> = emptySet(),
     val listCollapsedDayGroups: Set<String> = emptySet(),
-    val listTrashbinExpanded: Boolean = false
+    val listTrashbinExpanded: Boolean = false,
+
+    val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES  // must be overwritten immediately on load
 ) {
 
     val displayMap: Map<ListGrouping, List<IcalEntry>>
@@ -65,8 +68,12 @@ data class IcalEntryListState(
     @OptIn(ExperimentalTime::class)
     private fun computeDisplayMap(): Map<ListGrouping, List<IcalEntry>> {
 
-        val baseList = icalEntries.filter { !it.syncState.isDeletedState() }
-        // TODO: Filter Notes and Journals accordingly!
+        val baseList = icalEntries
+            .filter { when(spectacledVariant) {
+                SpectacledVariant.JOURNALS -> !it.syncState.isDeletedState() && it.dtStart != null
+                SpectacledVariant.NOTES -> !it.syncState.isDeletedState() && it.dtStart == null
+                SpectacledVariant.TASKS -> !it.syncState.isDeletedState()
+            } }
 
         val filteredList =
             if (searchQuery.isBlank())

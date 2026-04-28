@@ -64,7 +64,8 @@ class IcalEntryListViewModel(
             },
             listCollapsedListGroupings = appPreferences.listCollapsedSections,
             listCollapsedDayGroups = appPreferences.listCollapsedDays,
-            listTrashbinExpanded = appPreferences.listTrashbinExpanded
+            listTrashbinExpanded = appPreferences.listTrashbinExpanded,
+            spectacledVariant = spectacledVariant
         )
 
         appPreferences.lastUsedCalendarId = calendarId
