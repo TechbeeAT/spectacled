@@ -58,6 +58,7 @@ suspend fun discoverPrincipalsMultiplatform(
     client.request(location) {
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
+        contentType(ContentType.Application.Xml)
         //setBody("<?xml version='1.0' encoding='UTF-8' ?><propfind xmlns=\"DAV:\" xmlns:CAL=\"urn:ietf:params:xml:ns:caldav\" xmlns:CARD=\"urn:ietf:params:xml:ns:carddav\"><prop><current-user-principal /><displayname /></prop></propfind>")
         setBody(xmlString)
     }.let { response ->
@@ -128,6 +129,7 @@ suspend fun discoverHomeCollections(client: HttpClient, principal: Principal): D
     client.request(principal.principalUrl) {
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
+        contentType(ContentType.Application.Xml)
         //setBody("<?xml version='1.0' encoding='UTF-8' ?><propfind xmlns=\"DAV:\" xmlns:CAL=\"urn:ietf:params:xml:ns:caldav\" xmlns:CARD=\"urn:ietf:params:xml:ns:carddav\"><prop><CAL:calendar-home-set /><displayname /></prop></propfind>")
         setBody(xmlString)
     }.let { response ->
@@ -212,6 +214,7 @@ suspend fun discoverCalendars(client: HttpClient, homeCollection: HomeCollection
     client.request(homeCollection.url) {
         headers.append(HttpHeaders.Depth, "1")
         method = HttpMethod.parse("PROPFIND")
+        contentType(ContentType.Application.Xml)
         //setBody("<?xml version='1.0' encoding='UTF-8' ?><propfind xmlns=\"DAV:\" xmlns:CAL=\"urn:ietf:params:xml:ns:caldav\" xmlns:CARD=\"urn:ietf:params:xml:ns:carddav\"><prop><displayname /><resourcetype /><n0:calendar-color xmlns:n0=\"http://apple.com/ns/ical/\" /><CAL:calendar-description /><current-user-privilege-set /><CAL:supported-calendar-component-set /><n1:getctag xmlns:n1=\"http://calendarserver.org/ns/\" /></prop></propfind>\n")
         //TODO: Add properties again!
         //setBody("<?xml version='1.0' encoding='UTF-8' ?><propfind xmlns=\"DAV:\" xmlns:CAL=\"urn:ietf:params:xml:ns:caldav\" xmlns:CARD=\"urn:ietf:params:xml:ns:carddav\"><prop><displayname /><CAL:calendar-description /><n1:getctag xmlns:n1=\"http://calendarserver.org/ns/\" /></prop></propfind>\n")
@@ -534,6 +537,7 @@ suspend fun createCalendarMultiplatform(
     client.request(newCalendar.url) {
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
+        contentType(ContentType.Application.Xml)
         setBody(xmlString2)
     }.let { response ->
 
@@ -653,6 +657,7 @@ suspend fun updateCalDavCalendarMultiplatform(
     client.request(calendar.url) {
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
+        contentType(ContentType.Application.Xml)
         setBody(xmlString2)
     }.let { response ->
 
