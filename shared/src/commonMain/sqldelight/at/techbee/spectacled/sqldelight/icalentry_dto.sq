@@ -1,4 +1,4 @@
-CREATE TABLE VjournalDto (
+CREATE TABLE IcalEntryDto (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     calendarId INTEGER NOT NULL REFERENCES CalendarDto(id) ON DELETE CASCADE,
     uid TEXT NOT NULL UNIQUE,
@@ -19,35 +19,35 @@ CREATE TABLE VjournalDto (
     href TEXT
 );
 
-getJournalsByCalendar:
-SELECT * FROM VjournalDto WHERE calendarId = ?;
+getIcalEntriesByCalendar:
+SELECT * FROM IcalEntryDto WHERE calendarId = ?;
 
-getDirtyJournalsByCalendar:
-SELECT * FROM VjournalDto WHERE calendarId = ? AND syncState NOT IN ('SYNCED', 'REMOTE_DELETED_LOCAL_TRASHBIN');
+getDirtyIcalEntriesByCalendar:
+SELECT * FROM IcalEntryDto WHERE calendarId = ? AND syncState NOT IN ('SYNCED', 'REMOTE_DELETED_LOCAL_TRASHBIN');
 
 getDeletedDeltaHrefs:
-SELECT VjournalDto.href FROM VjournalDto  WHERE calendarId = ? AND href NOT IN ? AND syncState != 'REMOTE_DELETED_LOCAL_TRASHBIN' AND href NOT NULL;
+SELECT IcalEntryDto.href FROM IcalEntryDto  WHERE calendarId = ? AND href NOT IN ? AND syncState != 'REMOTE_DELETED_LOCAL_TRASHBIN' AND href NOT NULL;
 
-getJournalByUid:
-SELECT * FROM VjournalDto WHERE uid = ?;
+getIcalEntryByUid:
+SELECT * FROM IcalEntryDto WHERE uid = ?;
 
-getJournalById:
-SELECT * FROM VjournalDto WHERE id = ?;
+getIcalEntryById:
+SELECT * FROM IcalEntryDto WHERE id = ?;
 
-getJournalsByHrefs:
-SELECT * FROM VjournalDto WHERE href IN ?;
+getIcalEntriesByHrefs:
+SELECT * FROM IcalEntryDto WHERE href IN ?;
 
-getJournalByHref:
-SELECT * FROM VjournalDto WHERE href = ?;
+getIcalEntryByHref:
+SELECT * FROM IcalEntryDto WHERE href = ?;
 
 getAllColors:
-SELECT DISTINCT color FROM VjournalDto WHERE color IS NOT NULL ORDER BY lastModified DESC;
+SELECT DISTINCT color FROM IcalEntryDto WHERE color IS NOT NULL ORDER BY lastModified DESC;
 
 getAllCategories:
-SELECT DISTINCT categories FROM VjournalDto WHERE categories IS NOT NULL ORDER BY lastModified DESC;
+SELECT DISTINCT categories FROM IcalEntryDto WHERE categories IS NOT NULL ORDER BY lastModified DESC;
 
-insertVjournal:
-INSERT OR IGNORE INTO VjournalDto (
+insertIcalEntry:
+INSERT OR IGNORE INTO IcalEntryDto (
     calendarId,
     uid,
     summary,
@@ -84,9 +84,9 @@ VALUES (
     :href
 );
 
-updateVjournal:
+updateIcalEntry:
 UPDATE
-    VjournalDto
+    IcalEntryDto
 SET
     calendarId = :calendarId,
     uid = :uid,
@@ -107,13 +107,13 @@ SET
 WHERE uid = :uid;
 
 deleteTrashed:
-DELETE FROM VjournalDto WHERE lastModified < :cutOffTimestamp AND syncState = 'REMOTE_DELETED_LOCAL_TRASHBIN';
+DELETE FROM IcalEntryDto WHERE lastModified < :cutOffTimestamp AND syncState = 'REMOTE_DELETED_LOCAL_TRASHBIN';
 
 markAsDeleted:
-UPDATE VjournalDto SET syncState = 'LOCAL_DELETED' WHERE id IN ?;
+UPDATE IcalEntryDto SET syncState = 'LOCAL_DELETED' WHERE id IN ?;
 
 updateColor:
-UPDATE VjournalDto SET color = :newColor WHERE id IN :ids;
+UPDATE IcalEntryDto SET color = :newColor WHERE id IN :ids;
 
 updateOrderNo:
-UPDATE VjournalDto SET orderNo = :orderNo WHERE id = :id;
+UPDATE IcalEntryDto SET orderNo = :orderNo WHERE id = :id;

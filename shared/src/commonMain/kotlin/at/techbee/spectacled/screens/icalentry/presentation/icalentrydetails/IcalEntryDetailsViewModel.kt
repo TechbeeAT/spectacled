@@ -64,14 +64,14 @@ class IcalEntryDetailsViewModel(
             database = getDatabase()
 
             launch {
-            snapshotFlow { state.icalEntry } // snapshotFlow tracks reads of the entry and emits on change
-                .debounce(500L) // Wait for 500ms pause in typing
-                .distinctUntilChanged { old, new -> old.lastModified == new.lastModified } // Only save if last modified changed
-                .collect {
-                    if(!state.isLoading && state.icalEntry.calendarId != 0L && state.icalEntry.syncState != SyncState.SYNCED)
-                        saveIcalEntry(state.icalEntry.syncState)
-                }
-                }
+                snapshotFlow { state.icalEntry } // snapshotFlow tracks reads of the entry and emits on change
+                    .debounce(500L) // Wait for 500ms pause in typing
+                    .distinctUntilChanged { old, new -> old.lastModified == new.lastModified } // Only save if last modified changed
+                    .collect {
+                        if(!state.isLoading && state.icalEntry.calendarId != 0L && state.icalEntry.syncState != SyncState.SYNCED)
+                            saveIcalEntry(state.icalEntry.syncState)
+                    }
+            }
         }
     }
 
@@ -80,14 +80,14 @@ class IcalEntryDetailsViewModel(
 
         viewModelScope.launch {
 
-            val unsplitCategories = database.vjournal_dtoQueries.getAllCategories().awaitAsList()
+            val unsplitCategories = database.icalentry_dtoQueries.getAllCategories().awaitAsList()
             unsplitCategories.forEach { category ->
                 allCategories.addAll(category.split(","))
             }
-            allColors.addAll(database.vjournal_dtoQueries.getAllColors().awaitAsList().map { color -> Color(color) })
+            allColors.addAll(database.icalentry_dtoQueries.getAllColors().awaitAsList().map { color -> Color(color) })
 
 
-            val icalEntry = database.vjournal_dtoQueries.getJournalById(icalEntryId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+            val icalEntry = database.icalentry_dtoQueries.getIcalEntryById(icalEntryId).awaitAsOneOrNull()?.toDomain() ?: return@launch
             val calendar = database.calendar_dtoQueries.getCalendarById(icalEntry.calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
             _state = _state.copy(
@@ -127,7 +127,7 @@ class IcalEntryDetailsViewModel(
     fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
         viewModelScope.launch {
             //saveIcalEntry(false)
-            val originalIcalEntry = database.vjournal_dtoQueries.getJournalById(icalEntryIdToCopy).awaitAsOneOrNull()?.toDomain()
+            val originalIcalEntry = database.icalentry_dtoQueries.getIcalEntryById(icalEntryIdToCopy).awaitAsOneOrNull()?.toDomain()
             if(originalIcalEntry == null) {
                 _state = _state.copy(
                     snackbarText = getString(Res.string.unexpected_error_occurred),
@@ -318,7 +318,7 @@ class IcalEntryDetailsViewModel(
                 val client = HttpClientFactory.create(getPlatformEngine(), credentials.username, credentials.password)
 
                 SyncCoordinator(database, client).pushDirtyIcalEntry(_state.icalEntry, calendar)
-                val processedIcalEntry = database.vjournal_dtoQueries.getJournalByUid(_state.icalEntry.uid).awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
+                val processedIcalEntry = database.icalentry_dtoQueries.getIcalEntryByUid(_state.icalEntry.uid).awaitAsOneOrNull()?.toDomain() ?: throw Exception(getString(Res.string.unexpected_error_occurred))
 
                 when(processedIcalEntry.syncState) {
                     SyncState.LOCAL_MODIFIED, SyncState.SYNCED -> {

@@ -36,11 +36,11 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.http.Url
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 
 class SyncCoordinator(
@@ -73,7 +73,7 @@ class SyncCoordinator(
 
             // empty trashbin for items older than 30 days
             val cutoffDate = formatIcsDateTime(IcsDateTime(Clock.System.now().minus(30.days), false))?.first
-            database.vjournal_dtoQueries.deleteTrashed(cutoffDate)
+            database.icalentry_dtoQueries.deleteTrashed(cutoffDate)
         }
 
         suspend fun syncSpecificCalendars(
@@ -305,7 +305,7 @@ class SyncCoordinator(
     private suspend fun applyServerchanges(calendar: Calendar, allServerHrefs: Map<Url, String?>) {
 
         val deletedHrefs =
-            database.vjournal_dtoQueries.getDeletedDeltaHrefs(calendar.id, allServerHrefs.map { it.key.toString() }).awaitAsList()
+            database.icalentry_dtoQueries.getDeletedDeltaHrefs(calendar.id, allServerHrefs.map { it.key.toString() }).awaitAsList()
                 .mapNotNull { it.href }
         removeLocalByHrefs(deletedHrefs)
 
@@ -325,7 +325,7 @@ class SyncCoordinator(
 
     private suspend fun upsertLocalByHrefs(calendar: Calendar, href: Url, eTag: String?) {
 
-        val localIcalEntry = database.vjournal_dtoQueries.getJournalByHref(href.toString()).awaitAsOneOrNull()?.toDomain()
+        val localIcalEntry = database.icalentry_dtoQueries.getIcalEntryByHref(href.toString()).awaitAsOneOrNull()?.toDomain()
 
         if (localIcalEntry?.href != null && localIcalEntry.etag == eTag)
             return    // no eTag change, we skip
@@ -369,7 +369,7 @@ class SyncCoordinator(
     private suspend fun removeLocalByHrefs(hrefs: List<String>) {
         database.transaction {
 
-            val deletedIcalEntry = database.vjournal_dtoQueries.getJournalsByHrefs(hrefs).awaitAsList().map { it.toDomain() }
+            val deletedIcalEntry = database.icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs).awaitAsList().map { it.toDomain() }
 
             deletedIcalEntry.forEach { deletedIcalEntry ->
 
@@ -403,7 +403,7 @@ class SyncCoordinator(
         calendar: Calendar
     ) {
 
-        val dirtyIcalEntries = database.vjournal_dtoQueries.getDirtyJournalsByCalendar(calendar.id).awaitAsList().map { it.toDomain() }
+        val dirtyIcalEntries = database.icalentry_dtoQueries.getDirtyIcalEntriesByCalendar(calendar.id).awaitAsList().map { it.toDomain() }
 
         dirtyIcalEntries.forEach { dirtyIcalEntry ->
             pushSingleLocalChange(dirtyIcalEntry, calendar)

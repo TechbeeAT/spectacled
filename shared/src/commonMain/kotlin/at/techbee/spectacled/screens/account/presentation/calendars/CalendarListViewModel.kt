@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.coroutines.asFlow
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.account.data.upsertCalendar
 import at.techbee.spectacled.screens.account.data.upsertHomeCollection
@@ -45,7 +46,8 @@ import kotlin.uuid.ExperimentalUuidApi
 class CalendarListViewModel(
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
-    private val platformSyncTrigger: PlatformSyncTrigger
+    private val platformSyncTrigger: PlatformSyncTrigger,
+    private val spectacledVariant: SpectacledVariant,
 ): ViewModel() {
 
     private val _state = mutableStateOf(CalendarListState())
@@ -212,7 +214,8 @@ class CalendarListViewModel(
                     supportedComponents = emptyList(),
                     calDavPrivileges = listOf(CalDavPrivilege.WRITE),
                     calendarSyncStatus = null,
-                    syncToken = null
+                    syncToken = null,
+                    syncComponent = spectacledVariant.syncCalendarComponent
                 ),
                 testUrl
             )
@@ -317,7 +320,11 @@ class CalendarListViewModel(
 
                     // STEP 3: Discover Calendars
                     discoveredHomeCollections.forEach { homeCollection ->
-                        when(val discoverCalendarsResult = discoverCalendars(client, homeCollection)) {
+                        when(val discoverCalendarsResult = discoverCalendars(
+                            client = client,
+                            homeCollection = homeCollection,
+                            supportedCalendarComponent = spectacledVariant.syncCalendarComponent
+                        )) {
                             is DiscoverCalendarsResult.Failed -> {
                                 _state.value = _state.value.copy(
                                     processingState = ProcessingState.Error(
@@ -381,7 +388,10 @@ class CalendarListViewModel(
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
                 val client = HttpClientFactory.create(getPlatformEngine(), credentials.username, credentials.password)
                 val upsertCalendarResult = if(calendar.id == 0L) {
-                    createCalendarMultiplatform(client,calendar)
+                    createCalendarMultiplatform(
+                        client = client,
+                        newCalendar = calendar.copy(syncComponent = spectacledVariant.syncCalendarComponent)
+                    )
                 } else {
                     updateCalDavCalendarMultiplatform(client, calendar)
                 }

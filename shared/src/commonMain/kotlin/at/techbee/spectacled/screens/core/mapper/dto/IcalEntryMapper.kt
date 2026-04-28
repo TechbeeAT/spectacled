@@ -8,7 +8,7 @@ import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcsDateTime
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.domain.SyncState
-import at.techbee.spectacled.sqldelight.VjournalDto
+import at.techbee.spectacled.sqldelight.IcalEntryDto
 import io.ktor.http.Url
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock.System
@@ -16,7 +16,7 @@ import kotlin.time.ExperimentalTime
 
 
 @OptIn(ExperimentalTime::class)
-fun VjournalDto.toDomain(): IcalEntry {
+fun IcalEntryDto.toDomain(): IcalEntry {
 
     val mapperJson = Json {
         ignoreUnknownKeys = true
@@ -50,13 +50,13 @@ fun VjournalDto.toDomain(): IcalEntry {
 }
 
 @OptIn(ExperimentalTime::class)
-fun IcalEntry.toDto(): VjournalDto {
+fun IcalEntry.toDto(): IcalEntryDto {
     val mapperJson = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
 
-    return VjournalDto(
+    return IcalEntryDto(
         id = this.id,
         calendarId = this.calendarId,
         uid = this.uid,

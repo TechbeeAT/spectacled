@@ -17,6 +17,7 @@ import at.techbee.spectacled.screens.account.presentation.calendars.CalendarList
 import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.AppPreferences
+import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.koin.sharedModule
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsScreenRoot
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsViewModel
@@ -38,10 +39,10 @@ import spectacled.shared.generated.resources.app_name_spectacled_tasks
 import kotlin.time.ExperimentalTime
 
 
-enum class SpectacledVariant(val dbName: String, val appNameStringRes: StringResource) {
-    JOURNALS("spectacled_journals.db", Res.string.app_name_spectacled_journals),
-    NOTES("spectacled_notes.db", Res.string.app_name_spectacled_notes),
-    TASKS("spectacled_tasks.db", Res.string.app_name_spectacled_tasks);
+enum class SpectacledVariant(val dbName: String, val appNameStringRes: StringResource, val syncCalendarComponent: CalendarComponent) {
+    JOURNALS("spectacled_journals.db", Res.string.app_name_spectacled_journals, CalendarComponent.VJOURNAL),
+    NOTES("spectacled_notes.db", Res.string.app_name_spectacled_notes, CalendarComponent.VJOURNAL),
+    TASKS("spectacled_tasks.db", Res.string.app_name_spectacled_tasks, CalendarComponent.VTODO);
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)

@@ -142,7 +142,7 @@ fun parseIcsDateTime(
 
 
 
-fun parseVJournalBlock(lines: List<String>): IcalEntry? {
+fun parseIcalEntryBlock(lines: List<String>): IcalEntry? {
 
     val knownProps = mutableMapOf<String, IcsProperty>()
     val extraProps = mutableListOf<RawIcsProperty>()
@@ -212,11 +212,13 @@ fun extractComponents(
     return components
 }
 
-fun parseVJournals(ics: String): List<IcalEntry> {
+fun parseIcalEntries(ics: String, calendarComponent: CalendarComponent?): List<IcalEntry> {
+    if(calendarComponent == null)
+        return emptyList()
+
     val lines = unfoldLines(ics)
 
-    val journalBlocks = extractComponents(lines, CalendarComponent.VJOURNAL)
+    val calendarComponentBlocks = extractComponents(lines, calendarComponent)
 
-    return journalBlocks
-        .mapNotNull(::parseVJournalBlock)
+    return calendarComponentBlocks.mapNotNull(::parseIcalEntryBlock)
 }

@@ -104,7 +104,7 @@ class IcalEntryListViewModel(
 
     private suspend fun observeIcalentries() {
         database
-            .vjournal_dtoQueries.getJournalsByCalendar(state.calendar.id)
+            .icalentry_dtoQueries.getIcalEntriesByCalendar(state.calendar.id)
             .asFlow()
             .collect { journalsFlow ->
                 val emittedIcalEntries = journalsFlow.awaitAsList().map { vjournalDto -> vjournalDto.toDomain() }
@@ -178,10 +178,10 @@ class IcalEntryListViewModel(
 
 
     private fun updateList() = updateList(
-    _state.value.listSortedBy,
-    _state.value.listSortedByAscending,
-    _state.value.searchQuery,
-    _state.value.searchCategory
+        _state.value.listSortedBy,
+        _state.value.listSortedByAscending,
+        _state.value.searchQuery,
+        _state.value.searchCategory
     )
     @OptIn(ExperimentalTime::class)
     private fun updateList(listSortedBy: ListSortedBy, listSortedByAscending: Boolean, searchQuery: String, searchCategory: String) {
@@ -197,7 +197,7 @@ class IcalEntryListViewModel(
 
     private fun onDeleteSelectedItems() {
         viewModelScope.launch {
-            _state.value.multiselectItems?.let { database.vjournal_dtoQueries.markAsDeleted(it) }
+            _state.value.multiselectItems?.let { database.icalentry_dtoQueries.markAsDeleted(it) }
             platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
             _state.value = _state.value.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false)
         }
@@ -205,7 +205,7 @@ class IcalEntryListViewModel(
 
     private fun onUpdateColorOfSelectedItems(color: Color?) {
         viewModelScope.launch {
-            _state.value.multiselectItems?.let { database.vjournal_dtoQueries.updateColor( if(color == Color.Unspecified) null else color?.toArgb()?.toLong(), it) }
+            _state.value.multiselectItems?.let { database.icalentry_dtoQueries.updateColor( if(color == Color.Unspecified) null else color?.toArgb()?.toLong(), it) }
             platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
             //_state.value = _state.value.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false)
         }
@@ -246,9 +246,9 @@ class IcalEntryListViewModel(
 
     private fun onPersistOrderNo() {
         viewModelScope.launch {
-            database.vjournal_dtoQueries.transaction {
+            database.icalentry_dtoQueries.transaction {
                 dragAndDropList.forEachIndexed { index, icalEntry ->
-                    database.vjournal_dtoQueries.updateOrderNo(index.toLong(), icalEntry.id)
+                    database.icalentry_dtoQueries.updateOrderNo(index.toLong(), icalEntry.id)
                 }
             }
         }

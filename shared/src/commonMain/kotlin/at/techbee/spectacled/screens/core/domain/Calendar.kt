@@ -18,7 +18,8 @@ data class Calendar(
     val supportedComponents: List<CalendarComponent>, // A type-safe List
     val calDavPrivileges: List<CalDavPrivilege>, // A type-safe List
     val calendarSyncStatus: CalendarSyncStatus?,
-    val syncToken: String?
+    val syncToken: String?,
+    val syncComponent: CalendarComponent?
 ) {
 
     companion object {
@@ -33,11 +34,12 @@ data class Calendar(
             supportedComponents = emptyList(),
             calDavPrivileges = emptyList(),
             calendarSyncStatus = null,
-            syncToken = null
+            syncToken = null,
+            syncComponent = null
         )
 
         @OptIn(ExperimentalUuidApi::class)
-        fun getNewCalendar(homeCollection: HomeCollection, supportedComponents: List<CalendarComponent> = listOf(CalendarComponent.VJOURNAL)): Calendar {
+        fun getNewCalendar(homeCollection: HomeCollection): Calendar {
             return Calendar(
                 homeCollectionId = homeCollection.id,   // TODO: taking first home collection, check if better solution can be found!
                 id = 0L,
@@ -46,10 +48,11 @@ data class Calendar(
                 calendarDescription = null,
                 color = null,
                 ctag = null,
-                supportedComponents = listOf(CalendarComponent.VJOURNAL),
+                supportedComponents = emptyList(),
                 calDavPrivileges = emptyList(),
                 calendarSyncStatus = null,
-                syncToken = null
+                syncToken = null,
+                syncComponent = null
             )
         }
     }

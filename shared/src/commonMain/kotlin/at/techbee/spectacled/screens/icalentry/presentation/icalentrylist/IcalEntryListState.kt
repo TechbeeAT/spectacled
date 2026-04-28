@@ -24,7 +24,8 @@ data class IcalEntryListState(
         supportedComponents = emptyList(),
         calDavPrivileges = emptyList(),
         calendarSyncStatus = null,
-        syncToken = null
+        syncToken = null,
+        syncComponent = null
     ),
     val principal: Principal = Principal(
         id = 0L,
@@ -65,6 +66,7 @@ data class IcalEntryListState(
     private fun computeDisplayMap(): Map<ListGrouping, List<IcalEntry>> {
 
         val baseList = icalEntries.filter { !it.syncState.isDeletedState() }
+        // TODO: Filter Notes and Journals accordingly!
 
         val filteredList =
             if (searchQuery.isBlank())

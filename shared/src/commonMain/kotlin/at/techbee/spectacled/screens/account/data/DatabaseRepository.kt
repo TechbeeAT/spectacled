@@ -72,7 +72,8 @@ suspend fun SpectacledDatabase.upsertCalendar(calendar: Calendar, homeCollection
             supportedComponents = calendarDto.supportedComponents,
             calDavPrivileges = calendarDto.calDavPrivileges,
             calendarSyncStatus = calendarDto.calendarSyncStatus,
-            syncToken = calendarDto.syncToken
+            syncToken = calendarDto.syncToken,
+            syncComponent = calendarDto.syncComponent
         )
         // insert, but if the entry exists, it will be ignored
         calendar_dtoQueries.insertCalendar(
@@ -85,7 +86,8 @@ suspend fun SpectacledDatabase.upsertCalendar(calendar: Calendar, homeCollection
             supportedComponents = calendarDto.supportedComponents,
             calDavPrivileges = calendarDto.calDavPrivileges,
             calendarSyncStatus = calendarDto.calendarSyncStatus,
-            syncToken = calendarDto.syncToken
+            syncToken = calendarDto.syncToken,
+            syncComponent = calendarDto.syncComponent
         )
     }
 
@@ -96,9 +98,9 @@ suspend fun SpectacledDatabase.upsertCalendar(calendar: Calendar, homeCollection
 suspend fun SpectacledDatabase.insertOrUpdateIcalEntry(icalEntry: IcalEntry) {
     val icalEntryDto = icalEntry.toDto()
 
-    vjournal_dtoQueries.transaction {
+    icalentry_dtoQueries.transaction {
         // first update, if the UID doesn't exist, this is ignored
-        vjournal_dtoQueries.updateVjournal(
+        icalentry_dtoQueries.updateIcalEntry(
             calendarId = icalEntryDto.calendarId,
             uid = icalEntryDto.uid,
             summary = icalEntryDto.summary,
@@ -117,7 +119,7 @@ suspend fun SpectacledDatabase.insertOrUpdateIcalEntry(icalEntry: IcalEntry) {
             href = icalEntryDto.href
         )
         // insert, but if the UID exists, it will be ignored
-        vjournal_dtoQueries.insertVjournal(
+        icalentry_dtoQueries.insertIcalEntry(
             calendarId = icalEntryDto.calendarId,
             uid = icalEntryDto.uid,
             summary = icalEntryDto.summary,

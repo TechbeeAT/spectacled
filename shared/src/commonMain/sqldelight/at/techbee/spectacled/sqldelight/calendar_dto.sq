@@ -9,7 +9,8 @@ CREATE TABLE CalendarDto (
     supportedComponents TEXT,   -- e.g. "VEVENT,VJOURNAL"
     calDavPrivileges TEXT,    -- e.g. write, bind, unbind,...
     calendarSyncStatus TEXT,
-    syncToken TEXT
+    syncToken TEXT,
+    syncComponent TEXT
 );
 
 getAllCalendars:
@@ -45,7 +46,8 @@ SET
     supportedComponents = :supportedComponents,
     calDavPrivileges = :calDavPrivileges,
     calendarSyncStatus = :calendarSyncStatus,
-    syncToken = :syncToken
+    syncToken = :syncToken,
+    syncComponent = :syncComponent
 WHERE
     url = :url
 ;
@@ -63,7 +65,8 @@ INSERT OR IGNORE INTO
         supportedComponents,
         calDavPrivileges,
         calendarSyncStatus,
-        syncToken
+        syncToken,
+        syncComponent
     )
 VALUES (
         (SELECT HomeCollectionDto.id FROM HomeCollectionDto WHERE HomeCollectionDto.url = :homeCollectionUrl),
@@ -75,7 +78,8 @@ VALUES (
         :supportedComponents,
         :calDavPrivileges,
         :calendarSyncStatus,
-        :syncToken
+        :syncToken,
+        :syncComponent
 );
 
 
