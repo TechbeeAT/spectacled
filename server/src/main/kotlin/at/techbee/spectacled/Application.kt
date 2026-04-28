@@ -24,13 +24,13 @@ import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
-import io.ktor.server.routing.options
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyTo
 
-const val SERVER_PORT = 8080
+const val SERVER_PORT = 8088
+
 fun main() {
     embeddedServer(Netty, port = SERVER_PORT, host = "127.0.0.1", module = Application::module)
         .start(wait = true)
@@ -42,14 +42,13 @@ fun Application.module() {
     }
 
     install(CORS) {
-        // Echo back the Origin header to support allowCredentials = true
-        // We allow common development ports for Compose HTML/Wasm
-        val allowedHosts = listOf("localhost", "127.0.0.1")
-        val allowedPorts = listOf(8080, 8081, 8082, 8083, 8084, 8085)
-
-        allowedHosts.forEach { host ->
-            allowHost(host) // No port (default 80)
-            allowedPorts.forEach { port ->
+        // Allow common development origins
+        val hosts = listOf("localhost", "127.0.0.1", "0.0.0.0")
+        val ports = listOf(8080, 8081, 8082, 8083, 8084, 8085)
+        
+        hosts.forEach { host ->
+            allowHost(host)
+            ports.forEach { port ->
                 allowHost("$host:$port")
             }
         }
@@ -90,27 +89,22 @@ fun Application.module() {
     }
 
     routing {
-        // 1. Explicitly catch ANY OPTIONS request so it never gets proxied
-        options("/{proxy...}") {
-            call.respond(HttpStatusCode.OK)
-        }
-
         get("/") {
-            call.respondText("Spectacled Proxy Server is running. Proxying to https://nextcloud.techbee.at/remote.php/dav")
+            call.respondText("Spectacled Proxy Server is running. Usage: http://localhost:8080/{path}?target={target_url}")
         }
 
-        // Proxy all other requests to Nextcloud
+        // Catch-all route for proxying
+        // Note: The CORS plugin handles OPTIONS automatically before this
         route("/{proxy...}") {
             handle {
-                // Double check to ensure OPTIONS never leaks through
-                if (call.request.httpMethod == HttpMethod.Options) {
-                    call.respond(HttpStatusCode.OK)
+                val targetBase = call.request.queryParameters["target"]
+                if (targetBase == null) {
+                    call.respond(HttpStatusCode.BadRequest, "Missing 'target' query parameter")
                     return@handle
                 }
 
                 val path = call.parameters.getAll("proxy")?.joinToString("/") ?: ""
-                val targetBaseUrl = "https://nextcloud.techbee.at/remote.php/dav"
-                val proxyUrl = if (path.isEmpty()) targetBaseUrl else "$targetBaseUrl/$path"
+                val proxyUrl = if (path.isEmpty()) targetBase else "${targetBase.removeSuffix("/")}/$path"
 
                 println("Proxying ${call.request.httpMethod.value} to: $proxyUrl")
 
