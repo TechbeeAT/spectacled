@@ -113,7 +113,10 @@ markAsDeleted:
 UPDATE IcalEntryDto SET syncState = 'LOCAL_DELETED' WHERE id IN ?;
 
 updateColor:
-UPDATE IcalEntryDto SET color = :newColor WHERE id IN :ids;
+UPDATE IcalEntryDto SET color = :newColor, lastModified = :lastModified, syncState = :syncState WHERE id = :id;
+
+updateCategory:
+UPDATE IcalEntryDto SET categories = :newCategories, lastModified = :lastModified, syncState = :syncState WHERE id = :id;
 
 updateOrderNo:
 UPDATE IcalEntryDto SET orderNo = :orderNo WHERE id = :id;

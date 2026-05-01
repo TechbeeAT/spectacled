@@ -94,9 +94,9 @@ data class IcalEntryListState(
     private fun getPinnedFilteredList(icalEntries: List<IcalEntry>, pinned: Boolean = false) =
         icalEntries.filter {
             if(pinned)
-                it.categories.any { category -> category == "\uD83D\uDCCC"}
+                it.categories.any { category -> category == IcalEntry.PINNED_CATEGORY}
             else
-                it.categories.none { category -> category == "\uD83D\uDCCC"}
+                it.categories.none { category -> category == IcalEntry.PINNED_CATEGORY }
         }
 
 

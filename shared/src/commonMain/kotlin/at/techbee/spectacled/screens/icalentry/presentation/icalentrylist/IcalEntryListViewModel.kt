@@ -4,7 +4,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.cash.sqldelight.async.coroutines.awaitAsList
@@ -16,8 +15,11 @@ import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.AppPreferences
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
+import at.techbee.spectacled.screens.core.mapper.dto.toDto
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
+import at.techbee.spectacled.screens.icalentry.domain.SyncState
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListLayout
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 import kotlinx.coroutines.launch
@@ -169,6 +171,7 @@ class IcalEntryListViewModel(
             }
             is IcalEntryListAction.OnUpdateColorOfSelected -> { onUpdateColorOfSelectedItems(action.color) }
             IcalEntryListAction.OnSelectAllMultiselectItems -> { _state.value = _state.value.copy(multiselectItems = state.displayMap.flatMap { it.value }.map { it.id }) }
+            is IcalEntryListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
         }
     }
 
@@ -199,11 +202,62 @@ class IcalEntryListViewModel(
         }
     }
 
+
     private fun onUpdateColorOfSelectedItems(color: Color?) {
         viewModelScope.launch {
-            _state.value.multiselectItems?.let { database.icalentry_dtoQueries.updateColor( if(color == Color.Unspecified) null else color?.toArgb()?.toLong(), it) }
+
+            database.icalentry_dtoQueries.transaction {
+                _state.value.multiselectItems?.forEach { id ->
+                    _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
+
+                        icalEntry.copy(
+                            color = if(color == Color.Unspecified) null else color,
+                            lastModified = IcsDateTime.now(),
+                            syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+                        ).toDto().let { copyDto ->
+                            database.icalentry_dtoQueries.updateColor(
+                                newColor = copyDto.color,
+                                lastModified = copyDto.lastModified,
+                                syncState = copyDto.syncState,
+                                id = copyDto.id
+                            )
+                        }
+                    }
+                }
+            }
             platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
-            //_state.value = _state.value.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false)
+        }
+    }
+
+    private fun onUpdatePinOfSelectedItems(pin: Boolean) {
+        viewModelScope.launch {
+
+            database.icalentry_dtoQueries.transaction {
+                _state.value.multiselectItems?.forEach { id ->
+                    _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
+                        if (pin && icalEntry.categories.contains(IcalEntry.PINNED_CATEGORY))
+                            return@forEach   // already pinned, do nothing
+                        if (!pin && !icalEntry.categories.contains(IcalEntry.PINNED_CATEGORY))
+                            return@forEach   // already unpinned, do nothing
+
+                        icalEntry.copy(
+                            categories = if (pin) icalEntry.categories.plus(IcalEntry.PINNED_CATEGORY) else icalEntry.categories.minus(
+                                IcalEntry.PINNED_CATEGORY
+                            ),
+                            lastModified = IcsDateTime.now(),
+                            syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+                        ).toDto().let { copyDto ->
+                            database.icalentry_dtoQueries.updateCategory(
+                                newCategories = copyDto.categories,
+                                lastModified = copyDto.lastModified,
+                                syncState = copyDto.syncState,
+                                id = copyDto.id
+                            )
+                        }
+                    }
+                }
+            }
+            platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
         }
     }
 

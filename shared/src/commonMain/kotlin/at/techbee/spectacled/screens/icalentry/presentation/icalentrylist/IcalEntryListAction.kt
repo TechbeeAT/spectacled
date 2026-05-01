@@ -25,4 +25,5 @@ sealed interface IcalEntryListAction {
     data class OnUpdateOrderNo(val fromIndex: Int, val toIndex: Int): IcalEntryListAction
     object OnPersistOrderNo: IcalEntryListAction
     data class OnToggleListGroupExpanded(val listGroup: String): IcalEntryListAction
+    data class OnTogglePinEntry(val pin: Boolean): IcalEntryListAction
 }

@@ -162,6 +162,9 @@ fun IcalEntryListScreenRoot(
                         multiselectItems = state.multiselectItems,
                         onAction = { action -> icalEntryListViewModel.onAction(action) },
                         onSurfaceTint = contentColor,
+                        allSelectedPinned = state.multiselectItems?.all { selectedId ->
+                            state.icalEntries.find { entry -> entry.id == selectedId }?.categories?.contains(IcalEntry.PINNED_CATEGORY) == true
+                        } == true,
                         modifier = Modifier.fillMaxWidth(1f)
                     )
                 },

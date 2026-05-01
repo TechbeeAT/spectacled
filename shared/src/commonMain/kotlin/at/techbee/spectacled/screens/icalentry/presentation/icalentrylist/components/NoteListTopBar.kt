@@ -55,18 +55,23 @@ import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datast
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import at.techbee.spectacled.theme.getThemeForColoredSurfaces
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_selection
 import spectacled.shared.generated.resources.delete_selected
 import spectacled.shared.generated.resources.folders
+import spectacled.shared.generated.resources.ic_pin
+import spectacled.shared.generated.resources.ic_unpin
+import spectacled.shared.generated.resources.pin
 import spectacled.shared.generated.resources.refresh
 import spectacled.shared.generated.resources.search
 import spectacled.shared.generated.resources.select_all
 import spectacled.shared.generated.resources.select_multiple
 import spectacled.shared.generated.resources.sort_ascending
 import spectacled.shared.generated.resources.sort_descending
+import spectacled.shared.generated.resources.unpin
 import spectacled.shared.generated.resources.update_color
 import spectacled.shared.generated.resources.x_selected
 
@@ -81,6 +86,7 @@ fun IcalEntryListTopBar(
     multiselectItems: List<Long>?,
     onSurfaceTint: Color,
     onAction: (IcalEntryListAction) -> Unit,
+    allSelectedPinned: Boolean,
     modifier: Modifier = Modifier,
     spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>()
 ) {
@@ -306,6 +312,24 @@ fun IcalEntryListTopBar(
                             tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
                         )
                     }
+
+                    TextButton(
+                        onClick = { onAction(IcalEntryListAction.OnTogglePinEntry(if(allSelectedPinned) false else true)) },
+                        enabled = multiselectItems?.isNotEmpty() == true
+                    ) {
+                        if(allSelectedPinned)
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_unpin),
+                                contentDescription = stringResource(Res.string.unpin),
+                                tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                            )
+                        else
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_pin),
+                                contentDescription = stringResource(Res.string.pin),
+                                tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                            )
+                    }
                 }
             }
         },
@@ -329,7 +353,9 @@ private fun IcalEntrySearchBar_Preview() {
                 multiselectItems = null,
                 onSurfaceTint = Color.Unspecified,
                 onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES
+                spectacledVariant = SpectacledVariant.NOTES,
+                allSelectedPinned = false
+
             )
         }
     }
@@ -350,7 +376,8 @@ private fun IcalEntrySearchBar_blue_Preview() {
                 multiselectItems = null,
                 onSurfaceTint = getContentColorForColoredSurfaces(Color.Blue),
                 onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES
+                spectacledVariant = SpectacledVariant.NOTES,
+                allSelectedPinned = false
             )
         }
     }
@@ -373,7 +400,8 @@ private fun IcalEntrySearchBar_Multiselect_Preview() {
                 multiselectItems = listOf(1, 2, 3),
                 onSurfaceTint = Color.Unspecified,
                 onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES
+                spectacledVariant = SpectacledVariant.NOTES,
+                allSelectedPinned = false
             )
         }
     }
@@ -394,7 +422,8 @@ private fun IcalEntrySearchBar_yellow_Multiselect_Preview() {
                 multiselectItems = emptyList(),
                 onSurfaceTint = getContentColorForColoredSurfaces(Color.Yellow),
                 onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES
+                spectacledVariant = SpectacledVariant.NOTES,
+                allSelectedPinned = true
             )
         }
     }
@@ -419,7 +448,8 @@ private fun IcalEntrySearchBar_sync_in_progress_Preview() {
                 multiselectItems = null,
                 onSurfaceTint = Color.Unspecified,
                 onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES
+                spectacledVariant = SpectacledVariant.NOTES,
+                allSelectedPinned = false
             )
         }
     }

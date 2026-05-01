@@ -8,9 +8,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
-import spectacled.shared.generated.resources.Res
 import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -59,6 +59,8 @@ data class IcalEntry(
     ) {
 
     companion object {
+
+        const val PINNED_CATEGORY = "\uD83D\uDCCC"
 
         private val sampleParagraphs = listOf(
             "Lorem *ipsum* dolor sit _amet_, consectetur adipiscing elit. *_Nulla_* id libero felis. Vestibulum tristique suscipit elit, et pharetra leo posuere non. Suspendisse purus lacus, pretium et porttitor a, consequat at sapien. Integer dictum sagittis lacus, sed semper massa euismod non. Pellentesque viverra nunc id felis ullamcorper, at viverra nisl consequat. Quisque et fermentum elit, tincidunt molestie nulla. Proin leo neque, luctus ac nisi convallis, ultricies tempor felis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nulla facilisi. Phasellus sit amet diam elementum, ultrices lorem sed, blandit lacus.",
