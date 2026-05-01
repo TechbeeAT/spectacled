@@ -25,12 +25,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.NoteAdd
-import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.EditOff
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -40,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
@@ -62,14 +57,12 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
-import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_PINNED
+import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
 import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.CustomBottomSnackbarHost
@@ -79,23 +72,22 @@ import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.compon
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.IcalEntryDragHandle
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.IcalEntryListItem
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.IcalEntryListTopBar
+import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.ListGroupHeader
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListGrouping
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListLayout
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import at.techbee.spectacled.theme.getThemeForColoredSurfaces
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_entry
-import spectacled.shared.generated.resources.collapse
-import spectacled.shared.generated.resources.expand
-import spectacled.shared.generated.resources.read_only
-import spectacled.shared.generated.resources.search
-import spectacled.shared.generated.resources.trashbin
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_entry
 import spectacled.shared.generated.resources.category
+import spectacled.shared.generated.resources.read_only
+import spectacled.shared.generated.resources.search
+import spectacled.shared.generated.resources.trashbin
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -475,54 +467,28 @@ fun IcalEntryListScreen(
                             )
                         }
                     }
-                } else if(state.listSortedBy == ListSortedBy.DATE) {
-                    val groupedByDay = state.displayMap[ListGrouping.GROUP_NONE]
-                        ?.groupBy { PlatformInstantFormatter(it.dtStart ?: IcsDateTime.now()).formatLocalizedDate() } ?: return@LazyVerticalStaggeredGrid
-                    groupedByDay.keys.forEach { dayGroup ->
-                        if (groupedByDay[dayGroup].isNullOrEmpty())
-                            return@forEach
+                } else {
 
+                    if(state.pinned.isNotEmpty()) {
                         item(span = StaggeredGridItemSpan.FullLine) {
-                            TextButton(
-                                onClick = {
-                                    onAction(IcalEntryListAction.OnToggleDayGroupingExpanded(dayGroup))
-                                },
-                                colors = ButtonDefaults.textButtonColors().copy(contentColor = LocalContentColor.current),
-                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp, start = 8.dp, end = 8.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = dayGroup,
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Crossfade(dayGroup in state.listCollapsedDayGroups) {
-                                        if (it)
-                                            Icon(Icons.Outlined.ExpandLess, stringResource(Res.string.expand))
-                                        else
-                                            Icon(Icons.Outlined.ExpandMore, stringResource(Res.string.collapse))
-                                    }
-                                }
-                            }
+                            ListGroupHeader(
+                                appPreferencesTag = LIST_COLLAPSED_GROUP_PINNED,
+                                headerText = "Pinned",
+                                isCollapsed = LIST_COLLAPSED_GROUP_PINNED in state.listCollapsedGroups,
+                                onToggleListGroupExpanded = { onAction(IcalEntryListAction.OnToggleListGroupExpanded(it)) }
+                            )
                         }
 
-                        if (dayGroup !in state.listCollapsedDayGroups) {
+                        if (LIST_COLLAPSED_GROUP_PINNED !in state.listCollapsedGroups) {
                             itemsIndexed(
-                                items = groupedByDay[dayGroup]!!,
+                                items = state.pinned,
                                 key = { _, icalEntry -> icalEntry.uid }
                             ) { index, icalEntry ->
 
                                 IcalEntryListItem(
                                     icalEntry = icalEntry,
                                     isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
-                                    isLast = (state.listLayout == ListLayout.LIST && index == groupedByDay[dayGroup]!!.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
+                                    isLast = (state.listLayout == ListLayout.LIST && index == state.pinned.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
                                     isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
                                     onClick = {
                                         if (state.multiselectItems == null)
@@ -541,54 +507,77 @@ fun IcalEntryListScreen(
                         }
                     }
 
-                } else {
-                    // No drag and drop. We build the grouped list based on the map
 
-                    ListGrouping.entries
-                        .let { if (state.listSortedByAscending) it else it.asReversed() }
-                        .forEach { grouping ->
 
-                            if (state.displayMap[grouping].isNullOrEmpty())
+                    if (state.listSortedBy == ListSortedBy.DATE) {
+                        val groupedByDay = state.displayMapByDtStartDay
+                        groupedByDay.keys.forEach { dayGroup ->
+                            if (groupedByDay[dayGroup].isNullOrEmpty())
                                 return@forEach
 
-                            if (grouping.stringRes != null) {
-                                item(span = StaggeredGridItemSpan.FullLine) {
-                                    TextButton(
-                                        onClick = {
-                                            onAction(IcalEntryListAction.OnToggleListGroupingExpanded(grouping))
-                                        },
-                                        colors = ButtonDefaults.textButtonColors().copy(contentColor = LocalContentColor.current),
-                                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp, start = 8.dp, end = 8.dp)
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Text(
-                                                text =
-                                                    if (grouping.stringResParam != null)
-                                                        stringResource(grouping.stringRes, grouping.stringResParam)
-                                                    else
-                                                        stringResource(grouping.stringRes),
-                                                style = MaterialTheme.typography.headlineSmall,
-                                                fontSize = 20.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Spacer(modifier = Modifier.weight(1f))
-                                            Crossfade(grouping in state.listCollapsedListGroupings) {
-                                                if (it)
-                                                    Icon(Icons.Outlined.ExpandLess, stringResource(Res.string.expand))
-                                                else
-                                                    Icon(Icons.Outlined.ExpandMore, stringResource(Res.string.collapse))
-                                            }
-                                        }
-                                    }
-                                }
+                            item(span = StaggeredGridItemSpan.FullLine) {
+                                ListGroupHeader(
+                                    appPreferencesTag = dayGroup,
+                                    headerText = dayGroup,
+                                    isCollapsed = dayGroup in state.listCollapsedGroups,
+                                    onToggleListGroupExpanded = { onAction(IcalEntryListAction.OnToggleListGroupExpanded(it)) }
+                                )
                             }
 
-                            if (grouping !in state.listCollapsedListGroupings) {
-                                itemsIndexed(state.displayMap[grouping]!!, key = { _, icalEntry -> icalEntry.uid }) { index, note ->
+                            if (dayGroup !in state.listCollapsedGroups) {
+                                itemsIndexed(
+                                    items = groupedByDay[dayGroup]!!,
+                                    key = { _, icalEntry -> icalEntry.uid }
+                                ) { index, icalEntry ->
+
+                                    IcalEntryListItem(
+                                        icalEntry = icalEntry,
+                                        isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
+                                        isLast = (state.listLayout == ListLayout.LIST && index == groupedByDay[dayGroup]!!.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
+                                        isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
+                                        onClick = {
+                                            if (state.multiselectItems == null)
+                                                onAction(IcalEntryListAction.OnIcalEntryClicked(icalEntry.id))
+                                            else
+                                                onAction(IcalEntryListAction.OnToggleMultiselectItem(icalEntry.id))
+                                        },
+                                        onLongClick = { onAction(IcalEntryListAction.OnToggleMultiselectItem(icalEntry.id)) },
+                                        modifier = Modifier
+                                            .widthIn(max = 700.dp)
+                                            .heightIn(min = 50.dp)
+                                            .animateItem()
+                                    )
+
+                                }
+                            }
+                        }
+
+                    } else {
+                        // No drag and drop. We build the grouped list based on the map
+
+                        ListGrouping.entries
+                            .let { if (state.listSortedByAscending) it else it.asReversed() }
+                            .forEach { grouping ->
+
+                                if (state.displayMap[grouping].isNullOrEmpty())
+                                    return@forEach
+
+                                if (grouping.stringRes != null) {
+                                    item(span = StaggeredGridItemSpan.FullLine) {
+                                        ListGroupHeader(
+                                            appPreferencesTag = grouping.name,
+                                            headerText = if (grouping.stringResParam != null)
+                                                stringResource(grouping.stringRes, grouping.stringResParam)
+                                            else
+                                                stringResource(grouping.stringRes),
+                                            isCollapsed = grouping.name in state.listCollapsedGroups,
+                                            onToggleListGroupExpanded = { onAction(IcalEntryListAction.OnToggleListGroupExpanded(it)) }
+                                        )
+                                    }
+                                }
+
+                                if (grouping.name !in state.listCollapsedGroups) {
+                                    itemsIndexed(state.displayMap[grouping]!!, key = { _, icalEntry -> icalEntry.uid }) { index, note ->
 
                                         IcalEntryListItem(
                                             icalEntry = note,
@@ -608,54 +597,27 @@ fun IcalEntryListScreen(
                                                 .animateItem()
                                         )
 
+                                    }
                                 }
                             }
-                        }
+                    }
+
                 }
-
-
                 // TRASHBIN
                 if(state.trashbin.isNotEmpty()) {
+
                     item(span = StaggeredGridItemSpan.FullLine) {
-
-                        Row(
-                            modifier = Modifier
-                                .padding(top = 16.dp, bottom = 8.dp)
-                                .fillMaxWidth()
-                                .alpha(0.33f)
-                        ) {
-
-                            TextButton(
-                                onClick = { onAction(IcalEntryListAction.OnToggleListTrashbinExpanded) },
-                                colors = ButtonDefaults.textButtonColors().copy(contentColor = LocalContentColor.current)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-
-                                    Icon(Icons.Outlined.DeleteOutline, null)
-                                    Text(
-                                        text = stringResource(Res.string.trashbin) + " (${state.trashbin.size})",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Crossfade(state.listTrashbinExpanded) {
-                                        if (!it)
-                                            Icon(Icons.Outlined.ExpandLess, stringResource(Res.string.expand))
-                                        else
-                                            Icon(Icons.Outlined.ExpandMore, stringResource(Res.string.collapse))
-                                    }
-
-                                }
-                            }
-                        }
+                        ListGroupHeader(
+                            appPreferencesTag = LIST_COLLAPSED_GROUP_TRASHBIN,
+                            headerText = stringResource(Res.string.trashbin) + " \uD83D\uDDD1 " + "(${state.trashbin.size})",
+                            isCollapsed = LIST_COLLAPSED_GROUP_TRASHBIN in state.listCollapsedGroups,
+                            onToggleListGroupExpanded = { onAction(IcalEntryListAction.OnToggleListGroupExpanded(it)) },
+                            modifier = Modifier.alpha(0.33f)
+                        )
                     }
                 }
 
-                if(state.listTrashbinExpanded) {
+                if(LIST_COLLAPSED_GROUP_TRASHBIN in state.listCollapsedGroups) {
                     if (state.trashbin.isEmpty())
                         item { Text(
                             text = "Nothing here",

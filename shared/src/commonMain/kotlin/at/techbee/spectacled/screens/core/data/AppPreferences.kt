@@ -1,6 +1,5 @@
 package at.techbee.spectacled.screens.core.data
 
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListGrouping
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListLayout
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 import com.russhwolf.settings.Settings
@@ -10,8 +9,10 @@ const val LAST_USED_CALENDAR_ID = "last_used_calendar_id"
 const val LIST_SORTED_BY = "list_sorted_by"
 const val LIST_SORTED_BY_ASCENDING = "list_sorted_by_ascending"
 const val LIST_LAYOUT = "list_layout"
-const val LIST_COLLAPSED_SECTIONS = "list_collapsed_sections"
-const val LIST_COLLAPSED_DAYS = "list_collapsed_days"
+const val LIST_COLLAPSED_GROUPS = "list_collapsed_groups"
+const val LIST_COLLAPSED_GROUP_TRASHBIN = "list_collapsed_group_trashbin"
+const val LIST_COLLAPSED_GROUP_PINNED = "list_collapsed_group_pinned"
+
 
 
 class AppPreferences(private val settings: Settings) {
@@ -54,21 +55,9 @@ class AppPreferences(private val settings: Settings) {
             else settings.putString(LIST_LAYOUT, value.name)
         }
 
-    var listCollapsedSections: Set<ListGrouping>
-        get() = settings.getStringOrNull(LIST_COLLAPSED_SECTIONS)
-            ?.split("|")
-            ?.mapNotNull { ListGrouping.entries.find { listGrouping -> listGrouping.name == it } }
-            ?.toSet()
-            ?: emptySet()
-        set(value) = settings.putString(LIST_COLLAPSED_SECTIONS, value.joinToString("|") { it.name })
-
-    var listCollapsedDays: Set<String>
-        get() = settings.getStringOrNull(LIST_COLLAPSED_DAYS)
+    var listCollapsedGroups: Set<String>
+        get() = settings.getStringOrNull(LIST_COLLAPSED_GROUPS)
             ?.split("|")?.toSet() ?: emptySet()
-        set(value) = settings.putString(LIST_COLLAPSED_DAYS, value.joinToString("|"))
+        set(value) = settings.putString(LIST_COLLAPSED_GROUPS, value.joinToString("|"))
 
-
-    var listTrashbinExpanded: Boolean
-        get() = settings.getBoolean("list_trashbin_expanded", defaultValue = false)
-        set(value) = settings.putBoolean("list_trashbin_expanded", value)
 }

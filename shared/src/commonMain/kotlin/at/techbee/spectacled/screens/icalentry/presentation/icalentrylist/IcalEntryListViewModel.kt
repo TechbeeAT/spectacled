@@ -18,7 +18,6 @@ import at.techbee.spectacled.screens.core.data.AppPreferences
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListGrouping
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListLayout
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 import kotlinx.coroutines.launch
@@ -62,9 +61,7 @@ class IcalEntryListViewModel(
                 spectacledVariant == SpectacledVariant.JOURNALS -> ListLayout.LIST
                 else -> ListLayout.STAGGERED_GRID
             },
-            listCollapsedListGroupings = appPreferences.listCollapsedSections,
-            listCollapsedDayGroups = appPreferences.listCollapsedDays,
-            listTrashbinExpanded = appPreferences.listTrashbinExpanded,
+            listCollapsedGroups = appPreferences.listCollapsedGroups,
             spectacledVariant = spectacledVariant
         )
 
@@ -162,9 +159,7 @@ class IcalEntryListViewModel(
             IcalEntryListAction.OnDeleteSelectedItems -> onDeleteSelectedItems()
             is IcalEntryListAction.OnUpdateOrderNo -> onUpdateOrderNo(action.fromIndex, action.toIndex)
             IcalEntryListAction.OnPersistOrderNo -> onPersistOrderNo()
-            is IcalEntryListAction.OnToggleListGroupingExpanded -> onToggleListGroupingExpanded(action.listGrouping)
-            is IcalEntryListAction.OnToggleDayGroupingExpanded -> onToggleDayGroupingExpanded(action.listDayGroup)
-            IcalEntryListAction.OnToggleListTrashbinExpanded -> onToggleTrashbinExpanded()
+            is IcalEntryListAction.OnToggleListGroupExpanded -> onToggleListGroupExpanded(action.listGroup)
             is IcalEntryListAction.OnShowUpdateColorOfSelectedBottomSheet -> {
                 _state.value = if(action.show)
                     _state.value.copy(showUpdateColorOfSelectedBottomSheet = true)
@@ -255,28 +250,13 @@ class IcalEntryListViewModel(
         }
     }
 
-    private fun onToggleListGroupingExpanded(listGrouping: ListGrouping) {
+    private fun onToggleListGroupExpanded(listGroup: String) {
         _state.value = _state.value.copy(
-            listCollapsedListGroupings = if(state.listCollapsedListGroupings.contains(listGrouping))
-                state.listCollapsedListGroupings.minus(listGrouping)
+            listCollapsedGroups = if(state.listCollapsedGroups.contains(listGroup))
+                state.listCollapsedGroups.minus(listGroup)
             else
-                state.listCollapsedListGroupings.plus(listGrouping)
+                state.listCollapsedGroups.plus(listGroup)
         )
-        appPreferences.listCollapsedSections = state.listCollapsedListGroupings
-    }
-
-    private fun onToggleDayGroupingExpanded(listDayGrouping: String) {
-        _state.value = _state.value.copy(
-            listCollapsedDayGroups = if(state.listCollapsedDayGroups.contains(listDayGrouping))
-                state.listCollapsedDayGroups.minus(listDayGrouping)
-            else
-                state.listCollapsedDayGroups.plus(listDayGrouping)
-        )
-        appPreferences.listCollapsedDays = state.listCollapsedDayGroups
-    }
-
-    private fun onToggleTrashbinExpanded() {
-        _state.value = _state.value.copy(listTrashbinExpanded = !_state.value.listTrashbinExpanded)
-        appPreferences.listTrashbinExpanded = state.listTrashbinExpanded
+        appPreferences.listCollapsedGroups = state.listCollapsedGroups
     }
 }

@@ -2,7 +2,9 @@ package at.techbee.spectacled.screens.icalentry.presentation.icalentrylist
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.Credentials
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
@@ -10,7 +12,6 @@ import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datast
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListLayout
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 import io.ktor.http.Url
-import kotlin.time.ExperimentalTime
 
 data class IcalEntryListState(
     val icalEntries: List<IcalEntry> = emptyList(),
@@ -52,34 +53,59 @@ data class IcalEntryListState(
     val showDeleteSelectedItemsDialog: Boolean = false,
     val showUpdateColorOfSelectedBottomSheet: Boolean = false,
 
-    val listCollapsedListGroupings: Set<ListGrouping> = emptySet(),
-    val listCollapsedDayGroups: Set<String> = emptySet(),
-    val listTrashbinExpanded: Boolean = false,
-
+    val listCollapsedGroups: Set<String> = emptySet(),
     val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES  // must be overwritten immediately on load
 ) {
 
     val displayMap: Map<ListGrouping, List<IcalEntry>>
-        get() = computeDisplayMap()
+        get() = getBaseList(icalEntries)
+            .let { getFilteredList(it) }
+            .let { getPinnedFilteredList(it) }
+            .let { getSortedList(it) }
+            .let { getGroupedMap(it) }
+
+    val displayMapByDtStartDay: Map<String, List<IcalEntry>>
+        get() = getBaseList(icalEntries)
+            .let { getFilteredList(it) }
+            .let { getPinnedFilteredList(it) }
+            .let { getSortedList(it) }
+            .groupBy { PlatformInstantFormatter(it.dtStart ?: IcsDateTime.now()).formatLocalizedDate() }
 
     val trashbin: List<IcalEntry>
-        get() = getTrashbinList()
+        get() = getBaseList(icalEntries, true)
+            .let { getFilteredList(it) }
+            .let { getSortedList(it) }
 
-    @OptIn(ExperimentalTime::class)
-    private fun computeDisplayMap(): Map<ListGrouping, List<IcalEntry>> {
+    val pinned: List<IcalEntry>
+        get() = getBaseList(icalEntries)
+            .let { getFilteredList(it) }
+            .let { getPinnedFilteredList(it, true) }
+            .let { getSortedList(it) }
 
-        val baseList = icalEntries
+
+    private fun getBaseList(icalEntries: List<IcalEntry>, trashbin: Boolean = false) =
+        icalEntries
             .filter { when(spectacledVariant) {
-                SpectacledVariant.JOURNALS -> !it.syncState.isDeletedState() && it.dtStart != null
-                SpectacledVariant.NOTES -> !it.syncState.isDeletedState() && it.dtStart == null
-                SpectacledVariant.TASKS -> !it.syncState.isDeletedState()
-            } }
+                SpectacledVariant.JOURNALS -> it.syncState.isDeletedState() == trashbin && it.dtStart != null
+                SpectacledVariant.NOTES -> it.syncState.isDeletedState() == trashbin && it.dtStart == null
+                SpectacledVariant.TASKS -> it.syncState.isDeletedState() == trashbin
+        } }
 
+    private fun getPinnedFilteredList(icalEntries: List<IcalEntry>, pinned: Boolean = false) =
+        icalEntries.filter {
+            if(pinned)
+                it.categories.any { category -> category == "\uD83D\uDCCC"}
+            else
+                it.categories.none { category -> category == "\uD83D\uDCCC"}
+        }
+
+
+    private fun getFilteredList(icalEntries: List<IcalEntry>): List<IcalEntry> {
         val filteredList =
             if (searchQuery.isBlank())
-                baseList
+                icalEntries
             else
-                baseList.filter {
+                icalEntries.filter {
                     it.summary?.contains(searchQuery, ignoreCase = true) == true
                             || it.description?.contains(searchQuery, ignoreCase = true) == true
                 }
@@ -90,21 +116,25 @@ data class IcalEntryListState(
             else
                 filteredList.filter { it.categories.any { category -> category.equals(searchCategory, ignoreCase = true) } }
 
-        val comparator = compareBy<IcalEntry> {
-            when (listSortedBy) {
-                ListSortedBy.CREATED -> it.created.instant.toEpochMilliseconds()
-                ListSortedBy.LAST_MODIFIED -> it.lastModified?.instant?.toEpochMilliseconds()
-                ListSortedBy.DATE -> it.dtStart?.instant?.toEpochMilliseconds()
-                ListSortedBy.SUMMARY -> it.summary?.uppercase() ?: ""
-                ListSortedBy.DRAGANDDROP -> it.orderNo?:-1
-            }
+        return filteredListByCategory
+    }
+
+    private val sortingComparator = compareBy<IcalEntry> {
+        when (listSortedBy) {
+            ListSortedBy.CREATED -> it.created.instant.toEpochMilliseconds()
+            ListSortedBy.LAST_MODIFIED -> it.lastModified?.instant?.toEpochMilliseconds()
+            ListSortedBy.DATE -> it.dtStart?.instant?.toEpochMilliseconds()
+            ListSortedBy.SUMMARY -> it.summary?.uppercase() ?: ""
+            ListSortedBy.DRAGANDDROP -> it.orderNo?:-1
         }
+    }
 
-        val sortedFilteredList =
-            if (listSortedByAscending) filteredListByCategory.sortedWith(comparator)
-            else filteredListByCategory.sortedWith(comparator.reversed())
+    private fun getSortedList(icalEntries: List<IcalEntry>) =
+        if (listSortedByAscending) icalEntries.sortedWith(sortingComparator)
+        else icalEntries.sortedWith(sortingComparator.reversed())
 
-        val groupedMap: Map<ListGrouping, List<IcalEntry>> = sortedFilteredList.groupBy {
+    private fun getGroupedMap(icalEntries: List<IcalEntry>) =
+        icalEntries.groupBy {
             when (listSortedBy) {
                 ListSortedBy.CREATED -> ListGrouping.getGrouping(it.created.instant)
                 ListSortedBy.LAST_MODIFIED -> ListGrouping.getGrouping(it.lastModified?.instant ?: it.created.instant)
@@ -113,9 +143,4 @@ data class IcalEntryListState(
                 ListSortedBy.DRAGANDDROP -> ListGrouping.GROUP_NONE
             }
         }
-
-        return groupedMap
-    }
-
-    private fun getTrashbinList()= icalEntries.filter { it.syncState.isDeletedState() }
 }

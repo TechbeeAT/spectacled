@@ -1,7 +1,6 @@
 package at.techbee.spectacled.screens.icalentry.presentation.icalentrylist
 
 import androidx.compose.ui.graphics.Color
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListGrouping
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListLayout
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 
@@ -25,7 +24,5 @@ sealed interface IcalEntryListAction {
     data class OnUpdateColorOfSelected(val color: Color?): IcalEntryListAction
     data class OnUpdateOrderNo(val fromIndex: Int, val toIndex: Int): IcalEntryListAction
     object OnPersistOrderNo: IcalEntryListAction
-    data class OnToggleListGroupingExpanded(val listGrouping: ListGrouping): IcalEntryListAction
-    data class OnToggleDayGroupingExpanded(val listDayGroup: String): IcalEntryListAction
-    object OnToggleListTrashbinExpanded: IcalEntryListAction
+    data class OnToggleListGroupExpanded(val listGroup: String): IcalEntryListAction
 }
