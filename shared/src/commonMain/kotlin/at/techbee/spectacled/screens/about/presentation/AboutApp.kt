@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.about.presentation
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,17 +30,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.shared.BuildKonfig
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.copyright_info
-import spectacled.shared.generated.resources.logo_techbee_svg
-import spectacled.shared.generated.resources.logo_techbee_xml
-import spectacled.shared.generated.resources.spectacled_notes_svg
-import spectacled.shared.generated.resources.spectacled_notes_xml
-import spectacled.shared.generated.resources.terms_conditions
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.copyright_info
+import spectacled.shared.generated.resources.logo_techbee_xml
+import spectacled.shared.generated.resources.spectacled_notes_xml
+import spectacled.shared.generated.resources.terms_conditions
 
 @Composable
 fun AboutApp(
@@ -68,9 +67,8 @@ fun AboutApp(
                 contentAlignment = Alignment.Center
             ) {
 
-                getPlatform().PlatformDependentImage(
-                    resourceXML = Res.drawable.spectacled_notes_xml,
-                    resourceSVG = Res.drawable.spectacled_notes_svg,
+                Image(
+                    painter = painterResource(Res.drawable.spectacled_notes_xml),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(Color.White),
                     modifier = Modifier
@@ -142,17 +140,14 @@ fun AboutApp(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-
-                getPlatform().PlatformDependentImage(
-                    resourceXML = Res.drawable.logo_techbee_xml,
-                    resourceSVG = Res.drawable.logo_techbee_svg,
+                Image(
+                    painter = painterResource(Res.drawable.logo_techbee_xml),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(150.dp)
                         .padding(16.dp)
                 )
-
 
                 /*
                 Crossfade(targetState = clickCount, label = "techbee_logo_swap") { clicks ->

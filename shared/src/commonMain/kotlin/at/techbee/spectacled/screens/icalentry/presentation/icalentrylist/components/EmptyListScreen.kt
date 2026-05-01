@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +13,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.core.getPlatform
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.no_matching_entries_found
-import spectacled.shared.generated.resources.no_entries_found_in_this_folder
-import spectacled.shared.generated.resources.undraw_dreamer_gb41_svg
-import spectacled.shared.generated.resources.undraw_dreamer_gb41_xml
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.no_entries_found_in_this_folder
+import spectacled.shared.generated.resources.no_matching_entries_found
+import spectacled.shared.generated.resources.undraw_dreamer
 
 @Composable
 fun EmptyListScreen(
@@ -35,9 +35,8 @@ fun EmptyListScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            getPlatform().PlatformDependentImage(
-                resourceXML = Res.drawable.undraw_dreamer_gb41_xml,
-                resourceSVG = Res.drawable.undraw_dreamer_gb41_svg,
+            Image(
+                painter = painterResource(Res.drawable.undraw_dreamer),
                 contentDescription = null,
                 modifier = Modifier
                     .weight(1f)
