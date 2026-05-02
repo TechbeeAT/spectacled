@@ -122,9 +122,9 @@ compose.desktop {
             packageName = "at.techbee.spectacled.journals"
             packageVersion = libs.versions.appVersionString.get()
 
-            linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_png.png")) }
-            windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_ico.ico")) }
-            macOS { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_icns.icns")) }
+            linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_png.png")) }
+            windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_ico.ico")) }
+            macOS { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_icns.icns")) }
         }
     }
 }
