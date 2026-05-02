@@ -12,19 +12,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListAction
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListState
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about
 import spectacled.shared.generated.resources.accounts
-import spectacled.shared.generated.resources.done
-import spectacled.shared.generated.resources.edit
-import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.settings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrincipalListTopBar(
-    onAction: (CalendarListAction) -> Unit,
-    state: CalendarListState
+    onAction: (CalendarListAction) -> Unit
 ) {
 
     TopAppBar(
@@ -47,14 +44,9 @@ fun PrincipalListTopBar(
         actions = {
 
             TextButton(
-                onClick = { onAction(CalendarListAction.OnToggleEditMode) },
+                onClick = { TODO("Not yet implemented") },
             ) {
-                Text(
-                    text = if (state.isEditMode)
-                        stringResource(Res.string.done)
-                    else
-                        stringResource(Res.string.edit),
-                )
+                Text(text = stringResource(Res.string.settings))
             }
         }
     )
@@ -64,20 +56,8 @@ fun PrincipalListTopBar(
 
 @Preview
 @Composable
-private fun PrincipalListTopBar_edit_off_Preview() {
+private fun PrincipalListTopBar_Preview() {
     PrincipalListTopBar(
-        onAction = {},
-        state = CalendarListState(isEditMode = false)
+        onAction = {}
     )
 }
-
-
-@Preview
-@Composable
-private fun PrincipalListTopBar_edit_on_Preview() {
-    PrincipalListTopBar(
-        onAction = {},
-        state = CalendarListState(isEditMode =  true)
-    )
-}
-

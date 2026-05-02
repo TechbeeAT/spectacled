@@ -12,18 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.SyncProblem
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,14 +26,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListAction
@@ -57,10 +48,8 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.edit
 import spectacled.shared.generated.resources.folders
-import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.open_foldername
 import spectacled.shared.generated.resources.read_only
-import spectacled.shared.generated.resources.refresh
 import spectacled.shared.generated.resources.sync_problem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,22 +58,20 @@ fun CalendarCard(
     principal: Principal,
     homeCollection: HomeCollection,
     calendar: Calendar,
-    isEditMode: Boolean,
+    editEditFoldersModeEnabled: Boolean,
     isFirst: Boolean,
     isLast: Boolean,
     onAction: (CalendarListAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
 
-    //var showSelectColor by remember { mutableStateOf(false) }
-    var calendarMenuExpanded by rememberSaveable { mutableStateOf(false) }
     val smallIconSize = 20.dp
 
     SpecialRoundedCard(
         isFirst = isFirst,
         isLast = isLast,
         onClick = {
-            if (!isEditMode)
+            if (!editEditFoldersModeEnabled)
                 onAction(CalendarListAction.OnCalendarClicked(calendar.id))
         },
         colors = CardDefaults.cardColors(
@@ -123,7 +110,9 @@ fun CalendarCard(
             ) {
                 Text(
                     text = calendar.displayName?:calendar.url.toString(),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                     //fontWeight = FontWeight.Bold
                 )
 
@@ -131,7 +120,9 @@ fun CalendarCard(
                     Text(
                         text = calendar.calendarDescription,
                         fontStyle = FontStyle.Italic,
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
             }
 
@@ -163,65 +154,36 @@ fun CalendarCard(
                 }
             }
 
-            AnimatedVisibility(isEditMode) {
+            AnimatedVisibility(editEditFoldersModeEnabled) {
                 Row {
-
-                    if(calendar.canWriteProperties()) {
-                        TextButton(
-                            onClick = {
-                                onAction(CalendarListAction.OnShowCreateOrUpdateCalendarBottomSheet(principal, homeCollection, calendar))
-                            },
-                            colors = ButtonDefaults.textButtonColors().copy(
-                                contentColor = calendar.color?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified
-                            )
-                        ) {
-                            Text(stringResource(Res.string.edit))
-                        }
+                    TextButton(
+                        onClick = {
+                            onAction(CalendarListAction.OnShowCreateOrUpdateCalendarBottomSheet(principal, homeCollection, calendar))
+                        },
+                        colors = ButtonDefaults.textButtonColors().copy(
+                            contentColor = calendar.color?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified
+                        ),
+                        enabled = calendar.canWriteProperties()
+                    ) {
+                        Text(stringResource(Res.string.edit))
                     }
-
 
                     TextButton(
                         onClick = {
-                            calendarMenuExpanded = true
+                            onAction(CalendarListAction.OnShowDeleteCalendarDialog(principal, calendar))
                         },
-                        colors = ButtonColors(
-                            contentColor = calendar.color?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified,
-                            containerColor = Color.Unspecified,
-                            disabledContainerColor = Color.Unspecified,
-                            disabledContentColor = Color.Unspecified
-                        )
+                        colors = ButtonDefaults.textButtonColors().copy(
+                            contentColor = calendar.color?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified
+                        ),
+                        enabled = homeCollection.canUnbind()
                     ) {
-                        Icon(Icons.Outlined.MoreVert, stringResource(Res.string.more))
-
-                        DropdownMenu(
-                            expanded = calendarMenuExpanded,
-                            onDismissRequest = { calendarMenuExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.refresh)) },
-                                onClick = {
-                                    calendarMenuExpanded = false
-                                    onAction(CalendarListAction.OnSyncCalendars(listOf(calendar)))
-                                },
-                                leadingIcon = { Icon(Icons.Outlined.Sync, null) }
-                            )
-
-                            if(homeCollection.canUnbind()) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(Res.string.delete)) },
-                                    onClick = {
-                                        calendarMenuExpanded = false
-                                        onAction(CalendarListAction.OnShowDeleteCalendarDialog(principal, calendar))
-                                    },
-                                    leadingIcon = { Icon(Icons.Outlined.DeleteOutline, null) }
-                                )
-                            }
-                        }
+                            Text(stringResource(Res.string.delete))
                     }
+
                 }
             }
 
-            AnimatedVisibility(!isEditMode) {
+            AnimatedVisibility(!editEditFoldersModeEnabled) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -255,7 +217,7 @@ private fun FolderCard_no_edit_Preview() {
         calendar = Calendar.getCalendarForPreview().copy(
             calDavPrivileges = listOf(CalDavPrivilege.WRITE)
         ),
-        isEditMode = false,
+        editEditFoldersModeEnabled = false,
         isFirst = true,
         isLast = true,
         onAction = {}
@@ -269,7 +231,7 @@ private fun FolderCard_no_edit_readonly_Preview() {
         principal = Principal.getPrincipalForPreview(),
         homeCollection = HomeCollection.getHomeCollectionForPreview(),
         calendar = Calendar.getCalendarForPreview(),
-        isEditMode = false,
+        editEditFoldersModeEnabled = false,
         isFirst = true,
         isLast = true,
         onAction = {}
@@ -283,7 +245,7 @@ private fun FolderCard_no_edit_colored_Preview() {
         principal = Principal.getPrincipalForPreview(),
         homeCollection = HomeCollection.getHomeCollectionForPreview(),
         calendar = Calendar.getCalendarForPreview().copy(color = Color.Yellow),
-        isEditMode = false,
+        editEditFoldersModeEnabled = false,
         isFirst = true,
         isLast = false,
         onAction = {}
@@ -299,7 +261,7 @@ private fun FolderCard_edit_Preview() {
         calendar = Calendar.getCalendarForPreview().copy(
             calDavPrivileges = listOf(CalDavPrivilege.WRITE)
         ),
-        isEditMode = true,
+        editEditFoldersModeEnabled = true,
         isFirst = false,
         isLast = false,
         onAction = {}
@@ -320,7 +282,7 @@ private fun FolderCard_edit_colored_Preview() {
             calendarSyncStatus = CalendarSyncStatus(CalendarSyncStatusType.FAILED),
             calDavPrivileges = listOf(CalDavPrivilege.WRITE)
         ),
-        isEditMode = true,
+        editEditFoldersModeEnabled = true,
         isFirst = false,
         isLast = true,
         onAction = {}
@@ -329,12 +291,12 @@ private fun FolderCard_edit_colored_Preview() {
 
 @Preview
 @Composable
-private fun FolderCard_sync_in_progress_Preview() {
+private fun FolderCard_sync_in_progress_edit_Preview() {
     CalendarCard(
         principal = Principal.getPrincipalForPreview(),
         homeCollection = HomeCollection.getHomeCollectionForPreview(),
         calendar = Calendar.getCalendarForPreview().copy(calendarSyncStatus = CalendarSyncStatus(CalendarSyncStatusType.IN_PROGRESS)),
-        isEditMode = false,
+        editEditFoldersModeEnabled = true,
         isFirst = false,
         isLast = false,
         onAction = {}

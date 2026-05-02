@@ -50,11 +50,11 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.presentation.CustomBottomSnackbarHost
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_account
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_account
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -155,10 +155,7 @@ fun CalendarListScreenRoot(
 
     Scaffold(
         topBar = {
-            PrincipalListTopBar(
-                onAction = { action -> viewModel.onAction(action) },
-                state = state
-            )
+            PrincipalListTopBar(onAction = { action -> viewModel.onAction(action) })
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -343,7 +340,7 @@ fun CalendarListScreen(
                     principal = principal,
                     homeCollections = principalHomeCollections,
                     calendars = state.calendars.filter { calendar -> principalHomeCollections.any { homeCollection -> homeCollection.id == calendar.homeCollectionId } },
-                    isEditMode = state.isEditMode,
+                    folderEditEnabled = state.editFoldersOfPrincipal?.id == principal.id,
                     onAction = onAction,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -393,7 +390,7 @@ fun CalendarListScreen(
                         principal = principal,
                         homeCollection = homeCollection,
                         calendar = calendar,
-                        isEditMode = state.isEditMode,
+                        editEditFoldersModeEnabled = state.editFoldersOfPrincipal?.id == principal.id,
                         isFirst = indexCalendar == 0,
                         isLast = indexCalendar == calendars.lastIndex,
                         onAction = onAction,
@@ -436,8 +433,7 @@ private fun FolderListScreen_edit_off_Preview() {
                 ),
             ),
             homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-            calendars = listOf(Calendar.getCalendarForPreview()),
-            isEditMode = false
+            calendars = listOf(Calendar.getCalendarForPreview())
         ),
         onAction = { }
     )
@@ -456,7 +452,7 @@ private fun FolderListScreen_edit_on_Preview() {
             ),
             homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
             calendars = listOf(Calendar.getCalendarForPreview()),
-            isEditMode = true
+            editFoldersOfPrincipal = Principal.getPrincipalForPreview()
         ),
         onAction = { }
     )
@@ -473,8 +469,7 @@ private fun FolderListScreen_edit_off_empty_without_rights_Preview() {
                     displayName = "My Account"
                 ),
             ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-            isEditMode = false
+            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview())
         ),
         onAction = { }
     )
@@ -494,7 +489,6 @@ private fun FolderListScreen_edit_off_empty_with_rights_Preview() {
             homeCollections = listOf(HomeCollection.getHomeCollectionForPreview().copy(
                 calDavPrivileges = listOf(CalDavPrivilege.WRITE)
             )),
-            isEditMode = false
         ),
         onAction = { }
     )

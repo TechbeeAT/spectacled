@@ -34,7 +34,7 @@ sealed interface CalendarListAction {
     data class OnAddPrincipal(val credentials: Credentials, val useDav5Jvm: Boolean = false): CalendarListAction
     data class OnUpdatePrincipalPassword(val principal: Principal, val newPassword: String): CalendarListAction
 
-    object OnToggleEditMode: CalendarListAction
+    data class OnEditAccountFolders(val principal: Principal?): CalendarListAction
 
     data class OnUpdateSnackbar(val message: String?): CalendarListAction
 }

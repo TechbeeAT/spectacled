@@ -15,6 +15,7 @@
     <string name="more_on_github">More on GitHub.com</string>
     <string name="terms_conditions">Terms &amp; Conditions</string>
     <string name="close">Close</string>
+    <string name="settings">Settings</string>
 
     <string name="edit">Edit</string>
     <string name="done">Done</string>
@@ -31,6 +32,7 @@
     <string name="remove_account">Remove account</string>
     <string name="create_folder">Create folder</string>
     <string name="update_folder">Update folder</string>
+    <string name="edit_folders">Edit folders</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="show_hide_password">Show/hide password</string>
@@ -44,6 +46,7 @@
     <string name="sync_problem">Sync problem</string>
     <string name="sync_conflict_detected">Sync conflict detected</string>
     <string name="refresh">Refresh</string>
+    <string name="refresh_all">Refresh all</string>
     <string name="retry">Retry</string>
     <string name="expand">Expand</string>
     <string name="collapse">Collapse</string>

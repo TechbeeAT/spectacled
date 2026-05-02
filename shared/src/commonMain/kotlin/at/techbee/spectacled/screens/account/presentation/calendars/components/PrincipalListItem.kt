@@ -1,19 +1,20 @@
 package at.techbee.spectacled.screens.account.presentation.calendars.components
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.GroupRemove
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,18 +34,24 @@ import at.techbee.spectacled.screens.account.presentation.calendars.CalendarList
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.create_folder
+import spectacled.shared.generated.resources.done
+import spectacled.shared.generated.resources.edit_folders
+import spectacled.shared.generated.resources.ic_folder_managed
+import spectacled.shared.generated.resources.ic_folder_match
 import spectacled.shared.generated.resources.more
+import spectacled.shared.generated.resources.refresh_all
 import spectacled.shared.generated.resources.remove_account
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun PrincipalListItem(
     principal: Principal,
     homeCollections: List<HomeCollection>,
     calendars: List<Calendar>,
-    isEditMode: Boolean,
+    folderEditEnabled: Boolean,
     onAction: (CalendarListAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -71,59 +78,86 @@ fun PrincipalListItem(
             )
         }
 
-        AnimatedVisibility(isEditMode) {
-            TextButton(
-                onClick = { iCalCollectionMenuExpanded = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.MoreVert,
-                    contentDescription = stringResource(Res.string.more),
-                )
-
-                DropdownMenu(
-                    expanded = iCalCollectionMenuExpanded,
-                    onDismissRequest = { iCalCollectionMenuExpanded = false }
+        Crossfade(folderEditEnabled) { enabled ->
+            if (enabled) {
+                TextButton(
+                    onClick = { onAction(CalendarListAction.OnEditAccountFolders(null)) }
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.remove_account)) },
-                        onClick = {
-                            iCalCollectionMenuExpanded = false
-                            onAction(CalendarListAction.OnShowRemovePrincipalDialog(principal))
-                        },
-                        leadingIcon = { Icon(Icons.Outlined.GroupRemove, null) }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.create_folder)) },
-                        onClick = {
-                            iCalCollectionMenuExpanded = false
-
-                            onAction(CalendarListAction.OnShowCreateOrUpdateCalendarBottomSheet(
-                                principal = principal,
-                                homeCollection = homeCollections.first(),
-                                calendar = Calendar.getNewCalendar(homeCollections.first())
-                            ))
-                        },
-                        leadingIcon = { Icon(Icons.Outlined.CreateNewFolder, null) }
+                    Text(stringResource(Res.string.done))
+                }
+            } else {
+                TextButton(
+                    onClick = { iCalCollectionMenuExpanded = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.MoreVert,
+                        contentDescription = stringResource(Res.string.more),
                     )
 
-                    DropdownMenuItem(
-                        text = { Text("Refresh all") },
-                        onClick = {
-                            iCalCollectionMenuExpanded = false
-                            onAction(CalendarListAction.OnSyncCalendars(calendars))
-                        },
-                        leadingIcon = { Icon(Icons.Outlined.Sync, null) }
-                    )
+                    DropdownMenu(
+                        expanded = iCalCollectionMenuExpanded,
+                        onDismissRequest = { iCalCollectionMenuExpanded = false }
+                    ) {
 
-                    DropdownMenuItem(
-                        text = { Text("Reload folders") },
-                        onClick = {
-                            iCalCollectionMenuExpanded = false
-                            onAction(CalendarListAction.OnRerunAccountDiscovery(listOf(principal)))
-                        },
-                        leadingIcon = { Icon(Icons.Outlined.Refresh, null) }
-                    )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.create_folder)) },
+                            onClick = {
+                                iCalCollectionMenuExpanded = false
 
+                                onAction(CalendarListAction.OnShowCreateOrUpdateCalendarBottomSheet(
+                                    principal = principal,
+                                    homeCollection = homeCollections.first(),
+                                    calendar = Calendar.getNewCalendar(homeCollections.first())
+                                ))
+                            },
+                            leadingIcon = { Icon(Icons.Outlined.CreateNewFolder, null) }
+                        )
+
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.edit_folders)) },
+                            onClick = {
+                                iCalCollectionMenuExpanded = false
+
+                                onAction(CalendarListAction.OnEditAccountFolders(principal = principal))
+                            },
+                            leadingIcon = { Icon(painterResource(Res.drawable.ic_folder_managed), null) }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(8.dp))
+
+
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.refresh_all)) },
+                            onClick = {
+                                iCalCollectionMenuExpanded = false
+                                onAction(CalendarListAction.OnSyncCalendars(calendars))
+                            },
+                            leadingIcon = { Icon(Icons.Outlined.Sync, null) }
+                        )
+
+                        DropdownMenuItem(
+                            text = { Text("Reload folders") },
+                            onClick = {
+                                iCalCollectionMenuExpanded = false
+                                onAction(CalendarListAction.OnRerunAccountDiscovery(listOf(principal)))
+                            },
+                            leadingIcon = { Icon(painterResource(Res.drawable.ic_folder_match), null) }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(8.dp))
+
+
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.remove_account)) },
+                            onClick = {
+                                iCalCollectionMenuExpanded = false
+                                onAction(CalendarListAction.OnShowRemovePrincipalDialog(principal))
+                            },
+                            leadingIcon = { Icon(Icons.Outlined.GroupRemove, null) }
+                        )
+
+
+                    }
                 }
             }
         }
@@ -132,24 +166,25 @@ fun PrincipalListItem(
 
 @Preview
 @Composable
-private fun PrincipalListItem_no_edit_Preview() {
+private fun PrincipalListItem_Preview() {
     PrincipalListItem(
         principal = Principal.getPrincipalForPreview(),
         homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
         calendars = listOf(Calendar.getCalendarForPreview()),
-        isEditMode = false,
+        folderEditEnabled = false,
         onAction = {}
     )
 }
 
 @Preview
 @Composable
-private fun AccountListItem_edit_Preview() {
+private fun PrincipalListItem_folder_edit_Preview() {
     PrincipalListItem(
         principal = Principal.getPrincipalForPreview(),
         homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
         calendars = listOf(Calendar.getCalendarForPreview()),
-        isEditMode = true,
+        folderEditEnabled = true,
         onAction = {}
     )
 }
+

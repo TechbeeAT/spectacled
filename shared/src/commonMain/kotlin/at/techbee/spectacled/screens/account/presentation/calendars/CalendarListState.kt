@@ -8,7 +8,7 @@ data class CalendarListState(
     val principals: List<Principal> = emptyList(),
     val homeCollections: List<HomeCollection> = emptyList(),
     val calendars: List<Calendar> = emptyList(),
-    val isEditMode: Boolean = false,
+    val editFoldersOfPrincipal: Principal? = null,
     val snackbarText: String? = null,
     var processingState: ProcessingState = ProcessingState.Idle,
 

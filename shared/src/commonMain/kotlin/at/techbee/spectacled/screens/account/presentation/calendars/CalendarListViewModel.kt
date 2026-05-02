@@ -100,7 +100,7 @@ class CalendarListViewModel(
             is CalendarListAction.OnShowDeleteCalendarDialog -> { _state.value = _state.value.copy(showDeleteCalendarDialog = action) }
             is CalendarListAction.OnShowRemovePrincipalDialog -> { _state.value = _state.value.copy(showRemovePrincipalDialog = action) }
             is CalendarListAction.OnShowCreateOrUpdateCalendarBottomSheet -> { _state.value = _state.value.copy(showAddOrUpdateCalendarBottomSheet = action, processingState = ProcessingState.Idle) }
-            CalendarListAction.OnToggleEditMode -> { _state.value = _state.value.copy(isEditMode = !state.isEditMode) }
+            is CalendarListAction.OnEditAccountFolders -> { _state.value = _state.value.copy(editFoldersOfPrincipal = action.principal) }
             is CalendarListAction.OnUpdateSnackbar -> { _state.value = _state.value.copy(snackbarText = action.message) }
             //CalendarListAction.OnAddLocalCalendar -> addLocalCalendar()
             is CalendarListAction.OnRemovePrincipal -> { removePrincipal(action.principal) }
@@ -363,7 +363,6 @@ class CalendarListViewModel(
 
                     _state.value = _state.value.copy(
                         showAddPrincipalBottomSheet = false,
-                        isEditMode = false,
                         processingState = ProcessingState.Success("Account added/updated"),
                         snackbarText = "Account added/updated"
                     )
