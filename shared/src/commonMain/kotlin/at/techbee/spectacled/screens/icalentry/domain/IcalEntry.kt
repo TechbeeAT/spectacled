@@ -104,4 +104,23 @@ data class IcalEntry(
             }
         }.toAnnotatedString()
     }
+
+    fun getPlainTextForShare(categoryLabel: String): String {
+        return buildString {
+            summary?.let {
+                append(it)
+                append("\n")
+            }
+            description?.let {
+                append(it)
+                append("\n")
+            }
+            if (categories.isNotEmpty()) {
+                append("\n")
+                append(categoryLabel)
+                append(": ")
+                append(categories.joinToString(", "))
+            }
+        }
+    }
 }

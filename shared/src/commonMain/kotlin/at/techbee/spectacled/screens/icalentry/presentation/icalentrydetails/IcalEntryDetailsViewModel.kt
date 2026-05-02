@@ -13,8 +13,10 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.account.data.insertOrUpdateIcalEntry
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
+import at.techbee.spectacled.screens.core.PlatformShareManager
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
+import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
@@ -31,6 +33,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.entry_copy
 import spectacled.shared.generated.resources.entry_deleted
@@ -47,6 +50,7 @@ class IcalEntryDetailsViewModel(
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
+    private val shareManager: PlatformShareManager,
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
     
@@ -189,6 +193,20 @@ class IcalEntryDetailsViewModel(
             is IcalEntryDetailsAction.OnShowTimePickerBottomSheet -> { _state = _state.copy(showTimePickerBottomSheet = action.show) }
             is IcalEntryDetailsAction.OnShowTimezonePickerBottomSheet -> { _state = _state.copy(showTimezonePickerBottomSheet = action.show) }
             is IcalEntryDetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
+            IcalEntryDetailsAction.OnShare -> onShare()
+        }
+    }
+
+    private fun onShare() {
+        _state = _state.copy(showMoreBottomSheet = false)
+        viewModelScope.launch {
+            val categoryLabel = getString(Res.string.category)
+            shareManager.share(
+                ShareContent(
+                    subject = state.icalEntry.summary ?: "",
+                    body = state.icalEntry.getPlainTextForShare(categoryLabel)
+                )
+            )
         }
     }
 

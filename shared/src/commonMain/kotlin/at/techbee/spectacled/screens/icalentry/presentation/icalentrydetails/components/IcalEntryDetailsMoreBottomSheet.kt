@@ -4,9 +4,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentPaste
-import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.FileCopy
+import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,17 +24,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
-import at.techbee.spectacled.screens.core.PlatformShareManager
 import at.techbee.spectacled.screens.core.Platforms
-import at.techbee.spectacled.screens.core.ShareContent
-import at.techbee.spectacled.screens.core.ShareManager
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsAction
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.copied_to_clipboard
 import spectacled.shared.generated.resources.copy_to_clipboard
@@ -50,8 +47,7 @@ import spectacled.shared.generated.resources.share
 fun IcalEntryDetailsMoreBottomSheet(
     onAction: (IcalEntryDetailsAction) -> Unit,
     icalEntry: IcalEntry,
-    canWriteContent: Boolean,
-    shareManager: ShareManager = koinInject<PlatformShareManager>()
+    canWriteContent: Boolean
 ) {
 
     val scope = rememberCoroutineScope()
@@ -67,7 +63,7 @@ fun IcalEntryDetailsMoreBottomSheet(
         //val copyCreated = stringResource(Res.string.copy_created)
 
         DropdownMenuItem(
-            leadingIcon = { Icon(Icons.Outlined.DeleteForever, stringResource(Res.string.delete)) },
+            leadingIcon = { Icon(Icons.Outlined.Delete, stringResource(Res.string.delete)) },
             text = { Text(text = stringResource(Res.string.delete)) },
             onClick = {
                 onAction(IcalEntryDetailsAction.OnShowDeleteIcalEntryDialog(true))
@@ -80,40 +76,34 @@ fun IcalEntryDetailsMoreBottomSheet(
             enabled = canWriteContent
         )
 
-        // TODO: Skipping this button for iOS for now as it fails, reason is not so clear
-        if(getPlatform().platform != Platforms.IOS) {
-            DropdownMenuItem(
-                leadingIcon = {
-                    if (getPlatform().platform == Platforms.ANDROID || getPlatform().platform == Platforms.IOS)
-                        Icon(Icons.Outlined.Share, stringResource(Res.string.share))
-                    else
-                        Icon(Icons.Outlined.Email, stringResource(Res.string.send_as_email))
-                },
-                text = {
-                    Text(
-                        text = stringResource(
-                            if (getPlatform().platform == Platforms.ANDROID || getPlatform().platform == Platforms.IOS)
-                                Res.string.share
-                            else
-                                Res.string.send_as_email
-                        )
-                    )
-                },
-                onClick = {
-                    onAction(IcalEntryDetailsAction.OnShowMoreBottomSheet(false))
-                    shareManager.share(
-                        ShareContent(
-                            subject = icalEntry.summary ?: "",
-                            body = shareText.text
-                        )
-                    )
-                },
-                colors = MenuDefaults.itemColors().copy(
-                    textColor = MaterialTheme.colorScheme.primary,
-                    leadingIconColor = MaterialTheme.colorScheme.primary
+        DropdownMenuItem(
+            leadingIcon = {
+                Icon(
+                    when(getPlatform().platform) {
+                        Platforms.ANDROID -> Icons.Outlined.Share
+                        Platforms.IOS -> Icons.Outlined.IosShare
+                        Platforms.DESKTOP, Platforms.WASM -> Icons.Outlined.Email
+                    },
+                    when(getPlatform().platform) {
+                        Platforms.ANDROID, Platforms.IOS -> stringResource(Res.string.share)
+                        Platforms.DESKTOP, Platforms.WASM -> stringResource(Res.string.send_as_email)
+                    }
                 )
+            },
+            text = {
+                Text(
+                    text = when(getPlatform().platform) {
+                        Platforms.ANDROID, Platforms.IOS -> stringResource(Res.string.share)
+                        Platforms.DESKTOP, Platforms.WASM -> stringResource(Res.string.send_as_email)
+                    }
+                )
+            },
+            onClick = { onAction(IcalEntryDetailsAction.OnShare) },
+            colors = MenuDefaults.itemColors().copy(
+                textColor = MaterialTheme.colorScheme.primary,
+                leadingIconColor = MaterialTheme.colorScheme.primary
             )
-        }
+        )
 
         DropdownMenuItem(
             leadingIcon = { Icon(Icons.Outlined.FileCopy, stringResource(Res.string.create_copy)) },
@@ -177,12 +167,7 @@ fun IcalEntryDetailsMoreBottomSheetPreview() {
         IcalEntryDetailsMoreBottomSheet(
             onAction = {},
             icalEntry = IcalEntry.getSampleIcalEntry(),
-            canWriteContent = true,
-            shareManager = object : ShareManager {
-                override fun share(content: ShareContent) {
-                    println("Sharing: $content")
-                }
-            }
+            canWriteContent = true
         )
     }
 }
@@ -194,12 +179,7 @@ fun IcalEntryDetailsMoreBottomSheet_ReadOnly_Preview() {
         IcalEntryDetailsMoreBottomSheet(
             onAction = {},
             icalEntry = IcalEntry.getSampleIcalEntry(),
-            canWriteContent = false,
-            shareManager = object : ShareManager {
-                override fun share(content: ShareContent) {
-                    println("Sharing: $content")
-                }
-            }
+            canWriteContent = false
         )
     }
 }

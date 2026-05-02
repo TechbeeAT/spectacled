@@ -25,6 +25,7 @@ sealed interface IcalEntryDetailsAction {
     object OnCreateCopy: IcalEntryDetailsAction
     object OnDispose: IcalEntryDetailsAction
     object OnRestoreEntry: IcalEntryDetailsAction
+    object OnShare: IcalEntryDetailsAction
 
     data class OnUpdateSnackbar(val message: String?): IcalEntryDetailsAction
     data class OnNavigateUp(val navigateUp: Boolean): IcalEntryDetailsAction

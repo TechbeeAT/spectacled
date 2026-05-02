@@ -13,4 +13,5 @@ actual val platformModule = module {
     singleOf(::DatabaseDriverFactory)
     singleOf(::PlatformCredentialStore)
     singleOf(::PlatformSyncTrigger)
+    singleOf(::PlatformShareManager)
 }
