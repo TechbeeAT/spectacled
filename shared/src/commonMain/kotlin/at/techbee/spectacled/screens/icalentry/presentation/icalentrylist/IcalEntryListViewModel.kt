@@ -32,7 +32,7 @@ class IcalEntryListViewModel(
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val appPreferences: AppPreferences,
-    private val spectacledVariant: SpectacledVariant
+    val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
     private val _state = mutableStateOf(IcalEntryListState())

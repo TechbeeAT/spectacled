@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
-import androidx.compose.material.icons.automirrored.outlined.NoteAdd
 import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ElevatedFilterChip
@@ -59,6 +58,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_PINNED
@@ -78,13 +78,19 @@ import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datast
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import at.techbee.spectacled.theme.getThemeForColoredSurfaces
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_entry
+import spectacled.shared.generated.resources.add_journal
+import spectacled.shared.generated.resources.add_note
+import spectacled.shared.generated.resources.add_task
 import spectacled.shared.generated.resources.category
+import spectacled.shared.generated.resources.ic_add_journal
+import spectacled.shared.generated.resources.ic_add_note
+import spectacled.shared.generated.resources.ic_add_task
 import spectacled.shared.generated.resources.pinned
 import spectacled.shared.generated.resources.read_only
 import spectacled.shared.generated.resources.search
@@ -181,12 +187,25 @@ fun IcalEntryListScreenRoot(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.AutoMirrored.Outlined.NoteAdd,
-                                        contentDescription = stringResource(Res.string.add_entry),
+                                        painter = painterResource(when(icalEntryListViewModel.spectacledVariant) {
+                                            SpectacledVariant.JOURNALS -> Res.drawable.ic_add_journal
+                                            SpectacledVariant.NOTES -> Res.drawable.ic_add_note
+                                            SpectacledVariant.TASKS -> Res.drawable.ic_add_task
+                                        }),
+                                        contentDescription = stringResource(when(icalEntryListViewModel.spectacledVariant) {
+                                            SpectacledVariant.JOURNALS -> Res.string.add_journal
+                                            SpectacledVariant.NOTES -> Res.string.add_note
+                                            SpectacledVariant.TASKS -> Res.string.add_task
+                                        }),
                                         tint = getContentColorForColoredSurfaces(icalEntryListViewModel.state.calendar.color, true)
                                     )
+
                                     Text(
-                                        text = "Add note",
+                                        text = stringResource(when(icalEntryListViewModel.spectacledVariant) {
+                                            SpectacledVariant.JOURNALS -> Res.string.add_journal
+                                            SpectacledVariant.NOTES -> Res.string.add_note
+                                            SpectacledVariant.TASKS -> Res.string.add_task
+                                        }),
                                         color = getContentColorForColoredSurfaces(icalEntryListViewModel.state.calendar.color, true)
                                     )
                                 }
