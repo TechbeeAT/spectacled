@@ -1,7 +1,6 @@
 package at.techbee.spectacled.screens.account.presentation.calendars.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.EditOff
-import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -47,7 +45,6 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.edit
-import spectacled.shared.generated.resources.folders
 import spectacled.shared.generated.resources.open_foldername
 import spectacled.shared.generated.resources.read_only
 import spectacled.shared.generated.resources.sync_problem
@@ -86,27 +83,8 @@ fun CalendarCard(
             modifier = Modifier.fillMaxWidth().padding(8.dp).heightIn(min = 48.dp)
         ) {
 
-            Crossfade(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.IN_PROGRESS) { syncInProgress ->
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(48.dp).padding(8.dp)
-                ) {
-                    if(syncInProgress)
-                        CircularProgressIndicator(
-                            color = LocalContentColor.current,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    else
-                        Icon(
-                            imageVector = Icons.Outlined.Folder,
-                            contentDescription = stringResource(Res.string.folders),
-                            tint = LocalContentColor.current
-                        )
-                }
-            }
-
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).padding(start = 8.dp)
             ) {
                 Text(
                     text = calendar.displayName?:calendar.url.toString(),
@@ -124,6 +102,18 @@ fun CalendarCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+            }
+
+            AnimatedVisibility(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.IN_PROGRESS) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(48.dp).padding(8.dp)
+                ) {
+                    CircularProgressIndicator(
+                        color = LocalContentColor.current,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             if(!calendar.canWriteProperties()) {
