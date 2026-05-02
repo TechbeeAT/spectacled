@@ -85,6 +85,7 @@ import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_entry
 import spectacled.shared.generated.resources.category
+import spectacled.shared.generated.resources.pinned
 import spectacled.shared.generated.resources.read_only
 import spectacled.shared.generated.resources.search
 import spectacled.shared.generated.resources.trashbin
@@ -476,7 +477,7 @@ fun IcalEntryListScreen(
                         item(span = StaggeredGridItemSpan.FullLine) {
                             ListGroupHeader(
                                 appPreferencesTag = LIST_COLLAPSED_GROUP_PINNED,
-                                headerText = "Pinned",
+                                headerText = stringResource(Res.string.pinned) + "  " + IcalEntry.PINNED_CATEGORY,
                                 isCollapsed = LIST_COLLAPSED_GROUP_PINNED in state.listCollapsedGroups,
                                 onToggleListGroupExpanded = { onAction(IcalEntryListAction.OnToggleListGroupExpanded(it)) }
                             )

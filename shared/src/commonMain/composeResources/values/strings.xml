@@ -114,6 +114,7 @@
     <string name="delete_selected_warning">Are you sure you want to delete the selected %1$d entry/entries?</string>
     <string name="pin">Pin</string>
     <string name="unpin">Unpin</string>
+    <string name="pinned">Pinned</string>
     <string name="share">Share</string>
     <string name="send_as_email">Send as E-Mail</string>
 

@@ -314,7 +314,7 @@ fun IcalEntryListTopBar(
                     }
 
                     TextButton(
-                        onClick = { onAction(IcalEntryListAction.OnTogglePinEntry(if(allSelectedPinned) false else true)) },
+                        onClick = { onAction(IcalEntryListAction.OnTogglePinEntry(!allSelectedPinned)) },
                         enabled = multiselectItems?.isNotEmpty() == true
                     ) {
                         if(allSelectedPinned)
