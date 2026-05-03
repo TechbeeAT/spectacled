@@ -202,50 +202,53 @@ fun IcalEntryListTopBar(
                         )
                     }
 
-                    TextButton(
-                        onClick = { sortedByDropdownExpanded = !sortedByDropdownExpanded }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.Sort,
-                            contentDescription = stringResource(listSortedBy.displayName),
-                            tint = onSurfaceTint
-                        )
-
-                        DropdownMenu(
-                            expanded = sortedByDropdownExpanded,
-                            onDismissRequest = { sortedByDropdownExpanded = false }
+                    // No sorting option for Journals
+                    if(spectacledVariant != SpectacledVariant.JOURNALS) {
+                        TextButton(
+                            onClick = { sortedByDropdownExpanded = !sortedByDropdownExpanded }
                         ) {
-                            ListSortedBy.entriesFor(spectacledVariant).forEach { sortedByOption ->
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.Sort,
+                                contentDescription = stringResource(listSortedBy.displayName),
+                                tint = onSurfaceTint
+                            )
 
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = stringResource(sortedByOption.displayName),
-                                            color = onSurfaceTint
-                                        )
-                                    },
-                                    onClick = {
-                                        // toggle ascending if the same item is selected again
-                                        if (listSortedBy.name == sortedByOption.name && listSortedBy != ListSortedBy.DRAGANDDROP)
-                                            onAction(IcalEntryListAction.OnSortedByChanged(sortedByOption, !sortedAscending))
-                                        else
-                                            onAction(IcalEntryListAction.OnSortedByChanged(sortedByOption, true))
-                                    },
-                                    trailingIcon = {
-                                        if (listSortedBy.name == sortedByOption.name && sortedAscending)
-                                            Icon(
-                                                imageVector = Icons.Default.ArrowCircleDown,
-                                                contentDescription = stringResource(Res.string.sort_ascending),
-                                                tint = onSurfaceTint
+                            DropdownMenu(
+                                expanded = sortedByDropdownExpanded,
+                                onDismissRequest = { sortedByDropdownExpanded = false }
+                            ) {
+                                ListSortedBy.entriesFor(spectacledVariant).forEach { sortedByOption ->
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = stringResource(sortedByOption.displayName),
+                                                color = onSurfaceTint
                                             )
-                                        else if (listSortedBy.name == sortedByOption.name)
-                                            Icon(
-                                                imageVector = Icons.Outlined.ArrowCircleUp,
-                                                contentDescription = stringResource(Res.string.sort_descending),
-                                                tint = onSurfaceTint
-                                            )
-                                    }
-                                )
+                                        },
+                                        onClick = {
+                                            // toggle ascending if the same item is selected again
+                                            if (listSortedBy.name == sortedByOption.name && listSortedBy != ListSortedBy.DRAGANDDROP)
+                                                onAction(IcalEntryListAction.OnSortedByChanged(sortedByOption, !sortedAscending))
+                                            else
+                                                onAction(IcalEntryListAction.OnSortedByChanged(sortedByOption, true))
+                                        },
+                                        trailingIcon = {
+                                            if (listSortedBy.name == sortedByOption.name && sortedAscending)
+                                                Icon(
+                                                    imageVector = Icons.Default.ArrowCircleDown,
+                                                    contentDescription = stringResource(Res.string.sort_ascending),
+                                                    tint = onSurfaceTint
+                                                )
+                                            else if (listSortedBy.name == sortedByOption.name)
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ArrowCircleUp,
+                                                    contentDescription = stringResource(Res.string.sort_descending),
+                                                    tint = onSurfaceTint
+                                                )
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
