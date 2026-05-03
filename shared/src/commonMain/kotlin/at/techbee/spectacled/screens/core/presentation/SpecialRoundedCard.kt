@@ -13,12 +13,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+
 
 @Composable
 fun SpecialRoundedCard(
-    isFirst: Boolean,
-    isLast: Boolean,
+    isFirst: Boolean = true,
+    isLast: Boolean = true,
+    overrideTopRoundedCornerSize: Dp? = null,
+    overrideBottomRoundedCornerSize: Dp? = null,
     isSelected: Boolean = false,
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
@@ -30,10 +34,10 @@ fun SpecialRoundedCard(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(
-            topStart = if (isFirst) 16.dp else 4.dp,
-            topEnd = if (isFirst) 16.dp else 4.dp,
-            bottomStart = if (isLast) 16.dp else 4.dp,
-            bottomEnd = if (isLast) 16.dp else 4.dp
+            topStart = overrideTopRoundedCornerSize?: if(isFirst) 16.dp else 4.dp,
+            topEnd = overrideTopRoundedCornerSize?: if(isFirst) 16.dp else 4.dp,
+            bottomStart = overrideBottomRoundedCornerSize?: if(isLast) 16.dp else 4.dp,
+            bottomEnd = overrideBottomRoundedCornerSize?: if(isLast) 16.dp else 4.dp
         ),
         colors = colors,
         border = if(isSelected) BorderStroke(3.dp, colors.disabledContentColor) else null,

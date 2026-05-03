@@ -53,6 +53,8 @@ data class IcalEntryListState(
     val showDeleteSelectedItemsDialog: Boolean = false,
     val showUpdateColorOfSelectedBottomSheet: Boolean = false,
 
+    val draggingIcalEntryId: Long? = null,
+
     val listCollapsedGroups: Set<String> = emptySet(),
     val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES  // must be overwritten immediately on load
 ) {

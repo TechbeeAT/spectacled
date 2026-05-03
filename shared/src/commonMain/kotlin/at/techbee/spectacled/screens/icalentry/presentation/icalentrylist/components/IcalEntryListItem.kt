@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -53,12 +54,14 @@ import kotlin.time.ExperimentalTime
 @Composable
 fun IcalEntryListItem(
     icalEntry: IcalEntry,
-    isFirst: Boolean,
-    isLast: Boolean,
     isSelected: Boolean,
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    isFirst: Boolean = true,
+    isLast: Boolean = true,
+    overrideTopRoundedCornerSize: Dp? = null,
+    overrideBottomRoundedCornerSize: Dp? = null,
     dragHandle: @Composable (() -> Unit) = { },
     modifier: Modifier = Modifier
 ) {
@@ -75,6 +78,8 @@ fun IcalEntryListItem(
         ),
         interactionSource = interactionSource,
         onClick = {},
+        overrideTopRoundedCornerSize = overrideTopRoundedCornerSize,
+        overrideBottomRoundedCornerSize = overrideBottomRoundedCornerSize,
         modifier = modifier
     ) {
 

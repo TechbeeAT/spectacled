@@ -79,6 +79,13 @@ data class IcalEntry(
             description = sampleParagraphs[0],
             categories = listOf("Category 1", "Category 2")
         )
+
+        fun getSampleJournal()= IcalEntry(
+            summary = sampleParagraphs[0].substring(0, 30),
+            description = sampleParagraphs[0],
+            dtStart = IcsDateTime.now(),
+            categories = listOf("Category 1", "Category 2")
+        )
     }
 
     @Composable
