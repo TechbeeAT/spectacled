@@ -46,6 +46,7 @@ import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
+import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.IcalEntryListTopBar
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
@@ -133,6 +134,25 @@ fun IcalEntryListScreenRoot(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+    }
+    
+    if (state.showUpdateCategoryOfSelectedBottomSheet) {
+        CategorySelectionBottomSheet(
+            allCategories = state.allCategories.filter { it != IcalEntry.PINNED_CATEGORY },
+            selectedCategories = state.multiselectItems?.let { selectedIds ->
+                val selectedEntries = state.icalEntries.filter { it.id in selectedIds }
+                if (selectedEntries.isEmpty()) return@let emptyList()
+
+                selectedEntries
+                    .map { it.categories.toSet() }
+                    .reduce { acc, categories -> acc.intersect(categories) }
+                    .filter { it != IcalEntry.PINNED_CATEGORY }
+                    .toList()
+            } ?: emptyList(),
+            onCategoryAdded = { icalEntryListViewModel.onAction(IcalEntryListAction.OnUpdateCategoryOfSelected(it, "")) },
+            onCategoryRemoved = { icalEntryListViewModel.onAction(IcalEntryListAction.OnUpdateCategoryOfSelected("", it)) },
+            onDismiss = { icalEntryListViewModel.onAction(IcalEntryListAction.OnShowUpdateCategoryOfSelectedBottomSheet(false)) }
+        )
     }
 
     CompositionLocalProvider(LocalContentColor provides customColors.onSurface) {

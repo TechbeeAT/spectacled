@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.outlined.ArrowCircleUp
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
@@ -25,6 +27,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +67,7 @@ import spectacled.shared.generated.resources.delete_selected
 import spectacled.shared.generated.resources.folders
 import spectacled.shared.generated.resources.ic_pin
 import spectacled.shared.generated.resources.ic_unpin
+import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.pin
 import spectacled.shared.generated.resources.refresh
 import spectacled.shared.generated.resources.search
@@ -72,6 +76,7 @@ import spectacled.shared.generated.resources.select_multiple
 import spectacled.shared.generated.resources.sort_ascending
 import spectacled.shared.generated.resources.sort_descending
 import spectacled.shared.generated.resources.unpin
+import spectacled.shared.generated.resources.update_category
 import spectacled.shared.generated.resources.update_color
 import spectacled.shared.generated.resources.x_selected
 
@@ -92,6 +97,7 @@ fun IcalEntryListTopBar(
 ) {
 
     var sortedByDropdownExpanded by remember { mutableStateOf(false) }
+    var multiselectMoreDropdownExpanded by remember { mutableStateOf(false) }
 
     CenterAlignedTopAppBar(
         title = {},
@@ -291,27 +297,6 @@ fun IcalEntryListTopBar(
 
             AnimatedVisibility(multiselectItems != null) {
                 Row {
-                    TextButton(
-                        onClick = { onAction(IcalEntryListAction.OnShowUpdateColorOfSelectedBottomSheet(true)) },
-                        enabled = multiselectItems?.isNotEmpty() == true
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Palette,
-                            contentDescription = stringResource(Res.string.update_color),
-                            tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
-                        )
-                    }
-
-                    TextButton(
-                        onClick = { onAction(IcalEntryListAction.OnShowDeleteSelectedItemsDialog(true)) },
-                        enabled = multiselectItems?.isNotEmpty() == true
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.DeleteOutline,
-                            contentDescription = stringResource(Res.string.delete_selected),
-                            tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
-                        )
-                    }
 
                     TextButton(
                         onClick = { onAction(IcalEntryListAction.OnTogglePinEntry(!allSelectedPinned)) },
@@ -329,6 +314,79 @@ fun IcalEntryListTopBar(
                                 contentDescription = stringResource(Res.string.pin),
                                 tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
                             )
+                    }
+
+                    TextButton(
+                        onClick = { multiselectMoreDropdownExpanded = !multiselectMoreDropdownExpanded },
+                        enabled = multiselectItems?.isNotEmpty() == true
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MoreVert,
+                            contentDescription = stringResource(Res.string.more),
+                            tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = multiselectMoreDropdownExpanded,
+                        onDismissRequest = { multiselectMoreDropdownExpanded = false }
+                    ) {
+
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = stringResource(Res.string.update_color),
+                                    color = onSurfaceTint
+                                )
+                            },
+                            enabled = multiselectItems?.isNotEmpty() == true,
+                            onClick = { onAction(IcalEntryListAction.OnShowUpdateColorOfSelectedBottomSheet(true)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Palette,
+                                    contentDescription = stringResource(Res.string.update_color),
+                                    tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                                )
+                            }
+                        )
+
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = stringResource(Res.string.update_category),
+                                    color = onSurfaceTint
+                                )
+                            },
+                            enabled = multiselectItems?.isNotEmpty() == true,
+                            onClick = { onAction(IcalEntryListAction.OnShowUpdateCategoryOfSelectedBottomSheet(true)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.Label,
+                                    contentDescription = stringResource(Res.string.update_category),
+                                    tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                                )
+                            }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(8.dp))
+
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = stringResource(Res.string.delete_selected),
+                                    color = onSurfaceTint
+                                )
+                            },
+                            enabled = multiselectItems?.isNotEmpty() == true,
+                            onClick = { onAction(IcalEntryListAction.OnShowDeleteSelectedItemsDialog(true))  },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.DeleteOutline,
+                                    contentDescription = stringResource(Res.string.delete_selected),
+                                    tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                                )
+                            }
+                        )
                     }
                 }
             }

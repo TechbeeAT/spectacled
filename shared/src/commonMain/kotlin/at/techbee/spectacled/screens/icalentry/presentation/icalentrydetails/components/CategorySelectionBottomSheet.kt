@@ -22,7 +22,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -37,23 +36,23 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.create_category
 import spectacled.shared.generated.resources.search_add_category
-import org.jetbrains.compose.resources.stringResource
-import spectacled.shared.generated.resources.category
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IcalEntryDetailsCategorySelectionBottomSheet(
+fun CategorySelectionBottomSheet(
     allCategories: List<String>,
-    initiallySelectedCategories: List<String>,
-    onCategoriesChanged: (List<String>) -> Unit,
+    selectedCategories: List<String>,
+    onCategoryAdded: (String) -> Unit,
+    onCategoryRemoved: (String) -> Unit,
     onDismiss: () -> Unit
     ) {
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    val selectedCategories = remember(initiallySelectedCategories) { mutableStateListOf(*initiallySelectedCategories.toTypedArray()) }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
 
@@ -83,9 +82,8 @@ fun IcalEntryDetailsCategorySelectionBottomSheet(
                     IconButton(
                         onClick = {
                             if (searchQuery.isNotBlank()) {
-                                selectedCategories.add(searchQuery)
+                                onCategoryAdded(searchQuery)
                                 searchQuery = ""
-                                onCategoriesChanged(selectedCategories.distinct())
                             }
                             keyboardController?.hide()
                         },
@@ -102,9 +100,8 @@ fun IcalEntryDetailsCategorySelectionBottomSheet(
                 keyboardActions = KeyboardActions(
                     onDone = {
                         if (searchQuery.isNotBlank()) {
-                            selectedCategories.add(searchQuery)
+                            onCategoryAdded(searchQuery)
                             searchQuery = ""
-                            onCategoriesChanged(selectedCategories.distinct())
                         }
                     }
                 ),
@@ -119,18 +116,15 @@ fun IcalEntryDetailsCategorySelectionBottomSheet(
                 modifier = Modifier.padding(8.dp).fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
                 allCategories
-                    .toMutableSet()
-                    .apply { addAll(selectedCategories) }
                     .sorted()
                     .forEach { category ->
                         FilterChip(
                             selected = selectedCategories.contains(category),
                             onClick = {
                                 if (selectedCategories.contains(category))
-                                    selectedCategories.remove(category)
+                                    onCategoryRemoved(category)
                                 else
-                                    selectedCategories.add(category)
-                                onCategoriesChanged(selectedCategories.distinct())
+                                    onCategoryAdded(category)
                             },
                             label = { Text(category) },
                             leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category)) }
@@ -145,11 +139,12 @@ fun IcalEntryDetailsCategorySelectionBottomSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
-private fun IcalEntryDetailsCategorySelectionBottomSheet_Preview() {
-    IcalEntryDetailsCategorySelectionBottomSheet(
+private fun CategorySelectionBottomSheet_Preview() {
+    CategorySelectionBottomSheet(
         allCategories = listOf("Category 5", "Category 1", "Category 2", "Category 3", "Category 4"),
-        initiallySelectedCategories = listOf("Category 2"),
-        onCategoriesChanged = { },
+        selectedCategories = listOf("Category 2"),
+        onCategoryAdded = { },
+        onCategoryRemoved = { },
         onDismiss = { }
     )
 }

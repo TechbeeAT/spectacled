@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails
 
+import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import kotlin.time.ExperimentalTime
@@ -8,6 +9,9 @@ data class IcalEntryDetailsState @OptIn(ExperimentalTime::class) constructor(
     val icalEntry: IcalEntry = IcalEntry(),
     val originalIcalEntry: IcalEntry = IcalEntry(),
     val calendar: Calendar? = null,
+
+    val allColors: List<Color> = emptyList(),
+    val allCategories: List<String> = emptyList(),
 
     val showDeleteDialog: Boolean = false,
     val showMoreBottomSheet: Boolean = false,

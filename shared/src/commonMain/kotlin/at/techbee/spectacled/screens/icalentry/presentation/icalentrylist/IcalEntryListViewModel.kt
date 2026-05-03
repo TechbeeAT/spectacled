@@ -16,6 +16,7 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.AppPreferences
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
@@ -71,7 +72,6 @@ class IcalEntryListViewModel(
 
         viewModelScope.launch {
             try {
-
                 val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendarId).awaitAsOneOrNull()?.toDomain() ?: throw NullPointerException("Principal not found")
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw NullPointerException("Credentials not found")
 
@@ -82,6 +82,8 @@ class IcalEntryListViewModel(
 
                 launch { observeCalendar(calendarId) }
                 launch { observeIcalentries() }
+                launch { observeColors() }
+                launch { observeCategories() }
 
             } catch (_: NullPointerException) {
                 _state.value = _state.value.copy(navigateUp = true, isRefreshing = false)
@@ -99,7 +101,6 @@ class IcalEntryListViewModel(
                     calendar = emittedCalendar
                 )
             }
-
     }
 
     private suspend fun observeIcalentries() {
@@ -121,6 +122,33 @@ class IcalEntryListViewModel(
                     addAll(emittedIcalEntries.filter { emitted -> !emitted.syncState.isDeletedState() })
                     sortBy { icalEntry -> icalEntry.orderNo }
                 }
+            }
+    }
+
+    private suspend fun observeColors() {
+        database
+            .icalentry_dtoQueries.getAllColors()
+            .asFlow()
+            .collect { colorsFlow ->
+                val emittedColors = colorsFlow.awaitAsList().map { Color(it) }
+                _state.value = state.copy(
+                    allColors = emittedColors
+                )
+            }
+    }
+
+    private suspend fun observeCategories() {
+        database
+            .icalentry_dtoQueries.getAllCategories()
+            .asFlow()
+            .collect { categoriesFlow ->
+                val allCategories = mutableSetOf<String>()
+                categoriesFlow.awaitAsList().let { unsplitCategories ->
+                    unsplitCategories.forEach { allCategories.addAll(it.split(CATEGORY_SPLIT_DELIMITER)) }
+                }
+                _state.value = state.copy(
+                    allCategories = allCategories.toList()
+                )
             }
     }
 
@@ -173,6 +201,49 @@ class IcalEntryListViewModel(
             IcalEntryListAction.OnSelectAllMultiselectItems -> { _state.value = _state.value.copy(multiselectItems = state.displayMap.flatMap { it.value }.map { it.id }) }
             is IcalEntryListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
             is IcalEntryListAction.OnDraggingIcalEntry -> { _state.value = _state.value.copy(draggingIcalEntryId = action.IcalEntryId) }
+            is IcalEntryListAction.OnShowUpdateCategoryOfSelectedBottomSheet -> {
+                _state.value = if(action.show)
+                    _state.value.copy(showUpdateCategoryOfSelectedBottomSheet = true)
+                else {
+                    _state.value.copy(showUpdateCategoryOfSelectedBottomSheet = false, multiselectItems = null)
+                }
+            }
+            is IcalEntryListAction.OnUpdateCategoryOfSelected -> { onUpdateCategoryOfSelectedItems(action.addCategory, action.removeCategory) }
+        }
+    }
+
+
+    private fun onUpdateCategoryOfSelectedItems(addCategory: String, removeCategory: String) {
+        viewModelScope.launch {
+            database.icalentry_dtoQueries.transaction {
+                _state.value.multiselectItems?.forEach { id ->
+                    _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
+                        var newCategories = icalEntry.categories
+                        if (addCategory.isNotBlank() && !newCategories.contains(addCategory)) {
+                            newCategories = newCategories + addCategory
+                        }
+                        if (removeCategory.isNotBlank() && newCategories.contains(removeCategory)) {
+                            newCategories = newCategories - removeCategory
+                        }
+
+                        if (newCategories != icalEntry.categories) {
+                            icalEntry.copy(
+                                categories = newCategories,
+                                lastModified = IcsDateTime.now(),
+                                syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+                            ).toDto().let { copyDto ->
+                                database.icalentry_dtoQueries.updateCategory(
+                                    newCategories = copyDto.categories,
+                                    lastModified = copyDto.lastModified,
+                                    syncState = copyDto.syncState,
+                                    id = copyDto.id
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            //platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
         }
     }
 
@@ -226,7 +297,7 @@ class IcalEntryListViewModel(
                     }
                 }
             }
-            platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
+            //platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
         }
     }
 

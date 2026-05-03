@@ -41,6 +41,9 @@ data class IcalEntryListState(
     val searchCategory: String = "",
     val errorMessage: String? = null,
 
+    val allColors: List<Color> = emptyList(),
+    val allCategories: List<String> = emptyList(),
+
     val isSearchBarExpanded: Boolean = false,
     val listSortedBy: ListSortedBy = ListSortedBy.CREATED,
     val listSortedByAscending: Boolean = true,
@@ -52,6 +55,7 @@ data class IcalEntryListState(
     val multiselectItems: List<Long>? = null,
     val showDeleteSelectedItemsDialog: Boolean = false,
     val showUpdateColorOfSelectedBottomSheet: Boolean = false,
+    val showUpdateCategoryOfSelectedBottomSheet: Boolean = false,
 
     val draggingIcalEntryId: Long? = null,
 

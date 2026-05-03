@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
+import app.cash.sqldelight.coroutines.asFlow
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.account.data.insertOrUpdateIcalEntry
@@ -23,6 +24,7 @@ import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.domain.SyncState
@@ -53,9 +55,6 @@ class IcalEntryDetailsViewModel(
     private val shareManager: PlatformShareManager,
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
-    
-    val allCategories = mutableSetOf<String>()
-    val allColors = mutableSetOf<Color>()
 
     private var _state by mutableStateOf(IcalEntryDetailsState())
     val state: IcalEntryDetailsState get() = _state
@@ -84,13 +83,6 @@ class IcalEntryDetailsViewModel(
 
         viewModelScope.launch {
 
-            val unsplitCategories = database.icalentry_dtoQueries.getAllCategories().awaitAsList()
-            unsplitCategories.forEach { category ->
-                allCategories.addAll(category.split(","))
-            }
-            allColors.addAll(database.icalentry_dtoQueries.getAllColors().awaitAsList().map { color -> Color(color) })
-
-
             val icalEntry = database.icalentry_dtoQueries.getIcalEntryById(icalEntryId).awaitAsOneOrNull()?.toDomain() ?: return@launch
             val calendar = database.calendar_dtoQueries.getCalendarById(icalEntry.calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
@@ -102,7 +94,36 @@ class IcalEntryDetailsViewModel(
                 navigateUp = false
             )
 
+            launch { observeColors() }
+            launch { observeCategories() }
         }
+    }
+
+    private suspend fun observeColors() {
+        database
+            .icalentry_dtoQueries.getAllColors()
+            .asFlow()
+            .collect { colorsFlow ->
+                val emittedColors = colorsFlow.awaitAsList().map { Color(it) }
+                _state = _state.copy(
+                    allColors = emittedColors
+                )
+            }
+    }
+
+    private suspend fun observeCategories() {
+        database
+            .icalentry_dtoQueries.getAllCategories()
+            .asFlow()
+            .collect { categoriesFlow ->
+                val allCategories = mutableSetOf<String>()
+                categoriesFlow.awaitAsList().let {
+                    it.forEach { allCategories.addAll(it.split(CATEGORY_SPLIT_DELIMITER)) }
+                }
+                _state = _state.copy(
+                    allCategories = allCategories.toList()
+                )
+            }
     }
 
 
@@ -162,7 +183,7 @@ class IcalEntryDetailsViewModel(
     fun onAction(action: IcalEntryDetailsAction) {
         when(action) {
             is IcalEntryDetailsAction.OnUpdateSnackbar -> { _state = _state.copy(snackbarText = action.message) }
-            is IcalEntryDetailsAction.OnUpdateCategories -> onUpdateCategories(action.categories)
+            is IcalEntryDetailsAction.OnUpdateCategories -> onUpdateCategories(action.addCategory, action.removeCategory)
             is IcalEntryDetailsAction.OnUpdateColor -> onUpdateColor(action.color)
             is IcalEntryDetailsAction.OnUpdateDescription -> onUpdateDescription(action.description)
             is IcalEntryDetailsAction.OnUpdateSummary -> onUpdateSummary(action.summary)
@@ -240,10 +261,17 @@ class IcalEntryDetailsViewModel(
     }
 
     @OptIn(ExperimentalTime::class)
-    private fun onUpdateCategories(newCategories: List<String>) {
+    private fun onUpdateCategories(addCategory: String?, removeCategory: String?) {
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(
-                categories = newCategories,
+                categories = _state.icalEntry.categories.let {
+                    if(addCategory != null)
+                        it.plus(addCategory)
+                    else if (removeCategory != null)
+                        it.minus(removeCategory)
+                    else
+                        it
+                },
                 lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                     SyncState.USER_DECIDED_CLIENT_WINS

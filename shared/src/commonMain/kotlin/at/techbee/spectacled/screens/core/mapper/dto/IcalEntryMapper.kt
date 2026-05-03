@@ -14,6 +14,7 @@ import kotlinx.serialization.json.Json
 import kotlin.time.Clock.System
 import kotlin.time.ExperimentalTime
 
+const val CATEGORY_SPLIT_DELIMITER = ","
 
 @OptIn(ExperimentalTime::class)
 fun IcalEntryDto.toDomain(): IcalEntry {
@@ -38,7 +39,7 @@ fun IcalEntryDto.toDomain(): IcalEntry {
         color = this.color?.let { Color(it) },
         sequence = this.sequence,
         dtstamp = parseIcsDateTime(this.dtstamp)?: IcsDateTime(System.now(), false),
-        categories = this.categories?.split(',') ?: emptyList(),
+        categories = this.categories?.split(CATEGORY_SPLIT_DELIMITER) ?: emptyList(),
         created = parseIcsDateTime(this.created)?: IcsDateTime(System.now(), false),
         lastModified = parseIcsDateTime(this.lastModified)?: IcsDateTime(System.now(), false),
         extraProperties = extraProps,
@@ -67,7 +68,7 @@ fun IcalEntry.toDto(): IcalEntryDto {
         sequence = this.sequence,
         dtstart = this.dtStart?.let { formatIcsDateTime(it)?.first },
         dtStartTimeZone = this.dtStart?.timeZone?.id,
-        categories = this.categories.joinToString(",").ifEmpty { null },
+        categories = this.categories.joinToString(CATEGORY_SPLIT_DELIMITER).ifEmpty { null },
         created = formatIcsDateTime(this.created)?.first,
         lastModified = formatIcsDateTime(this.lastModified)?.first,
         extraProperties = if(this.extraProperties.isNotEmpty()) mapperJson.encodeToString(this.extraProperties) else null,

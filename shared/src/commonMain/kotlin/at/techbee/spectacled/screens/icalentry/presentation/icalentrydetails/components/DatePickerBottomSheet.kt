@@ -46,9 +46,10 @@ fun DatePickerBottomSheet(
 @Preview(showBackground = true)
 @Composable
 private fun DatePickerBottomSheet_Preview() {
+
     DatePickerBottomSheet(
         icsDateTime = IcsDateTime(System.now(), false),
-        sheetState = rememberModalBottomSheetState(),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         onDateSelected = {},
         onDismiss = {}
     )

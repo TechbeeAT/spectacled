@@ -80,6 +80,7 @@
     <string name="more_colors">More colors</string>
     <string name="update_color">Update color</string>
     <string name="category">Category</string>
+    <string name="update_category">Update category</string>
     <string name="create_category">Create "%1$s"</string>
     <string name="search_add_category">Search/add category</string>
     <string name="delete">Delete</string>

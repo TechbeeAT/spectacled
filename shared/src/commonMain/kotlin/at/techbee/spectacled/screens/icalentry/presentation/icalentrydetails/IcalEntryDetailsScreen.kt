@@ -63,9 +63,9 @@ import at.techbee.spectacled.screens.core.presentation.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.domain.SyncState
 import at.techbee.spectacled.screens.icalentry.presentation.MarkdownVisualTransformation
+import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.DatePickerBottomSheet
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.DeleteIcalEntryDialog
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.IcalEntryDetailsCategorySelectionBottomSheet
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.IcalEntryDetailsMoreBottomSheet
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.IcalEntryDetailsTopBar
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.ResolveSyncConflictDialog
@@ -122,10 +122,11 @@ fun IcalEntryDetailsScreenRoot(
     }
 
     if (detailsState.showCategorySelectorBottomSheet) {
-        IcalEntryDetailsCategorySelectionBottomSheet(
-            allCategories = icalEntryDetailsViewModel.allCategories.toList(),
-            initiallySelectedCategories = detailsState.icalEntry.categories,
-            onCategoriesChanged = { icalEntryDetailsViewModel.onAction(IcalEntryDetailsAction.OnUpdateCategories(it)) },
+        CategorySelectionBottomSheet(
+            allCategories = detailsState.allCategories.filter { it != IcalEntry.PINNED_CATEGORY },
+            selectedCategories = detailsState.icalEntry.categories.filter { it != IcalEntry.PINNED_CATEGORY },
+            onCategoryAdded = { icalEntryDetailsViewModel.onAction(IcalEntryDetailsAction.OnUpdateCategories(it, null)) },
+            onCategoryRemoved = { icalEntryDetailsViewModel.onAction(IcalEntryDetailsAction.OnUpdateCategories(null, it)) },
             onDismiss = { icalEntryDetailsViewModel.onAction(IcalEntryDetailsAction.OnShowCategorySelectorBottomSheet(false)) }
         )
     }
@@ -135,7 +136,7 @@ fun IcalEntryDetailsScreenRoot(
             onDismiss = { icalEntryDetailsViewModel.onAction(IcalEntryDetailsAction.OnShowColorSelectorBottomSheet(false)) },
         ) {
             ColorSelectorElement(
-                recentColors = icalEntryDetailsViewModel.allColors.toList(),
+                recentColors = detailsState.allColors,
                 preselectedColor = detailsState.icalEntry.color ?: Color.Transparent,
                 onColorChanged = { icalEntryDetailsViewModel.onAction(IcalEntryDetailsAction.OnUpdateColor(if (it == Color.Transparent) null else it)) },
                 skipPartialSelection = true,
