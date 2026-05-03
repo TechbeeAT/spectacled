@@ -42,11 +42,12 @@ import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.domain.SyncState
 import at.techbee.spectacled.screens.icalentry.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.categories
 import spectacled.shared.generated.resources.no_summary_description
 import spectacled.shared.generated.resources.sync_conflict_detected
-import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.time
 import kotlin.time.ExperimentalTime
 
 @Composable
@@ -129,13 +130,16 @@ fun IcalEntryListItem(
                         )
 
                     icalEntry.dtStart?.let {
+                        if(it.isDateOnly)
+                            return@let
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Schedule,
-                                contentDescription = "Time",
+                                contentDescription = stringResource(Res.string.time),
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
