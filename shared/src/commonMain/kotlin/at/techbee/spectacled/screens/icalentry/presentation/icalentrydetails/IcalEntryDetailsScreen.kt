@@ -73,19 +73,18 @@ import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.com
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.TimeZonePickerBottomSheet
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import at.techbee.spectacled.theme.getThemeForColoredSurfaces
+import kotlinx.datetime.TimeZone
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_time
+import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.no_timezone
 import spectacled.shared.generated.resources.restore
 import spectacled.shared.generated.resources.summary
-import spectacled.shared.generated.resources.category
-import kotlinx.datetime.TimeZone
-import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.viewmodel.koinViewModel
-
 import kotlin.time.ExperimentalTime
 
 
@@ -436,7 +435,7 @@ fun IcalEntryDetailsScreen(
             enabled = state.allowEditing(),
             visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
             modifier = Modifier
-                .heightIn(min = 50.dp)
+                .heightIn(min = 200.dp)
                 .fillMaxWidth()
                 .fillMaxHeight(1f)
                 .onFocusChanged {
@@ -491,7 +490,8 @@ private fun IcalEntryListScreen_with_dtstart_and_timezone_Preview() {
             icalEntry = IcalEntry.getSampleIcalEntry().copy(dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna"))),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
         ),
-        onAction = {}
+        onAction = {},
+        modifier = Modifier.fillMaxHeight()
     )
 }
 
