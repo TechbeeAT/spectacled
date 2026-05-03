@@ -327,7 +327,7 @@ fun CalendarListScreen(
     ) {
 
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(1.dp),
         modifier = modifier.padding(8.dp)
     ) {
 
@@ -430,6 +430,10 @@ private fun FolderListScreen_edit_off_Preview() {
                 Principal.getPrincipalForPreview().copy(
                     principalUrl = Url("https://example.com"),
                     displayName = "My Account"
+                ),
+                Principal.getPrincipalForPreview().copy(
+                    principalUrl = Url("https://example2.com"),
+                    displayName = "My Account2"
                 ),
             ),
             homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),

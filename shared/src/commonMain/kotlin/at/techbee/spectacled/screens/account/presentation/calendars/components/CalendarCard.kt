@@ -68,9 +68,8 @@ fun CalendarCard(
     val smallIconSize = 20.dp
 
     SpecialRoundedCard(
-        isFirst = isFirst,
-        isLast = isLast,
-        onClick = {
+        overrideTopRoundedCornerSize = if(isFirst) 16.dp else 0.dp,
+        overrideBottomRoundedCornerSize = if(isLast) 16.dp else 0.dp,        onClick = {
             if (!editEditFoldersModeEnabled)
                 onAction(CalendarListAction.OnCalendarClicked(calendar.id))
         },
