@@ -215,6 +215,7 @@ class IcalEntryDetailsViewModel(
             is IcalEntryDetailsAction.OnShowTimezonePickerBottomSheet -> { _state = _state.copy(showTimezonePickerBottomSheet = action.show) }
             is IcalEntryDetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
             IcalEntryDetailsAction.OnShare -> onShare()
+            is IcalEntryDetailsAction.OnPinIcalEntry -> { onPinIcalEntry(action.pin) }
         }
     }
 
@@ -260,7 +261,13 @@ class IcalEntryDetailsViewModel(
         )
     }
 
-    @OptIn(ExperimentalTime::class)
+    private fun onPinIcalEntry(pin: Boolean) {
+        if(pin)
+            onUpdateCategories(IcalEntry.PINNED_CATEGORY, null)
+        else
+            onUpdateCategories(null, IcalEntry.PINNED_CATEGORY)
+    }
+
     private fun onUpdateCategories(addCategory: String?, removeCategory: String?) {
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(

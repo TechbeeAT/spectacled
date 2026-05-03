@@ -20,11 +20,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsAction
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.back
+import spectacled.shared.generated.resources.ic_pin
+import spectacled.shared.generated.resources.ic_unpin
+import spectacled.shared.generated.resources.pin
 import spectacled.shared.generated.resources.read_only
-import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.unpin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,8 +40,11 @@ fun IcalEntryDetailsTopBar(
     canWriteContent: Boolean,
     contentColor: Color,
     isLoading: Boolean,
+    isPinned: Boolean,
+    spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>(),
     modifier: Modifier = Modifier
 ) {
+
 
     //var dropdownMenuExpanded by remember { mutableStateOf(false) }
 
@@ -82,6 +92,23 @@ fun IcalEntryDetailsTopBar(
                         contentDescription = stringResource(Res.string.read_only),
                         tint = contentColor
                     )
+                }
+            } else if (spectacledVariant == SpectacledVariant.NOTES){
+                TextButton(
+                    onClick = { onAction(IcalEntryDetailsAction.OnPinIcalEntry(!isPinned)) }
+                ) {
+                    if(isPinned)
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_pin),
+                            contentDescription = stringResource(Res.string.unpin),
+                            tint = contentColor
+                        )
+                    else
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_unpin),
+                            contentDescription = stringResource(Res.string.pin),
+                            tint = contentColor
+                        )
                 }
             }
             /*
@@ -155,6 +182,7 @@ private fun IcalEntryDetailsTopBar_Preview() {
         canWriteContent = true,
         contentColor = Color.Unspecified,
         isLoading = false,
+        isPinned = false,
         onAction = {}
     )
 }
@@ -166,6 +194,7 @@ private fun IcalEntryDetailsTopBar_readonly_Preview() {
         canWriteContent = false,
         contentColor = Color.Unspecified,
         isLoading = true,
+        isPinned = true,
         onAction = {}
     )
 }

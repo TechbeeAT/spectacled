@@ -199,7 +199,6 @@ class IcalEntryListViewModel(
             }
             is IcalEntryListAction.OnUpdateColorOfSelected -> { onUpdateColorOfSelectedItems(action.color) }
             IcalEntryListAction.OnSelectAllMultiselectItems -> { _state.value = _state.value.copy(multiselectItems = state.displayMap.flatMap { it.value }.map { it.id }) }
-            is IcalEntryListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
             is IcalEntryListAction.OnDraggingIcalEntry -> { _state.value = _state.value.copy(draggingIcalEntryId = action.IcalEntryId) }
             is IcalEntryListAction.OnShowUpdateCategoryOfSelectedBottomSheet -> {
                 _state.value = if(action.show)
@@ -209,20 +208,28 @@ class IcalEntryListViewModel(
                 }
             }
             is IcalEntryListAction.OnUpdateCategoryOfSelected -> { onUpdateCategoryOfSelectedItems(action.addCategory, action.removeCategory) }
+            is IcalEntryListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
         }
     }
 
 
-    private fun onUpdateCategoryOfSelectedItems(addCategory: String, removeCategory: String) {
+    private fun onUpdatePinOfSelectedItems(pin: Boolean) {
+        if(pin)
+            onUpdateCategoryOfSelectedItems(IcalEntry.PINNED_CATEGORY, null)
+        else
+            onUpdateCategoryOfSelectedItems(null, IcalEntry.PINNED_CATEGORY)
+    }
+
+    private fun onUpdateCategoryOfSelectedItems(addCategory: String?, removeCategory: String?) {
         viewModelScope.launch {
             database.icalentry_dtoQueries.transaction {
                 _state.value.multiselectItems?.forEach { id ->
                     _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
                         var newCategories = icalEntry.categories
-                        if (addCategory.isNotBlank() && !newCategories.contains(addCategory)) {
+                        if (addCategory?.isNotBlank() == true && !newCategories.contains(addCategory)) {
                             newCategories = newCategories + addCategory
                         }
-                        if (removeCategory.isNotBlank() && newCategories.contains(removeCategory)) {
+                        if (removeCategory?.isNotBlank() == true && newCategories.contains(removeCategory)) {
                             newCategories = newCategories - removeCategory
                         }
 
@@ -298,38 +305,6 @@ class IcalEntryListViewModel(
                 }
             }
             //platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
-        }
-    }
-
-    private fun onUpdatePinOfSelectedItems(pin: Boolean) {
-        viewModelScope.launch {
-
-            database.icalentry_dtoQueries.transaction {
-                _state.value.multiselectItems?.forEach { id ->
-                    _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
-                        if (pin && icalEntry.categories.contains(IcalEntry.PINNED_CATEGORY))
-                            return@forEach   // already pinned, do nothing
-                        if (!pin && !icalEntry.categories.contains(IcalEntry.PINNED_CATEGORY))
-                            return@forEach   // already unpinned, do nothing
-
-                        icalEntry.copy(
-                            categories = if (pin) icalEntry.categories.plus(IcalEntry.PINNED_CATEGORY) else icalEntry.categories.minus(
-                                IcalEntry.PINNED_CATEGORY
-                            ),
-                            lastModified = IcsDateTime.now(),
-                            syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
-                        ).toDto().let { copyDto ->
-                            database.icalentry_dtoQueries.updateCategory(
-                                newCategories = copyDto.categories,
-                                lastModified = copyDto.lastModified,
-                                syncState = copyDto.syncState,
-                                id = copyDto.id
-                            )
-                        }
-                    }
-                }
-            }
-            platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
         }
     }
 

@@ -212,6 +212,7 @@ fun IcalEntryDetailsScreenRoot(
                         canWriteContent = detailsState.allowEditing(),
                         contentColor = iconTint,
                         isLoading = detailsState.isLoading,
+                        isPinned = detailsState.icalEntry.categories.any { it == IcalEntry.PINNED_CATEGORY },
                         onAction = { action -> icalEntryDetailsViewModel.onAction(action) }
                     )
                 },

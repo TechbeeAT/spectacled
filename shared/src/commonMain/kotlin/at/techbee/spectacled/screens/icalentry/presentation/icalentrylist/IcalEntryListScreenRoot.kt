@@ -149,8 +149,8 @@ fun IcalEntryListScreenRoot(
                     .filter { it != IcalEntry.PINNED_CATEGORY }
                     .toList()
             } ?: emptyList(),
-            onCategoryAdded = { icalEntryListViewModel.onAction(IcalEntryListAction.OnUpdateCategoryOfSelected(it, "")) },
-            onCategoryRemoved = { icalEntryListViewModel.onAction(IcalEntryListAction.OnUpdateCategoryOfSelected("", it)) },
+            onCategoryAdded = { icalEntryListViewModel.onAction(IcalEntryListAction.OnUpdateCategoryOfSelected(it, null)) },
+            onCategoryRemoved = { icalEntryListViewModel.onAction(IcalEntryListAction.OnUpdateCategoryOfSelected(null, it)) },
             onDismiss = { icalEntryListViewModel.onAction(IcalEntryListAction.OnShowUpdateCategoryOfSelectedBottomSheet(false)) }
         )
     }

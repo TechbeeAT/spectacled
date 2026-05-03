@@ -8,6 +8,7 @@ sealed interface IcalEntryDetailsAction {
     data class OnUpdateSummary(val summary: String): IcalEntryDetailsAction
     data class OnUpdateDescription(val description: String): IcalEntryDetailsAction
     data class OnUpdateCategories(val addCategory: String?, val removeCategory: String?): IcalEntryDetailsAction
+    data class OnPinIcalEntry(val pin: Boolean): IcalEntryDetailsAction
     data class OnUpdateColor(val color: Color?): IcalEntryDetailsAction
     data class OnUpdateDtStart(val icsDateTime: IcsDateTime): IcalEntryDetailsAction
 

@@ -23,7 +23,7 @@ sealed interface IcalEntryListAction {
     data class OnShowUpdateColorOfSelectedBottomSheet(val show: Boolean): IcalEntryListAction
     data class OnShowUpdateCategoryOfSelectedBottomSheet(val show: Boolean): IcalEntryListAction
     data class OnUpdateColorOfSelected(val color: Color?): IcalEntryListAction
-    data class OnUpdateCategoryOfSelected(val addCategory: String, val removeCategory: String): IcalEntryListAction
+    data class OnUpdateCategoryOfSelected(val addCategory: String?, val removeCategory: String?): IcalEntryListAction
     data class OnUpdateOrderNo(val fromIndex: Int, val toIndex: Int): IcalEntryListAction
     object OnPersistOrderNo: IcalEntryListAction
     data class OnToggleListGroupExpanded(val listGroup: String): IcalEntryListAction
