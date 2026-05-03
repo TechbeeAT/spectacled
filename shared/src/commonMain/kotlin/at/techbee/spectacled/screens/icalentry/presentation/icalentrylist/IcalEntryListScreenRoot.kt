@@ -22,12 +22,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -42,15 +44,18 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.CategorySelectionBottomSheet
+import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.components.DatePickerBottomSheet
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.IcalEntryListTopBar
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import at.techbee.spectacled.theme.getThemeForColoredSurfaces
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -82,6 +87,17 @@ fun IcalEntryListScreenRoot(
 
     val searchBarFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val selectableDates = remember(state.icalEntries) {
+        val allowedMillis = state.icalEntries.mapNotNull {
+            it.dtStart?.toDatePickerMillis(TimeZone.currentSystemDefault())
+        }.toSet()
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return allowedMillis.contains(utcTimeMillis)
+            }
+        }
+    }
 
 
     LaunchedEffect(state.snackbarText) {
@@ -152,6 +168,16 @@ fun IcalEntryListScreenRoot(
             onCategoryAdded = { icalEntryListViewModel.onAction(IcalEntryListAction.OnUpdateCategoryOfSelected(it, null)) },
             onCategoryRemoved = { icalEntryListViewModel.onAction(IcalEntryListAction.OnUpdateCategoryOfSelected(null, it)) },
             onDismiss = { icalEntryListViewModel.onAction(IcalEntryListAction.OnShowUpdateCategoryOfSelectedBottomSheet(false)) }
+        )
+    }
+
+    if (state.showDateSelectorBottomSheet) {
+        DatePickerBottomSheet(
+            icsDateTime = IcsDateTime.now(),
+            sheetState = rememberModalBottomSheetState(),
+            selectableDates = selectableDates,
+            onDateSelected = { selectedDate -> icalEntryListViewModel.onAction(IcalEntryListAction.OnGoToSelectedDate(selectedDate)) },
+            onDismiss = { icalEntryListViewModel.onAction(IcalEntryListAction.OnShowDateSelectorBottomSheet(false)) }
         )
     }
 

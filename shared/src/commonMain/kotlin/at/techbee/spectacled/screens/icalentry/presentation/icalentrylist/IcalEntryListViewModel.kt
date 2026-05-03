@@ -199,7 +199,7 @@ class IcalEntryListViewModel(
             }
             is IcalEntryListAction.OnUpdateColorOfSelected -> { onUpdateColorOfSelectedItems(action.color) }
             IcalEntryListAction.OnSelectAllMultiselectItems -> { _state.value = _state.value.copy(multiselectItems = state.displayMap.flatMap { it.value }.map { it.id }) }
-            is IcalEntryListAction.OnDraggingIcalEntry -> { _state.value = _state.value.copy(draggingIcalEntryId = action.IcalEntryId) }
+            is IcalEntryListAction.OnDraggingIcalEntry -> { _state.value = _state.value.copy(draggingIcalEntryId = action.icalEntryId) }
             is IcalEntryListAction.OnShowUpdateCategoryOfSelectedBottomSheet -> {
                 _state.value = if(action.show)
                     _state.value.copy(showUpdateCategoryOfSelectedBottomSheet = true)
@@ -207,8 +207,10 @@ class IcalEntryListViewModel(
                     _state.value.copy(showUpdateCategoryOfSelectedBottomSheet = false, multiselectItems = null)
                 }
             }
+            is IcalEntryListAction.OnShowDateSelectorBottomSheet -> { _state.value = _state.value.copy(showDateSelectorBottomSheet = action.show) }
             is IcalEntryListAction.OnUpdateCategoryOfSelected -> { onUpdateCategoryOfSelectedItems(action.addCategory, action.removeCategory) }
             is IcalEntryListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
+            is IcalEntryListAction.OnGoToSelectedDate -> { onGoToDate(action.selectedDate) }
         }
     }
 
@@ -359,5 +361,9 @@ class IcalEntryListViewModel(
                 state.listCollapsedGroups.plus(listGroup)
         )
         appPreferences.listCollapsedGroups = state.listCollapsedGroups
+    }
+
+    private fun onGoToDate(selectedDate: IcsDateTime?) {
+        selectedDate?.let { _state.value = state.copy(scrollToDate = selectedDate) }
     }
 }

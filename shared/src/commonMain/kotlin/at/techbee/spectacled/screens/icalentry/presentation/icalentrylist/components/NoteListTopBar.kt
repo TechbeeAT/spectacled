@@ -63,8 +63,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_selection
+import spectacled.shared.generated.resources.date_selector
 import spectacled.shared.generated.resources.delete_selected
 import spectacled.shared.generated.resources.folders
+import spectacled.shared.generated.resources.ic_gotodate
 import spectacled.shared.generated.resources.ic_pin
 import spectacled.shared.generated.resources.ic_unpin
 import spectacled.shared.generated.resources.more
@@ -265,6 +267,18 @@ fun IcalEntryListTopBar(
                             Icon(
                                 imageVector = listLayout.displayIcon,
                                 contentDescription = stringResource(listLayout.displayName),
+                                tint = onSurfaceTint
+                            )
+                        }
+                    }
+
+                    if (spectacledVariant == SpectacledVariant.JOURNALS) {
+                        TextButton(
+                            onClick = { onAction(IcalEntryListAction.OnShowDateSelectorBottomSheet(true)) }
+                        ) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_gotodate),
+                                contentDescription = stringResource(Res.string.date_selector),
                                 tint = onSurfaceTint
                             )
                         }

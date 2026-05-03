@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontStyle
@@ -24,12 +26,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
 import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.EmptyListScreen
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.IcalEntryListItem
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.components.ListGroupHeader
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListLayout
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.trashbin
@@ -43,6 +47,40 @@ fun JournalsListScreen(
 ) {
 
     val lazyStaggeredGridState: LazyStaggeredGridState = rememberLazyStaggeredGridState()
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(state.scrollToDate) {
+        state.scrollToDate?.let { scrollToIcsDateTime ->
+            val scrollToDayGroup = PlatformInstantFormatter(scrollToIcsDateTime).formatLocalizedDate()
+
+            var targetIndex = -1
+            var currentIndex = 0
+            val groupedByDay = state.displayMapByDtStartDay
+
+            for (dayGroup in groupedByDay.keys) {
+                val entries = groupedByDay[dayGroup] ?: continue
+                if (entries.isEmpty()) continue
+
+                if (dayGroup == scrollToDayGroup) {
+                    targetIndex = currentIndex
+                    break
+                }
+
+                currentIndex++     // Add 1 for the day group header
+                if (dayGroup !in state.listCollapsedGroups)
+                    currentIndex += entries.size   // Add size of entries if group is expanded
+
+            }
+
+            if (targetIndex != -1) {
+                scope.launch {
+                    lazyStaggeredGridState.animateScrollToItem(targetIndex)
+                }
+            }
+            onAction(IcalEntryListAction.OnGoToSelectedDate(null))
+        }
+    }
+
 
     LazyVerticalStaggeredGrid(
         //horizontalArrangement = Arrangement.spacedBy(8.dp),

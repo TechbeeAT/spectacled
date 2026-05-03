@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.icalentry.presentation.icalentrylist
 
 import androidx.compose.ui.graphics.Color
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListLayout
 import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
 
@@ -20,13 +21,18 @@ sealed interface IcalEntryListAction {
     object OnSelectAllMultiselectItems: IcalEntryListAction
     data class OnShowDeleteSelectedItemsDialog(val showDialog: Boolean): IcalEntryListAction
     object OnDeleteSelectedItems: IcalEntryListAction
+
+    data class OnShowDateSelectorBottomSheet(val show: Boolean): IcalEntryListAction
     data class OnShowUpdateColorOfSelectedBottomSheet(val show: Boolean): IcalEntryListAction
     data class OnShowUpdateCategoryOfSelectedBottomSheet(val show: Boolean): IcalEntryListAction
+
     data class OnUpdateColorOfSelected(val color: Color?): IcalEntryListAction
     data class OnUpdateCategoryOfSelected(val addCategory: String?, val removeCategory: String?): IcalEntryListAction
     data class OnUpdateOrderNo(val fromIndex: Int, val toIndex: Int): IcalEntryListAction
     object OnPersistOrderNo: IcalEntryListAction
+
+    data class OnGoToSelectedDate(val selectedDate: IcsDateTime?): IcalEntryListAction
     data class OnToggleListGroupExpanded(val listGroup: String): IcalEntryListAction
     data class OnTogglePinEntry(val pin: Boolean): IcalEntryListAction
-    data class OnDraggingIcalEntry(val IcalEntryId: Long?): IcalEntryListAction
+    data class OnDraggingIcalEntry(val icalEntryId: Long?): IcalEntryListAction
 }
