@@ -62,8 +62,8 @@ fun AboutApp(
                     .size(180.dp)
                     .padding(top = 24.dp)
                     .clip(RoundedCornerShape(32.dp)) // Adjust corner radius as needed
-                    //.background(MaterialTheme.colorScheme.primary), // Placeholder color,
-                    .background(Color(0, 136, 123)),
+                    .background(MaterialTheme.colorScheme.primary), // Placeholder color,
+                    //.background(Color(0, 136, 123)),
                 contentAlignment = Alignment.Center
             ) {
 
