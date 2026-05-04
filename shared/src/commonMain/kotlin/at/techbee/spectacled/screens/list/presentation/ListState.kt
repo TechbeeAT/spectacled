@@ -21,7 +21,7 @@ data class ListState(
         displayName = null,
         calendarDescription = null,
         url = Url(""),
-        color = Color.Companion.Unspecified,
+        color = Color.Unspecified,
         ctag = null,
         supportedComponents = emptyList(),
         calDavPrivileges = emptyList(),
@@ -78,7 +78,7 @@ data class ListState(
             .let { getFilteredList(it) }
             .let { getPinnedFilteredList(it) }
             .let { getSortedList(it) }
-            .groupBy { PlatformInstantFormatter(it.dtStart ?: IcsDateTime.Companion.now()).formatLocalizedDate() }
+            .groupBy { PlatformInstantFormatter(it.dtStart ?: IcsDateTime.now()).formatLocalizedDate() }
 
     val trashbin: List<IcalEntry>
         get() = getBaseList(icalEntries, true)
@@ -103,9 +103,9 @@ data class ListState(
     private fun getPinnedFilteredList(icalEntries: List<IcalEntry>, pinned: Boolean = false) =
         icalEntries.filter {
             if(pinned)
-                it.categories.any { category -> category == IcalEntry.Companion.PINNED_CATEGORY}
+                it.categories.any { category -> category == IcalEntry.PINNED_CATEGORY}
             else
-                it.categories.none { category -> category == IcalEntry.Companion.PINNED_CATEGORY }
+                it.categories.none { category -> category == IcalEntry.PINNED_CATEGORY }
         }
 
 
@@ -145,8 +145,8 @@ data class ListState(
     private fun getGroupedMap(icalEntries: List<IcalEntry>) =
         icalEntries.groupBy {
             when (listSortedBy) {
-                ListSortedBy.CREATED -> ListGrouping.Companion.getGrouping(it.created.instant)
-                ListSortedBy.LAST_MODIFIED -> ListGrouping.Companion.getGrouping(it.lastModified?.instant ?: it.created.instant)
+                ListSortedBy.CREATED -> ListGrouping.getGrouping(it.created.instant)
+                ListSortedBy.LAST_MODIFIED -> ListGrouping.getGrouping(it.lastModified?.instant ?: it.created.instant)
                 ListSortedBy.DATE -> ListGrouping.GROUP_NONE
                 ListSortedBy.SUMMARY -> ListGrouping.GROUP_NONE
                 ListSortedBy.DRAGANDDROP -> ListGrouping.GROUP_NONE

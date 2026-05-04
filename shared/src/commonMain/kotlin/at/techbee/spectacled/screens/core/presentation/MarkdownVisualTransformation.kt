@@ -16,7 +16,7 @@ class MarkdownVisualTransformation(val localContentColor: Color) : VisualTransfo
     override fun filter(text: AnnotatedString): TransformedText {
 
 
-        return TransformedText(formatAnnotatedString(text), OffsetMapping.Companion.Identity)
+        return TransformedText(formatAnnotatedString(text), OffsetMapping.Identity)
     }
 
     fun formatAnnotatedString(text: String?) = formatAnnotatedString(androidx.compose.ui.text.AnnotatedString(text ?: ""))
@@ -48,8 +48,8 @@ class MarkdownVisualTransformation(val localContentColor: Color) : VisualTransfo
                     val content = input.substring(start + 1, end)
 
                     val style = when (delimiter) {
-                        '*' -> SpanStyle(fontWeight = FontWeight.Companion.Bold)
-                        '_' -> SpanStyle(fontStyle = FontStyle.Companion.Italic)
+                        '*' -> SpanStyle(fontWeight = FontWeight.Bold)
+                        '_' -> SpanStyle(fontStyle = FontStyle.Italic)
                         else -> SpanStyle()
                     }
 

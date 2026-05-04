@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.details.presentation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -43,7 +44,6 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_time
 import spectacled.shared.generated.resources.description
-import spectacled.shared.generated.resources.no_timezone
 import spectacled.shared.generated.resources.summary
 
 
@@ -83,43 +83,46 @@ fun DetailsScreen(
                             Icon(Icons.Outlined.Schedule, null)
                     },
                     label = {
-                        if(dtStart.isDateOnly)
-                            Icon(
-                                imageVector = Icons.Outlined.MoreTime,
-                                contentDescription = stringResource(Res.string.add_time),
-                                tint = state.icalEntry.color ?: MaterialTheme.colorScheme.primary
-                            )
-                        else
-                            Text(PlatformInstantFormatter(dtStart).formatLocalizedTime())
+                        Crossfade(dtStart.isDateOnly) { dateOnly ->
+                            if (dateOnly) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreTime,
+                                    contentDescription = stringResource(Res.string.add_time),
+                                    tint = state.icalEntry.color ?: MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Column {
+                                    AnimatedVisibility(dtStart.timeZone != null) {
+                                        Text(
+                                            text = dtStart.timeZone?.id ?: "",
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+                                    Text(PlatformInstantFormatter(dtStart).formatLocalizedTime())
+                                }
+                            }
+                        }
                     },
                     colors = AssistChipDefaults.assistChipColors()
                         .copy(leadingIconContentColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary)
                 )
 
-                AnimatedVisibility(!dtStart.isDateOnly) {
+                AnimatedVisibility(!dtStart.isDateOnly && dtStart.timeZone != null) {
                     AssistChip(
-                        onClick = { onAction(DetailsAction.OnShowTimezonePickerBottomSheet(true)) },
+                        onClick = { /* disabled, info only */  },
+                        enabled = false,
                         leadingIcon = {
-                            if(dtStart.timeZone != null)
-                                Icon(Icons.Outlined.Language, null)
+                            Icon(Icons.Outlined.Language, null)
                         },
                         label = {
-                            if (dtStart.timeZone == null) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Language,
-                                    contentDescription = stringResource(Res.string.no_timezone),
-                                    tint = state.icalEntry.color ?: MaterialTheme.colorScheme.primary
+                            Column {
+                                Text(
+                                    text = TimeZone.currentSystemDefault().id,
+                                    style = MaterialTheme.typography.labelSmall
                                 )
-                            } else {
-                                Column {
-                                    Text(dtStart.timeZone.id)
-                                    Text(
-                                        text = PlatformInstantFormatter(dtStart.copy(timeZone = TimeZone.currentSystemDefault())).formatLocalizedDateTime() +
-                                                " (${TimeZone.currentSystemDefault().id})",
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
-
+                                Text(
+                                    text = PlatformInstantFormatter(dtStart.copy(timeZone = TimeZone.currentSystemDefault())).formatLocalizedDateTime()
+                                )
                             }
                         },
                         colors = AssistChipDefaults.assistChipColors()

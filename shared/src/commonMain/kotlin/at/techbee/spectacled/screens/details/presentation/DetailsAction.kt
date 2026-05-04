@@ -20,7 +20,6 @@ sealed interface DetailsAction {
     data class OnShowCategorySelectorBottomSheet(val show: Boolean): DetailsAction
     data class OnShowTimePickerBottomSheet(val show: Boolean): DetailsAction
     data class OnShowDatePickerBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowTimezonePickerBottomSheet(val show: Boolean): DetailsAction
 
     object OnDelete: DetailsAction
     object OnCreateCopy: DetailsAction

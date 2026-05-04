@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.details.presentation
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import kotlinx.datetime.TimeZone
 import kotlin.time.ExperimentalTime
 
 data class DetailsState @OptIn(ExperimentalTime::class) constructor(
@@ -12,6 +13,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
 
     val allColors: List<Color> = emptyList(),
     val allCategories: List<String> = emptyList(),
+    val latestUsedTimezones: List<TimeZone> = emptyList(),
 
     val showDeleteDialog: Boolean = false,
     val showMoreBottomSheet: Boolean = false,
@@ -19,7 +21,6 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val showCategorySelectorBottomSheet: Boolean = false,
     val showTimePickerBottomSheet: Boolean = false,
     val showDatePickerBottomSheet: Boolean = false,
-    val showTimezonePickerBottomSheet: Boolean = false,
 
     val isLoading: Boolean = true,
 

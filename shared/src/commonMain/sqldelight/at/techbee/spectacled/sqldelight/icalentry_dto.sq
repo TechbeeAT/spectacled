@@ -46,6 +46,9 @@ SELECT DISTINCT color FROM IcalEntryDto WHERE color IS NOT NULL ORDER BY lastMod
 getAllCategories:
 SELECT DISTINCT categories FROM IcalEntryDto WHERE categories IS NOT NULL ORDER BY lastModified DESC;
 
+getLastUsedTimezones:
+SELECT DISTINCT dtStartTimeZone FROM IcalEntryDto WHERE dtStartTimeZone IS NOT NULL ORDER BY lastModified DESC LIMIT 5;
+
 insertIcalEntry:
 INSERT OR IGNORE INTO IcalEntryDto (
     calendarId,

@@ -33,6 +33,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -59,7 +60,7 @@ class DetailsViewModel(
     val state: DetailsState get() = _state
 
     private lateinit var database: SpectacledDatabase
-    private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Companion.Schema)
+    private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
     init {
         viewModelScope.launch {
@@ -95,36 +96,9 @@ class DetailsViewModel(
 
             launch { observeColors() }
             launch { observeCategories() }
+            launch { observeTimezones() }
         }
     }
-
-    private suspend fun observeColors() {
-        database
-            .icalentry_dtoQueries.getAllColors()
-            .asFlow()
-            .collect { colorsFlow ->
-                val emittedColors = colorsFlow.awaitAsList().map { Color(it) }
-                _state = _state.copy(
-                    allColors = emittedColors
-                )
-            }
-    }
-
-    private suspend fun observeCategories() {
-        database
-            .icalentry_dtoQueries.getAllCategories()
-            .asFlow()
-            .collect { categoriesFlow ->
-                val allCategories = mutableSetOf<String>()
-                categoriesFlow.awaitAsList().let {
-                    it.forEach { allCategories.addAll(it.split(CATEGORY_SPLIT_DELIMITER)) }
-                }
-                _state = _state.copy(
-                    allCategories = allCategories.toList()
-                )
-            }
-    }
-
 
     @OptIn(ExperimentalTime::class)
     fun loadNew(calendarId: Long) {
@@ -132,7 +106,7 @@ class DetailsViewModel(
         viewModelScope.launch {
             val newIcalEntry = IcalEntry(
                 calendarId = calendarId,
-                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.Companion.now() else null
+                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null
             )
             val calendar = database.calendar_dtoQueries.getCalendarById(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
@@ -144,8 +118,13 @@ class DetailsViewModel(
                 showDeleteDialog = false,
                 navigateUp = false
             )
+
+            launch { observeColors() }
+            launch { observeCategories() }
+            launch { observeTimezones() }
         }
     }
+
 
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
@@ -179,7 +158,49 @@ class DetailsViewModel(
                 isLoading = false,
                 navigateUp = false
             )
+
+            launch { observeColors() }
+            launch { observeCategories() }
+            launch { observeTimezones() }
         }
+    }
+
+    private suspend fun observeColors() {
+        database
+            .icalentry_dtoQueries.getAllColors()
+            .asFlow()
+            .collect { colorsFlow ->
+                val emittedColors = colorsFlow.awaitAsList().map { Color(it) }
+                _state = _state.copy(
+                    allColors = emittedColors
+                )
+            }
+    }
+
+    private suspend fun observeCategories() {
+        database
+            .icalentry_dtoQueries.getAllCategories()
+            .asFlow()
+            .collect { categoriesFlow ->
+                val allCategories = mutableSetOf<String>()
+                categoriesFlow.awaitAsList().let {
+                    it.forEach { unsplitCategory -> allCategories.addAll(unsplitCategory.split(CATEGORY_SPLIT_DELIMITER)) }
+                }
+                _state = _state.copy(
+                    allCategories = allCategories.toList()
+                )
+            }
+    }
+
+    private suspend fun observeTimezones() {
+        database
+            .icalentry_dtoQueries.getLastUsedTimezones()
+            .asFlow()
+            .collect { timezonesFlow ->
+                timezonesFlow.awaitAsList().let { timezones ->
+                    _state = _state.copy(latestUsedTimezones = timezones.map { TimeZone.of(it) })
+                }
+            }
     }
 
 
@@ -215,7 +236,6 @@ class DetailsViewModel(
             DetailsAction.OnRestoreEntry -> onRestoreEntry()
             is DetailsAction.OnShowDatePickerBottomSheet -> { _state = _state.copy(showDatePickerBottomSheet = action.show) }
             is DetailsAction.OnShowTimePickerBottomSheet -> { _state = _state.copy(showTimePickerBottomSheet = action.show) }
-            is DetailsAction.OnShowTimezonePickerBottomSheet -> { _state = _state.copy(showTimezonePickerBottomSheet = action.show) }
             is DetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
             DetailsAction.OnShare -> onShare()
             is DetailsAction.OnPin -> { onPinIcalEntry(action.pin) }
@@ -241,7 +261,7 @@ class DetailsViewModel(
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(
                 summary = newSummary,
-                lastModified = IcsDateTime.Companion.now(),
+                lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                         SyncState.USER_DECIDED_CLIENT_WINS
                     else
@@ -255,7 +275,7 @@ class DetailsViewModel(
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(
                 description = newDescription,
-                lastModified = IcsDateTime.Companion.now(),
+                lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                     SyncState.USER_DECIDED_CLIENT_WINS
                 else
@@ -266,9 +286,9 @@ class DetailsViewModel(
 
     private fun onPinIcalEntry(pin: Boolean) {
         if(pin)
-            onUpdateCategories(IcalEntry.Companion.PINNED_CATEGORY, null)
+            onUpdateCategories(IcalEntry.PINNED_CATEGORY, null)
         else
-            onUpdateCategories(null, IcalEntry.Companion.PINNED_CATEGORY)
+            onUpdateCategories(null, IcalEntry.PINNED_CATEGORY)
     }
 
     private fun onUpdateCategories(addCategory: String?, removeCategory: String?) {
@@ -282,7 +302,7 @@ class DetailsViewModel(
                     else
                         it
                 },
-                lastModified = IcsDateTime.Companion.now(),
+                lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                     SyncState.USER_DECIDED_CLIENT_WINS
                 else
@@ -297,7 +317,7 @@ class DetailsViewModel(
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(
                 color = newColor,
-                lastModified = IcsDateTime.Companion.now(),
+                lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                     SyncState.USER_DECIDED_CLIENT_WINS
                 else
@@ -311,7 +331,7 @@ class DetailsViewModel(
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(
                 dtStart = newDtStart,
-                lastModified = IcsDateTime.Companion.now(),
+                lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                     SyncState.USER_DECIDED_CLIENT_WINS
                 else

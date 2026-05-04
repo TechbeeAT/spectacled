@@ -48,7 +48,6 @@ import at.techbee.spectacled.screens.details.presentation.components.DetailsMore
 import at.techbee.spectacled.screens.details.presentation.components.DetailsTopBar
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TimePickerBottomSheet
-import at.techbee.spectacled.screens.details.presentation.components.TimeZonePickerBottomSheet
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import at.techbee.spectacled.theme.getThemeForColoredSurfaces
 import org.jetbrains.compose.resources.stringResource
@@ -129,7 +128,7 @@ fun DetailsScreenRoot(
     if (detailsState.showDatePickerBottomSheet) {
         DatePickerBottomSheet(
             icsDateTime = detailsState.icalEntry.dtStart ?: IcsDateTime.now(),
-            sheetState = rememberModalBottomSheetState(),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             onDateSelected = { detailsViewModel.onAction(DetailsAction.OnUpdateDtStart(it)) },
             onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowDatePickerBottomSheet(false)) }
         )
@@ -138,18 +137,10 @@ fun DetailsScreenRoot(
     if (detailsState.showTimePickerBottomSheet && detailsState.icalEntry.dtStart != null) {
         TimePickerBottomSheet(
             icsDateTime = detailsState.icalEntry.dtStart,
-            sheetState = rememberModalBottomSheetState(),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            suggestedTimezones = detailsState.latestUsedTimezones,
             onTimeUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateDtStart(it)) },
             onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowTimePickerBottomSheet(false)) }
-        )
-    }
-
-    if (detailsState.showTimezonePickerBottomSheet && detailsState.icalEntry.dtStart != null) {
-        TimeZonePickerBottomSheet(
-            icsDateTime = detailsState.icalEntry.dtStart,
-            sheetState = rememberModalBottomSheetState(),
-            onTimeZoneUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateDtStart(it)) },
-            onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowTimezonePickerBottomSheet(false)) }
         )
     }
 

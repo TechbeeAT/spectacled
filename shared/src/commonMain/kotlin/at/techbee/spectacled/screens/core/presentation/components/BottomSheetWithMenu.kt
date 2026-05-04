@@ -19,6 +19,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
@@ -35,46 +36,56 @@ fun BottomSheetWithMenu(
     content: @Composable () -> Unit
 ) {
 
-    ModalBottomSheet(
-        onDismissRequest = { onDismiss() },
-        sheetState = sheetState,
-        dragHandle = {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.padding(8.dp)) {
+    val header = @Composable {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.padding(8.dp)
+        ) {
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                    modifier = Modifier.fillMaxWidth()
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                TextButton(
+                    onClick = { onDismiss() }
                 ) {
-                    TextButton(
-                        onClick = { onDismiss() }
-                    ) {
-                        Text(stringResource(Res.string.close))
-                    }
-                }
-
-
-                BottomSheetDefaults.DragHandle()
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-
-                    AnimatedVisibility(showLoadingIndicator) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    menuAction()
+                    Text(stringResource(Res.string.close))
                 }
             }
+
+
+            BottomSheetDefaults.DragHandle()
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                AnimatedVisibility(showLoadingIndicator) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                menuAction()
+            }
         }
-    ) {
-        content()
+    }
+
+    if (LocalInspectionMode.current) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            header()
+            content()
+        }
+    } else {
+        ModalBottomSheet(
+            onDismissRequest = { onDismiss() },
+            sheetState = sheetState,
+            dragHandle = header
+        ) {
+            content()
+        }
     }
 }
 
