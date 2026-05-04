@@ -33,14 +33,14 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListAction
+import at.techbee.spectacled.screens.account.presentation.calendars.AccountListAction
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
-import at.techbee.spectacled.screens.core.presentation.SpecialRoundedCard
+import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
@@ -61,7 +61,7 @@ fun CalendarCard(
     editEditFoldersModeEnabled: Boolean,
     isFirst: Boolean,
     isLast: Boolean,
-    onAction: (CalendarListAction) -> Unit,
+    onAction: (AccountListAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -71,7 +71,7 @@ fun CalendarCard(
         overrideTopRoundedCornerSize = if(isFirst) 16.dp else 0.dp,
         overrideBottomRoundedCornerSize = if(isLast) 16.dp else 0.dp,        onClick = {
             if (!editEditFoldersModeEnabled)
-                onAction(CalendarListAction.OnCalendarClicked(calendar.id))
+                onAction(AccountListAction.OnCalendarClicked(calendar.id))
         },
         colors = CardDefaults.cardColors(
             containerColor = calendar.color ?: Color.Unspecified,
@@ -143,7 +143,7 @@ fun CalendarCard(
 
             AnimatedVisibility(calendar.calendarSyncStatus?.type?.isErrorType() == true) {
                 IconButton(
-                    onClick = { onAction(CalendarListAction.OnShowSyncInfoDialog(principal, calendar)) },
+                    onClick = { onAction(AccountListAction.OnShowSyncInfoDialog(principal, calendar)) },
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.SyncProblem,
@@ -157,7 +157,7 @@ fun CalendarCard(
                 Row {
                     TextButton(
                         onClick = {
-                            onAction(CalendarListAction.OnShowCreateOrUpdateCalendarBottomSheet(principal, homeCollection, calendar))
+                            onAction(AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet(principal, homeCollection, calendar))
                         },
                         colors = ButtonDefaults.textButtonColors().copy(
                             contentColor = calendar.color?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified
@@ -169,7 +169,7 @@ fun CalendarCard(
 
                     TextButton(
                         onClick = {
-                            onAction(CalendarListAction.OnShowDeleteCalendarDialog(principal, calendar))
+                            onAction(AccountListAction.OnShowDeleteCalendarDialog(principal, calendar))
                         },
                         colors = ButtonDefaults.textButtonColors().copy(
                             contentColor = calendar.color?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified

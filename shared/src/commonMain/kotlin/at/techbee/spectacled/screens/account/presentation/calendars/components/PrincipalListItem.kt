@@ -30,7 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListAction
+import at.techbee.spectacled.screens.account.presentation.calendars.AccountListAction
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
@@ -52,7 +52,7 @@ fun PrincipalListItem(
     homeCollections: List<HomeCollection>,
     calendars: List<Calendar>,
     folderEditEnabled: Boolean,
-    onAction: (CalendarListAction) -> Unit,
+    onAction: (AccountListAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -81,7 +81,7 @@ fun PrincipalListItem(
         Crossfade(folderEditEnabled) { enabled ->
             if (enabled) {
                 TextButton(
-                    onClick = { onAction(CalendarListAction.OnEditAccountFolders(null)) }
+                    onClick = { onAction(AccountListAction.OnEditAccountFolders(null)) }
                 ) {
                     Text(stringResource(Res.string.done))
                 }
@@ -104,7 +104,7 @@ fun PrincipalListItem(
                             onClick = {
                                 iCalCollectionMenuExpanded = false
 
-                                onAction(CalendarListAction.OnShowCreateOrUpdateCalendarBottomSheet(
+                                onAction(AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet(
                                     principal = principal,
                                     homeCollection = homeCollections.first(),
                                     calendar = Calendar.getNewCalendar(homeCollections.first())
@@ -118,7 +118,7 @@ fun PrincipalListItem(
                             onClick = {
                                 iCalCollectionMenuExpanded = false
 
-                                onAction(CalendarListAction.OnEditAccountFolders(principal = principal))
+                                onAction(AccountListAction.OnEditAccountFolders(principal = principal))
                             },
                             leadingIcon = { Icon(painterResource(Res.drawable.ic_folder_managed), null) }
                         )
@@ -130,7 +130,7 @@ fun PrincipalListItem(
                             text = { Text(stringResource(Res.string.refresh_all)) },
                             onClick = {
                                 iCalCollectionMenuExpanded = false
-                                onAction(CalendarListAction.OnSyncCalendars(calendars))
+                                onAction(AccountListAction.OnSyncCalendars(calendars))
                             },
                             leadingIcon = { Icon(Icons.Outlined.Sync, null) }
                         )
@@ -139,7 +139,7 @@ fun PrincipalListItem(
                             text = { Text("Reload folders") },
                             onClick = {
                                 iCalCollectionMenuExpanded = false
-                                onAction(CalendarListAction.OnRerunAccountDiscovery(listOf(principal)))
+                                onAction(AccountListAction.OnRerunAccountDiscovery(listOf(principal)))
                             },
                             leadingIcon = { Icon(painterResource(Res.drawable.ic_folder_match), null) }
                         )
@@ -151,7 +151,7 @@ fun PrincipalListItem(
                             text = { Text(stringResource(Res.string.remove_account)) },
                             onClick = {
                                 iCalCollectionMenuExpanded = false
-                                onAction(CalendarListAction.OnShowRemovePrincipalDialog(principal))
+                                onAction(AccountListAction.OnShowRemovePrincipalDialog(principal))
                             },
                             leadingIcon = { Icon(Icons.Outlined.GroupRemove, null) }
                         )

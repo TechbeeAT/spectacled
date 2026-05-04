@@ -4,10 +4,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
+import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcsDateTime
-import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
-import at.techbee.spectacled.screens.icalentry.domain.SyncState
 import at.techbee.spectacled.sqldelight.IcalEntryDto
 import io.ktor.http.Url
 import kotlinx.serialization.json.Json

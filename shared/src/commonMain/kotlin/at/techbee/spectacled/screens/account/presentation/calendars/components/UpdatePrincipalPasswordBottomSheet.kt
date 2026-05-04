@@ -32,17 +32,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListAction
+import at.techbee.spectacled.screens.account.presentation.calendars.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.calendars.ProcessingState
 import at.techbee.spectacled.screens.core.domain.Principal
-import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
+import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.show_error_details
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.update_passowrd_button
 import spectacled.shared.generated.resources.update_password
-import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +50,7 @@ fun UpdatePrincipalPasswordBottomSheet(
     sheetState: SheetState,
     principal: Principal,
     processingState: ProcessingState,
-    onAction: (CalendarListAction.OnUpdatePrincipalPassword) -> Unit,
+    onAction: (AccountListAction.OnUpdatePrincipalPassword) -> Unit,
     onDismiss: () -> Unit,
 ) {
 
@@ -65,7 +65,7 @@ fun UpdatePrincipalPasswordBottomSheet(
         menuAction = {
             TextButton(
                 onClick = {
-                    onAction(CalendarListAction.OnUpdatePrincipalPassword(principal, password))
+                    onAction(AccountListAction.OnUpdatePrincipalPassword(principal, password))
                 },
                 enabled = password.isNotBlank() && processingState !is ProcessingState.Processing
             ) {

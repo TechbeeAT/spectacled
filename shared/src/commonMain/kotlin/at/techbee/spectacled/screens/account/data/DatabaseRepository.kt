@@ -4,12 +4,11 @@ import app.cash.sqldelight.async.coroutines.awaitAsOne
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
+import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
-import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import io.ktor.http.Url
 import kotlin.time.ExperimentalTime
-
 
 
 suspend fun SpectacledDatabase.upsertPrincipal(principal: Principal): Long {

@@ -24,10 +24,10 @@ import at.techbee.spectacled.screens.core.data.webdav.syncCollectionMultiplatfor
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
+import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
-import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
-import at.techbee.spectacled.screens.icalentry.domain.SyncState
 import io.ktor.client.HttpClient
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException

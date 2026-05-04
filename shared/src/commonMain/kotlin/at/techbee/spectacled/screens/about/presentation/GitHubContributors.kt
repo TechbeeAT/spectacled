@@ -34,13 +34,13 @@ import at.techbee.spectacled.screens.about.data.KtorRemoteGitHubContributorDataS
 import at.techbee.spectacled.screens.about.domain.GitHubContributor
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
-import at.techbee.spectacled.screens.core.presentation.SpecialRoundedCard
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.about_contributors
-import spectacled.shared.generated.resources.more_on_github
+import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.about_contributors
+import spectacled.shared.generated.resources.more_on_github
 
 
 //TODO: Change for Release!!!

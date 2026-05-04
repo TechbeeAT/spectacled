@@ -33,14 +33,14 @@ import at.techbee.spectacled.screens.account.presentation.calendars.ProcessingSt
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
-import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
-import at.techbee.spectacled.screens.core.presentation.ColorSelectorElement
+import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.create_folder
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.folder
 import spectacled.shared.generated.resources.update_folder
-import org.jetbrains.compose.resources.stringResource
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)

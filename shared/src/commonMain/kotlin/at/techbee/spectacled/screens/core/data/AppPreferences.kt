@@ -1,7 +1,7 @@
 package at.techbee.spectacled.screens.core.data
 
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListLayout
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.datastructures.ListSortedBy
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import com.russhwolf.settings.Settings
 
 //const val APP_PREFERENCES_NAME = "app_preferences"

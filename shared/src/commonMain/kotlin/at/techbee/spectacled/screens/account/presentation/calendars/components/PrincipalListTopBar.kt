@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListAction
+import at.techbee.spectacled.screens.account.presentation.calendars.AccountListAction
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about
@@ -21,7 +21,7 @@ import spectacled.shared.generated.resources.settings
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrincipalListTopBar(
-    onAction: (CalendarListAction) -> Unit
+    onAction: (AccountListAction) -> Unit
 ) {
 
     TopAppBar(
@@ -36,7 +36,7 @@ fun PrincipalListTopBar(
         },
         navigationIcon = {
             TextButton(
-                onClick = { onAction(CalendarListAction.OnShowAboutBottomSheet()) }
+                onClick = { onAction(AccountListAction.OnShowAboutBottomSheet()) }
             ) {
                 Text(stringResource(Res.string.about))
             }

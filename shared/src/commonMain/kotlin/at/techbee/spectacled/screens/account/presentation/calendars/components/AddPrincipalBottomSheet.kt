@@ -30,23 +30,23 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListAction
+import at.techbee.spectacled.screens.account.presentation.calendars.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.calendars.ProcessingState
 import at.techbee.spectacled.screens.core.data.Credentials
-import at.techbee.spectacled.screens.core.presentation.BottomSheetWithMenu
+import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
 import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.username
-import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPrincipalBottomSheet(
     sheetState: SheetState,
     processingState: ProcessingState,
-    onAction: (CalendarListAction.OnAddPrincipal) -> Unit,
+    onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onDismiss: () -> Unit,
 ) {
 
@@ -62,7 +62,7 @@ fun AddPrincipalBottomSheet(
         menuAction = {
             TextButton(
                 onClick = {
-                    onAction(CalendarListAction.OnAddPrincipal(Credentials(server, username, password)))
+                    onAction(AccountListAction.OnAddPrincipal(Credentials(server, username, password)))
                 },
                 enabled = server.isNotBlank() && username.isNotBlank() && password.isNotBlank() && processingState !is ProcessingState.Processing
             ) {

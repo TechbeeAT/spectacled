@@ -7,6 +7,12 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.theme.journals.darkJournalsScheme
+import at.techbee.spectacled.theme.journals.lightJournalsScheme
+import at.techbee.spectacled.theme.notes.darkNotesScheme
+import at.techbee.spectacled.theme.notes.lightNotesScheme
+import at.techbee.spectacled.theme.tasks.darkTasksScheme
+import at.techbee.spectacled.theme.tasks.lightTasksScheme
 
 @Composable
 actual fun AppTheme(

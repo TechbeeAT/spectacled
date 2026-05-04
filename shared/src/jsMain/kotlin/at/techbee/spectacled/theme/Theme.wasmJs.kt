@@ -3,6 +3,12 @@ package at.techbee.spectacled.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.theme.journals.darkJournalsScheme
+import at.techbee.spectacled.theme.journals.lightJournalsScheme
+import at.techbee.spectacled.theme.notes.darkNotesScheme
+import at.techbee.spectacled.theme.notes.lightNotesScheme
+import at.techbee.spectacled.theme.tasks.darkTasksScheme
+import at.techbee.spectacled.theme.tasks.lightTasksScheme
 
 @Composable
 actual fun AppTheme(

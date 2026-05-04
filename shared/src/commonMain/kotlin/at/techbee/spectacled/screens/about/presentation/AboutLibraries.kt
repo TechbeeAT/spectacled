@@ -20,12 +20,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.core.presentation.SpecialRoundedCard
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.about_libraries
+import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import com.mikepenz.aboutlibraries.ui.compose.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.util.author
 import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.about_libraries
 
 @Composable
 fun AboutLibraries(

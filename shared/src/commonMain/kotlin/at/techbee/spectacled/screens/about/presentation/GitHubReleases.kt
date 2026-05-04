@@ -28,12 +28,12 @@ import at.techbee.spectacled.screens.about.data.KtorRemoteGitHubReleaseDataSourc
 import at.techbee.spectacled.screens.about.domain.GitHubRelease
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
-import at.techbee.spectacled.screens.core.presentation.SpecialRoundedCard
+import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_release_notes
 import spectacled.shared.generated.resources.more_on_github
-import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.stringResource
 
 
 //TODO: Change for Release!!!

@@ -13,16 +13,16 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import at.techbee.spectacled.screens.Route
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListScreenRoot
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListViewModel
+import at.techbee.spectacled.screens.account.presentation.calendars.AccountListScreenRoot
+import at.techbee.spectacled.screens.account.presentation.calendars.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.AppPreferences
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.koin.sharedModule
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsScreenRoot
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsViewModel
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.IcalEntryListScreenRoot
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.IcalEntryListViewModel
+import at.techbee.spectacled.screens.details.presentation.DetailsScreenRoot
+import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
+import at.techbee.spectacled.screens.list.presentation.ListScreenRoot
+import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
@@ -74,8 +74,8 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                 syncTrigger.requestImmediate()
             }
 
-            val icalEntryListViewModel = koinViewModel<IcalEntryListViewModel>()
-            val calendarListViewModel = koinViewModel<CalendarListViewModel>()
+            val listViewModel = koinViewModel<ListViewModel>()
+            val accountListViewModel = koinViewModel<AccountListViewModel>()
 
             NavHost(
                 navController = navController,
@@ -84,8 +84,8 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                 navigation<Route.HomeGraph>(Route.AccountsList) {
 
                     composable<Route.AccountsList> {
-                        CalendarListScreenRoot(
-                            viewModel = calendarListViewModel,
+                        AccountListScreenRoot(
+                            viewModel = accountListViewModel,
                             onNavigate = { route -> navController.navigate(route) }
                         )
                     }
@@ -100,11 +100,11 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                         val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
 
                         LaunchedEffect(calendarId) {
-                            icalEntryListViewModel.load(calendarId)
+                            listViewModel.load(calendarId)
                         }
 
-                        IcalEntryListScreenRoot(
-                            icalEntryListViewModel = icalEntryListViewModel,
+                        ListScreenRoot(
+                            listViewModel = listViewModel,
                             onNavigate = { route -> navController.navigate(route) },
                             onNavigateUp = { navController.popBackStack() }
                         )
@@ -112,14 +112,14 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
 
                     composable<Route.IcalEntryDetails> { args ->
                         val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
-                        val icalEntryDetailsViewModel: IcalEntryDetailsViewModel = koinViewModel<IcalEntryDetailsViewModel>()
+                        val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
 
                         LaunchedEffect(icalEntryId) {
-                            icalEntryDetailsViewModel.load(icalEntryId)
+                            detailsViewModel.load(icalEntryId)
                         }
 
-                        IcalEntryDetailsScreenRoot(
-                            icalEntryDetailsViewModel = icalEntryDetailsViewModel,
+                        DetailsScreenRoot(
+                            detailsViewModel = detailsViewModel,
                             onNavigateUp = { navController.popBackStack() }
                             /*
                                 onNavigate = { route ->
@@ -137,17 +137,17 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                         val copyFromId = args.toRoute<Route.AddICalEntry>().copyFromId
                         val calendarId = args.toRoute<Route.AddICalEntry>().calendarId
 
-                        val icalEntryDetailsViewModel: IcalEntryDetailsViewModel = koinViewModel<IcalEntryDetailsViewModel>()
+                        val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
 
                         LaunchedEffect(copyFromId, calendarId) {
                             if (copyFromId != null)
-                                icalEntryDetailsViewModel.loadCopy(copyFromId)
+                                detailsViewModel.loadCopy(copyFromId)
                             else
-                                icalEntryDetailsViewModel.loadNew(calendarId)
+                                detailsViewModel.loadNew(calendarId)
                         }
 
-                        IcalEntryDetailsScreenRoot(
-                            icalEntryDetailsViewModel = icalEntryDetailsViewModel,
+                        DetailsScreenRoot(
+                            detailsViewModel = detailsViewModel,
                             onNavigateUp = { navController.popBackStack() }
                             //onNavigate = { navController.navigate(it) }
                         )
