@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,10 +99,27 @@ fun JournalsListScreen(
             item(span = StaggeredGridItemSpan.FullLine) {
                 Text(
                     text = dayGroup,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 11.dp, bottom = 0.dp)
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 20.sp,
+                        lineHeightStyle = LineHeightStyle(
+                            alignment = LineHeightStyle.Alignment.Center,
+                            trim = LineHeightStyle.Trim.Both
+                        )
+                    ),
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, top = 11.dp, bottom = 0.dp)
+                        /*
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            // Subtract 5dp from the bottom to act as negative padding and compensate for grid spacing
+                            val reduction = 6.dp.roundToPx()
+                            layout(placeable.width, placeable.height - reduction) {
+                                placeable.placeRelative(0, 0)
+                            }
+                        }
+                         */
                 )
             }
 
