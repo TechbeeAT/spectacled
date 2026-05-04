@@ -33,7 +33,6 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.shared.BuildKonfig
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.copyright_info
 import spectacled.shared.generated.resources.logo_techbee_xml
@@ -42,7 +41,7 @@ import spectacled.shared.generated.resources.terms_conditions
 
 @Composable
 fun AboutApp(
-    spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>()
+    spectacledVariant: SpectacledVariant
 ) {
 
     val uriHandler = LocalUriHandler.current

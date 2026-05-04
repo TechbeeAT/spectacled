@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryList
-import at.techbee.spectacled.screens.about.presentation.AboutBottomSheet
+import at.techbee.spectacled.screens.about.presentation.AboutScreen
 import at.techbee.spectacled.screens.account.presentation.calendars.components.AddPrincipalBottomSheet
 import at.techbee.spectacled.screens.account.presentation.calendars.components.CalendarSyncInfoDialog
 import at.techbee.spectacled.screens.account.presentation.calendars.components.CreateOrUpdateCalendarBottomSheet
@@ -34,6 +34,7 @@ import at.techbee.spectacled.screens.account.presentation.calendars.components.D
 import at.techbee.spectacled.screens.account.presentation.calendars.components.PrincipalListTopBar
 import at.techbee.spectacled.screens.account.presentation.calendars.components.RemovePrincipalDialog
 import at.techbee.spectacled.screens.account.presentation.calendars.components.UpdatePrincipalPasswordBottomSheet
+import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -272,10 +273,13 @@ fun AccountListScreenRoot(
 
 
         if (aboutBottomSheetState.isVisible) {
-            AboutBottomSheet(
+            BottomSheetWithMenu(
+                sheetState = aboutBottomSheetState,
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
-                sheetState = aboutBottomSheetState
-            )
+                menuAction = { }
+            ) {
+                AboutScreen(spectacledVariant = viewModel.spectacledVariant)
+            }
         }
 
         viewModel.state.showAddOrUpdateCalendarBottomSheet?.let {

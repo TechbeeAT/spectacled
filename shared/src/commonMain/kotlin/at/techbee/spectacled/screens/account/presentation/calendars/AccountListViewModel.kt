@@ -47,7 +47,7 @@ class AccountListViewModel(
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
-    private val spectacledVariant: SpectacledVariant,
+    val spectacledVariant: SpectacledVariant,
 ): ViewModel() {
 
     private val _state = mutableStateOf(AccountListState())
