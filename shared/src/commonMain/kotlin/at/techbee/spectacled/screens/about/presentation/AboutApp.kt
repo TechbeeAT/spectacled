@@ -36,7 +36,6 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.copyright_info
 import spectacled.shared.generated.resources.logo_techbee_xml
-import spectacled.shared.generated.resources.spectacled_notes_xml
 import spectacled.shared.generated.resources.terms_conditions
 
 @Composable
@@ -67,7 +66,7 @@ fun AboutApp(
             ) {
 
                 Image(
-                    painter = painterResource(Res.drawable.spectacled_notes_xml),
+                    painter = painterResource(spectacledVariant.logoDrawableResource),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(Color.White),
                     modifier = Modifier

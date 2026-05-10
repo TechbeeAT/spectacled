@@ -26,6 +26,7 @@ import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
@@ -36,13 +37,16 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.app_name_spectacled_journals
 import spectacled.shared.generated.resources.app_name_spectacled_notes
 import spectacled.shared.generated.resources.app_name_spectacled_tasks
+import spectacled.shared.generated.resources.logo_spectacled_journals
+import spectacled.shared.generated.resources.logo_spectacled_notes
+import spectacled.shared.generated.resources.logo_spectacled_tasks
 import kotlin.time.ExperimentalTime
 
 
-enum class SpectacledVariant(val dbName: String, val appNameStringRes: StringResource, val syncCalendarComponent: CalendarComponent) {
-    JOURNALS("spectacled_journals.db", Res.string.app_name_spectacled_journals, CalendarComponent.VJOURNAL),
-    NOTES("spectacled_notes.db", Res.string.app_name_spectacled_notes, CalendarComponent.VJOURNAL),
-    TASKS("spectacled_tasks.db", Res.string.app_name_spectacled_tasks, CalendarComponent.VTODO);
+enum class SpectacledVariant(val dbName: String, val appNameStringRes: StringResource, val logoDrawableResource: DrawableResource,  val syncCalendarComponent: CalendarComponent) {
+    JOURNALS("spectacled_journals.db", Res.string.app_name_spectacled_journals, Res.drawable.logo_spectacled_journals, CalendarComponent.VJOURNAL),
+    NOTES("spectacled_notes.db", Res.string.app_name_spectacled_notes, Res.drawable.logo_spectacled_notes, CalendarComponent.VJOURNAL),
+    TASKS("spectacled_tasks.db", Res.string.app_name_spectacled_tasks, Res.drawable.logo_spectacled_tasks, CalendarComponent.VTODO);
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
