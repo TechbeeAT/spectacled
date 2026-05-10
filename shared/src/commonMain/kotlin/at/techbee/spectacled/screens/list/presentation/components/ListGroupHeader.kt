@@ -42,7 +42,7 @@ fun ListGroupHeader(
             onToggleListGroupExpanded(appPreferencesTag)
         },
         colors = ButtonDefaults.textButtonColors().copy(contentColor = LocalContentColor.current),
-        modifier = modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp, start = 8.dp, end = 8.dp)
+        modifier = modifier.fillMaxWidth().padding(top = 16.dp, bottom = 0.dp, start = 4.dp, end = 4.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -51,9 +51,7 @@ fun ListGroupHeader(
         ) {
             Text(
                 text = headerText,
-                style = MaterialTheme.typography.headlineSmall,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.headlineSmall
             )
             Spacer(modifier = Modifier.weight(1f))
             Crossfade(isCollapsed) {

@@ -16,12 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.calendars.components.CalendarCard
 import at.techbee.spectacled.screens.account.presentation.calendars.components.PrincipalListItem
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
+import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 
 
@@ -56,7 +58,8 @@ fun AccountListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
-                            bottom = 8.dp,
+                            start = 16.dp,
+                            bottom = 0.dp,
                             top = if (indexPrincipal != 0) 24.dp else 0.dp
                         )
                         .animateItem()
@@ -135,76 +138,86 @@ fun AccountListScreen(
 @Preview
 @Composable
 private fun FolderListScreen_edit_off_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        AccountListScreen(
+            state = AccountListState().copy(
+                principals = listOf(
+                    Principal.getPrincipalForPreview().copy(
+                        principalUrl = Url("https://example.com"),
+                        displayName = "My Account"
+                    ),
+                    Principal.getPrincipalForPreview().copy(
+                        principalUrl = Url("https://example2.com"),
+                        displayName = "My Account2"
+                    ),
                 ),
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example2.com"),
-                    displayName = "My Account2"
-                ),
+                homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                calendars = listOf(Calendar.getCalendarForPreview())
             ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-            calendars = listOf(Calendar.getCalendarForPreview())
-        ),
-        onAction = { }
-    )
+            onAction = { }
+        )
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_edit_on_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        AccountListScreen(
+            state = AccountListState().copy(
+                principals = listOf(
+                    Principal.getPrincipalForPreview().copy(
+                        principalUrl = Url("https://example.com"),
+                        displayName = "My Account"
+                    ),
                 ),
+                homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                calendars = listOf(Calendar.getCalendarForPreview()),
+                editFoldersOfPrincipal = Principal.getPrincipalForPreview()
             ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-            calendars = listOf(Calendar.getCalendarForPreview()),
-            editFoldersOfPrincipal = Principal.getPrincipalForPreview()
-        ),
-        onAction = { }
-    )
+            onAction = { }
+        )
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_edit_off_empty_without_rights_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        AccountListScreen(
+            state = AccountListState().copy(
+                principals = listOf(
+                    Principal.getPrincipalForPreview().copy(
+                        principalUrl = Url("https://example.com"),
+                        displayName = "My Account"
+                    ),
                 ),
+                homeCollections = listOf(HomeCollection.getHomeCollectionForPreview())
             ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview())
-        ),
-        onAction = { }
-    )
+            onAction = { }
+        )
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_edit_off_empty_with_rights_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        AccountListScreen(
+            state = AccountListState().copy(
+                principals = listOf(
+                    Principal.getPrincipalForPreview().copy(
+                        principalUrl = Url("https://example.com"),
+                        displayName = "My Account"
+                    ),
+                ),
+                homeCollections = listOf(
+                    HomeCollection.getHomeCollectionForPreview().copy(
+                        calDavPrivileges = listOf(CalDavPrivilege.WRITE)
+                    )
                 ),
             ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview().copy(
-                calDavPrivileges = listOf(CalDavPrivilege.WRITE)
-            )),
-        ),
-        onAction = { }
-    )
+            onAction = { }
+        )
+    }
 }

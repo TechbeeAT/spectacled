@@ -26,14 +26,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.calendars.AccountListAction
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
+import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -71,7 +72,6 @@ fun PrincipalListItem(
             Text(
                 text = principal.displayName ?: principal.principalUrl.toString(),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth()
@@ -167,24 +167,28 @@ fun PrincipalListItem(
 @Preview
 @Composable
 private fun PrincipalListItem_Preview() {
-    PrincipalListItem(
-        principal = Principal.getPrincipalForPreview(),
-        homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-        calendars = listOf(Calendar.getCalendarForPreview()),
-        folderEditEnabled = false,
-        onAction = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        PrincipalListItem(
+            principal = Principal.getPrincipalForPreview(),
+            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+            calendars = listOf(Calendar.getCalendarForPreview()),
+            folderEditEnabled = false,
+            onAction = {}
+        )
+    }
 }
 
 @Preview
 @Composable
 private fun PrincipalListItem_folder_edit_Preview() {
-    PrincipalListItem(
-        principal = Principal.getPrincipalForPreview(),
-        homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-        calendars = listOf(Calendar.getCalendarForPreview()),
-        folderEditEnabled = true,
-        onAction = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        PrincipalListItem(
+            principal = Principal.getPrincipalForPreview(),
+            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+            calendars = listOf(Calendar.getCalendarForPreview()),
+            folderEditEnabled = true,
+            onAction = {}
+        )
+    }
 }
 

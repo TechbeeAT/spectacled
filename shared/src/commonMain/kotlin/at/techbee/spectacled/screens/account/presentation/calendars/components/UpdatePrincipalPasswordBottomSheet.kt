@@ -86,7 +86,7 @@ fun UpdatePrincipalPasswordBottomSheet(
             principal.displayName?.let {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
 
