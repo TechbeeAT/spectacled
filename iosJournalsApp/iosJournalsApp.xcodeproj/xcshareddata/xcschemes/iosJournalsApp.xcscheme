@@ -14,7 +14,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "6A1B65F6CA24A667CA678A53"
-               BuildableName = "iosJournalsApp.app"
+               BuildableName = "spectacledJournals.app"
                BlueprintName = "iosJournalsApp"
                ReferencedContainer = "container:iosJournalsApp.xcodeproj">
             </BuildableReference>
@@ -43,7 +43,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6A1B65F6CA24A667CA678A53"
-            BuildableName = "iosJournalsApp.app"
+            BuildableName = "spectacledJournals.app"
             BlueprintName = "iosJournalsApp"
             ReferencedContainer = "container:iosJournalsApp.xcodeproj">
          </BuildableReference>
