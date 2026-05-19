@@ -35,7 +35,7 @@ actual class DatabaseDriverFactory {
                 d.execute(null, "PRAGMA foreign_keys=ON;", 0)
 
                 Napier.d("Driver fully initialized")
-                SpectacledDatabase(d)
+                SpectacledDatabase(d).also { database = it }
             }
         }
     }

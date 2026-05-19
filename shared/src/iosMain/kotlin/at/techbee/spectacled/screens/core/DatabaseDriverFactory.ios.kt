@@ -2,7 +2,6 @@ package at.techbee.spectacled.screens.core
 
 import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.db.QueryResult
-import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import at.techbee.spectacled.SpectacledVariant
@@ -24,7 +23,7 @@ actual class DatabaseDriverFactory(val spectacledVariant: SpectacledVariant) {
         return mutex.withLock {
             database ?: SpectacledDatabase(NativeSqliteDriver(schema.synchronous(), spectacledVariant.dbName).also {
                 it.execute(null, "PRAGMA foreign_keys=ON;", 0)
-            })
+            }).also { database = it }
         }
     }
 }
