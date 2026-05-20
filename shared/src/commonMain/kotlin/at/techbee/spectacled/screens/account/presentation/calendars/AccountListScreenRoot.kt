@@ -51,10 +51,10 @@ fun AccountListScreenRoot(
 
     val state = viewModel.state
     val snackbarHostState = remember { SnackbarHostState() }
-    val aboutBottomSheetState = rememberModalBottomSheetState()
-    val addPrincipalBottomSheetState = rememberModalBottomSheetState()
-    val createCalendarBottomSheetState = rememberModalBottomSheetState()
-    val updatePrincipalPasswordBottomSheetState = rememberModalBottomSheetState()
+    val aboutBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val addPrincipalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val createCalendarBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val updatePrincipalPasswordBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
 
