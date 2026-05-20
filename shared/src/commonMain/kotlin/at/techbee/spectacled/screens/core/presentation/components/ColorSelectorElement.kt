@@ -44,7 +44,7 @@ import spectacled.shared.generated.resources.recent_colors
 fun ColorSelectorElement(
     recentColors: List<Color>,
     preselectedColor: Color?,
-    onColorChanged: (Color) -> Unit,
+    onColorChanged: (Color?) -> Unit,
     skipPartialSelection: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -89,11 +89,11 @@ fun ColorSelectorElement(
 
         ColorSelectionBox(
             color = Color.Transparent,
-            selected = preselectedColor == Color.Unspecified,
+            selected = selectedColor == null,
             onColorSelected = {
-                selectedColor = Color.Unspecified
-                onColorChanged(Color.Unspecified)
-                              },
+                selectedColor = null
+                onColorChanged(null)
+            },
             content = {
                 Icon(
                     imageVector = Icons.Outlined.FormatColorReset,

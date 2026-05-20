@@ -58,7 +58,7 @@ fun CreateOrUpdateCalendarBottomSheet(
 
     var calendarName by rememberSaveable { mutableStateOf(calendar.displayName?:"") }
     var calendarDescription by rememberSaveable { mutableStateOf(calendar.calendarDescription?:"") }
-    var color by remember { mutableStateOf(calendar.color?:Color.Unspecified) }
+    var color by remember { mutableStateOf(calendar.color) }
 
     val focusRequester = remember { FocusRequester() }
 

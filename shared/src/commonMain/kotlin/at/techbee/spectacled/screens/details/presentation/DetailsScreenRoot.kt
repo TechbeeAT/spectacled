@@ -32,7 +32,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -109,8 +108,8 @@ fun DetailsScreenRoot(
         ) {
             ColorSelectorElement(
                 recentColors = detailsState.allColors,
-                preselectedColor = detailsState.icalEntry.color ?: Color.Transparent,
-                onColorChanged = { detailsViewModel.onAction(DetailsAction.OnUpdateColor(if (it == Color.Transparent) null else it)) },
+                preselectedColor = detailsState.icalEntry.color,
+                onColorChanged = { detailsViewModel.onAction(DetailsAction.OnUpdateColor(it)) },
                 skipPartialSelection = true,
                 modifier = Modifier.fillMaxWidth()
             )
