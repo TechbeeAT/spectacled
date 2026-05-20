@@ -4,8 +4,8 @@ import at.techbee.spectacled.screens.about.domain.GitHubRelease
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlin.coroutines.coroutineContext
 
 private const val BASE_URL = "https://api.github.com/repos/TechbeeAT/jtxBoard/releases?per_page=100"
 
@@ -18,7 +18,7 @@ class KtorRemoteGitHubReleaseDataSource(
             val response = client.get(BASE_URL)
             response.body<List<GitHubReleaseDto>>().map { it.toGitHubRelease() }
         } catch (e: Exception) {
-            coroutineContext.ensureActive()
+            currentCoroutineContext().ensureActive()
             println("Error: ${e.stackTraceToString()}")
             emptyList()
         }

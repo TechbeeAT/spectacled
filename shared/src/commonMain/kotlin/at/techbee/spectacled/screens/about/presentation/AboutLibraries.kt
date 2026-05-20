@@ -12,7 +12,6 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -21,18 +20,25 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
-import com.mikepenz.aboutlibraries.ui.compose.produceLibraries
+import com.mikepenz.aboutlibraries.Libs
+import com.mikepenz.aboutlibraries.entity.Library
 import com.mikepenz.aboutlibraries.ui.compose.util.author
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_libraries
 
+
+@Composable
+fun AboutLibrariesRoot(
+    viewModel: AboutViewModel
+) {
+    AboutLibraries(viewModel.state.libraries)
+}
+
 @Composable
 fun AboutLibraries(
+    libraries: Libs
 ) {
-    val libraries by produceLibraries {
-        Res.readBytes("files/libraries.json").decodeToString()
-    }
     val uriHandler = LocalUriHandler.current
 
     Column(
@@ -51,10 +57,10 @@ fun AboutLibraries(
             modifier = Modifier.padding(4.dp).fillMaxSize()
         ) {
 
-            itemsIndexed(libraries?.libraries?:emptyList()) { index, library ->
+            itemsIndexed(libraries.libraries) { index, library ->
                 SpecialRoundedCard(
                     isFirst = index == 0,
-                    isLast = index == libraries?.libraries?.lastIndex,
+                    isLast = index == libraries.libraries.lastIndex,
                     onClick = {
 
                         try {
@@ -110,5 +116,5 @@ fun AboutLibraries(
 @Preview
 @Composable
 private fun AboutLibraries_Preview() {
-    AboutLibraries()
+    AboutLibraries(Libs(listOf(Library("1", null, "test-lib", "test-desc", "https://example.com", emptyList(), null, null, emptySet())), emptySet()))
 }

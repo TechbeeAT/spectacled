@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryList
 import at.techbee.spectacled.screens.about.presentation.AboutScreen
+import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.calendars.components.AddPrincipalBottomSheet
 import at.techbee.spectacled.screens.account.presentation.calendars.components.CalendarSyncInfoDialog
 import at.techbee.spectacled.screens.account.presentation.calendars.components.CreateOrUpdateCalendarBottomSheet
@@ -38,6 +39,7 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
 
@@ -278,7 +280,7 @@ fun AccountListScreenRoot(
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
                 menuAction = { }
             ) {
-                AboutScreen(spectacledVariant = viewModel.spectacledVariant)
+                AboutScreen(koinInject<AboutViewModel>())
             }
         }
 

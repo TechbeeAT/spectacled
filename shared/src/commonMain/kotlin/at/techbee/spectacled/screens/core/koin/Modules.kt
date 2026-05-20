@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.koin
 
+import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.calendars.AccountListViewModel
 import at.techbee.spectacled.screens.core.data.AppPreferences
 import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
@@ -13,6 +14,7 @@ val sharedModule = module {
     viewModelOf(::ListViewModel)
     viewModelOf(::AccountListViewModel)
     viewModelOf(::DetailsViewModel)
+    viewModelOf(::AboutViewModel)
     single { AppPreferences(Settings()) }
 
     includes(platformModule)

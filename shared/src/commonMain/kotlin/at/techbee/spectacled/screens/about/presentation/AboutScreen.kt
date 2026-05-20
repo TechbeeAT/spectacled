@@ -17,25 +17,23 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(
-    spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>(),
+    viewModel: AboutViewModel,
     modifier: Modifier = Modifier
 ) {
 
-    val screens = mutableListOf<AboutTabDestination>().apply {
-        add(AboutTabDestination.Jtx)
-        add(AboutTabDestination.Releasenotes)
-        add(AboutTabDestination.Contributors)
-        add(AboutTabDestination.Libraries)
-    }
+    val screens = listOf(
+        AboutTabDestination.Jtx,
+        AboutTabDestination.Releasenotes,
+        AboutTabDestination.Contributors,
+        AboutTabDestination.Libraries
+    )
 
     val pagerState = rememberPagerState(initialPage = screens.indexOf(AboutTabDestination.Jtx), pageCount = { screens.size })
     val scope = rememberCoroutineScope()
-
 
     Column(modifier = modifier) {
         PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
@@ -60,10 +58,10 @@ fun AboutScreen(
             modifier = Modifier.weight(1f).padding(8.dp)
         ) { page ->
             when (page) {
-                screens.indexOf(AboutTabDestination.Jtx) -> AboutApp(spectacledVariant)
-                screens.indexOf(AboutTabDestination.Releasenotes) -> GitHubReleasesRoot()
-                screens.indexOf(AboutTabDestination.Contributors) -> GitHubContributorsRoot()
-                screens.indexOf(AboutTabDestination.Libraries) -> AboutLibraries()
+                screens.indexOf(AboutTabDestination.Jtx) -> AboutApp(viewModel.spectacledVariant)
+                screens.indexOf(AboutTabDestination.Releasenotes) -> GitHubReleasesRoot(viewModel)
+                screens.indexOf(AboutTabDestination.Contributors) -> GitHubContributorsRoot(viewModel)
+                screens.indexOf(AboutTabDestination.Libraries) -> AboutLibrariesRoot(viewModel)
             }
         }
     }
@@ -75,7 +73,7 @@ fun AboutScreen(
 @Composable
 private fun AboutScreen_Preview() {
     AboutScreen(
-        spectacledVariant = SpectacledVariant.JOURNALS
+        AboutViewModel(SpectacledVariant.JOURNALS)
     )
 }
 

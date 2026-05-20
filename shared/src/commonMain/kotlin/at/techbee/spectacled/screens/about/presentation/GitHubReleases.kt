@@ -15,21 +15,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.about.data.KtorRemoteGitHubReleaseDataSource
 import at.techbee.spectacled.screens.about.domain.GitHubRelease
-import at.techbee.spectacled.screens.core.data.HttpClientFactory
-import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_release_notes
@@ -41,26 +34,10 @@ private const val GITHUB_RELEASES_URL = "https://github.com/TechbeeAT/jtxBoard/r
 
 @Composable
 fun GitHubReleasesRoot(
+    viewModel: AboutViewModel
 ) {
 
-    val scope = rememberCoroutineScope()
-    val releases = mutableStateListOf<GitHubRelease>()
-
-    LaunchedEffect(Unit) {
-        scope.launch {
-            releases.clear()
-            releases.addAll(
-                KtorRemoteGitHubReleaseDataSource(
-                    HttpClientFactory.create(
-                        engine = getPlatformEngine(),
-                        jsonContentNegotiation = true
-                    )
-                ).getReleases()
-            )
-        }
-    }
-
-    GitHubReleases(releases)
+    GitHubReleases(viewModel.state.gitHubReleases)
 }
 
 @Composable

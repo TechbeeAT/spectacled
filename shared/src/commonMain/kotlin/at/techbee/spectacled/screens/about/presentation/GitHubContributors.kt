@@ -18,9 +18,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,13 +27,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.about.data.KtorRemoteGitHubContributorDataSource
 import at.techbee.spectacled.screens.about.domain.GitHubContributor
-import at.techbee.spectacled.screens.core.data.HttpClientFactory
-import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_contributors
@@ -48,26 +41,9 @@ private const val GITHUB_CONTRIBUTORS_URL = "https://github.com/TechbeeAT/jtxBoa
 
 @Composable
 fun GitHubContributorsRoot(
+    viewModel: AboutViewModel
 ) {
-
-    val scope = rememberCoroutineScope()
-    val contributors = mutableStateListOf<GitHubContributor>()
-
-    LaunchedEffect(Unit) {
-        scope.launch {
-            contributors.clear()
-            contributors.addAll(
-                KtorRemoteGitHubContributorDataSource(
-                    HttpClientFactory.create(
-                        engine = getPlatformEngine(),
-                        jsonContentNegotiation = true
-                    )
-                ).getContributors()
-            )
-        }
-    }
-
-    GitHubContributors(contributors)
+    GitHubContributors(viewModel.state.gitHubContributors)
 }
 
 @Composable
