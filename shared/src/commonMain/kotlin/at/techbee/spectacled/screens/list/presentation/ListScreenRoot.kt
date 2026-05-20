@@ -173,7 +173,7 @@ fun ListScreenRoot(
     if (state.showDateSelectorBottomSheet) {
         DatePickerBottomSheet(
             icsDateTime = IcsDateTime.now(),
-            sheetState = rememberModalBottomSheetState(),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             selectableDates = selectableDates,
             onDateSelected = { selectedDate -> listViewModel.onAction(ListAction.OnGoToSelectedDate(selectedDate)) },
             onDismiss = { listViewModel.onAction(ListAction.OnShowDateSelectorBottomSheet(false)) }
