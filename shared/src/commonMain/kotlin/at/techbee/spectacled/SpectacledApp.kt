@@ -16,7 +16,7 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.account.presentation.calendars.AccountListScreenRoot
 import at.techbee.spectacled.screens.account.presentation.calendars.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
-import at.techbee.spectacled.screens.core.data.AppPreferences
+import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.koin.sharedModule
 import at.techbee.spectacled.screens.details.presentation.DetailsScreenRoot
@@ -70,7 +70,7 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
             val navController = rememberNavController()
             //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
 
-            val appPreferences = koinInject<AppPreferences>()
+            val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
             val syncTrigger = koinInject<PlatformSyncTrigger>()
 
             LaunchedEffect(Unit) {
@@ -160,7 +160,7 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
             }
 
             LaunchedEffect(Unit) {
-                appPreferences.lastUsedCalendarId?.let { lastUsedCalendarId ->
+                userAppPreferencesStore.lastUsedCalendarId?.let { lastUsedCalendarId ->
                     navController.navigate(Route.IcalEntryList(lastUsedCalendarId))
                 }
             }

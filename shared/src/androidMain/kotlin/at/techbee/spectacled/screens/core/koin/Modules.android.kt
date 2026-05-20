@@ -4,12 +4,14 @@ import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.PlatformShareManager
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 actual val platformModule = module {
     single { DatabaseDriverFactory(androidContext(), get()) }
     single { PlatformCredentialStore(androidContext()) }
+    single { PlatformUserAppPreferencesStore(androidContext()) }
     single { PlatformSyncTrigger(androidContext()) }
     single { PlatformShareManager(androidContext()) }
 }

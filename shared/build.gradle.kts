@@ -74,9 +74,7 @@ kotlin {
 
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.kotlinx.serialization.json)
-
-            implementation(libs.multiplatform.settings.no.arg)
-
+            
             //koin
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
@@ -91,6 +89,9 @@ kotlin {
             implementation(libs.reorderable)
 
             implementation(libs.sql.delight.coroutines.extensions)
+
+            // safe storage
+            implementation(libs.ksafe)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -102,9 +103,7 @@ kotlin {
             //implementation(libs.dav4jvm)
             implementation(libs.sql.delight.android.driver)
             implementation(libs.androidx.work.runtime.ktx)
-            // safe storage
-            implementation(libs.ksafe)
-            
+
             // Required for rendering Compose Previews in Android Studio
             implementation(libs.compose.uiTooling)
         }
@@ -114,16 +113,12 @@ kotlin {
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sql.delight.sqlite.driver)
-            // safe storage
-            implementation(libs.ksafe)
             //implementation(libs.dav4jvm)
         }
 
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.sql.delight.native.driver)
-            // safe storage
-            implementation(libs.ksafe)
         }
 
         webMain.dependencies {

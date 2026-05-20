@@ -13,8 +13,8 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
-import at.techbee.spectacled.screens.core.data.AppPreferences
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -30,8 +30,8 @@ import kotlin.uuid.ExperimentalUuidApi
 class ListViewModel(
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
-    private val platformSyncTrigger: PlatformSyncTrigger,
-    private val appPreferences: AppPreferences,
+    private val syncTrigger: PlatformSyncTrigger,
+    private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
     val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -49,21 +49,21 @@ class ListViewModel(
             navigateUp = false,
             snackbarText = null,
             listSortedBy = when {
-                appPreferences.listSortedBy != null -> appPreferences.listSortedBy!!
+                userAppPreferencesStore.listSortedBy != null -> userAppPreferencesStore.listSortedBy!!
                 spectacledVariant == SpectacledVariant.JOURNALS -> ListSortedBy.DATE
                 else -> ListSortedBy.CREATED
             },
-            listSortedByAscending = appPreferences.listSortedByAscending,
+            listSortedByAscending = userAppPreferencesStore.listSortedByAscending,
             listLayout = when {
-                appPreferences.listLayout != null -> appPreferences.listLayout!!
+                userAppPreferencesStore.listLayout != null -> userAppPreferencesStore.listLayout!!
                 spectacledVariant == SpectacledVariant.JOURNALS -> ListLayout.LIST
                 else -> ListLayout.STAGGERED_GRID
             },
-            listCollapsedGroups = appPreferences.listCollapsedGroups,
+            listCollapsedGroups = userAppPreferencesStore.listCollapsedGroups,
             spectacledVariant = spectacledVariant
         )
 
-        appPreferences.lastUsedCalendarId = calendarId
+        userAppPreferencesStore.lastUsedCalendarId = calendarId
 
         viewModelScope.launch {
             try {
@@ -157,16 +157,16 @@ class ListViewModel(
             is ListAction.OnCategoryFilterChanged -> {
                 updateList(state.listSortedBy, state.listSortedByAscending, state.searchQuery, action.category)
             }
-            is ListAction.OnTriggerSync -> platformSyncTrigger.requestImmediate(listOf(state.calendar.id))
+            is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(state.calendar.id))
             is ListAction.OnIcalEntryClicked -> { }   // handled in IcalEntryListScreen
             is ListAction.OnSortedByChanged -> {
                 updateList(action.listSortedBy, action.listSortedByAscending, _state.value.searchQuery, _state.value.searchCategory)
-                appPreferences.listSortedBy = action.listSortedBy
-                appPreferences.listSortedByAscending = action.listSortedByAscending
+                userAppPreferencesStore.listSortedBy = action.listSortedBy
+                userAppPreferencesStore.listSortedByAscending = action.listSortedByAscending
             }
             is ListAction.OnViewModeChanged -> {
                 _state.value = _state.value.copy(listLayout = action.listLayout)
-                appPreferences.listLayout = action.listLayout
+                userAppPreferencesStore.listLayout = action.listLayout
             }
             is ListAction.OnSearchBarExpanded -> {
                 _state.value = _state.value.copy(
@@ -176,7 +176,7 @@ class ListViewModel(
             }
             is ListAction.OnNavigateUp -> {
                 if(action.navigateUp)
-                    appPreferences.lastUsedCalendarId = null // reset lastUsedCalendarId
+                    userAppPreferencesStore.lastUsedCalendarId = null // reset lastUsedCalendarId
                 _state.value = _state.value.copy(navigateUp = action.navigateUp)
             }
             is ListAction.OnUpdateSnackbar -> { _state.value = _state.value.copy(snackbarText = action.message) }
@@ -276,7 +276,7 @@ class ListViewModel(
     private fun onDeleteSelectedItems() {
         viewModelScope.launch {
             _state.value.multiselectItems?.let { getDatabase().icalentry_dtoQueries.markAsDeleted(it) }
-            platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
+            syncTrigger.requestImmediatePush(_state.value.calendar.id)
             _state.value = _state.value.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false)
         }
     }
@@ -358,7 +358,7 @@ class ListViewModel(
             else
                 state.listCollapsedGroups.plus(listGroup)
         )
-        appPreferences.listCollapsedGroups = state.listCollapsedGroups
+        userAppPreferencesStore.listCollapsedGroups = state.listCollapsedGroups
     }
 
     private fun onGoToDate(selectedDate: IcsDateTime?) {
