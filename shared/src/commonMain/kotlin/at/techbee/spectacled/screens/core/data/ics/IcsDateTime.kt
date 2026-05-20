@@ -5,7 +5,13 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -13,6 +19,7 @@ import kotlin.time.Instant
 data class IcsDateTime(
     val instant: Instant,
     val isDateOnly: Boolean,
+    @Serializable(with = TimeZoneSerializer::class)
     val timeZone: TimeZone? = null,
 ) {
     companion object {
@@ -103,4 +110,10 @@ data class IcsDateTime(
             timeZone = newZone
         )
     }
+}
+
+object TimeZoneSerializer : KSerializer<TimeZone> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TimeZone", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TimeZone) = encoder.encodeString(value.id)
+    override fun deserialize(decoder: Decoder): TimeZone = TimeZone.of(decoder.decodeString())
 }
