@@ -39,12 +39,8 @@ class ListViewModel(
     val state by _state
     val dragAndDropList = mutableStateListOf<IcalEntry>()
 
-    private lateinit var database: SpectacledDatabase
     private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
-    init {
-        viewModelScope.launch { database = getDatabase() }
-    }
 
     fun load(calendarId: Long) {
         _state.value = _state.value.copy(
@@ -71,7 +67,7 @@ class ListViewModel(
 
         viewModelScope.launch {
             try {
-                val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendarId).awaitAsOneOrNull()?.toDomain() ?: throw NullPointerException("Principal not found")
+                val principal = getDatabase().principal_dtoQueries.getPrincipalForCalendar(calendarId).awaitAsOneOrNull()?.toDomain() ?: throw NullPointerException("Principal not found")
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw NullPointerException("Credentials not found")
 
                 _state.value = _state.value.copy(
@@ -91,7 +87,7 @@ class ListViewModel(
     }
 
     private suspend fun observeCalendar(calendarId: Long) {
-        database
+        getDatabase()
             .calendar_dtoQueries.getCalendarById(calendarId)
             .asFlow()
             .collect { calendarFlow ->
@@ -103,7 +99,7 @@ class ListViewModel(
     }
 
     private suspend fun observeIcalentries() {
-        database
+        getDatabase()
             .icalentry_dtoQueries.getIcalEntriesByCalendar(state.calendar.id)
             .asFlow()
             .collect { journalsFlow ->
@@ -125,7 +121,7 @@ class ListViewModel(
     }
 
     private suspend fun observeColors() {
-        database
+        getDatabase()
             .icalentry_dtoQueries.getAllColors()
             .asFlow()
             .collect { colorsFlow ->
@@ -137,7 +133,7 @@ class ListViewModel(
     }
 
     private suspend fun observeCategories() {
-        database
+        getDatabase()
             .icalentry_dtoQueries.getAllCategories()
             .asFlow()
             .collect { categoriesFlow ->
@@ -226,7 +222,7 @@ class ListViewModel(
 
     private fun onUpdateCategoryOfSelectedItems(addCategory: String?, removeCategory: String?) {
         viewModelScope.launch {
-            database.icalentry_dtoQueries.transaction {
+            getDatabase().icalentry_dtoQueries.transaction {
                 _state.value.multiselectItems?.forEach { id ->
                     _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
                         var newCategories = icalEntry.categories
@@ -243,7 +239,7 @@ class ListViewModel(
                                 lastModified = IcsDateTime.now(),
                                 syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
                             ).toDto().let { copyDto ->
-                                database.icalentry_dtoQueries.updateCategory(
+                                getDatabase().icalentry_dtoQueries.updateCategory(
                                     newCategories = copyDto.categories,
                                     lastModified = copyDto.lastModified,
                                     syncState = copyDto.syncState,
@@ -279,7 +275,7 @@ class ListViewModel(
 
     private fun onDeleteSelectedItems() {
         viewModelScope.launch {
-            _state.value.multiselectItems?.let { database.icalentry_dtoQueries.markAsDeleted(it) }
+            _state.value.multiselectItems?.let { getDatabase().icalentry_dtoQueries.markAsDeleted(it) }
             platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
             _state.value = _state.value.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false)
         }
@@ -289,7 +285,7 @@ class ListViewModel(
     private fun onUpdateColorOfSelectedItems(color: Color?) {
         viewModelScope.launch {
 
-            database.icalentry_dtoQueries.transaction {
+            getDatabase().icalentry_dtoQueries.transaction {
                 _state.value.multiselectItems?.forEach { id ->
                     _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
 
@@ -298,7 +294,7 @@ class ListViewModel(
                             lastModified = IcsDateTime.now(),
                             syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
                         ).toDto().let { copyDto ->
-                            database.icalentry_dtoQueries.updateColor(
+                            getDatabase().icalentry_dtoQueries.updateColor(
                                 newColor = copyDto.color,
                                 lastModified = copyDto.lastModified,
                                 syncState = copyDto.syncState,
@@ -347,9 +343,9 @@ class ListViewModel(
 
     private fun onPersistOrderNo() {
         viewModelScope.launch {
-            database.icalentry_dtoQueries.transaction {
+            getDatabase().icalentry_dtoQueries.transaction {
                 dragAndDropList.forEachIndexed { index, icalEntry ->
-                    database.icalentry_dtoQueries.updateOrderNo(index.toLong(), icalEntry.id)
+                    getDatabase().icalentry_dtoQueries.updateOrderNo(index.toLong(), icalEntry.id)
                 }
             }
         }

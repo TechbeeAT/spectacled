@@ -53,12 +53,10 @@ class AccountListViewModel(
     private val _state = mutableStateOf(AccountListState())
     val state by _state
 
-    private lateinit var database: SpectacledDatabase
     private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
     init {
         viewModelScope.launch {
-            database = getDatabase()
             launch { observePrincipals() }
             launch { observeHomeCollections() }
             launch { observeCalendars() }
@@ -67,7 +65,7 @@ class AccountListViewModel(
 
     private suspend fun observePrincipals() {
         Napier.d("Observing principals")
-        database.principal_dtoQueries.getAllPrincipals().asFlow().collect {
+        getDatabase().principal_dtoQueries.getAllPrincipals().asFlow().collect {
             _state.value = _state.value.copy(
                 principals = it.awaitAsList().map { principalDto -> principalDto.toDomain() }
             )
@@ -76,7 +74,7 @@ class AccountListViewModel(
 
     private suspend fun observeHomeCollections() {
         Napier.d("Observing homeCollections")
-        database.home_collection_dtoQueries.getAllHomeCollections().asFlow().collect {
+        getDatabase().home_collection_dtoQueries.getAllHomeCollections().asFlow().collect {
             _state.value = _state.value.copy(
                 homeCollections = it.awaitAsList().map { homeCollectionDto -> homeCollectionDto.toDomain() }
             )
@@ -85,7 +83,7 @@ class AccountListViewModel(
 
     private suspend fun observeCalendars() {
         Napier.d("Observing calendars")
-        database.calendar_dtoQueries.getAllCalendars().asFlow().collect {
+        getDatabase().calendar_dtoQueries.getAllCalendars().asFlow().collect {
             _state.value = _state.value.copy(
                 calendars = it.awaitAsList().map { calendarDto -> calendarDto.toDomain() }
             )
@@ -132,7 +130,7 @@ class AccountListViewModel(
         _state.value = _state.value.copy(processingState = ProcessingState.Processing)
         viewModelScope.launch {
             credentialStore.clear(principal.principalUrl)
-            database.principal_dtoQueries.delete(principal.id)
+            getDatabase().principal_dtoQueries.delete(principal.id)
             _state.value = _state.value.copy(
                 processingState = ProcessingState.Success(message = "Account successfully removed"),
                 showRemovePrincipalDialog = null,
@@ -154,7 +152,7 @@ class AccountListViewModel(
 
                     when (remoteResult) {
                         is DeleteCalendarResult.SuccessfullyDeleted, is DeleteCalendarResult.AlreadyDeleted -> {
-                            database.calendar_dtoQueries.delete(calendar.id)
+                            getDatabase().calendar_dtoQueries.delete(calendar.id)
                             _state.value = _state.value.copy(
                                 processingState = ProcessingState.Success(message = "Calendar successfully deleted"),
                                 showDeleteCalendarDialog = null,
@@ -183,7 +181,7 @@ class AccountListViewModel(
 
             val testUrl = Url("https://localhost/${Random.nextInt(100)}")
 
-            database.upsertPrincipal(
+            getDatabase().upsertPrincipal(
                 Principal(
                     id = 0,
                     principalUrl = testUrl,
@@ -192,7 +190,7 @@ class AccountListViewModel(
                 )
             )
 
-            database.upsertHomeCollection(
+            getDatabase().upsertHomeCollection(
                 HomeCollection(
                     id = 0,
                     principalId = 0,
@@ -202,7 +200,7 @@ class AccountListViewModel(
                 testUrl
             )
 
-            database.upsertCalendar(
+            getDatabase().upsertCalendar(
                 Calendar(
                     id = 0,
                     homeCollectionId = 0,
@@ -277,7 +275,7 @@ class AccountListViewModel(
                     }
                     is DiscoverPrincipalsResult.Success -> {
                         discoverPrincipalsResult.principals.forEach { principal ->
-                            //database.upsertPrincipal(principal)    // principals are upserted with the discovery of homesets to avoid double db operations
+                            //getDatabase().upsertPrincipal(principal)    // principals are upserted with the discovery of homesets to avoid double db operations
                             credentialStore.save(Credentials(principal.principalUrl.toString(), credentials.username, credentials.password))
                             Napier.d("Principal added")
                         }
@@ -308,10 +306,10 @@ class AccountListViewModel(
                             principal.displayName = discoverHomeCollectionsResult.principalDisplayName
                             principal.calendarUserAddressSet = discoverHomeCollectionsResult.principalCalendarUserAddressSet
 
-                            database.upsertPrincipal(principal)
+                            getDatabase().upsertPrincipal(principal)
                             /*   // home collections are upserted with calendars to avoid double db operations
                             discoverHomeCollectionsResult.homeCollections.forEach { homeCollection ->
-                                database.upsertHomeCollection(homeCollection, principal.principalUrl)
+                                getDatabase().upsertHomeCollection(homeCollection, principal.principalUrl)
                             }
                              */
                             discoveredHomeCollections.addAll(discoverHomeCollectionsResult.homeCollections)
@@ -341,9 +339,9 @@ class AccountListViewModel(
                             }
                             is DiscoverCalendarsResult.Success -> {
                                 homeCollection.calDavPrivileges = discoverCalendarsResult.calDavPrivileges
-                                database.upsertHomeCollection(homeCollection, principal.principalUrl)
+                                getDatabase().upsertHomeCollection(homeCollection, principal.principalUrl)
                                 discoverCalendarsResult.calendars.forEach {
-                                    database.upsertCalendar(it, homeCollection.url)
+                                    getDatabase().upsertCalendar(it, homeCollection.url)
                                 }
                                 discoveredCalendars.addAll(discoverCalendarsResult.calendars)
                             }
@@ -356,9 +354,9 @@ class AccountListViewModel(
                 //reload calendars from DB, remove calendars that haven't been returned
                 // theoretically there should be only one principal. but just in case...
                 discoverPrincipalsResult.principals.forEach { principal ->
-                    val localCalendars = database.calendar_dtoQueries.getCalendarsForPrincipalUrl(principal.principalUrl.toString()).awaitAsList().map { it.toDomain() }
+                    val localCalendars = getDatabase().calendar_dtoQueries.getCalendarsForPrincipalUrl(principal.principalUrl.toString()).awaitAsList().map { it.toDomain() }
                     val removedCalendars = localCalendars.filter { localCalendar -> discoveredCalendars.none { calendar -> calendar.url == localCalendar.url}  }
-                    removedCalendars.forEach { database.calendar_dtoQueries.delete(it.id) }
+                    removedCalendars.forEach { getDatabase().calendar_dtoQueries.delete(it.id) }
                     // Todo: infom user that calendar was removed!
 
                     _state.value = _state.value.copy(
@@ -398,7 +396,7 @@ class AccountListViewModel(
                 when(upsertCalendarResult) {
                     is UpsertCalendarResult.Success -> {
                         Napier.d("Saving Calendar")
-                        database.upsertCalendar(upsertCalendarResult.calendar, homeCollection.url)
+                        getDatabase().upsertCalendar(upsertCalendarResult.calendar, homeCollection.url)
                         Napier.d("Calendar ${calendar.displayName} added")
                         _state.value = state.copy(
                             snackbarText = "Calendar successfully added/updated",
@@ -423,7 +421,7 @@ class AccountListViewModel(
 
             if(forgetSyncToken) {
                 calendars.forEach { calendar ->
-                    database.calendar_dtoQueries.updateCalendarSyncStatus(calendar.calendarSyncStatus?.serialize(), calendar.syncToken, calendar.id)
+                    getDatabase().calendar_dtoQueries.updateCalendarSyncStatus(calendar.calendarSyncStatus?.serialize(), calendar.syncToken, calendar.id)
                 }
             }
 

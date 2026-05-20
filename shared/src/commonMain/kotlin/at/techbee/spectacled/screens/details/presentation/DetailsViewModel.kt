@@ -59,22 +59,18 @@ class DetailsViewModel(
     private var _state by mutableStateOf(DetailsState())
     val state: DetailsState get() = _state
 
-    private lateinit var database: SpectacledDatabase
     private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
     init {
         viewModelScope.launch {
-            database = getDatabase()
 
-            launch {
-                snapshotFlow { state.icalEntry } // snapshotFlow tracks reads of the entry and emits on change
-                    .debounce(500L) // Wait for 500ms pause in typing
-                    .distinctUntilChanged { old, new -> old.lastModified == new.lastModified } // Only save if last modified changed
-                    .collect {
-                        if(!state.isLoading && state.icalEntry.calendarId != 0L && state.icalEntry.syncState != SyncState.SYNCED)
-                            saveIcalEntry(state.icalEntry.syncState)
-                    }
-            }
+            snapshotFlow { state.icalEntry } // snapshotFlow tracks reads of the entry and emits on change
+                .debounce(500L) // Wait for 500ms pause in typing
+                .distinctUntilChanged { old, new -> old.lastModified == new.lastModified } // Only save if last modified changed
+                .collect {
+                    if(!state.isLoading && state.icalEntry.calendarId != 0L && state.icalEntry.syncState != SyncState.SYNCED)
+                        saveIcalEntry(state.icalEntry.syncState)
+                }
         }
     }
 
@@ -82,9 +78,8 @@ class DetailsViewModel(
     fun load(icalEntryId: Long) {
 
         viewModelScope.launch {
-
-            val icalEntry = database.icalentry_dtoQueries.getIcalEntryById(icalEntryId).awaitAsOneOrNull()?.toDomain() ?: return@launch
-            val calendar = database.calendar_dtoQueries.getCalendarById(icalEntry.calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+            val icalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryById(icalEntryId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+            val calendar = getDatabase().calendar_dtoQueries.getCalendarById(icalEntry.calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
             _state = _state.copy(
                 icalEntry = icalEntry,
@@ -108,7 +103,7 @@ class DetailsViewModel(
                 calendarId = calendarId,
                 dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null
             )
-            val calendar = database.calendar_dtoQueries.getCalendarById(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+            val calendar = getDatabase().calendar_dtoQueries.getCalendarById(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
             _state = _state.copy(
                 icalEntry = newIcalEntry,
@@ -130,7 +125,7 @@ class DetailsViewModel(
     fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
         viewModelScope.launch {
             //saveIcalEntry(false)
-            val originalIcalEntry = database.icalentry_dtoQueries.getIcalEntryById(icalEntryIdToCopy).awaitAsOneOrNull()?.toDomain()
+            val originalIcalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryById(icalEntryIdToCopy).awaitAsOneOrNull()?.toDomain()
             if(originalIcalEntry == null) {
                 _state = _state.copy(
                     snackbarText = getString(Res.string.unexpected_error_occurred),
@@ -166,7 +161,7 @@ class DetailsViewModel(
     }
 
     private suspend fun observeColors() {
-        database
+        getDatabase()
             .icalentry_dtoQueries.getAllColors()
             .asFlow()
             .collect { colorsFlow ->
@@ -178,7 +173,7 @@ class DetailsViewModel(
     }
 
     private suspend fun observeCategories() {
-        database
+        getDatabase()
             .icalentry_dtoQueries.getAllCategories()
             .asFlow()
             .collect { categoriesFlow ->
@@ -193,7 +188,7 @@ class DetailsViewModel(
     }
 
     private suspend fun observeTimezones() {
-        database
+        getDatabase()
             .icalentry_dtoQueries.getLastUsedTimezones()
             .asFlow()
             .collect { timezonesFlow ->
@@ -370,7 +365,9 @@ class DetailsViewModel(
             navigateUp = navigateUp
         )
 
-        viewModelScope.launch { database.insertOrUpdateIcalEntry(_state.icalEntry) }
+        viewModelScope.launch { 
+            getDatabase().insertOrUpdateIcalEntry(_state.icalEntry)
+        }
         Napier.d("Entry saved")
     }
 
@@ -386,21 +383,21 @@ class DetailsViewModel(
 
         viewModelScope.launch {
             try {
-                val calendar = database.calendar_dtoQueries.getCalendarById(_state.icalEntry.calendarId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
+                val calendar = getDatabase().calendar_dtoQueries.getCalendarById(_state.icalEntry.calendarId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
-                val homeCollection = database.home_collection_dtoQueries.getHomeCollectionsById(calendar.homeCollectionId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
+                val homeCollection = getDatabase().home_collection_dtoQueries.getHomeCollectionsById(calendar.homeCollectionId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
-                val principal = database.principal_dtoQueries.getPrincipalById(homeCollection.principalId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
+                val principal = getDatabase().principal_dtoQueries.getPrincipalById(homeCollection.principalId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
 
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
                 val client = HttpClientFactory.create(getPlatformEngine(), credentials.username, credentials.password)
 
-                SyncCoordinator(database, client).pushDirtyIcalEntry(_state.icalEntry, calendar)
-                val processedIcalEntry = database.icalentry_dtoQueries.getIcalEntryByUid(_state.icalEntry.uid).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
+                SyncCoordinator(getDatabase(), client).pushDirtyIcalEntry(_state.icalEntry, calendar)
+                val processedIcalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryByUid(_state.icalEntry.uid).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
 
