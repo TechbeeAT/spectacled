@@ -31,8 +31,8 @@ import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.list.presentation.components.EmptyListScreen
-import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListItem
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
+import at.techbee.spectacled.screens.list.presentation.components.ListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -129,7 +129,7 @@ fun JournalsListScreen(
                     key = { _, icalEntry -> icalEntry.uid }
                 ) { index, icalEntry ->
 
-                    IcalEntryListItem(
+                    ListItem(
                         icalEntry = icalEntry,
                         //isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
                         //isLast = (state.listLayout == ListLayout.LIST && index == groupedByDay[dayGroup]!!.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
@@ -143,6 +143,7 @@ fun JournalsListScreen(
                                 onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                         },
                         onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
+                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
                         modifier = Modifier
                             .widthIn(max = 700.dp)
                             .heightIn(min = 50.dp)
@@ -176,7 +177,7 @@ fun JournalsListScreen(
             else
                 itemsIndexed(state.trashbin, key = { _, note -> note.uid }) { index, note ->
 
-                    IcalEntryListItem(
+                    ListItem(
                         icalEntry = note,
                         isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
                         isLast = (state.listLayout == ListLayout.LIST && index == state.trashbin.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
@@ -188,6 +189,7 @@ fun JournalsListScreen(
                                 onAction(ListAction.OnToggleMultiselectItem(note.id))
                         },
                         onLongClick = { onAction(ListAction.OnToggleMultiselectItem(note.id)) },
+                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
                         modifier = Modifier
                             .widthIn(max = 700.dp)
                             .heightIn(min = 50.dp)
@@ -237,7 +239,6 @@ private fun JournalsListScreen_Search_Preview() {
     var state = ListState()
     state = state.copy(
         searchQuery = "Lorem",
-        isSearchBarExpanded = true,
         icalEntries = listOf(IcalEntry.getSampleIcalEntry(), IcalEntry.getSampleIcalEntry())
     )
 

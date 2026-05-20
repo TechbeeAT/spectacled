@@ -28,9 +28,9 @@ import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_PINNED
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.list.presentation.components.EmptyListScreen
-import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListItem
 import at.techbee.spectacled.screens.list.presentation.components.ListDragHandle
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
+import at.techbee.spectacled.screens.list.presentation.components.ListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
@@ -73,8 +73,8 @@ fun ListScreen(
         // using mutableStateList instead of grouped list for drag and drop
         // this allows us to directly manipulate the list and avoid jitter
         if(state.listSortedBy == ListSortedBy.DRAGANDDROP
-            && !state.isSearchBarExpanded
-            && state.searchCategory.isEmpty()
+            && !state.searchQuery.isNullOrEmpty()
+            && !state.searchCategory.isNullOrEmpty()
         ) {
             itemsIndexed(dragAndDropList, key = { _, note -> note.uid }) { index, icalEntry ->
 
@@ -93,7 +93,7 @@ fun ListScreen(
 
                     val interactionSource = remember { MutableInteractionSource() }
 
-                    IcalEntryListItem(
+                    ListItem(
                         icalEntry = icalEntry,
                         isFirst = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
                         isLast = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == dragAndDropList.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
@@ -110,6 +110,7 @@ fun ListScreen(
                             if (state.listSortedBy == ListSortedBy.DRAGANDDROP)
                                 ListDragHandle(this)
                         },
+                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
                         modifier = Modifier
                             .widthIn(max = 700.dp)
                             .heightIn(min = 50.dp)
@@ -135,7 +136,7 @@ fun ListScreen(
                         key = { _, icalEntry -> icalEntry.uid }
                     ) { index, icalEntry ->
 
-                        IcalEntryListItem(
+                        ListItem(
                             icalEntry = icalEntry,
                             isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
                             isLast = (state.listLayout == ListLayout.LIST && index == state.pinned.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
@@ -147,6 +148,7 @@ fun ListScreen(
                                     onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                             },
                             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
+                            onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
                             modifier = Modifier
                                 .widthIn(max = 700.dp)
                                 .heightIn(min = 50.dp)
@@ -180,7 +182,7 @@ fun ListScreen(
                             key = { _, icalEntry -> icalEntry.uid }
                         ) { index, icalEntry ->
 
-                            IcalEntryListItem(
+                            ListItem(
                                 icalEntry = icalEntry,
                                 isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
                                 isLast = (state.listLayout == ListLayout.LIST && index == groupedByDay[dayGroup]!!.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
@@ -192,6 +194,7 @@ fun ListScreen(
                                         onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                                 },
                                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
+                                onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
                                 modifier = Modifier
                                     .widthIn(max = 700.dp)
                                     .heightIn(min = 50.dp)
@@ -229,7 +232,7 @@ fun ListScreen(
                         if (grouping.name !in state.listCollapsedGroups) {
                             itemsIndexed(state.displayMap[grouping]!!, key = { _, icalEntry -> icalEntry.uid }) { index, note ->
 
-                                IcalEntryListItem(
+                                ListItem(
                                     icalEntry = note,
                                     isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
                                     isLast = (state.listLayout == ListLayout.LIST && index == state.displayMap[grouping]!!.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
@@ -241,6 +244,7 @@ fun ListScreen(
                                             onAction(ListAction.OnToggleMultiselectItem(note.id))
                                     },
                                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(note.id)) },
+                                    onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
                                     modifier = Modifier
                                         .widthIn(max = 700.dp)
                                         .heightIn(min = 50.dp)
@@ -276,7 +280,7 @@ fun ListScreen(
             else
                 itemsIndexed(state.trashbin, key = { _, note -> note.uid }) { index, note ->
 
-                    IcalEntryListItem(
+                    ListItem(
                         icalEntry = note,
                         isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
                         isLast = (state.listLayout == ListLayout.LIST && index == state.trashbin.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
@@ -288,6 +292,7 @@ fun ListScreen(
                                 onAction(ListAction.OnToggleMultiselectItem(note.id))
                         },
                         onLongClick = { onAction(ListAction.OnToggleMultiselectItem(note.id)) },
+                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
                         modifier = Modifier
                             .widthIn(max = 700.dp)
                             .heightIn(min = 50.dp)
@@ -328,10 +333,7 @@ private fun ListScreenRoot_Preview() {
 private fun ListScreen_Preview() {
 
     var state = ListState()
-    state = state.copy(
-        searchQuery = "test",
-        isSearchBarExpanded = true
-    )
+    state = state.copy(searchQuery = "test")
 
     ListScreen(
         state = state,

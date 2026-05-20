@@ -173,7 +173,10 @@ class ListViewModel(
                 appPreferences.listLayout = action.listLayout
             }
             is ListAction.OnSearchBarExpanded -> {
-                _state.value = _state.value.copy(isSearchBarExpanded = action.isExpanded)
+                _state.value = _state.value.copy(
+                    searchQuery = if(action.isExpanded) "" else null,
+                    searchCategory = if(action.isExpanded) "" else null
+                )
             }
             is ListAction.OnNavigateUp -> {
                 if(action.navigateUp)
@@ -263,7 +266,7 @@ class ListViewModel(
         _state.value.searchCategory
     )
     @OptIn(ExperimentalTime::class)
-    private fun updateList(listSortedBy: ListSortedBy, listSortedByAscending: Boolean, searchQuery: String, searchCategory: String) {
+    private fun updateList(listSortedBy: ListSortedBy, listSortedByAscending: Boolean, searchQuery: String?, searchCategory: String?) {
 
         _state.value = _state.value.copy(
             listSortedBy = listSortedBy,

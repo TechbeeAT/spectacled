@@ -13,13 +13,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MoreTime
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Badge
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -32,17 +32,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
-import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
+import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_time
+import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.summary
 
@@ -140,16 +142,13 @@ fun DetailsScreen(
             ) {
                 state.icalEntry.categories.sorted().forEach { category ->
 
-                    Badge(
-                        containerColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
-                        contentColor = state.icalEntry.color?.let { getContentColorForColoredSurfaces(state.icalEntry.color) }
-                            ?: MaterialTheme.colorScheme.onPrimary,
-                    ) {
-                        Text(
-                            text = category,
-                            modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp)
-                        )
-                    }
+                    MetaInfoCard(
+                        icon = Icons.AutoMirrored.Outlined.Label,
+                        iconContentDescription = stringResource(Res.string.category),
+                        containerColor = state.icalEntry.color ?: Color.Unspecified,
+                        text = category,
+                        onClick = { onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) }
+                    )
                 }
             }
         }

@@ -37,14 +37,13 @@ data class ListState(
     ),
     val credentials: Credentials? = null,
     val isRefreshing: Boolean = false,
-    val searchQuery: String = "",
-    val searchCategory: String = "",
+    val searchQuery: String? = null,
+    val searchCategory: String? = null,
     val errorMessage: String? = null,
 
     val allColors: List<Color> = emptyList(),
     val allCategories: List<String> = emptyList(),
 
-    val isSearchBarExpanded: Boolean = false,
     val listSortedBy: ListSortedBy = ListSortedBy.CREATED,
     val listSortedByAscending: Boolean = true,
     val listLayout: ListLayout = ListLayout.STAGGERED_GRID,
@@ -65,6 +64,10 @@ data class ListState(
     val listCollapsedGroups: Set<String> = emptySet(),
     val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES  // must be overwritten immediately on load
 ) {
+
+    val isSearchBarExpanded: Boolean
+        get() = searchQuery != null || searchCategory != null
+
 
     val displayMap: Map<ListGrouping, List<IcalEntry>>
         get() = getBaseList(icalEntries)
@@ -111,7 +114,7 @@ data class ListState(
 
     private fun getFilteredList(icalEntries: List<IcalEntry>): List<IcalEntry> {
         val filteredList =
-            if (searchQuery.isBlank())
+            if (searchQuery.isNullOrBlank())
                 icalEntries
             else
                 icalEntries.filter {
@@ -120,7 +123,7 @@ data class ListState(
                 }
 
         val filteredListByCategory =
-            if (searchCategory.isBlank())
+            if (searchCategory.isNullOrBlank())
                 filteredList
             else
                 filteredList.filter { it.categories.any { category -> category.equals(searchCategory, ignoreCase = true) } }

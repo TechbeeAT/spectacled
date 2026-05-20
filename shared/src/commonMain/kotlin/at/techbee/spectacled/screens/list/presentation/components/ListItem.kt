@@ -6,12 +6,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
@@ -45,19 +45,20 @@ import at.techbee.spectacled.screens.core.presentation.components.SpecialRounded
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.categories
+import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.no_summary_description
 import spectacled.shared.generated.resources.sync_conflict_detected
 import spectacled.shared.generated.resources.time
 import kotlin.time.ExperimentalTime
 
 @Composable
-fun IcalEntryListItem(
+fun ListItem(
     icalEntry: IcalEntry,
     isSelected: Boolean,
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onFilterCategory: (category: String) -> Unit,
     isFirst: Boolean = true,
     isLast: Boolean = true,
     overrideTopRoundedCornerSize: Dp? = null,
@@ -134,60 +135,47 @@ fun IcalEntryListItem(
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                    icalEntry.dtStart?.let {
-                        if(it.isDateOnly)
-                            return@let
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Schedule,
-                                contentDescription = stringResource(Res.string.time),
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                text = PlatformInstantFormatter(it).formatLocalizedTime(),
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.fillMaxWidth()
+                        icalEntry.dtStart?.let {
+                            if (it.isDateOnly)
+                                return@let
+
+                            MetaInfoCard(
+                                icon = Icons.Outlined.Schedule,
+                                iconContentDescription = stringResource(Res.string.time),
+                                containerColor = icalEntry.color ?: Color.Unspecified,
+                                text = PlatformInstantFormatter(it).formatLocalizedTime()
                             )
                         }
-                    }
 
-
-                    AnimatedVisibility (icalEntry.categories.isNotEmpty() || icalEntry.syncState.isConflictState()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            if(icalEntry.categories.isNotEmpty()) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.Label,
-                                    contentDescription = stringResource(Res.string.categories),
-                                    modifier = Modifier.size(12.dp)
-                                )
-
-                                Text(
-                                    text = icalEntry.categories.joinToString(separator = ","),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontStyle = FontStyle.Italic,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.weight(1f))
-
-                            AnimatedVisibility(icalEntry.syncState.isConflictState()) {
-                                Icon(
-                                    imageVector = Icons.Outlined.SyncProblem,
-                                    contentDescription = stringResource(Res.string.sync_conflict_detected),
-                                    modifier = Modifier.size(12.dp)
-                                )
-                            }
+                        icalEntry.categories.forEach { category ->
+                            MetaInfoCard(
+                                icon = Icons.AutoMirrored.Outlined.Label,
+                                iconContentDescription = stringResource(Res.string.category),
+                                containerColor = icalEntry.color ?: Color.Unspecified,
+                                text = category, 
+                                onClick = { onFilterCategory(category) }
+                            )
                         }
+
+                        AnimatedVisibility(icalEntry.syncState.isConflictState()) {
+                            MetaInfoCard(
+                                icon = Icons.Outlined.SyncProblem,
+                                iconContentDescription = stringResource(Res.string.sync_conflict_detected),
+                                containerColor = icalEntry.color ?: Color.Unspecified,
+                                text = null
+                            )
+                        }
+
+
+
+
+
                     }
                 }
             }
@@ -199,28 +187,30 @@ fun IcalEntryListItem(
 @OptIn(ExperimentalTime::class)
 @Preview
 @Composable
-private fun IcalEntryListItem_first_Preview() {
-    IcalEntryListItem(
+private fun ListItem_first_Preview() {
+    ListItem(
         icalEntry = IcalEntry.getSampleIcalEntry(),
         isFirst = true,
         isLast = false,
         isSelected = false,
         onClick = {},
-        onLongClick = {}
+        onLongClick = {},
+        onFilterCategory = {}
     )
 }
 
 @OptIn(ExperimentalTime::class)
 @Preview
 @Composable
-private fun IcalEntryListItem_last_Preview_with_color() {
-    IcalEntryListItem(
+private fun ListItem_last_Preview_with_color() {
+    ListItem(
         icalEntry = IcalEntry.getSampleIcalEntry().copy(color = Color.Blue),
         isFirst = false,
         isLast = true,
         isSelected = true,
         onClick = {},
-        onLongClick = {}
+        onLongClick = {},
+        onFilterCategory = {}
     )
 }
 
@@ -228,36 +218,38 @@ private fun IcalEntryListItem_last_Preview_with_color() {
 @OptIn(ExperimentalTime::class)
 @Preview
 @Composable
-private fun IcalEntryListItem_first_and_last_Preview_with_color() {
-    IcalEntryListItem(
+private fun ListItem_first_and_last_Preview_with_color() {
+    ListItem(
         icalEntry = IcalEntry.getSampleIcalEntry(),
         isFirst = true,
         isLast = true,
         isSelected = false,
         onClick = {},
-        onLongClick = {}
+        onLongClick = {},
+        onFilterCategory = {}
     )
 }
 
 @OptIn(ExperimentalTime::class)
 @Preview
 @Composable
-private fun IcalEntryListItem_middle_Preview_with_color() {
-    IcalEntryListItem(
+private fun ListItem_middle_Preview_with_color() {
+    ListItem(
         icalEntry = IcalEntry.getSampleIcalEntry().copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED),
         isFirst = false,
         isLast = false,
         isSelected = false,
         onClick = {},
-        onLongClick = {}
+        onLongClick = {},
+        onFilterCategory = {}
     )
 }
 
 @OptIn(ExperimentalTime::class)
 @Preview
 @Composable
-private fun IcalEntryListItem_middle_Preview_no_summary_and_description() {
-    IcalEntryListItem(
+private fun ListItem_middle_Preview_no_summary_and_description() {
+    ListItem(
         icalEntry = IcalEntry.getSampleIcalEntry().copy(summary = null, description = null),
         isFirst = false,
         isLast = false,
@@ -270,21 +262,23 @@ private fun IcalEntryListItem_middle_Preview_no_summary_and_description() {
             ) {
                 Icon(Icons.Outlined.DragIndicator, null)
             }
-        }
+        },
+        onFilterCategory = {}
     )
 }
 
 @OptIn(ExperimentalTime::class)
 @Preview
 @Composable
-private fun IcalEntryListItem_withTime_Preview() {
-    IcalEntryListItem(
+private fun ListItem_withTime_Preview() {
+    ListItem(
         icalEntry = IcalEntry.getSampleIcalEntry().copy(dtStart = IcsDateTime.now()),
         isFirst = true,
         isLast = false,
         isSelected = false,
         onClick = {},
-        onLongClick = {}
+        onLongClick = {},
+        onFilterCategory = {}
     )
 }
 

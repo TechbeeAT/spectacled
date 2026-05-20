@@ -347,7 +347,7 @@ fun ListScreenRoot(
                         AnimatedVisibility(state.isSearchBarExpanded) {
                             TextField(
                                 placeholder = { Text(stringResource(Res.string.search)) },
-                                value = state.searchQuery,
+                                value = state.searchQuery ?: "",
                                 onValueChange = { listViewModel.onAction(ListAction.OnSearchQueryChanged(it)) },
                                 modifier = Modifier
                                     .fillMaxWidth()
