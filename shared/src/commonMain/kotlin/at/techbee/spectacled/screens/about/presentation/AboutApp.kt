@@ -34,7 +34,9 @@ import at.techbee.spectacled.shared.BuildKonfig
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.about_nlnet_thanks
 import spectacled.shared.generated.resources.copyright_info
+import spectacled.shared.generated.resources.logo_nlnet
 import spectacled.shared.generated.resources.logo_techbee_xml
 import spectacled.shared.generated.resources.terms_conditions
 
@@ -172,6 +174,35 @@ fun AboutApp(
                 }
 
                  */
+            }
+
+            Text(
+                text = stringResource(Res.string.about_nlnet_thanks),
+                modifier = Modifier.padding(top = 12.dp, start = 16.dp, end = 16.dp),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center
+            )
+
+            ElevatedCard(
+                onClick = {
+                    try {
+                        uriHandler.openUri("https://nlnet.nl/")
+                    } catch (e: Exception) {
+                        println(e.stackTraceToString())
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.logo_nlnet),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .padding(32.dp)
+                )
             }
         }
     }

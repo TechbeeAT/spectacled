@@ -8,10 +8,12 @@
     <string name="notes">Notes</string>
     <string name="journals">Journals</string>
 
+
     <string name="about">About</string>
     <string name="about_release_notes">Release Notes</string>
     <string name="about_libraries">Libraries</string>
     <string name="about_contributors">Contributors</string>
+    <string name="about_nlnet_thanks">This project was realized with the friendly support of the nlnet foundation</string>
     <string name="more_on_github">More on GitHub.com</string>
     <string name="terms_conditions">Terms &amp; Conditions</string>
     <string name="close">Close</string>
