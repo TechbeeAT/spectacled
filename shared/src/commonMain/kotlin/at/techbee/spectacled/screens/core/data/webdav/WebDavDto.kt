@@ -658,11 +658,23 @@ data class WebDavSet(
 )
 
 @Serializable
+@XmlSerialName("remove", NAMESPACE_DAV, PREFIX_WILDCARD)
+data class WebDavRemove(
+    @XmlElement
+    @XmlSerialName("prop", NAMESPACE_DAV, PREFIX_WILDCARD) // Use an empty prefix for the default namespace
+    val prop: WebDavProp,
+)
+
+@Serializable
 @XmlSerialName("propertyupdate", NAMESPACE_DAV, PREFIX_WILDCARD)
 data class CalendarPropertyupdate(
     @XmlElement
     @XmlSerialName("set", NAMESPACE_DAV, PREFIX_WILDCARD)
-    val set: WebDavSet
+    val set: WebDavSet? = null,
+
+    @XmlElement
+    @XmlSerialName("remove", NAMESPACE_DAV, PREFIX_WILDCARD)
+    val remove: WebDavRemove? = null
 )
 
 @Serializable

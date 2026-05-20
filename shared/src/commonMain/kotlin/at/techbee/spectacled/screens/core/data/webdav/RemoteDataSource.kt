@@ -629,7 +629,14 @@ suspend fun updateCalDavCalendarMultiplatform(
                 calendarDescription = calendar.calendarDescription,
                 calendarColor = calendar.color,
             )
-        )
+        ),
+        remove = if (calendar.color == null) {
+            WebDavRemove(
+                prop = WebDavProp(
+                    calendarColor = Color.Unspecified
+                )
+            )
+        } else null
     )
     val xmlString = calDavXml.encodeToString(propertyupdateRequest)
 
