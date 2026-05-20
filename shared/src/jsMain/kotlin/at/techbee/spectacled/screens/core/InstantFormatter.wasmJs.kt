@@ -38,8 +38,7 @@ actual class PlatformInstantFormatter actual constructor(
     private val deviceZone: TimeZone
 ) : InstantFormatter {
 
-    private val effectiveZone: TimeZone =
-        icsDateTime.effectiveZone(deviceZone)
+    private val effectiveZone: TimeZone = icsDateTime.effectiveZone()
 
     private val timeZoneId: String =
         when {

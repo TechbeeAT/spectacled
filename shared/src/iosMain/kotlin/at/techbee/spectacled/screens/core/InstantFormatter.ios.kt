@@ -19,7 +19,7 @@ import kotlin.time.Clock
 
 actual class PlatformInstantFormatter actual constructor(val icsDateTime: IcsDateTime, val deviceZone: TimeZone) : InstantFormatter {
 
-    private val effectiveZone = icsDateTime.effectiveZone(deviceZone)
+    private val effectiveZone = icsDateTime.effectiveZone()
 
     private fun TimeZone.toNSTimeZone(): NSTimeZone =
         NSTimeZone.timeZoneWithName(this.id)
