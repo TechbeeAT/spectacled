@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,7 +15,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -84,29 +88,32 @@ fun AboutApp(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Version: ${BuildKonfig.APP_VERSION_STRING}",
+                text = "Version: ${BuildKonfig.APP_VERSION_STRING} (${BuildKonfig.APP_BUILD_NUMBER})",
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Text(
-                text = "Build: ${BuildKonfig.APP_BUILD_NUMBER}",
-                style = MaterialTheme.typography.bodyLarge,
-            )
+
             Text(
                 text = "Codename: ${BuildKonfig.APP_VERSION_CODENAME}",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
-            Text(
-                text = stringResource(Res.string.terms_conditions),
-                modifier = Modifier.padding(top = 12.dp),
-                style = MaterialTheme.typography.titleMedium,
-            )
+
             TextButton(
                 content = {
-                    Text(
-                        text = "<Link to terms & conditions>",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.terms_conditions),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.OpenInNew, 
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                            )
+                    }
                 },
                 onClick = {
                     try {
@@ -118,8 +125,7 @@ fun AboutApp(
             )
             Text(
                 text = stringResource(Res.string.copyright_info),
-                modifier = Modifier.padding(top = 12.dp),
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge
             )
 
             ElevatedCard(
