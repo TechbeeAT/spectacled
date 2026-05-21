@@ -289,5 +289,5 @@ expect fun AppTheme(
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     spectacledVariant: SpectacledVariant,
-    content: @Composable() () -> Unit
+    content: @Composable () -> Unit
 )
