@@ -18,7 +18,8 @@ data class AccountListState(
     var showDeleteCalendarDialog: AccountListAction.OnShowDeleteCalendarDialog? = null,
     var showRemovePrincipalDialog: AccountListAction.OnShowRemovePrincipalDialog? = null,
     var showSyncInfoDialog: AccountListAction.OnShowSyncInfoDialog? = null,
-    var showUpdatePrincipalPasswordBottomSheet: AccountListAction.OnShowUpdatePrincipalPasswordBottomSheet? = null
+    var showUpdatePrincipalPasswordBottomSheet: AccountListAction.OnShowUpdatePrincipalPasswordBottomSheet? = null,
+    var showSettingsBottomSheet: Boolean = false
 )
 
 

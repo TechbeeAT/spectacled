@@ -7,30 +7,23 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.theme.journals.darkJournalsScheme
-import at.techbee.spectacled.theme.journals.lightJournalsScheme
-import at.techbee.spectacled.theme.notes.darkNotesScheme
-import at.techbee.spectacled.theme.notes.lightNotesScheme
-import at.techbee.spectacled.theme.tasks.darkTasksScheme
-import at.techbee.spectacled.theme.tasks.lightTasksScheme
 
 @Composable
 actual fun AppTheme(
-    darkTheme: Boolean,
+    themeOption: ThemeOption,
+    isSystemInDarkTheme: Boolean,
     dynamicColor: Boolean,
     spectacledVariant: SpectacledVariant,
     content: @Composable (() -> Unit)
 ) {
+    val applyDarkTheme = themeOption == ThemeOption.DARK || (themeOption == ThemeOption.SYSTEM && isSystemInDarkTheme)
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (applyDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        else -> when(spectacledVariant) {
-            SpectacledVariant.JOURNALS -> if (darkTheme) darkJournalsScheme else lightJournalsScheme
-            SpectacledVariant.NOTES -> if (darkTheme) darkNotesScheme else lightNotesScheme
-            SpectacledVariant.TASKS -> if (darkTheme) darkTasksScheme else lightTasksScheme
-        }
+        else -> if (applyDarkTheme) spectacledVariant.darkColorScheme else spectacledVariant.lightColorScheme
     }
 
     MaterialTheme(

@@ -138,4 +138,9 @@
     <string name="view_grid">Grid</string>
     <string name="drag_handle">Drag handle</string>
 
+    <string name="theme">Theme</string>
+    <string name="theme_system">Default (System)</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+
 </resources>

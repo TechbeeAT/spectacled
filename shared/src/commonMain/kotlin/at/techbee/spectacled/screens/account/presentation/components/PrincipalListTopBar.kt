@@ -44,7 +44,7 @@ fun PrincipalListTopBar(
         actions = {
 
             TextButton(
-                onClick = { TODO("Not yet implemented") },
+                onClick = { onAction(AccountListAction.OnShowSettingsBottomSheet(true)) },
             ) {
                 Text(text = stringResource(Res.string.settings))
             }

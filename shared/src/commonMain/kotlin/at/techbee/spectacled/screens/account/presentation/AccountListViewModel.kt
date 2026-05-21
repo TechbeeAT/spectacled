@@ -17,6 +17,7 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.webdav.DeleteCalendarResult
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverCalendarsResult
@@ -48,7 +49,8 @@ class AccountListViewModel(
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
     val spectacledVariant: SpectacledVariant,
-): ViewModel() {
+    val userAppPreferencesStore: PlatformUserAppPreferencesStore
+    ): ViewModel() {
 
     private val _state = mutableStateOf(AccountListState())
     val state by _state
@@ -121,6 +123,7 @@ class AccountListViewModel(
             is AccountListAction.OnDismissSyncInfoDialog -> { _state.value = _state.value.copy(showSyncInfoDialog = null) }
             AccountListAction.OnDismissUpdatePrincipalPasswordBottomSheet -> { _state.value = _state.value.copy(showUpdatePrincipalPasswordBottomSheet = null) }
             AccountListAction.OnAddLocalCalendar -> addLocalCalendar()
+            is AccountListAction.OnShowSettingsBottomSheet -> { _state.value = _state.value.copy(showSettingsBottomSheet = action.show) }
         }
     }
 

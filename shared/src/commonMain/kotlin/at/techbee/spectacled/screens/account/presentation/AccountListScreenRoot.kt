@@ -34,6 +34,7 @@ import at.techbee.spectacled.screens.account.presentation.components.CreateOrUpd
 import at.techbee.spectacled.screens.account.presentation.components.DeleteCalendarDialog
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListTopBar
 import at.techbee.spectacled.screens.account.presentation.components.RemovePrincipalDialog
+import at.techbee.spectacled.screens.account.presentation.components.SettingsBottomSheet
 import at.techbee.spectacled.screens.account.presentation.components.UpdatePrincipalPasswordBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
@@ -57,6 +58,7 @@ fun AccountListScreenRoot(
     val addPrincipalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val createCalendarBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val updatePrincipalPasswordBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val settingsBottomSheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
 
@@ -91,6 +93,15 @@ fun AccountListScreenRoot(
                 createCalendarBottomSheetState.show()
             else
                 createCalendarBottomSheetState.hide()
+        }
+    }
+
+    LaunchedEffect(state.showSettingsBottomSheet) {
+        scope.launch {
+            if (state.showSettingsBottomSheet)
+                settingsBottomSheet.show()
+            else
+                settingsBottomSheet.hide()
         }
     }
 
@@ -282,6 +293,15 @@ fun AccountListScreenRoot(
             ) {
                 AboutScreen(koinInject<AboutViewModel>())
             }
+        }
+
+        if (settingsBottomSheet.isVisible) {
+            SettingsBottomSheet(
+                sheetState = settingsBottomSheet,
+                userAppPreferencesStore = viewModel.userAppPreferencesStore,
+                onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) },
+                onAction = { }
+            )
         }
 
         viewModel.state.showAddOrUpdateCalendarBottomSheet?.let {

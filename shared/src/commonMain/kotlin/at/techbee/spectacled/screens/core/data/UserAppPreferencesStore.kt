@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.data
 
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.theme.ThemeOption
 
 const val APP_PREFERENCES_FILE_NAME = "app_preferences"
 
@@ -13,6 +14,7 @@ const val LIST_COLLAPSED_GROUPS = "list_collapsed_groups"
 const val LIST_COLLAPSED_GROUP_TRASHBIN = "list_collapsed_group_trashbin"
 const val LIST_COLLAPSED_GROUP_PINNED = "list_collapsed_group_pinned"
 
+const val THEME_OPTION = "theme_option"
 
 interface UserAppPreferencesStore {
     fun save(key: String, value: String)
@@ -50,7 +52,9 @@ interface UserAppPreferencesStore {
             ?.split("|")?.toSet() ?: emptySet()
         set(value) = this.save(LIST_COLLAPSED_GROUPS, value.joinToString("|"))
 
-
+    var themeOption: ThemeOption
+        get() = this.load(THEME_OPTION)?.let { ThemeOption.entries.find { themeOption -> themeOption.name == it } } ?: ThemeOption.SYSTEM
+        set(value) = this.save(THEME_OPTION, value.name)
 }
 
 expect class PlatformUserAppPreferencesStore: UserAppPreferencesStore {

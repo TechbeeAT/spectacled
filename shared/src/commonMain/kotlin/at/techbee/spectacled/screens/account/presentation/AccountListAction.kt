@@ -20,6 +20,8 @@ sealed interface AccountListAction {
     data class OnShowUpdatePrincipalPasswordBottomSheet(val principal: Principal): AccountListAction
     object OnDismissUpdatePrincipalPasswordBottomSheet: AccountListAction
 
+    data class OnShowSettingsBottomSheet(val show: Boolean): AccountListAction
+
     data class OnShowSyncInfoDialog(val principal: Principal, val calendar: Calendar): AccountListAction
     object OnDismissSyncInfoDialog: AccountListAction
 

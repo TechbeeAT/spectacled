@@ -6,6 +6,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.SpectacledVariant
+import org.jetbrains.compose.resources.StringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.theme_dark
+import spectacled.shared.generated.resources.theme_light
+import spectacled.shared.generated.resources.theme_system
 
 /*
 val lightScheme = lightColorScheme(
@@ -285,9 +290,17 @@ fun getContentColorForColoredSurfaces(surfaceColor: Color?, isFAB: Boolean = fal
 
 @Composable
 expect fun AppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    themeOption: ThemeOption = ThemeOption.SYSTEM,
+    isSystemInDarkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true, // Dynamic color is available on Android 12+
     spectacledVariant: SpectacledVariant,
     content: @Composable () -> Unit
 )
+
+enum class ThemeOption(
+    val stringRes: StringResource
+) {
+    SYSTEM(Res.string.theme_system),
+    LIGHT(Res.string.theme_light),
+    DARK(Res.string.theme_dark)
+}

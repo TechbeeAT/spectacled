@@ -3,6 +3,7 @@ package at.techbee.spectacled
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +25,12 @@ import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
 import at.techbee.spectacled.screens.list.presentation.ListScreenRoot
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
+import at.techbee.spectacled.theme.journals.darkJournalsScheme
+import at.techbee.spectacled.theme.journals.lightJournalsScheme
+import at.techbee.spectacled.theme.notes.darkNotesScheme
+import at.techbee.spectacled.theme.notes.lightNotesScheme
+import at.techbee.spectacled.theme.tasks.darkTasksScheme
+import at.techbee.spectacled.theme.tasks.lightTasksScheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.DrawableResource
@@ -43,10 +50,38 @@ import spectacled.shared.generated.resources.logo_spectacled_tasks
 import kotlin.time.ExperimentalTime
 
 
-enum class SpectacledVariant(val dbName: String, val appNameStringRes: StringResource, val logoDrawableResource: DrawableResource,  val syncCalendarComponent: CalendarComponent) {
-    JOURNALS("spectacled_journals.db", Res.string.app_name_spectacled_journals, Res.drawable.logo_spectacled_journals, CalendarComponent.VJOURNAL),
-    NOTES("spectacled_notes.db", Res.string.app_name_spectacled_notes, Res.drawable.logo_spectacled_notes, CalendarComponent.VJOURNAL),
-    TASKS("spectacled_tasks.db", Res.string.app_name_spectacled_tasks, Res.drawable.logo_spectacled_tasks, CalendarComponent.VTODO);
+enum class SpectacledVariant(
+    val dbName: String,
+    val appNameStringRes: StringResource,
+    val logoDrawableResource: DrawableResource,
+    val syncCalendarComponent: CalendarComponent,
+    val darkColorScheme: ColorScheme,
+    val lightColorScheme: ColorScheme
+) {
+    JOURNALS(
+        "spectacled_journals.db",
+        Res.string.app_name_spectacled_journals,
+        Res.drawable.logo_spectacled_journals,
+        CalendarComponent.VJOURNAL,
+        darkJournalsScheme,
+        lightJournalsScheme
+    ),
+    NOTES(
+        "spectacled_notes.db",
+        Res.string.app_name_spectacled_notes,
+        Res.drawable.logo_spectacled_notes,
+        CalendarComponent.VJOURNAL,
+        darkNotesScheme,
+        lightNotesScheme
+    ),
+    TASKS(
+        "spectacled_tasks.db",
+        Res.string.app_name_spectacled_tasks,
+        Res.drawable.logo_spectacled_tasks,
+        CalendarComponent.VTODO,
+        darkTasksScheme,
+        lightTasksScheme
+    );
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
@@ -64,14 +99,16 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
             )
         })
     ) {
+        val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
+        val syncTrigger = koinInject<PlatformSyncTrigger>()
 
-        AppTheme(spectacledVariant = spectacledVariant) {
+        AppTheme(
+            spectacledVariant = spectacledVariant,
+            themeOption = userAppPreferencesStore.themeOption
+        ) {
 
             val navController = rememberNavController()
             //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
-
-            val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
-            val syncTrigger = koinInject<PlatformSyncTrigger>()
 
             LaunchedEffect(Unit) {
                 syncTrigger.schedulePeriodic()
