@@ -13,8 +13,8 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import at.techbee.spectacled.screens.Route
-import at.techbee.spectacled.screens.account.presentation.calendars.AccountListScreenRoot
-import at.techbee.spectacled.screens.account.presentation.calendars.AccountListViewModel
+import at.techbee.spectacled.screens.account.presentation.AccountListScreenRoot
+import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.CalendarComponent

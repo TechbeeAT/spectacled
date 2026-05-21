@@ -1,7 +1,7 @@
 package at.techbee.spectacled.screens.core.koin
 
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
-import at.techbee.spectacled.screens.account.presentation.calendars.AccountListViewModel
+import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import org.koin.core.module.Module

@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.account.presentation.calendars.components
+package at.techbee.spectacled.screens.account.presentation.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import at.techbee.spectacled.screens.account.presentation.calendars.AccountListAction
+import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about

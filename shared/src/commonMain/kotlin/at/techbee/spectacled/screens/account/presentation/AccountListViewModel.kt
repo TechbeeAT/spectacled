@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.account.presentation.calendars
+package at.techbee.spectacled.screens.account.presentation
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

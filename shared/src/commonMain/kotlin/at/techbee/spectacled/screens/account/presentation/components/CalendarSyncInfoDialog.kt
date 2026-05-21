@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.account.presentation.calendars.components
+package at.techbee.spectacled.screens.account.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -28,10 +28,10 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.retry
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun CalendarSyncInfoDialog(

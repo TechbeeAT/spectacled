@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.account.presentation.calendars.components
+package at.techbee.spectacled.screens.account.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -33,7 +33,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.account.presentation.calendars.AccountListAction
+import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus

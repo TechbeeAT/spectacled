@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.account.presentation.calendars
+package at.techbee.spectacled.screens.account.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
@@ -16,8 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.account.presentation.calendars.components.CalendarCard
-import at.techbee.spectacled.screens.account.presentation.calendars.components.PrincipalListItem
+import at.techbee.spectacled.screens.account.presentation.components.CalendarCard
+import at.techbee.spectacled.screens.account.presentation.components.PrincipalListItem
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection

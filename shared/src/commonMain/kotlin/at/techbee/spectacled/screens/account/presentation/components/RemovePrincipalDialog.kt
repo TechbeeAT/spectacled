@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.account.presentation.calendars.components
+package at.techbee.spectacled.screens.account.presentation.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.NoAccounts
@@ -9,12 +9,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import at.techbee.spectacled.screens.core.domain.Principal
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.remove
 import spectacled.shared.generated.resources.remove_account_warning
 import spectacled.shared.generated.resources.remove_account_x
-import spectacled.shared.generated.resources.remove
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun RemovePrincipalDialog(

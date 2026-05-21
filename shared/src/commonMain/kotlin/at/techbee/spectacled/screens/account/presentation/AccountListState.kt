@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.account.presentation.calendars
+package at.techbee.spectacled.screens.account.presentation
 
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection

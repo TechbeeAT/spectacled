@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.account.presentation.calendars.components
+package at.techbee.spectacled.screens.account.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -21,7 +21,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -29,34 +28,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.account.presentation.calendars.AccountListAction
-import at.techbee.spectacled.screens.account.presentation.calendars.ProcessingState
-import at.techbee.spectacled.screens.core.domain.Principal
+import at.techbee.spectacled.screens.account.presentation.AccountListAction
+import at.techbee.spectacled.screens.account.presentation.ProcessingState
+import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_account
 import spectacled.shared.generated.resources.password
-import spectacled.shared.generated.resources.show_error_details
 import spectacled.shared.generated.resources.show_hide_password
-import spectacled.shared.generated.resources.update_passowrd_button
-import spectacled.shared.generated.resources.update_password
+import spectacled.shared.generated.resources.username
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UpdatePrincipalPasswordBottomSheet(
+fun AddPrincipalBottomSheet(
     sheetState: SheetState,
-    principal: Principal,
     processingState: ProcessingState,
-    onAction: (AccountListAction.OnUpdatePrincipalPassword) -> Unit,
+    onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onDismiss: () -> Unit,
 ) {
 
+    var server by rememberSaveable { mutableStateOf("") }
+    var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
-    var showMore by remember { mutableStateOf(false) }
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
@@ -65,34 +62,22 @@ fun UpdatePrincipalPasswordBottomSheet(
         menuAction = {
             TextButton(
                 onClick = {
-                    onAction(AccountListAction.OnUpdatePrincipalPassword(principal, password))
+                    onAction(AccountListAction.OnAddPrincipal(Credentials(server, username, password)))
                 },
-                enabled = password.isNotBlank() && processingState !is ProcessingState.Processing
+                enabled = server.isNotBlank() && username.isNotBlank() && password.isNotBlank() && processingState !is ProcessingState.Processing
             ) {
-                Text(stringResource(Res.string.update_passowrd_button))
+                Text(stringResource(Res.string.add_account))
             }
         }
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(8.dp).fillMaxSize()
         ) {
             Text(
-                text = stringResource(Res.string.update_password),
+                text = stringResource(Res.string.add_account),
                 style = MaterialTheme.typography.headlineMedium
-            )
-
-            principal.displayName?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.headlineSmall
-                )
-            }
-
-            Text(
-                text = principal.principalUrl.toString(),
-                style = MaterialTheme.typography.bodyMedium
             )
 
             val error = processingState as? ProcessingState.Error
@@ -104,23 +89,23 @@ fun UpdatePrincipalPasswordBottomSheet(
                 )
             }
 
-            AnimatedVisibility(error?.detail?.isNotEmpty() == true && !showMore) {
-                TextButton(
-                    onClick = { showMore = true }
-                ) {
-                    Text(stringResource(Res.string.show_error_details))
-                }
-            }
+            OutlinedTextField(
+                value = server,
+                onValueChange = { server = it },
+                placeholder = { Text("https://") },
+                //supportingText = { Text("Optional") },
+                label = { Text("Server (optional)") },
+                singleLine = true,
+            )
 
-            AnimatedVisibility(showMore) {
-                error?.detail?.let {
-                    Text(
-                        text = it,
-                        maxLines = 5,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                placeholder = { Text(stringResource(Res.string.username)) },
+                //supportingText = { Text("Optional") },
+                label = { Text(stringResource(Res.string.username)) },
+                singleLine = true,
+            )
 
             OutlinedTextField(
                 value = password,
@@ -136,7 +121,10 @@ fun UpdatePrincipalPasswordBottomSheet(
                             if (visible) Icon(
                                 Icons.Outlined.Visibility,
                                 contentDescription = stringResource(Res.string.show_hide_password)
-                            ) else Icon(Icons.Outlined.VisibilityOff, contentDescription = stringResource(Res.string.show_hide_password))
+                            ) else Icon(
+                                Icons.Outlined.VisibilityOff,
+                                contentDescription = stringResource(Res.string.show_hide_password)
+                            )
                         }
                     }
                 }
@@ -156,12 +144,12 @@ fun UpdatePrincipalPasswordBottomSheet(
             /*
             Button(
                 onClick = {
-                    onAction(CalendarListAction.OnUpdatePrincipalPassword(principal, password))
+                    onAction(CalendarListAction.OnAddPrincipal(Credentials(server, username, password)))
                 },
-                enabled = password.isNotBlank() && processingState !is ProcessingState.Processing,
+                enabled = server.isNotBlank() && username.isNotBlank() && password.isNotBlank() && processingState !is ProcessingState.Processing,
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text("Update password")
+                Text("Add account (multiplatform)")
             }
 
             AnimatedVisibility(processingState is ProcessingState.Processing) {
@@ -169,7 +157,32 @@ fun UpdatePrincipalPasswordBottomSheet(
                     modifier = Modifier.padding(8.dp)
                 )
             }
-            */
+
+             */
+
+            TextButton(onClick = {
+                username = "caldavnotes"
+                password = "caldavnotes"
+                server = "https://baikal.techbee.at/html/dav.php/calendars/caldavnotes/"
+            }) {
+                Text("Set sample baikal.techbee.at (caldavnotes/***)")
+            }
+
+
+            TextButton(onClick = {
+                username = "caldavnotes"
+                password = "caldavnotes"
+                server = "https://nextcloud.techbee.at/remote.php/dav"
+            }) {
+                Text("Set sample nextcloud.techbee.at (caldavnotes/***)")
+            }
+
+            /*
+        Crossfade(response) {
+            Text(it)
+        }
+         */
+
         }
     }
 }
@@ -177,11 +190,9 @@ fun UpdatePrincipalPasswordBottomSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
-private fun UpdatePrincipalPasswordBottomSheet_Preview_Idle() {
-    UpdatePrincipalPasswordBottomSheet(
+private fun AddAccountScreen_Preview_Idle() {
+    AddPrincipalBottomSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        principal = Principal.getPrincipalForPreview(),
-        //credentials = Credentials("https://localhost/dav", "my username", "my password"),
         processingState = ProcessingState.Idle,
         onAction = {},
         onDismiss = {}
@@ -191,11 +202,9 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Idle() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
-private fun UpdatePrincipalPasswordBottomSheet_Preview_Processing() {
-    UpdatePrincipalPasswordBottomSheet(
+private fun AddAccountScreen_Preview_Processing() {
+    AddPrincipalBottomSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        principal = Principal.getPrincipalForPreview(),
-        //credentials = Credentials("https://localhost/dav", "my username", "my password"),
         processingState = ProcessingState.Processing,
         onAction = {},
         onDismiss = {}
@@ -205,12 +214,10 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Processing() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
-private fun UpdatePrincipalPasswordBottomSheet_Preview_Error() {
-    UpdatePrincipalPasswordBottomSheet(
+private fun AddAccountScreen_Preview_Error() {
+    AddPrincipalBottomSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        principal = Principal.getPrincipalForPreview(),
-        //credentials = Credentials("https://localhost/dav", "my username", "my password"),
-        processingState = ProcessingState.Error("This is an error", "Here are the details"),
+        processingState = ProcessingState.Error("This is an error"),
         onAction = {},
         onDismiss = {}
     )

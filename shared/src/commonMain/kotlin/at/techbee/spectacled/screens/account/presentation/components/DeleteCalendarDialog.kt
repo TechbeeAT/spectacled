@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.account.presentation.calendars.components
+package at.techbee.spectacled.screens.account.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
@@ -16,16 +16,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.account.presentation.calendars.ProcessingState
+import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.Principal
+import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.delete_folder_warning
 import spectacled.shared.generated.resources.delete_folder_x
 import spectacled.shared.generated.resources.warning_operation_cannot_be_undone
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun DeleteCalendarDialog(
