@@ -115,7 +115,7 @@ fun serializeVCalendar(icalEntries: List<IcalEntry>): String {
 fun serializeVJournal(icalEntry: IcalEntry): String {
     val lines = mutableListOf<String>()
 
-    lines += "BEGIN:VJOURNAL"
+    lines += "BEGIN:${icalEntry.calendarComponent.name}"    // BEGIN:VJOURNAL or BEGIN:VTODO
     lines += "${KnownIcsPropertyName.UID.propertyName}:${escapeIcsValue(icalEntry.uid)}"
 
     icalEntry.dtStart?.let { icsDateTime ->
@@ -151,7 +151,7 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
         lines += it.unfoldedLine
     }
 
-    lines += "END:VJOURNAL"
+    lines += "END:${icalEntry.calendarComponent.name}"    // END:VJOURNAL or BEGIN:VTODO
 
     return lines.joinToString("\r\n", transform = ::foldIcsLine)
 }

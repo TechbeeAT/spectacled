@@ -16,7 +16,8 @@ CREATE TABLE IcalEntryDto (
     orderNo INTEGER,
     syncState TEXT,
     etag TEXT,
-    href TEXT
+    href TEXT,
+    calendarComponent TEXT
 );
 
 getIcalEntriesByCalendar:
@@ -66,7 +67,8 @@ INSERT OR IGNORE INTO IcalEntryDto (
     extraProperties,
     syncState,
     etag,
-    href
+    href,
+    calendarComponent
 )
 VALUES (
     :calendarId,
@@ -84,7 +86,8 @@ VALUES (
     :extraProperties,
     :syncState,
     :etag,
-    :href
+    :href,
+    :calendarComponent
 );
 
 updateIcalEntry:
@@ -106,7 +109,8 @@ SET
     extraProperties = :extraProperties,
     syncState = :syncState,
     etag = :etag,
-    href = :href
+    href = :href,
+    calendarComponent = :calendarComponent
 WHERE uid = :uid;
 
 deleteTrashed:

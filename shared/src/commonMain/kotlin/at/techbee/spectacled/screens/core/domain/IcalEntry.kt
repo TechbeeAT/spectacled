@@ -55,7 +55,8 @@ data class IcalEntry(
     val syncState: SyncState = SyncState.LOCAL_MODIFIED,
     val extraProperties: List<RawIcsProperty> = emptyList(),
     val etag: String? = null,
-    val href: Url? = null
+    val href: Url? = null,
+    val calendarComponent: CalendarComponent,
     ) {
 
     companion object {
@@ -77,14 +78,16 @@ data class IcalEntry(
         fun getSampleIcalEntry()= IcalEntry(
             summary = sampleParagraphs[0].substring(0, 30),
             description = sampleParagraphs[0],
-            categories = listOf("Category 1", "Category 2")
+            categories = listOf("Category 1", "Category 2"),
+            calendarComponent = CalendarComponent.VJOURNAL
         )
 
         fun getSampleJournal()= IcalEntry(
             summary = sampleParagraphs[0].substring(0, 30),
             description = sampleParagraphs[0],
             dtStart = IcsDateTime.now(),
-            categories = listOf("Category 1", "Category 2")
+            categories = listOf("Category 1", "Category 2"),
+            calendarComponent = CalendarComponent.VJOURNAL
         )
     }
 

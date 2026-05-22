@@ -101,7 +101,8 @@ class DetailsViewModel(
         viewModelScope.launch {
             val newIcalEntry = IcalEntry(
                 calendarId = calendarId,
-                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null
+                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
+                calendarComponent = spectacledVariant.syncCalendarComponent
             )
             val calendar = getDatabase().calendar_dtoQueries.getCalendarById(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
@@ -145,7 +146,8 @@ class DetailsViewModel(
                 dtStart = originalIcalEntry.dtStart,
                 categories = originalIcalEntry.categories,
                 color = originalIcalEntry.color,
-                extraProperties = originalIcalEntry.extraProperties
+                extraProperties = originalIcalEntry.extraProperties,
+                calendarComponent = originalIcalEntry.calendarComponent
             )
             _state = _state.copy(
                 icalEntry = copiedIcalEntry,

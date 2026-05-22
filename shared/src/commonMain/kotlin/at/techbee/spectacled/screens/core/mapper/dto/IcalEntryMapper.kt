@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
+import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
@@ -46,7 +47,8 @@ fun IcalEntryDto.toDomain(): IcalEntry {
         orderNo = this.orderNo,
         syncState = this.syncState?.let { SyncState.entries.find { it.name == this.syncState } } ?: SyncState.LOCAL_MODIFIED,
         etag = this.etag,
-        href = this.href?.let { Url(it) }
+        href = this.href?.let { Url(it) },
+        calendarComponent = CalendarComponent.entries.find { it.name == this.calendarComponent } ?: CalendarComponent.VJOURNAL
     )
 }
 
@@ -75,6 +77,7 @@ fun IcalEntry.toDto(): IcalEntryDto {
         orderNo = this.orderNo,
         syncState = this.syncState.name,
         etag = this.etag,
-        href = this.href?.toString()
+        href = this.href?.toString(),
+        calendarComponent = this.calendarComponent.name
     )
 }

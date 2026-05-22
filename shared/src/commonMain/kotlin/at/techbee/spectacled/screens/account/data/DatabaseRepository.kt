@@ -115,7 +115,8 @@ suspend fun SpectacledDatabase.insertOrUpdateIcalEntry(icalEntry: IcalEntry) {
             extraProperties = icalEntryDto.extraProperties,
             syncState = icalEntryDto.syncState,
             etag = icalEntryDto.etag,
-            href = icalEntryDto.href
+            href = icalEntryDto.href,
+            calendarComponent = icalEntryDto.calendarComponent
         )
         // insert, but if the UID exists, it will be ignored
         icalentry_dtoQueries.insertIcalEntry(
@@ -134,7 +135,8 @@ suspend fun SpectacledDatabase.insertOrUpdateIcalEntry(icalEntry: IcalEntry) {
             extraProperties = icalEntryDto.extraProperties,
             syncState = icalEntryDto.syncState,
             etag = icalEntryDto.etag,
-            href = icalEntryDto.href
+            href = icalEntryDto.href,
+            calendarComponent = icalEntryDto.calendarComponent
         )
     }
 }

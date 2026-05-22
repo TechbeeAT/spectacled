@@ -142,7 +142,7 @@ fun parseIcsDateTime(
 
 
 
-fun parseIcalEntryBlock(lines: List<String>): IcalEntry? {
+fun parseIcalEntryBlock(lines: List<String>, calendarComponent: CalendarComponent): IcalEntry? {
 
     val knownProps = mutableMapOf<String, IcsProperty>()
     val extraProps = mutableListOf<RawIcsProperty>()
@@ -184,7 +184,8 @@ fun parseIcalEntryBlock(lines: List<String>): IcalEntry? {
         created = created ?: IcsDateTime(Clock.System.now(), false),
         lastModified = lastModified,
         extraProperties = extraProps,
-        syncState = SyncState.SYNCED
+        syncState = SyncState.SYNCED,
+        calendarComponent = calendarComponent
     )
 }
 
@@ -220,5 +221,5 @@ fun parseIcalEntries(ics: String, calendarComponent: CalendarComponent?): List<I
 
     val calendarComponentBlocks = extractComponents(lines, calendarComponent)
 
-    return calendarComponentBlocks.mapNotNull(::parseIcalEntryBlock)
+    return calendarComponentBlocks.mapNotNull { parseIcalEntryBlock(it, calendarComponent) }
 }
