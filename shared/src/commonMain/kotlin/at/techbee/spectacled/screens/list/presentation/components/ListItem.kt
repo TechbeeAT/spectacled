@@ -106,7 +106,7 @@ fun ListItem(
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
 
                     if (icalEntry.summary?.isBlank() == false)
@@ -138,7 +138,7 @@ fun ListItem(
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(3.dp),
                         verticalArrangement = Arrangement.spacedBy(3.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                     ) {
 
                         icalEntry.dtStart?.let {

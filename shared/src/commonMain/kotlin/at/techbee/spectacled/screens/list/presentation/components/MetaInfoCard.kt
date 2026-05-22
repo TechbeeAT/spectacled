@@ -8,11 +8,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,32 +32,37 @@ fun MetaInfoCard(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    OutlinedCard(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor ?: Color.Unspecified,
-            contentColor = containerColor?.let { getContentColorForColoredSurfaces(it) } ?: contentColorFor(Color.Unspecified)
-        ),
-        onClick = onClick
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
-            modifier = Modifier.padding(vertical = 2.dp, horizontal = 6.dp)
-        ) {
-            icon?.let {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = iconContentDescription,
-                    modifier = Modifier.size(12.dp)
-                )
-            }
 
-            text?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.labelSmall
-                )
+    // Override constraints so elements can be smaller and don't occupy full 48.dp space
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+
+        OutlinedCard(
+            modifier = modifier,
+            colors = CardDefaults.cardColors(
+                containerColor = containerColor ?: Color.Unspecified,
+                contentColor = containerColor?.let { getContentColorForColoredSurfaces(it) } ?: contentColorFor(Color.Unspecified)
+            ),
+            onClick = onClick
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier.padding(vertical = 2.dp, horizontal = 6.dp)
+            ) {
+                icon?.let {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = iconContentDescription,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+
+                text?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }
