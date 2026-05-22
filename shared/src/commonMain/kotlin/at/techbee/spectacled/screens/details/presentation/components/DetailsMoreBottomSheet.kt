@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.details.presentation.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -18,9 +19,9 @@ import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
@@ -140,21 +141,27 @@ fun DetailsMoreBottomSheet(
             )
         )
 
-        Text(
-            text = "${stringResource(Res.string.created)}: ${PlatformInstantFormatter(icalEntry.created).formatLocalizedDateTime()}",
-            textAlign = TextAlign.End,
-            style = MaterialTheme.typography.labelSmall,
-            color = LocalContentColor.current.copy(alpha = 0.5f),
-            modifier = Modifier.padding(top = 24.dp, bottom = 0.dp, start = 16.dp, end = 16.dp).fillMaxWidth()
-        )
-        icalEntry.lastModified?.let {
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp, start = 16.dp, end = 16.dp).fillMaxWidth()
+        ) {
             Text(
-                text = "${stringResource(Res.string.last_modified)}: ${PlatformInstantFormatter(it).formatLocalizedDateTime()}",
-                textAlign = TextAlign.End,
+                text = "${stringResource(Res.string.created)}: ${PlatformInstantFormatter(icalEntry.created).formatLocalizedDateTime()}",
                 style = MaterialTheme.typography.labelSmall,
-                color = LocalContentColor.current.copy(alpha = 0.5f),
-                modifier = Modifier.padding(top = 0.dp, bottom = 8.dp, start = 16.dp, end = 16.dp).fillMaxWidth()
+                color = LocalContentColor.current.copy(alpha = 0.5f)
             )
+            Text(
+                text = "${stringResource(Res.string.last_modified)}: ${PlatformInstantFormatter(icalEntry.lastModified?:icalEntry.created).formatLocalizedDateTime()}",
+                style = MaterialTheme.typography.labelSmall,
+                color = LocalContentColor.current.copy(alpha = 0.5f)
+            )
+            /*
+            Text(
+                text = "Sync status: ${icalEntry.syncState.name}",
+                style = MaterialTheme.typography.labelSmall,
+                color = LocalContentColor.current.copy(alpha = 0.5f)
+            )
+             */
         }
     }
 }
