@@ -302,5 +302,9 @@ enum class ThemeOption(
 ) {
     SYSTEM(Res.string.theme_system),
     LIGHT(Res.string.theme_light),
-    DARK(Res.string.theme_dark)
+    DARK(Res.string.theme_dark);
+
+    companion object {
+        fun fromString(value: String?) = entries.find { it.name == value } ?: SYSTEM
+    }
 }

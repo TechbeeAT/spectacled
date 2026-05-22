@@ -18,6 +18,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +31,8 @@ import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.ThemeOption
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.theme
@@ -44,6 +47,7 @@ fun SettingsBottomSheet(
 ) {
 
     var themeDropdownExpanded by remember { mutableStateOf(false) }
+    val themeOption by userAppPreferencesStore.getThemeOptionAsFlow().collectAsState(ThemeOption.SYSTEM.name)
 
 
     BottomSheetWithMenu(
@@ -70,7 +74,7 @@ fun SettingsBottomSheet(
                             text = stringResource(Res.string.theme),
                             style = MaterialTheme.typography.labelSmall
                         )
-                        Text(stringResource(userAppPreferencesStore.themeOption.stringRes))
+                        Text(stringResource(ThemeOption.fromString(themeOption).stringRes))
                     }
 
                     DropdownMenu(
@@ -107,6 +111,7 @@ private fun SettingsBottomSheet_Preview() {
         userAppPreferencesStore = object: UserAppPreferencesStore {
             override fun save(key: String, value: String) { }
             override fun load(key: String): String? { return null }
+            override fun loadAsFlow(key: String): Flow<String?> { return flowOf(null ) }
             override fun remove(key: String) { }
         },
         onAction = {},

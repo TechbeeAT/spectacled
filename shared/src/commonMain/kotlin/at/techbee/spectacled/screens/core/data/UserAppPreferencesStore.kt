@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.core.data
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.ThemeOption
+import kotlinx.coroutines.flow.Flow
 
 const val APP_PREFERENCES_FILE_NAME = "app_preferences"
 
@@ -19,8 +20,8 @@ const val THEME_OPTION = "theme_option"
 interface UserAppPreferencesStore {
     fun save(key: String, value: String)
     fun load(key: String): String?
+    fun loadAsFlow(key: String): Flow<String?>
     fun remove(key: String)
-
 
     var lastUsedCalendarId: Long?
         get() = this.load(LAST_USED_CALENDAR_ID)?.toLongOrNull()
@@ -55,11 +56,13 @@ interface UserAppPreferencesStore {
     var themeOption: ThemeOption
         get() = this.load(THEME_OPTION)?.let { ThemeOption.entries.find { themeOption -> themeOption.name == it } } ?: ThemeOption.SYSTEM
         set(value) = this.save(THEME_OPTION, value.name)
+    fun getThemeOptionAsFlow() = this.loadAsFlow(THEME_OPTION)
 }
 
 expect class PlatformUserAppPreferencesStore: UserAppPreferencesStore {
 
     override fun save(key: String, value: String)
     override fun load(key: String): String?
+    override fun loadAsFlow(key: String): Flow<String?>
     override fun remove(key: String)
 }

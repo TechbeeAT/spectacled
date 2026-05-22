@@ -7,6 +7,8 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,6 +27,7 @@ import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
 import at.techbee.spectacled.screens.list.presentation.ListScreenRoot
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
+import at.techbee.spectacled.theme.ThemeOption
 import at.techbee.spectacled.theme.journals.darkJournalsScheme
 import at.techbee.spectacled.theme.journals.lightJournalsScheme
 import at.techbee.spectacled.theme.notes.darkNotesScheme
@@ -100,11 +103,12 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
         })
     ) {
         val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
+        val themeOption by userAppPreferencesStore.getThemeOptionAsFlow().collectAsState(null)
         val syncTrigger = koinInject<PlatformSyncTrigger>()
 
         AppTheme(
             spectacledVariant = spectacledVariant,
-            themeOption = userAppPreferencesStore.themeOption
+            themeOption = ThemeOption.fromString(themeOption)
         ) {
 
             val navController = rememberNavController()
