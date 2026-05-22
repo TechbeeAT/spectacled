@@ -8,8 +8,8 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.mapper.ics.VJournalIcsSerializer
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcalEntries
-import at.techbee.spectacled.screens.core.mapper.ics.serializeVCalendar
 import io.ktor.client.HttpClient
 import io.ktor.client.request.accept
 import io.ktor.client.request.delete
@@ -759,7 +759,7 @@ suspend fun putResourceMultiplatform(
 
     client.put(href) {
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
-        setBody(serializeVCalendar(icalEntry))
+        setBody(VJournalIcsSerializer().serializeVCalendar(icalEntry))
         headers.apply {
             if(icalEntry.etag != null)    // send etag or * if a new entry should be created
                 append(HttpHeaders.IfMatch, icalEntry.etag)     // update

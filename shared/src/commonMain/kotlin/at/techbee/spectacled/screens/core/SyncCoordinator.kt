@@ -27,7 +27,7 @@ import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
-import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
+import at.techbee.spectacled.screens.core.mapper.ics.VJournalIcsSerializer
 import io.ktor.client.HttpClient
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException
@@ -72,7 +72,7 @@ class SyncCoordinator(
             }
 
             // empty trashbin for items older than 30 days
-            val cutoffDate = formatIcsDateTime(IcsDateTime(Clock.System.now().minus(30.days), false))?.first
+            val cutoffDate = VJournalIcsSerializer().formatIcsDateTime(IcsDateTime(Clock.System.now().minus(30.days), false))?.first
             database.icalentry_dtoQueries.deleteTrashed(cutoffDate)
         }
 

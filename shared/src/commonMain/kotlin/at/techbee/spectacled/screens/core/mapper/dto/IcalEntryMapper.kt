@@ -6,7 +6,7 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
-import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
+import at.techbee.spectacled.screens.core.mapper.ics.VJournalIcsSerializer
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcsDateTime
 import at.techbee.spectacled.sqldelight.IcalEntryDto
 import io.ktor.http.Url
@@ -63,14 +63,14 @@ fun IcalEntry.toDto(): IcalEntryDto {
         uid = this.uid,
         summary = this.summary?.ifEmpty { null },
         description = this.description?.ifEmpty { null },
-        dtstamp = formatIcsDateTime(this.dtstamp)?.first,
+        dtstamp = VJournalIcsSerializer().formatIcsDateTime(this.dtstamp)?.first,
         color = this.color?.toArgb()?.toLong(),
         sequence = this.sequence,
-        dtstart = this.dtStart?.let { formatIcsDateTime(it)?.first },
+        dtstart = this.dtStart?.let { VJournalIcsSerializer().formatIcsDateTime(it)?.first },
         dtStartTimeZone = this.dtStart?.timeZone?.id,
         categories = this.categories.joinToString(CATEGORY_SPLIT_DELIMITER).ifEmpty { null },
-        created = formatIcsDateTime(this.created)?.first,
-        lastModified = formatIcsDateTime(this.lastModified)?.first,
+        created = VJournalIcsSerializer().formatIcsDateTime(this.created)?.first,
+        lastModified = VJournalIcsSerializer().formatIcsDateTime(this.lastModified)?.first,
         extraProperties = if(this.extraProperties.isNotEmpty()) mapperJson.encodeToString(this.extraProperties) else null,
         orderNo = this.orderNo,
         syncState = this.syncState.name,
