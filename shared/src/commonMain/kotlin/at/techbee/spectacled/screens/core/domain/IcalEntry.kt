@@ -12,7 +12,6 @@ import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -41,22 +40,28 @@ enum class SyncState {
 data class IcalEntry(
     val id: Long = 0L,
     val calendarId: Long = 0L,
-    val uid: String = Uuid.random().toString(),
-    val dtStart: IcsDateTime? = null,
+    val uid: String = getRandomUUID(),
     val summary: String? = null,
     val description: String? = null,
-    val dtstamp: IcsDateTime = IcsDateTime(Clock.System.now(), false),
+    val dtStart: IcsDateTime? = null,
+    val due: IcsDateTime? = null,
+    val completed: IcsDateTime? = null,
+    val status: Status? = null,
+    val percentComplete: Long = 0,
+    val priority: Long? = null,
+    val dtstamp: IcsDateTime = IcsDateTime.now(),
     val color: Color? = null,
     val sequence: Long? = null,
+    val classification: Classification? = null,
     val categories: List<String> = emptyList(),
-    val created: IcsDateTime = IcsDateTime(Clock.System.now(), false),
-    val lastModified: IcsDateTime? = IcsDateTime(Clock.System.now(), false),
+    val created: IcsDateTime = IcsDateTime.now(),
+    val lastModified: IcsDateTime? = IcsDateTime.now(),
     val orderNo: Long? = null,
     val syncState: SyncState = SyncState.LOCAL_MODIFIED,
     val extraProperties: List<RawIcsProperty> = emptyList(),
     val etag: String? = null,
     val href: Url? = null,
-    val calendarComponent: CalendarComponent,
+    val calendarComponent: CalendarComponent
     ) {
 
     companion object {
@@ -75,6 +80,10 @@ data class IcalEntry(
             "freestar"
         )
 
+        fun newJournal() = IcalEntry(dtStart = IcsDateTime.now(), calendarComponent = CalendarComponent.VJOURNAL)
+        fun newNote() = IcalEntry(calendarComponent = CalendarComponent.VJOURNAL)
+        fun newTodo() = IcalEntry(calendarComponent = CalendarComponent.VTODO)
+
         fun getSampleIcalEntry()= IcalEntry(
             summary = sampleParagraphs[0].substring(0, 30),
             description = sampleParagraphs[0],
@@ -82,13 +91,15 @@ data class IcalEntry(
             calendarComponent = CalendarComponent.VJOURNAL
         )
 
-        fun getSampleJournal()= IcalEntry(
+        fun getSampleJournal()= newJournal().copy(
             summary = sampleParagraphs[0].substring(0, 30),
             description = sampleParagraphs[0],
             dtStart = IcsDateTime.now(),
             categories = listOf("Category 1", "Category 2"),
             calendarComponent = CalendarComponent.VJOURNAL
         )
+
+        fun getRandomUUID() = Uuid.random().toString()
     }
 
     @Composable
@@ -133,4 +144,22 @@ data class IcalEntry(
             }
         }
     }
+}
+
+
+
+enum class Status(
+    val rfcName: String
+) {
+    FINAL("FINAL"),
+    DRAFT("DRAFT"),
+
+    NEEDS_ACTION("NEEDS-ACTION"),
+    IN_PROGRESS("IN-PROGRESS"),
+    COMPLETED("COMPLETED"),
+    CANCELLED("CANCELLED")
+}
+
+enum class Classification {
+    PUBLIC, PRIVATE, CONFIDENTIAL
 }

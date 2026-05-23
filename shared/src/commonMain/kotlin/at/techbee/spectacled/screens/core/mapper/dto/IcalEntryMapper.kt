@@ -5,7 +5,9 @@ import androidx.compose.ui.graphics.toArgb
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
+import at.techbee.spectacled.screens.core.domain.Classification
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcsDateTime
@@ -35,14 +37,20 @@ fun IcalEntryDto.toDomain(): IcalEntry {
         calendarId = this.calendarId,
         uid = this.uid,
         summary = this.summary,
-        dtStart =  parseIcsDateTime(this.dtstart, this.dtStartTimeZone),
+        dtStart = parseIcsDateTime(this.dtstart, this.dtStartTimeZone),
+        due = parseIcsDateTime(this.due, this.dueTimeZone),
+        completed = parseIcsDateTime(this.completed, this.completedTimeZone),
         description = this.description,
         color = this.color?.let { Color(it) },
         sequence = this.sequence,
-        dtstamp = parseIcsDateTime(this.dtstamp)?: IcsDateTime(System.now(), false),
+        classification = this.classification?.let { Classification.entries.find { cl -> cl.name == it } },
+        status = this.status?.let { Status.entries.find { vtodoStatus -> vtodoStatus.name == it } },
+        priority = this.priority,
+        percentComplete = this.percentComplete ?: 0L,
+        dtstamp = parseIcsDateTime(this.dtstamp) ?: IcsDateTime(System.now(), false),
         categories = this.categories?.split(CATEGORY_SPLIT_DELIMITER) ?: emptyList(),
-        created = parseIcsDateTime(this.created)?: IcsDateTime(System.now(), false),
-        lastModified = parseIcsDateTime(this.lastModified)?: IcsDateTime(System.now(), false),
+        created = parseIcsDateTime(this.created) ?: IcsDateTime(System.now(), false),
+        lastModified = parseIcsDateTime(this.lastModified) ?: IcsDateTime(System.now(), false),
         extraProperties = extraProps,
         orderNo = this.orderNo,
         syncState = this.syncState?.let { SyncState.entries.find { it.name == this.syncState } } ?: SyncState.LOCAL_MODIFIED,
@@ -68,8 +76,16 @@ fun IcalEntry.toDto(): IcalEntryDto {
         dtstamp = formatIcsDateTime(this.dtstamp)?.first,
         color = this.color?.toArgb()?.toLong(),
         sequence = this.sequence,
-        dtstart = this.dtStart?.let { formatIcsDateTime(it)?.first },
+        dtstart = this.dtStart.let { formatIcsDateTime(it)?.first },
         dtStartTimeZone = this.dtStart?.timeZone?.id,
+        due = if(this.calendarComponent == CalendarComponent.VTODO) this.due?.let { formatIcsDateTime(it)?.first } else null,
+        dueTimeZone = if(this.calendarComponent == CalendarComponent.VTODO) this.due?.timeZone?.id else null,
+        completed = if(this.calendarComponent == CalendarComponent.VTODO) this.completed?.let { formatIcsDateTime(it)?.first } else null,
+        completedTimeZone = if(this.calendarComponent == CalendarComponent.VTODO) this.completed?.timeZone?.id else null,
+        status = this.status?.name,
+        percentComplete = if(this.calendarComponent == CalendarComponent.VTODO) this.percentComplete else null,
+        priority = if(this.calendarComponent == CalendarComponent.VTODO) this.priority else null,
+        classification = this.classification?.name,
         categories = this.categories.joinToString(CATEGORY_SPLIT_DELIMITER).ifEmpty { null },
         created = formatIcsDateTime(this.created)?.first,
         lastModified = formatIcsDateTime(this.lastModified)?.first,

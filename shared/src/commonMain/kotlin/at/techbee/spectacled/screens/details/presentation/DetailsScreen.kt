@@ -227,7 +227,7 @@ private fun ListScreen_with_dtstart_Preview() {
 private fun ListScreen_with_dtstart_and_timezone_Preview() {
     DetailsScreen(
         state = DetailsState(
-            icalEntry = IcalEntry.getSampleIcalEntry().copy(dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna"))),
+            icalEntry = IcalEntry.getSampleJournal().copy(dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna"))),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
         ),
         onAction = {},
