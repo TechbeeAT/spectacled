@@ -7,7 +7,9 @@ import at.techbee.spectacled.screens.core.data.ics.KnownIcsParamName
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsPropertyName
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
+import at.techbee.spectacled.screens.core.domain.Classification
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -166,11 +168,21 @@ fun parseIcalEntryBlock(lines: List<String>, calendarComponent: CalendarComponen
     val dtStart = knownProps[KnownIcsPropertyName.DTSTART.propertyName]?.let { property ->
             parseIcsDateTime(property.value, property.params[KnownIcsParamName.TZID.paramName])
         }
+    val due = knownProps[KnownIcsPropertyName.DUE.propertyName]?.let { property ->
+        parseIcsDateTime(property.value, property.params[KnownIcsParamName.TZID.paramName])
+    }
+    val completed = knownProps[KnownIcsPropertyName.COMPLETED.propertyName]?.let { property ->
+        parseIcsDateTime(property.value, property.params[KnownIcsParamName.TZID.paramName])
+    }
     val dtstamp = knownProps[KnownIcsPropertyName.DTSTAMP.propertyName]?.value?.let { parseIcsDateTime(it, null) }
     val created = knownProps[KnownIcsPropertyName.CREATED.propertyName]?.value?.let { parseIcsDateTime(it, null) }
-    val lastModified = knownProps[KnownIcsPropertyName.LASTMODIFIED.propertyName]?.value?.let { parseIcsDateTime(it, null) }
+    val lastModified = knownProps[KnownIcsPropertyName.LAST_MODIFIED.propertyName]?.value?.let { parseIcsDateTime(it, null) }
     val categories = knownProps[KnownIcsPropertyName.CATEGORIES.propertyName]?.value?.split(',') ?: emptyList()
 
+    val status = knownProps[KnownIcsPropertyName.STATUS.propertyName]?.value?.let { Status.entries.find { status -> status.rfcName == it } }
+    val classification = knownProps[KnownIcsPropertyName.CLASSIFICATION.propertyName]?.value?.let { Classification.entries.find { classification -> classification.name == it } }
+    val priority = knownProps[KnownIcsPropertyName.PRIORITY.propertyName]?.value?.toLongOrNull()
+    val percentComplete = knownProps[KnownIcsPropertyName.PERCENT_COMPLETE.propertyName]?.value?.toLongOrNull() ?: 0
 
     return IcalEntry(
         uid = uid,
@@ -179,6 +191,12 @@ fun parseIcalEntryBlock(lines: List<String>, calendarComponent: CalendarComponen
         color = knownProps[KnownIcsPropertyName.COLOR.propertyName]?.value?.toLongOrNull()?.let(::Color),
         sequence = knownProps[KnownIcsPropertyName.SEQUENCE.propertyName]?.value?.toLongOrNull(),
         dtStart = dtStart,
+        due = due,
+        completed = completed,
+        status = status,
+        classification = classification,
+        priority = priority,
+        percentComplete = percentComplete,
         categories = categories,
         dtstamp = dtstamp ?: created ?: IcsDateTime(Clock.System.now(), false),
         created = created ?: IcsDateTime(Clock.System.now(), false),

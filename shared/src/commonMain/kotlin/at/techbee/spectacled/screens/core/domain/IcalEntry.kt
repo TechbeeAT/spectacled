@@ -1,17 +1,29 @@
 package at.techbee.spectacled.screens.core.domain
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Unpublished
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import io.ktor.http.Url
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
+import spectacled.shared.generated.resources.status_cancelled
+import spectacled.shared.generated.resources.status_completed
+import spectacled.shared.generated.resources.status_draft
+import spectacled.shared.generated.resources.status_final
+import spectacled.shared.generated.resources.status_in_process
+import spectacled.shared.generated.resources.status_needs_action
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -102,6 +114,9 @@ data class IcalEntry(
         fun getRandomUUID() = Uuid.random().toString()
     }
 
+    fun isNote() = calendarComponent == CalendarComponent.VJOURNAL && dtStart == null
+    fun isJournal() = calendarComponent == CalendarComponent.VJOURNAL && dtStart != null
+
     @Composable
     fun getAnnotatedStringForShare(): AnnotatedString {
         return AnnotatedString.Builder().apply {
@@ -149,15 +164,17 @@ data class IcalEntry(
 
 
 enum class Status(
-    val rfcName: String
+    val rfcName: String,
+    val stringRes: StringResource,
+    val vectorIcon: ImageVector?
 ) {
-    FINAL("FINAL"),
-    DRAFT("DRAFT"),
+    FINAL("FINAL", Res.string.status_final, Icons.Outlined.CheckCircle),
+    DRAFT("DRAFT", Res.string.status_draft, Icons.Outlined.Unpublished),
 
-    NEEDS_ACTION("NEEDS-ACTION"),
-    IN_PROGRESS("IN-PROGRESS"),
-    COMPLETED("COMPLETED"),
-    CANCELLED("CANCELLED")
+    NEEDS_ACTION("NEEDS-ACTION", Res.string.status_needs_action, null),
+    IN_PROCESS("IN-PROCESS", Res.string.status_in_process, null),
+    COMPLETED("COMPLETED", Res.string.status_completed, null),
+    CANCELLED("CANCELLED", Res.string.status_cancelled, Icons.Outlined.Cancel)
 }
 
 enum class Classification {

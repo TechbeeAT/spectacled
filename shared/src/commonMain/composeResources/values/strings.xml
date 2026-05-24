@@ -143,4 +143,12 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
 
+    <string name="status">Status</string>
+    <string name="status_final">Final</string>
+    <string name="status_draft">Draft</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="status_needs_action">Needs actions</string>
+    <string name="status_in_process">In process</string>
+    <string name="status_completed">Completed</string>
+
 </resources>

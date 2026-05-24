@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import kotlinx.datetime.TimeZone
@@ -135,11 +136,21 @@ fun DetailsScreen(
             HorizontalDivider(modifier = Modifier.fillMaxWidth())
         }
 
-        AnimatedVisibility(state.icalEntry.categories.isNotEmpty()) {
+        AnimatedVisibility(state.icalEntry.categories.isNotEmpty() || state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             ) {
+
+                AnimatedVisibility(state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {
+                    MetaInfoCard(
+                        icon = state.icalEntry.status?.vectorIcon ?: Status.DRAFT.vectorIcon!!,
+                        iconContentDescription = stringResource(state.icalEntry.status?.stringRes ?: Status.DRAFT.stringRes),
+                        text = stringResource(state.icalEntry.status?.stringRes ?: Status.DRAFT.stringRes),
+                        containerColor = state.icalEntry.color ?: Color.Unspecified,
+                    )
+                }
+
                 state.icalEntry.categories.sorted().forEach { category ->
 
                     MetaInfoCard(
@@ -227,7 +238,10 @@ private fun ListScreen_with_dtstart_Preview() {
 private fun ListScreen_with_dtstart_and_timezone_Preview() {
     DetailsScreen(
         state = DetailsState(
-            icalEntry = IcalEntry.getSampleJournal().copy(dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna"))),
+            icalEntry = IcalEntry.getSampleJournal().copy(
+                dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                status = Status.DRAFT
+            ),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
         ),
         onAction = {},

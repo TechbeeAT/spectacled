@@ -15,11 +15,14 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -29,13 +32,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
@@ -201,6 +208,58 @@ fun DetailsScreenRoot(
                                 contentDescription = stringResource(Res.string.category),
                                 tint = if(detailsState.allowEditing() && !detailsState.isLoading) iconTint else LocalContentColor.current
                             )
+                        }
+
+                        if(detailsViewModel.state.icalEntry.isJournal()) {
+                            var statusDropddownExpanded by remember { mutableStateOf(false) }
+
+                            TextButton(
+                                onClick = { statusDropddownExpanded = true },
+                                enabled = detailsState.allowEditing() && !detailsState.isLoading
+                            ) {
+                                Icon(
+                                    imageVector = detailsViewModel.state.icalEntry.status?.vectorIcon ?: Status.FINAL.vectorIcon!!,
+                                    contentDescription = stringResource(Res.string.more),
+                                    tint = when {
+                                        !detailsState.allowEditing() || detailsState.isLoading -> LocalContentColor.current
+                                        detailsState.icalEntry.status == null -> iconTint
+                                        detailsState.icalEntry.status == Status.FINAL -> iconTint
+                                        detailsState.icalEntry.status == Status.DRAFT -> MaterialTheme.colorScheme.error
+                                        detailsState.icalEntry.status== Status.CANCELLED -> MaterialTheme.colorScheme.onSurface
+                                        else -> LocalContentColor.current
+                                    }
+                                )
+
+                                if(statusDropddownExpanded) {
+
+                                    DropdownMenu(
+                                        expanded = statusDropddownExpanded,
+                                        onDismissRequest = { statusDropddownExpanded = false }
+                                    ) {
+                                        setOf(Status.FINAL, Status.DRAFT, Status.CANCELLED).forEach { status ->
+                                            DropdownMenuItem(
+                                                leadingIcon = { status.vectorIcon?.let { Icon(status.vectorIcon, stringResource(status.stringRes)) } },
+                                                text = { Text(stringResource(status.stringRes)) },
+                                                onClick = {
+                                                    detailsViewModel.onAction(DetailsAction.OnUpdateStatus(status))
+                                                    statusDropddownExpanded = false
+                                                },
+                                                colors = when(status) {
+                                                    Status.FINAL -> MenuDefaults.itemColors().copy(
+                                                        textColor = MaterialTheme.colorScheme.primary,
+                                                        leadingIconColor = MaterialTheme.colorScheme.primary
+                                                    )
+                                                    Status.DRAFT -> MenuDefaults.itemColors().copy(
+                                                        textColor = MaterialTheme.colorScheme.error,
+                                                        leadingIconColor = MaterialTheme.colorScheme.error
+                                                    )
+                                                    else -> MenuDefaults.itemColors()
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         Spacer(modifier = Modifier.weight(1f))

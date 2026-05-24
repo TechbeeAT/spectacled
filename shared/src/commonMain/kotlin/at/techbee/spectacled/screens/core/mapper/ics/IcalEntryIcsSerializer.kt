@@ -124,6 +124,18 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
             lines += "${KnownIcsPropertyName.DTSTART.propertyName}$paramPart:$value"
         }
     }
+    icalEntry.due?.let { icsDateTime ->
+        formatIcsDateTime(icsDateTime)?.let { (value, param) ->
+            val paramPart = param?.let { ";$it" } ?: ""
+            lines += "${KnownIcsPropertyName.DUE.propertyName}$paramPart:$value"
+        }
+    }
+    icalEntry.completed?.let { icsDateTime ->
+        formatIcsDateTime(icsDateTime)?.let { (value, param) ->
+            val paramPart = param?.let { ";$it" } ?: ""
+            lines += "${KnownIcsPropertyName.COMPLETED.propertyName}$paramPart:$value"
+        }
+    }
     icalEntry.created.let { icsDateTime ->
         formatIcsDateTime(icsDateTime)?.let { (value, _) ->
             lines += "${KnownIcsPropertyName.CREATED.propertyName}:$value"
@@ -131,7 +143,7 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
     }
     icalEntry.lastModified?.let {
         formatIcsDateTime(it)?.let { (value, _) ->
-            lines += "${KnownIcsPropertyName.LASTMODIFIED.propertyName}:$value"
+            lines += "${KnownIcsPropertyName.LAST_MODIFIED.propertyName}:$value"
         }
     }
 
@@ -143,6 +155,13 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
     icalEntry.summary?.let { lines += "${KnownIcsPropertyName.SUMMARY.propertyName}:${escapeIcsValue(it)}" }
     icalEntry.description?.let { lines += "${KnownIcsPropertyName.DESCRIPTION.propertyName}:${escapeIcsValue(it)}" }
     icalEntry.color?.let { lines += "${KnownIcsPropertyName.COLOR.propertyName}:${it.toArgb()}" }
+    icalEntry.status?.let { lines += "${KnownIcsPropertyName.STATUS.propertyName}:${it.rfcName}" }
+    icalEntry.classification?.let { lines += "${KnownIcsPropertyName.CLASSIFICATION.propertyName}:${it.name}" }
+    icalEntry.priority?.let { lines += "${KnownIcsPropertyName.PRIORITY.propertyName}:${it}" }
+    icalEntry.percentComplete.let {
+        if(it != 0L)
+            lines += "${KnownIcsPropertyName.PERCENT_COMPLETE.propertyName}:${it}"
+    }
     if(icalEntry.categories.isNotEmpty())
         icalEntry.categories.let { lines += "${KnownIcsPropertyName.CATEGORIES.propertyName}:${it.joinToString(",")}" }
     icalEntry.sequence?.let { lines += "${KnownIcsPropertyName.SEQUENCE.propertyName}:${it}" }

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
@@ -150,6 +151,15 @@ fun ListItem(
                                 iconContentDescription = stringResource(Res.string.time),
                                 containerColor = icalEntry.color ?: Color.Unspecified,
                                 text = PlatformInstantFormatter(it).formatLocalizedTime()
+                            )
+                        }
+
+                        if(icalEntry.status in listOf(Status.CANCELLED, Status.DRAFT)) {
+                            MetaInfoCard(
+                                icon = icalEntry.status?.vectorIcon,
+                                iconContentDescription = icalEntry.status?.stringRes?.let { stringResource(it) },
+                                containerColor = icalEntry.color ?: Color.Unspecified,
+                                text = stringResource(icalEntry.status?.stringRes ?: Status.FINAL.stringRes)
                             )
                         }
 

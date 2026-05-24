@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.details.presentation
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 
 sealed interface DetailsAction {
@@ -10,6 +11,7 @@ sealed interface DetailsAction {
     data class OnUpdateCategories(val addCategory: String?, val removeCategory: String?): DetailsAction
     data class OnPin(val pin: Boolean): DetailsAction
     data class OnUpdateColor(val color: Color?): DetailsAction
+    data class OnUpdateStatus(val status: Status): DetailsAction
     data class OnUpdateDtStart(val icsDateTime: IcsDateTime): DetailsAction
 
     data class OnSyncConflictUpdateUserDecision(val syncState: SyncState): DetailsAction

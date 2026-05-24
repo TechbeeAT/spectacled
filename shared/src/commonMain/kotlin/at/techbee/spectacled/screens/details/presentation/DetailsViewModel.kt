@@ -24,6 +24,7 @@ import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
@@ -236,6 +237,7 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
             DetailsAction.OnShare -> onShare()
             is DetailsAction.OnPin -> { onPinIcalEntry(action.pin) }
+            is DetailsAction.OnUpdateStatus -> { onUpdateStatus(action.status) }
         }
     }
 
@@ -299,6 +301,19 @@ class DetailsViewModel(
                     else
                         it
                 },
+                lastModified = IcsDateTime.now(),
+                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                    SyncState.USER_DECIDED_CLIENT_WINS
+                else
+                    SyncState.LOCAL_MODIFIED
+            )
+        )
+    }
+
+    private fun onUpdateStatus(status: Status) {
+        _state = _state.copy(
+            icalEntry = _state.icalEntry.copy(
+                status = status,
                 lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                     SyncState.USER_DECIDED_CLIENT_WINS

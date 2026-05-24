@@ -93,22 +93,29 @@ fun DetailsTopBar(
                         tint = contentColor
                     )
                 }
-            } else if (spectacledVariant == SpectacledVariant.NOTES){
-                TextButton(
-                    onClick = { onAction(DetailsAction.OnPin(!isPinned)) }
-                ) {
-                    if(isPinned)
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_pin),
-                            contentDescription = stringResource(Res.string.unpin),
-                            tint = contentColor
-                        )
-                    else
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_unpin),
-                            contentDescription = stringResource(Res.string.pin),
-                            tint = contentColor
-                        )
+            } else {
+
+                when(spectacledVariant) {
+                    SpectacledVariant.JOURNALS -> { }
+                    SpectacledVariant.NOTES -> {
+                        TextButton(
+                            onClick = { onAction(DetailsAction.OnPin(!isPinned)) }
+                        ) {
+                            if(isPinned)
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_pin),
+                                    contentDescription = stringResource(Res.string.unpin),
+                                    tint = contentColor
+                                )
+                            else
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_unpin),
+                                    contentDescription = stringResource(Res.string.pin),
+                                    tint = contentColor
+                                )
+                        }
+                    }
+                    SpectacledVariant.TASKS -> { }
                 }
             }
         },
@@ -121,13 +128,28 @@ fun DetailsTopBar(
 
 @Preview
 @Composable
-private fun DetailsTopBar_Preview() {
+private fun DetailsTopBar_Journals_Preview() {
     DetailsTopBar(
         canWriteContent = true,
         contentColor = Color.Unspecified,
         isLoading = false,
         isPinned = false,
-        onAction = {}
+        onAction = {},
+        spectacledVariant = SpectacledVariant.JOURNALS
+    )
+}
+
+
+@Preview
+@Composable
+private fun DetailsTopBar_Notes_Preview() {
+    DetailsTopBar(
+        canWriteContent = true,
+        contentColor = Color.Unspecified,
+        isLoading = false,
+        isPinned = false,
+        onAction = {},
+        spectacledVariant = SpectacledVariant.NOTES
     )
 }
 
@@ -139,6 +161,7 @@ private fun DetailsTopBar_readonly_Preview() {
         contentColor = Color.Unspecified,
         isLoading = true,
         isPinned = true,
-        onAction = {}
+        onAction = {},
+        spectacledVariant = SpectacledVariant.NOTES
     )
 }
