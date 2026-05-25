@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core
 
 import android.content.Context
+import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -11,6 +12,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.widget.SpectacledWidget
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.TimeUnit
@@ -61,7 +63,7 @@ actual class PlatformSyncTrigger(val context: Context) : SyncTrigger {
     }
 }
 
-class SyncWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params), KoinComponent {
+class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params), KoinComponent {
     private val credentialStore: PlatformCredentialStore by inject()
     private val databaseDriverFactory: DatabaseDriverFactory by inject()
 
@@ -83,6 +85,9 @@ class SyncWorker(appContext: Context, params: WorkerParameters) : CoroutineWorke
                 credentialStore
             )
         }
+
+        SpectacledWidget().updateAll(appContext)
+
         return Result.success()
     }
 }

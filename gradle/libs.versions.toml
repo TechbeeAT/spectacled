@@ -35,6 +35,7 @@ logback = "1.5.32"
 material3 = "1.9.0"
 workRuntimeKtx = "2.11.2"
 materialIconsExtended = "1.7.3"
+glance = "1.1.1"
 napier = "2.7.1"
 navigationCompose = "2.9.2"
 reorderable = "3.1.0"
@@ -96,6 +97,8 @@ material-icons-extended = { module = "org.jetbrains.compose.material:material-ic
 napier = { module = "io.github.aakira:napier", version.ref = "napier" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
+androidx-glance-material3 = { module = "androidx.glance:glance-material3", version.ref = "glance" }
 sql-delight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sql-delight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
 sql-delight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }

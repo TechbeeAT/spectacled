@@ -106,6 +106,10 @@ kotlin {
 
             // Required for rendering Compose Previews in Android Studio
             implementation(libs.compose.uiTooling)
+
+            // Glance Widget
+            implementation(libs.androidx.glance.appwidget)
+            implementation(libs.androidx.glance.material3)
         }
 
         jvmMain.dependencies {
