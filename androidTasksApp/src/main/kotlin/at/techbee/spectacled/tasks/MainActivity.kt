@@ -15,9 +15,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val initialCalendarId = intent.getLongExtra(SpectacledWidget.CALENDAR_ID_KEY, -1L).takeIf { it != -1L }
+        val initialIcalEntryId = intent.getLongExtra(SpectacledWidget.ICAL_ENTRY_ID_KEY, -1L).takeIf { it != -1L }
 
         setContent {
-            TasksApp(initialCalendarId = initialCalendarId)
+            TasksApp(
+                initialCalendarId = initialCalendarId,
+                initialIcalEntryId = initialIcalEntryId
+            )
         }
     }
 }

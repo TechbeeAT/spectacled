@@ -92,7 +92,8 @@ enum class SpectacledVariant(
 @Preview
 fun SpectacledApp(
     spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES,
-    initialCalendarId: Long? = null
+    initialCalendarId: Long? = null,
+    initialIcalEntryId: Long? = null
 ) {
 
     Napier.base(DebugAntilog())  // enables Napier logging for all platforms//onNavigate = { navController.navigate(it) }
@@ -207,8 +208,19 @@ fun SpectacledApp(
                 if (initialCalendarId != null) {
                     userAppPreferencesStore.lastUsedCalendarId = initialCalendarId
                 }
-                userAppPreferencesStore.lastUsedCalendarId?.let { lastUsedCalendarId ->
-                    navController.navigate(Route.IcalEntryList(lastUsedCalendarId))
+
+                if(initialIcalEntryId != null && initialCalendarId != null) {
+                    if(initialIcalEntryId == 0L) {
+                        navController.navigate(Route.IcalEntryList(initialCalendarId))
+                        navController.navigate(Route.AddICalEntry(initialCalendarId))
+                    } else {
+                        navController.navigate(Route.IcalEntryList(initialCalendarId))
+                        navController.navigate(Route.IcalEntryDetails(initialIcalEntryId))
+                    }
+                } else {
+                    userAppPreferencesStore.lastUsedCalendarId?.let { lastUsedCalendarId ->
+                        navController.navigate(Route.IcalEntryList(lastUsedCalendarId))
+                    }
                 }
             }
         }

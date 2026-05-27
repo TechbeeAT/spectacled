@@ -11,7 +11,11 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 @Preview
-fun NotesApp(initialCalendarId: Long? = null) = SpectacledApp(
+fun NotesApp(
+    initialCalendarId: Long? = null,
+    initialIcalEntryId: Long? = null
+) = SpectacledApp(
     spectacledVariant = SpectacledVariant.NOTES,
-    initialCalendarId = initialCalendarId
+    initialCalendarId = initialCalendarId,
+    initialIcalEntryId = initialIcalEntryId
 )
