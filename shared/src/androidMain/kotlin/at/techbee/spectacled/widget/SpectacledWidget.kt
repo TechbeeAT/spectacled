@@ -6,8 +6,10 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.components.Scaffold
+import androidx.glance.appwidget.components.TitleBar
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.itemsIndexed
@@ -23,11 +25,14 @@ import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.getAndroidLogoResId
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
+import org.jetbrains.compose.resources.getString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -35,6 +40,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
     private val databaseDriverFactory: DatabaseDriverFactory by inject()
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore by inject()
+    private val spectacledVariant: SpectacledVariant by inject()
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
 
@@ -49,23 +55,25 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
             .sortedByDescending { it.dtStart?.instant?.toEpochMilliseconds() ?: it.created.instant.toEpochMilliseconds() }
 
 
+        val appName = getString(spectacledVariant.appNameStringRes)
+
         provideContent {
 
             GlanceTheme {
-                SpectacledWidgetContent(entries)
+                SpectacledWidgetContent(entries, appName)
             }
         }
     }
 
     @Composable
-    fun SpectacledWidgetContent(entries: List<IcalEntry>) {
+    fun SpectacledWidgetContent(entries: List<IcalEntry>, title: String) {
 
         Scaffold(
             titleBar = {
-                Text(
-                    text = "Journal Entries",
-                    style = TextStyle(fontWeight = FontWeight.Bold),
-                    modifier = GlanceModifier.padding(vertical = 8.dp, horizontal = 16.dp)
+                TitleBar(
+                    startIcon = ImageProvider(spectacledVariant.getAndroidLogoResId()),
+                    iconColor = GlanceTheme.colors.primary,
+                    title = title
                 )
             }
         ) {
