@@ -58,17 +58,21 @@ class SyncCoordinator(
             database.principal_dtoQueries.getAllPrincipals().awaitAsList().map { it.toDomain() }.forEach { principal ->
                 val credentials = credentialStore.load(principal.principalUrl)
                 val client = HttpClientFactory.create(getPlatformEngine(), credentials?.username, credentials?.password)
-                database.calendar_dtoQueries
-                    .getCalendarsForPrincipalUrl(principal.principalUrl.toString())
-                    .awaitAsList()
-                    .map { it.toDomain() }
-                    .let { calendars ->
-                        coroutineScope {
-                            calendars.forEach { calendar ->
-                                launch { SyncCoordinator(database, client).syncCalendar(calendar) }
+                try {
+                    database.calendar_dtoQueries
+                        .getCalendarsForPrincipalUrl(principal.principalUrl.toString())
+                        .awaitAsList()
+                        .map { it.toDomain() }
+                        .let { calendars ->
+                            coroutineScope {
+                                calendars.forEach { calendar ->
+                                    launch { SyncCoordinator(database, client).syncCalendar(calendar) }
+                                }
                             }
                         }
-                    }
+                } finally {
+                    client.close()
+                }
             }
 
             // empty trashbin for items older than 30 days
@@ -89,7 +93,11 @@ class SyncCoordinator(
                         val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendar.id).awaitAsOne().toDomain()
                         val credentials = credentialStore.load(principal.principalUrl)
                         val client = HttpClientFactory.create(getPlatformEngine(), credentials?.username, credentials?.password)
-                        SyncCoordinator(database, client).syncCalendar(calendar)
+                        try {
+                            SyncCoordinator(database, client).syncCalendar(calendar)
+                        } finally {
+                            client.close()
+                        }
                     }
                 }
             }
@@ -105,7 +113,11 @@ class SyncCoordinator(
             val credentials = credentialStore.load(principal.principalUrl)
             val client = HttpClientFactory.create(getPlatformEngine(), credentials?.username, credentials?.password)
 
-            SyncCoordinator(database, client).pushLocalChanges(calendar)
+            try {
+                SyncCoordinator(database, client).pushLocalChanges(calendar)
+            } finally {
+                client.close()
+            }
         }
     }
 
@@ -195,7 +207,7 @@ class SyncCoordinator(
                     CalendarSyncStatusType.FAILED,
                     "Connection timed out. Please check your internet connection and try again.",
                     e.stackTraceToString()
-                ).serialize(), null, calendar.id
+                ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: SocketTimeoutException) { // Standard Java/Kotlin IO exceptions often encountered during connectivity issues (e.g., airplane mode).
             database.calendar_dtoQueries.updateCalendarSyncStatus(
@@ -203,7 +215,7 @@ class SyncCoordinator(
                     CalendarSyncStatusType.FAILED,
                     "Connection timed out. Please check your internet connection and try again.",
                     e.stackTraceToString()
-                ).serialize(), null, calendar.id
+                ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: ConnectTimeoutException) { // Standard Java/Kotlin IO exceptions often encountered during connectivity issues (e.g., airplane mode).
             database.calendar_dtoQueries.updateCalendarSyncStatus(
@@ -211,7 +223,7 @@ class SyncCoordinator(
                     CalendarSyncStatusType.FAILED,
                     "Connection timed out. Please check your internet connection and try again.",
                     e.stackTraceToString()
-                ).serialize(), null, calendar.id
+                ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: ClientRequestException) {  // Thrown for 4xx status codes (Client errors like 404 Not Found or 401 Unauthorized).
             database.calendar_dtoQueries.updateCalendarSyncStatus(
@@ -227,7 +239,7 @@ class SyncCoordinator(
                     CalendarSyncStatusType.FAILED,
                     "An unexpected server error occurred. Please try again.",
                     e.stackTraceToString()
-                ).serialize(), null, calendar.id
+                ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: ResponseException) {   //The base class for all exceptions related to non-success HTTP responses.
             database.calendar_dtoQueries.updateCalendarSyncStatus(
@@ -243,7 +255,7 @@ class SyncCoordinator(
                     CalendarSyncStatusType.NOT_AUTHORIZED,
                     "Connection error. Please check your internet connection, username and password and try again.",
                     e.stackTraceToString()
-                ).serialize(), null, calendar.id
+                ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: Exception) {   //The base class for all exceptions related to non-success HTTP responses.
             database.calendar_dtoQueries.updateCalendarSyncStatus(
@@ -251,7 +263,7 @@ class SyncCoordinator(
                     CalendarSyncStatusType.FAILED,
                     "Connection error. Please check your internet connection and try again.",
                     e.stackTraceToString()
-                ).serialize(), null, calendar.id
+                ).serialize(), calendar.syncToken, calendar.id
             )
         }
     }
@@ -380,22 +392,38 @@ class SyncCoordinator(
 
                 when (deletedIcalEntry.syncState) {
                     SyncState.LOCAL_DELETED, SyncState.SYNCED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN ->
-                        database.insertOrUpdateIcalEntry(deletedIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                        database.insertOrUpdateIcalEntry(
+                            deletedIcalEntry.copy(
+                                syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
+                                lastModified = IcsDateTime.now()
+                            )
+                        )
 
                     SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.USER_DECIDED_SERVER_WINS ->
                         // conflict1, but now it's also deleted on the server, we can delete it now
                         // conflict2, user decided to keep remote changes (delete), we can delete it now
-                        database.insertOrUpdateIcalEntry(deletedIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                        database.insertOrUpdateIcalEntry(
+                            deletedIcalEntry.copy(
+                                syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
+                                lastModified = IcsDateTime.now()
+                            )
+                        )
 
                     SyncState.LOCAL_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED ->
-                        database.insertOrUpdateIcalEntry(deletedIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
+                        database.insertOrUpdateIcalEntry(
+                            deletedIcalEntry.copy(
+                                syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED,
+                                lastModified = IcsDateTime.now()
+                            )
+                        )
 
                     SyncState.USER_DECIDED_CLIENT_WINS ->
                         database.insertOrUpdateIcalEntry(
                             deletedIcalEntry.copy(
                                 syncState = SyncState.LOCAL_MODIFIED,
                                 href = null,
-                                etag = null
+                                etag = null,
+                                lastModified = IcsDateTime.now()
                             )
                         )  // treat like a new entry
                 }
