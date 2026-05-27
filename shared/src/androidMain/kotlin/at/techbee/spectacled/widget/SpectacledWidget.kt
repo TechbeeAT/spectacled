@@ -11,6 +11,7 @@ import androidx.glance.GlanceTheme
 import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.components.Scaffold
+import androidx.glance.appwidget.components.SquareIconButton
 import androidx.glance.appwidget.components.TitleBar
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
@@ -36,6 +37,7 @@ import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.getAndroidLogoResId
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
+import at.techbee.spectacled.shared.R
 import org.jetbrains.compose.resources.getString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -82,9 +84,19 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                 TitleBar(
                     startIcon = ImageProvider(spectacledVariant.getAndroidLogoResId()),
                     iconColor = GlanceTheme.colors.primary,
-                    title = title
+                    title = title,
+                    actions = {
+
+                        SquareIconButton(
+                            imageProvider = ImageProvider(R.drawable.ic_open_in_new),
+                            contentDescription = "Open calendar",
+                            onClick = { TODO() },
+                            backgroundColor = GlanceTheme.colors.widgetBackground,
+                            contentColor = GlanceTheme.colors.onBackground
+                        )
+                    }
                 )
-            }
+            },
         ) {
             Column(
                 modifier = GlanceModifier
