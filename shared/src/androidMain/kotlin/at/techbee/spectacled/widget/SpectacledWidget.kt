@@ -1,6 +1,7 @@
 package at.techbee.spectacled.widget
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
@@ -9,7 +10,9 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.components.Scaffold
 import androidx.glance.appwidget.components.SquareIconButton
 import androidx.glance.appwidget.components.TitleBar
@@ -71,13 +74,15 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
             }
 
             GlanceTheme {
-                SpectacledWidgetContent(entries, appName, calendarId == null)
+                SpectacledWidgetContent(entries, appName, calendarId == null, calendarId)
             }
         }
     }
 
     @Composable
-    fun SpectacledWidgetContent(entries: List<IcalEntry>, title: String, isNotConfigured: Boolean) {
+    fun SpectacledWidgetContent(entries: List<IcalEntry>, title: String, isNotConfigured: Boolean, calendarId: Long?) {
+
+        val context = LocalContext.current
 
         Scaffold(
             titleBar = {
@@ -90,7 +95,11 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                         SquareIconButton(
                             imageProvider = ImageProvider(R.drawable.ic_open_in_new),
                             contentDescription = "Open calendar",
-                            onClick = { TODO() },
+                            onClick = actionStartActivity(
+                                context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+                                    putExtra(CALENDAR_ID_KEY, calendarId)
+                                } ?: Intent()
+                            ),
                             backgroundColor = GlanceTheme.colors.widgetBackground,
                             contentColor = GlanceTheme.colors.onBackground
                         )

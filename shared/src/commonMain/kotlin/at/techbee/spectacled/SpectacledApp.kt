@@ -90,7 +90,10 @@ enum class SpectacledVariant(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 @Preview
-fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES) {
+fun SpectacledApp(
+    spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES,
+    initialCalendarId: Long? = null
+) {
 
     Napier.base(DebugAntilog())  // enables Napier logging for all platforms//onNavigate = { navController.navigate(it) }
     //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
@@ -200,7 +203,10 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                 }
             }
 
-            LaunchedEffect(Unit) {
+            LaunchedEffect(initialCalendarId) {
+                if (initialCalendarId != null) {
+                    userAppPreferencesStore.lastUsedCalendarId = initialCalendarId
+                }
                 userAppPreferencesStore.lastUsedCalendarId?.let { lastUsedCalendarId ->
                     navController.navigate(Route.IcalEntryList(lastUsedCalendarId))
                 }
