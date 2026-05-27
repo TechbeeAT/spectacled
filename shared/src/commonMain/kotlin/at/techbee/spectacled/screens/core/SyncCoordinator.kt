@@ -325,7 +325,7 @@ class SyncCoordinator(
 
     private suspend fun upsertLocalByHrefs(calendar: Calendar, href: Url, eTag: String?) {
 
-        val localIcalEntry = database.icalentry_dtoQueries.getIcalEntryByHref(href.toString()).awaitAsOneOrNull()?.toDomain()
+        var localIcalEntry = database.icalentry_dtoQueries.getIcalEntryByHref(href.toString()).awaitAsOneOrNull()?.toDomain()
 
         if (localIcalEntry?.href != null && localIcalEntry.etag == eTag)
             return    // no eTag change, we skip
@@ -337,7 +337,11 @@ class SyncCoordinator(
             is MultigetResourceResult.Success -> fetchSingleResult.icalEntries.firstOrNull() ?: return
         }
 
-        if (localIcalEntry?.href == null) {     // Local IcalEntry doesn't exist, we insert
+        if (localIcalEntry == null) {
+            localIcalEntry = database.icalentry_dtoQueries.getIcalEntryByUid(serverIcalEntry.uid).awaitAsOneOrNull()?.toDomain()
+        }
+
+        if (localIcalEntry == null) {     // Local IcalEntry doesn't exist, we insert
             database.insertOrUpdateIcalEntry(serverIcalEntry.copy(calendarId = calendar.id, syncState = SyncState.SYNCED))
         } else {    //Local IcalEntry exists, but eTag is different. It is unchanged locally, but was changed on the server.
 
@@ -355,7 +359,8 @@ class SyncCoordinator(
                     database.insertOrUpdateIcalEntry(
                         localIcalEntry.copy(
                             syncState = SyncState.LOCAL_MODIFIED,
-                            etag = serverIcalEntry.etag
+                            etag = serverIcalEntry.etag,
+                            href = serverIcalEntry.href
                         )
                     )    // etag updated, push local changes after
 
@@ -444,12 +449,11 @@ class SyncCoordinator(
                     PutResourceResult.NotFound -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
 
                     // The locally modified entry was successfully pushed to the server, we just update the local entry as synced and store the new eTag
-                    is PutResourceResult.Success -> database.insertOrUpdateIcalEntry(
-                        dirtyIcalEntry.copy(
-                            etag = insertOrUpdateIcalEntryResult.icalEntry.etag,
-                            href = insertOrUpdateIcalEntryResult.icalEntry.href,
-                            syncState = SyncState.SYNCED
-                        )
+                    is PutResourceResult.Success -> database.icalentry_dtoQueries.updateSyncMetadata(
+                        etag = insertOrUpdateIcalEntryResult.icalEntry.etag,
+                        href = insertOrUpdateIcalEntryResult.icalEntry.href?.toString(),
+                        syncState = SyncState.SYNCED.name,
+                        id = dirtyIcalEntry.id
                     )
                 }
             }
@@ -487,7 +491,7 @@ class SyncCoordinator(
                     // Failed for some reason, retry
                     is PutResourceResult.Failed -> Unit   // leave for retry // TODO: Review in future, maybe store info why it failed
 
-                    // The entry was deleted in the meantime, we also delete it locally
+                    // The entry was deleted in the meantime, recreate it to push it again
                     PutResourceResult.NotFound -> {
                         val clientIcalEntry = dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
                         database.insertOrUpdateIcalEntry(clientIcalEntry)
@@ -496,12 +500,11 @@ class SyncCoordinator(
 
                     // The locally modified entry was successfully pushed to the server, we just update the local entry as synced and store the new eTag
                     is PutResourceResult.Success ->
-                        database.insertOrUpdateIcalEntry(
-                            dirtyIcalEntry.copy(
-                                etag = insertOrUpdateIcalEntryResult.icalEntry.etag,
-                                href = insertOrUpdateIcalEntryResult.icalEntry.href,
-                                syncState = SyncState.SYNCED
-                            )
+                        database.icalentry_dtoQueries.updateSyncMetadata(
+                            etag = insertOrUpdateIcalEntryResult.icalEntry.etag,
+                            href = insertOrUpdateIcalEntryResult.icalEntry.href?.toString(),
+                            syncState = SyncState.SYNCED.name,
+                            id = dirtyIcalEntry.id
                         )
                 }
             }

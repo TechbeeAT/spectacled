@@ -159,3 +159,8 @@ UPDATE IcalEntryDto SET categories = :newCategories, lastModified = :lastModifie
 
 updateOrderNo:
 UPDATE IcalEntryDto SET orderNo = :orderNo WHERE id = :id;
+
+updateSyncMetadata:
+UPDATE IcalEntryDto
+SET etag = :etag, href = :href, syncState = :syncState
+WHERE id = :id;
