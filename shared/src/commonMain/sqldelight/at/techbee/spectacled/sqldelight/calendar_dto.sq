@@ -34,6 +34,18 @@ INNER JOIN HomeCollectionDto ON HomeCollectionDto.id = CalendarDto.homeCollectio
 INNER JOIN PrincipalDto ON PrincipalDto.id = HomeCollectionDto.principalId
 WHERE PrincipalDto.principalUrl = :principalUrl;
 
+calendarsForWidgetConfig:
+SELECT
+    CalendarDto.id,
+    CalendarDto.url,
+    CalendarDto.displayName,
+    CalendarDto.calendarDescription,
+    PrincipalDto.displayName AS 'principalDisplayName'
+FROM CalendarDto
+INNER JOIN HomeCollectionDto ON HomeCollectionDto.id = CalendarDto.homeCollectionId
+INNER JOIN PrincipalDto ON PrincipalDto.id = HomeCollectionDto.principalId;
+
+
 updateCalendar:
 UPDATE CalendarDto
 SET

@@ -5,4 +5,5 @@
     android:minHeight="100dp"
     android:resizeMode="horizontal|vertical"
     android:configure="at.techbee.spectacled.widget.SpectacledWidgetConfigActivity"
+    android:widgetFeatures="reconfigurable"
     android:widgetCategory="home_screen" />

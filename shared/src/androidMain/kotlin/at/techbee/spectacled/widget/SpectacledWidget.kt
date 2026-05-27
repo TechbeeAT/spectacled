@@ -16,8 +16,8 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.background
+import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -33,7 +33,6 @@ import androidx.glance.text.TextStyle
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
-import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.getAndroidLogoResId
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
@@ -44,33 +43,30 @@ import org.koin.core.component.inject
 class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
     private val databaseDriverFactory: DatabaseDriverFactory by inject()
-    private val userAppPreferencesStore: PlatformUserAppPreferencesStore by inject()
     private val spectacledVariant: SpectacledVariant by inject()
 
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
 
-        val prefs = getAppWidgetState<Preferences>(context, id)
-        val calendarId = prefs[longPreferencesKey(CALENDAR_ID_KEY)] ?: userAppPreferencesStore.lastUsedCalendarId
-
         val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
-        val entries = if (calendarId != null) {
-            database
-                .icalentry_dtoQueries
-                .getIcalEntriesByCalendar(calendarId)
-                .executeAsList()
-                .map { it.toDomain() }
-                .filter { !it.syncState.isDeletedState() }
-                .sortedByDescending { it.dtStart?.instant?.toEpochMilliseconds() ?: it.created.instant.toEpochMilliseconds() }
-        } else {
-            emptyList()
-        }
-
-
         val appName = getString(spectacledVariant.appNameStringRes)
 
         provideContent {
+            val prefs = currentState<Preferences>()
+            val calendarId = prefs[longPreferencesKey(CALENDAR_ID_KEY)]
+
+            val entries = if (calendarId != null) {
+                database
+                    .icalentry_dtoQueries
+                    .getIcalEntriesByCalendar(calendarId)
+                    .executeAsList()
+                    .map { it.toDomain() }
+                    .filter { !it.syncState.isDeletedState() }
+                    .sortedByDescending { it.dtStart?.instant?.toEpochMilliseconds() ?: it.created.instant.toEpochMilliseconds() }
+            } else {
+                emptyList()
+            }
 
             GlanceTheme {
                 SpectacledWidgetContent(entries, appName, calendarId == null)
