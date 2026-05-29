@@ -83,6 +83,14 @@ data class ListState(
             .let { getSortedList(it) }
             .groupBy { PlatformInstantFormatter(it.dtStart ?: IcsDateTime.now()).formatLocalizedDate() }
 
+    val displayMapByDtStartMonth: Map<String, List<IcalEntry>>
+        get() = getBaseList(icalEntries)
+            .let { getFilteredList(it) }
+            .let { getPinnedFilteredList(it) }
+            .let { getSortedList(it) }
+            .groupBy { "${it.dtStart?.toLocalDateTime()?.year}-${it.dtStart?.toLocalDateTime()?.month}" }
+
+
     val trashbin: List<IcalEntry>
         get() = getBaseList(icalEntries, true)
             .let { getFilteredList(it) }

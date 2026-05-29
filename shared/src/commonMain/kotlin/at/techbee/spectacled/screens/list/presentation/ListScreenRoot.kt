@@ -336,8 +336,10 @@ fun ListScreenRoot(
 
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 8.dp, vertical = 8.dp)
-                        .padding(paddingValues)
+                        .padding(
+                            top = paddingValues.calculateTopPadding()-8.dp,
+                            bottom = paddingValues.calculateBottomPadding()
+                        )
                         .fillMaxSize(),
                     contentAlignment = Alignment.BottomCenter
                 ) {
@@ -427,7 +429,7 @@ fun ListScreenRoot(
                                             else -> listViewModel.onAction(action)
                                         }
                                     },
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
                                 )
                             }
                         }

@@ -49,6 +49,18 @@ actual class PlatformInstantFormatter actual constructor(val icsDateTime: IcsDat
         timeZone = nsTimeZone
     }
 
+    private val dayOfWeekFormatter = NSDateFormatter().apply {
+        dateFormat = "EEE"
+        locale = NSLocale.currentLocale
+        timeZone = nsTimeZone
+    }
+
+    private val monthNameFormatter = NSDateFormatter().apply {
+        dateFormat = "MMMM"
+        locale = NSLocale.currentLocale
+        timeZone = nsTimeZone
+    }
+
     private fun format(formatter: NSDateFormatter): String {
 
         return if (icsDateTime.isDateOnly) {
@@ -64,4 +76,6 @@ actual class PlatformInstantFormatter actual constructor(val icsDateTime: IcsDat
     actual override fun formatLocalizedDateTime() = format(dateTimeFormatter)
     actual override fun formatLocalizedDate() = format(dateFormatter)
     actual override fun formatLocalizedTime() = format(timeFormatter)
+    actual override fun formatLocalizedDayOfWeekShort() = format(dayOfWeekFormatter)
+    actual override fun formatFullMonthName() = format(monthNameFormatter)
 }

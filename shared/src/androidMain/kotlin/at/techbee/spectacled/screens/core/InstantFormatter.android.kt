@@ -15,6 +15,8 @@ actual class PlatformInstantFormatter actual constructor(val icsDateTime: IcsDat
     actual override fun formatLocalizedDate() = formatLocalized(dateFormatter)
     actual override fun formatLocalizedTime() = formatLocalized(timeFormatter)
     actual override fun formatLocalizedDateTime() = formatLocalized(dateTimeFormatter)
+    actual override fun formatLocalizedDayOfWeekShort() = formatLocalized(dayOfWeekFormatter)
+    actual override fun formatFullMonthName() = formatLocalized(monthNameFormatter)
 
 
     private val dateFormatter = DateTimeFormatter
@@ -29,6 +31,16 @@ actual class PlatformInstantFormatter actual constructor(val icsDateTime: IcsDat
 
     private val dateTimeFormatter = DateTimeFormatter
         .ofLocalizedDateTime(FormatStyle.MEDIUM,FormatStyle.SHORT)
+        .withLocale(Locale.getDefault())
+        .withZone(icsDateTime.effectiveZone().toJavaZoneId())
+
+    private val dayOfWeekFormatter = DateTimeFormatter
+        .ofPattern("EEE")
+        .withLocale(Locale.getDefault())
+        .withZone(icsDateTime.effectiveZone().toJavaZoneId())
+
+    private val monthNameFormatter = DateTimeFormatter
+        .ofPattern("MMMM")
         .withLocale(Locale.getDefault())
         .withZone(icsDateTime.effectiveZone().toJavaZoneId())
 

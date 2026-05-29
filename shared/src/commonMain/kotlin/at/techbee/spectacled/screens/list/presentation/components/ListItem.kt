@@ -37,7 +37,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
-import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -64,128 +63,131 @@ fun ListItem(
     isLast: Boolean = true,
     overrideTopRoundedCornerSize: Dp? = null,
     overrideBottomRoundedCornerSize: Dp? = null,
+    showDayBlock: Boolean = false,
     dragHandle: @Composable (() -> Unit) = { },
     modifier: Modifier = Modifier
 ) {
 
     val hapticFeedback = LocalHapticFeedback.current
 
-    SpecialRoundedCard(
-        isFirst = isFirst,
-        isLast = isLast,
-        isSelected = isSelected,
-        colors = CardDefaults.cardColors(
-            containerColor = icalEntry.color ?: Color.Unspecified,
-            contentColor = icalEntry.color?.let { getContentColorForColoredSurfaces(it) } ?: contentColorFor(Color.Unspecified)
-        ),
-        interactionSource = interactionSource,
-        onClick = {},
-        overrideTopRoundedCornerSize = overrideTopRoundedCornerSize,
-        overrideBottomRoundedCornerSize = overrideBottomRoundedCornerSize,
-        modifier = modifier
-    ) {
+    Row(modifier = modifier) {
+        if (icalEntry.dtStart != null && showDayBlock)
+            DayBlock(
+                icsDateTime = icalEntry.dtStart,
+                modifier = Modifier.padding(8.dp)
+            )
 
-        Box(
-            modifier = Modifier
-                .combinedClickable(
-                    onClick = { onClick() },
-                    onLongClick = {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onLongClick()
-                    }
-                )
-                .padding(8.dp)
-                .fillMaxWidth()
-                //.fillMaxSize()
+        SpecialRoundedCard(
+            isFirst = isFirst,
+            isLast = isLast,
+            isSelected = isSelected,
+            colors = CardDefaults.cardColors(
+                containerColor = icalEntry.color ?: Color.Unspecified,
+                contentColor = icalEntry.color?.let { getContentColorForColoredSurfaces(it) } ?: contentColorFor(Color.Unspecified)
+            ),
+            interactionSource = interactionSource,
+            onClick = {},
+            overrideTopRoundedCornerSize = overrideTopRoundedCornerSize,
+            overrideBottomRoundedCornerSize = overrideBottomRoundedCornerSize
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+
+            Box(
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = { onClick() },
+                        onLongClick = {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onLongClick()
+                        }
+                    )
+                    .padding(8.dp)
+                    .fillMaxWidth()
+                //.fillMaxSize()
             ) {
-                // workaround to ensure minimum height while having a proper ripple effect on click but also to have the same height as when the drag handle is visible
-                Spacer(modifier = Modifier.width(0.dp).height(48.dp))
-                dragHandle()
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // workaround to ensure minimum height while having a proper ripple effect on click but also to have the same height as when the drag handle is visible
+                    Spacer(modifier = Modifier.width(0.dp).height(48.dp))
+                    dragHandle()
 
-                    if (icalEntry.summary?.isBlank() == false)
-                        Text(
-                            text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-
-                    if (icalEntry.description?.isBlank() == false)
-                        Text(
-                            text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
-                            maxLines = 5,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-
-                    if (icalEntry.summary.isNullOrBlank() && icalEntry.description.isNullOrBlank())
-                        Text(
-                            text = stringResource(Res.string.no_summary_description),
-                            fontStyle = FontStyle.Italic,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        verticalArrangement = Arrangement.spacedBy(3.dp),
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
 
-                        icalEntry.dtStart?.let {
-                            if (it.isDateOnly)
-                                return@let
-
-                            MetaInfoCard(
-                                icon = Icons.Outlined.Schedule,
-                                iconContentDescription = stringResource(Res.string.time),
-                                containerColor = icalEntry.color ?: Color.Unspecified,
-                                text = PlatformInstantFormatter(it).formatLocalizedTime()
+                        if (icalEntry.summary?.isBlank() == false)
+                            Text(
+                                text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth()
                             )
-                        }
 
-                        if(icalEntry.status in listOf(Status.CANCELLED, Status.DRAFT)) {
-                            MetaInfoCard(
-                                icon = icalEntry.status?.vectorIcon,
-                                iconContentDescription = icalEntry.status?.stringRes?.let { stringResource(it) },
-                                containerColor = icalEntry.color ?: Color.Unspecified,
-                                text = stringResource(icalEntry.status?.stringRes ?: Status.FINAL.stringRes)
+
+                        if (icalEntry.description?.isBlank() == false)
+                            Text(
+                                text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
+                                maxLines = 5,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth()
                             )
-                        }
 
-                        icalEntry.categories.forEach { category ->
-                            MetaInfoCard(
-                                icon = Icons.AutoMirrored.Outlined.Label,
-                                iconContentDescription = stringResource(Res.string.category),
-                                containerColor = icalEntry.color ?: Color.Unspecified,
-                                text = category, 
-                                onClick = { onFilterCategory(category) }
+
+                        if (icalEntry.summary.isNullOrBlank() && icalEntry.description.isNullOrBlank())
+                            Text(
+                                text = stringResource(Res.string.no_summary_description),
+                                fontStyle = FontStyle.Italic,
+                                modifier = Modifier.fillMaxWidth()
                             )
+
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp),
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        ) {
+
+                            icalEntry.dtStart?.let {
+                                if (it.isDateOnly)
+                                    return@let
+
+                                MetaInfoCard(
+                                    icon = Icons.Outlined.Schedule,
+                                    iconContentDescription = stringResource(Res.string.time),
+                                    containerColor = icalEntry.color ?: Color.Unspecified,
+                                    text = PlatformInstantFormatter(it).formatLocalizedTime()
+                                )
+                            }
+
+                            if (icalEntry.status in listOf(Status.CANCELLED, Status.DRAFT)) {
+                                MetaInfoCard(
+                                    icon = icalEntry.status?.vectorIcon,
+                                    iconContentDescription = icalEntry.status?.stringRes?.let { stringResource(it) },
+                                    containerColor = icalEntry.color ?: Color.Unspecified,
+                                    text = stringResource(icalEntry.status?.stringRes ?: Status.FINAL.stringRes)
+                                )
+                            }
+
+                            icalEntry.categories.forEach { category ->
+                                MetaInfoCard(
+                                    icon = Icons.AutoMirrored.Outlined.Label,
+                                    iconContentDescription = stringResource(Res.string.category),
+                                    containerColor = icalEntry.color ?: Color.Unspecified,
+                                    text = category,
+                                    onClick = { onFilterCategory(category) }
+                                )
+                            }
+
+                            AnimatedVisibility(icalEntry.syncState.isConflictState()) {
+                                MetaInfoCard(
+                                    icon = Icons.Outlined.SyncProblem,
+                                    iconContentDescription = stringResource(Res.string.sync_conflict_detected),
+                                    containerColor = icalEntry.color ?: Color.Unspecified,
+                                    text = null
+                                )
+                            }
                         }
-
-                        AnimatedVisibility(icalEntry.syncState.isConflictState()) {
-                            MetaInfoCard(
-                                icon = Icons.Outlined.SyncProblem,
-                                iconContentDescription = stringResource(Res.string.sync_conflict_detected),
-                                containerColor = icalEntry.color ?: Color.Unspecified,
-                                text = null
-                            )
-                        }
-
-
-
-
-
                     }
                 }
             }
@@ -282,13 +284,14 @@ private fun ListItem_middle_Preview_no_summary_and_description() {
 @Composable
 private fun ListItem_withTime_Preview() {
     ListItem(
-        icalEntry = IcalEntry.getSampleIcalEntry().copy(dtStart = IcsDateTime.now()),
+        icalEntry = IcalEntry.getSampleJournal(),
         isFirst = true,
         isLast = false,
         isSelected = false,
         onClick = {},
         onLongClick = {},
-        onFilterCategory = {}
+        onFilterCategory = {},
+        showDayBlock = true
     )
 }
 

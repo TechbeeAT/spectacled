@@ -24,6 +24,18 @@ private external fun createDateFormatter(lang: String, timeZone: String): JsAny
 private external fun createTimeFormatter(lang: String, timeZone: String): JsAny
 
 @OptIn(ExperimentalWasmJsInterop::class)
+@JsFun(
+    "((lang, timeZone) => new Intl.DateTimeFormat(lang, { weekday: 'short', timeZone }))"
+)
+private external fun createDayOfWeekFormatter(lang: String, timeZone: String): JsAny
+
+@OptIn(ExperimentalWasmJsInterop::class)
+@JsFun(
+    "((lang, timeZone) => new Intl.DateTimeFormat(lang, { month: 'long', timeZone }))"
+)
+private external fun createMonthNameFormatter(lang: String, timeZone: String): JsAny
+
+@OptIn(ExperimentalWasmJsInterop::class)
 @JsFun("(formatter, millis) => formatter.format(new Date(millis))")
 private external fun formatWithFormatter(formatter: JsAny, millis: Double): String
 
@@ -79,4 +91,10 @@ actual class PlatformInstantFormatter actual constructor(
 
     actual override fun formatLocalizedTime(): String =
         format(::createTimeFormatter)
+
+    actual override fun formatLocalizedDayOfWeekShort(): String =
+        format(::createDayOfWeekFormatter)
+
+    actual override fun formatFullMonthName(): String =
+        format(::createMonthNameFormatter)
 }
