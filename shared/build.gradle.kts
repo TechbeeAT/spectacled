@@ -154,3 +154,6 @@ sqldelight {
     }
 }
 
+tasks.matching { it.name == "prepareAndroidMainArtProfile" }.configureEach {
+    enabled = false
+}
