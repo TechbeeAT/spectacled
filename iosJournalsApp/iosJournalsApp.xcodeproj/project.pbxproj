@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		09B66F19DCDDC655FFD79211 /* iosJournalsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosJournalsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		09B66F19DCDDC655FFD79211 /* spectacledJournals.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = spectacledJournals.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -50,7 +50,7 @@
 		987D042A10365E46A9EC9500 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				09B66F19DCDDC655FFD79211 /* iosJournalsApp.app */,
+				09B66F19DCDDC655FFD79211 /* spectacledJournals.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosJournalsApp;
-			productReference = 09B66F19DCDDC655FFD79211 /* iosJournalsApp.app */;
+			productReference = 09B66F19DCDDC655FFD79211 /* spectacledJournals.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -177,7 +177,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"iosJournalsApp/Preview Content\"";
-				DEVELOPMENT_TEAM = CQ24D5B7LP;
+				DEVELOPMENT_TEAM = BZY8AT5K2W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosJournalsApp/Info.plist;
@@ -333,7 +333,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"iosJournalsApp/Preview Content\"";
-				DEVELOPMENT_TEAM = CQ24D5B7LP;
+				DEVELOPMENT_TEAM = BZY8AT5K2W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosJournalsApp/Info.plist;
