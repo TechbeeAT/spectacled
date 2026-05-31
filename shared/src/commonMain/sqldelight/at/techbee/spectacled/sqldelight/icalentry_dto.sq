@@ -154,6 +154,9 @@ UPDATE IcalEntryDto SET syncState = 'LOCAL_DELETED' WHERE id IN ?;
 updateColor:
 UPDATE IcalEntryDto SET color = :newColor, lastModified = :lastModified, syncState = :syncState WHERE id = :id;
 
+updateProgress:
+UPDATE IcalEntryDto SET percentComplete = :newPercent, status = :newStatus, lastModified = :lastModified, syncState = :syncState WHERE id = :id;
+
 updateCategory:
 UPDATE IcalEntryDto SET categories = :newCategories, lastModified = :lastModified, syncState = :syncState WHERE id = :id;
 

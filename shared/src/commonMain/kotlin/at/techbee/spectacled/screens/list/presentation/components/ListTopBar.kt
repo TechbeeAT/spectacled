@@ -254,7 +254,7 @@ fun IcalEntryListTopBar(
                     }
 
                     // No staggered grid option for Journals
-                    if(spectacledVariant != SpectacledVariant.JOURNALS) {
+                    if(spectacledVariant == SpectacledVariant.NOTES) {
                         TextButton(
                             onClick = {
                                 onAction(

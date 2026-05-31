@@ -51,6 +51,7 @@ data class ListState(
     val snackbarText: String? = null,
     val showDeletedItems: Boolean = false,
     val navigateUp: Boolean = false,
+    val navigateToIcalEntryId: Long? = null,
     val multiselectItems: List<Long>? = null,
 
     val showDeleteSelectedItemsDialog: Boolean = false,

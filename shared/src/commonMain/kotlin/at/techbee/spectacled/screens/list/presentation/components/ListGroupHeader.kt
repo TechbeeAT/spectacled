@@ -42,7 +42,7 @@ fun ListGroupHeader(
             onToggleListGroupExpanded(appPreferencesTag)
         },
         colors = ButtonDefaults.textButtonColors().copy(contentColor = LocalContentColor.current),
-        modifier = modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp, start = 8.dp, end = 8.dp)
+        modifier = modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

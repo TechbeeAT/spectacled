@@ -1,22 +1,16 @@
 package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
-import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -30,20 +24,19 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.list.presentation.components.EmptyListScreen
 import at.techbee.spectacled.screens.list.presentation.components.ListDragHandle
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
-import at.techbee.spectacled.screens.list.presentation.components.ListItem
+import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.pinned
 import spectacled.shared.generated.resources.trashbin
 
 @Composable
-fun ListScreen(
+fun ListScreenTasks(
     state: ListState,
     dragAndDropList: List<IcalEntry>,
     onAction: (ListAction) -> Unit,
@@ -52,31 +45,25 @@ fun ListScreen(
 
     val hapticFeedback = LocalHapticFeedback.current
 
-    val lazyStaggeredGridState: LazyStaggeredGridState = rememberLazyStaggeredGridState()
-    val reorderableLazyListState = rememberReorderableLazyStaggeredGridState(lazyStaggeredGridState) { from, to ->
+    val lazyListState = rememberLazyListState()
+    val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
         onAction(ListAction.OnUpdateOrderNo(from.index, to.index))
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
 
-    LazyVerticalStaggeredGrid(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalItemSpacing = 2.dp,
-        state = lazyStaggeredGridState,
-        columns = when (state.listLayout) {
-            ListLayout.LIST -> StaggeredGridCells.Fixed(1)
-            ListLayout.STAGGERED_GRID -> StaggeredGridCells.Adaptive(150.dp)
-        },
+    LazyColumn(
+        state = lazyListState,
         modifier = modifier
     ) {
 
         // using mutableStateList instead of grouped list for drag and drop
         // this allows us to directly manipulate the list and avoid jitter
         if(state.listSortedBy == ListSortedBy.DRAGANDDROP
-            && !state.searchQuery.isNullOrEmpty()
-            && !state.searchCategory.isNullOrEmpty()
+            && state.searchQuery == null
+            && state.searchCategory == null
         ) {
-            itemsIndexed(dragAndDropList, key = { _, note -> note.uid }) { index, icalEntry ->
+            items (dragAndDropList, key = { note -> note.uid }) { icalEntry ->
 
                 ReorderableItem(
                     state = reorderableLazyListState,
@@ -91,12 +78,8 @@ fun ListScreen(
                         onAction(ListAction.OnDraggingIcalEntry(null))
                     }
 
-                    val interactionSource = remember { MutableInteractionSource() }
-
-                    ListItem(
+                    TaskListItem(
                         icalEntry = icalEntry,
-                        isFirst = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
-                        isLast = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == dragAndDropList.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
                         isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
                         onClick = {
                             if (state.multiselectItems == null)
@@ -105,7 +88,7 @@ fun ListScreen(
                                 onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                         },
                         onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                        interactionSource = interactionSource,
+                        onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
                         dragHandle = {
                             if (state.listSortedBy == ListSortedBy.DRAGANDDROP)
                                 ListDragHandle(this)
@@ -121,7 +104,7 @@ fun ListScreen(
         } else {
 
             if(state.pinned.isNotEmpty()) {
-                item(span = StaggeredGridItemSpan.FullLine) {
+                item {
                     ListGroupHeader(
                         appPreferencesTag = LIST_COLLAPSED_GROUP_PINNED,
                         headerText = stringResource(Res.string.pinned) + "  " + IcalEntry.PINNED_CATEGORY,
@@ -131,15 +114,13 @@ fun ListScreen(
                 }
 
                 if (LIST_COLLAPSED_GROUP_PINNED !in state.listCollapsedGroups) {
-                    itemsIndexed(
+                    items(
                         items = state.pinned,
-                        key = { _, icalEntry -> icalEntry.uid }
-                    ) { index, icalEntry ->
+                        key = { icalEntry -> icalEntry.uid }
+                    ) { icalEntry ->
 
-                        ListItem(
+                        TaskListItem(
                             icalEntry = icalEntry,
-                            isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
-                            isLast = (state.listLayout == ListLayout.LIST && index == state.pinned.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
                             isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
                             onClick = {
                                 if (state.multiselectItems == null)
@@ -149,6 +130,7 @@ fun ListScreen(
                             },
                             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
                             onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
+                            onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
                             modifier = Modifier
                                 .widthIn(max = 700.dp)
                                 .heightIn(min = 50.dp)
@@ -167,7 +149,7 @@ fun ListScreen(
                     if (groupedByDay[dayGroup].isNullOrEmpty())
                         return@forEach
 
-                    item(span = StaggeredGridItemSpan.FullLine) {
+                    item {
                         ListGroupHeader(
                             appPreferencesTag = dayGroup,
                             headerText = dayGroup,
@@ -177,15 +159,13 @@ fun ListScreen(
                     }
 
                     if (dayGroup !in state.listCollapsedGroups) {
-                        itemsIndexed(
+                        items(
                             items = groupedByDay[dayGroup]!!,
-                            key = { _, icalEntry -> icalEntry.uid }
-                        ) { index, icalEntry ->
+                            key = { icalEntry -> icalEntry.uid }
+                        ) { icalEntry ->
 
-                            ListItem(
+                            TaskListItem(
                                 icalEntry = icalEntry,
-                                isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
-                                isLast = (state.listLayout == ListLayout.LIST && index == groupedByDay[dayGroup]!!.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
                                 isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
                                 onClick = {
                                     if (state.multiselectItems == null)
@@ -195,6 +175,7 @@ fun ListScreen(
                                 },
                                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
                                 onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
+                                onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
                                 modifier = Modifier
                                     .widthIn(max = 700.dp)
                                     .heightIn(min = 50.dp)
@@ -216,7 +197,7 @@ fun ListScreen(
                             return@forEach
 
                         if (grouping.stringRes != null) {
-                            item(span = StaggeredGridItemSpan.FullLine) {
+                            item {
                                 ListGroupHeader(
                                     appPreferencesTag = grouping.name,
                                     headerText = if (grouping.stringResParam != null)
@@ -230,21 +211,20 @@ fun ListScreen(
                         }
 
                         if (grouping.name !in state.listCollapsedGroups) {
-                            itemsIndexed(state.displayMap[grouping]!!, key = { _, icalEntry -> icalEntry.uid }) { index, note ->
+                            items(state.displayMap[grouping]!!, key = { icalEntry -> icalEntry.uid }) { icalEntry ->
 
-                                ListItem(
-                                    icalEntry = note,
-                                    isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
-                                    isLast = (state.listLayout == ListLayout.LIST && index == state.displayMap[grouping]!!.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
-                                    isSelected = state.multiselectItems?.contains(note.id) == true,
+                                TaskListItem(
+                                    icalEntry = icalEntry,
+                                    isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
                                     onClick = {
                                         if (state.multiselectItems == null)
-                                            onAction(ListAction.OnIcalEntryClicked(note.id))
+                                            onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
                                         else
-                                            onAction(ListAction.OnToggleMultiselectItem(note.id))
+                                            onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                                     },
-                                    onLongClick = { onAction(ListAction.OnToggleMultiselectItem(note.id)) },
+                                    onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
                                     onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
+                                    onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
                                     modifier = Modifier
                                         .widthIn(max = 700.dp)
                                         .heightIn(min = 50.dp)
@@ -260,7 +240,7 @@ fun ListScreen(
         // TRASHBIN
         if(state.trashbin.isNotEmpty()) {
 
-            item(span = StaggeredGridItemSpan.FullLine) {
+            item {
                 ListGroupHeader(
                     appPreferencesTag = LIST_COLLAPSED_GROUP_TRASHBIN,
                     headerText = stringResource(Res.string.trashbin) + " \uD83D\uDDD1 " + "(${state.trashbin.size})",
@@ -278,21 +258,20 @@ fun ListScreen(
                     fontStyle = FontStyle.Italic
                 ) }
             else
-                itemsIndexed(state.trashbin, key = { _, note -> note.uid }) { index, note ->
+                items(state.trashbin, key = { note -> note.uid }) { icalEntry ->
 
-                    ListItem(
-                        icalEntry = note,
-                        isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
-                        isLast = (state.listLayout == ListLayout.LIST && index == state.trashbin.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
-                        isSelected = state.multiselectItems?.contains(note.id) == true,
+                    TaskListItem(
+                        icalEntry = icalEntry,
+                        isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
                         onClick = {
                             if (state.multiselectItems == null)
-                                onAction(ListAction.OnIcalEntryClicked(note.id))
+                                onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
                             else
-                                onAction(ListAction.OnToggleMultiselectItem(note.id))
+                                onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                         },
-                        onLongClick = { onAction(ListAction.OnToggleMultiselectItem(note.id)) },
+                        onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
                         onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
+                        onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
                         modifier = Modifier
                             .widthIn(max = 700.dp)
                             .heightIn(min = 50.dp)
@@ -302,7 +281,7 @@ fun ListScreen(
                 }
         }
 
-        item(span = StaggeredGridItemSpan.FullLine) {
+        item {
             Spacer(modifier = Modifier.height(80.dp))
         }
     }
@@ -330,12 +309,12 @@ private fun ListScreenRoot_Preview() {
 
 @Preview
 @Composable
-private fun ListScreen_Preview() {
+private fun ListScreen_Notes_Preview() {
 
     var state = ListState()
     state = state.copy(searchQuery = "test")
 
-    ListScreen(
+    ListScreenNotes(
         state = state,
         dragAndDropList = emptyList(),
         onAction = {}
@@ -344,9 +323,9 @@ private fun ListScreen_Preview() {
 
 @Preview
 @Composable
-private fun ListScreen_empty_Preview() {
+private fun ListScreen_Notes_empty_Preview() {
 
-    ListScreen(
+    ListScreenNotes(
         state = ListState(),
         dragAndDropList = emptyList(),
         onAction = {}

@@ -13,6 +13,15 @@ import spectacled.shared.generated.resources.drag_handle
 
 @Composable
 fun ListDragHandle(scope: ReorderableCollectionItemScope) {
+
+    /*
+    VerticalDragHandle(
+        modifier = with(scope) {
+            Modifier.draggableHandle()
+        }
+    )
+     */
+
     IconButton(
         onClick = {},
         modifier = with(scope) {

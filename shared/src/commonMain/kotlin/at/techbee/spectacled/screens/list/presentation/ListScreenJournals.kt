@@ -35,7 +35,7 @@ import spectacled.shared.generated.resources.trashbin
 
 
 @Composable
-fun JournalsListScreen(
+fun JournalsListJournals(
     state: ListState,
     onAction: (ListAction) -> Unit,
     modifier: Modifier = Modifier
@@ -91,8 +91,8 @@ fun JournalsListScreen(
             stickyHeader {
                 groupedByMonth[monthGroup]?.firstOrNull()?.dtStart?.let {
                     MonthHeader(
-                        it,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                        icsDateTime = it,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
             }
@@ -130,6 +130,8 @@ fun JournalsListScreen(
 
                 }
             }
+
+            item { Spacer(modifier = Modifier.height(8.dp)) }
         }
 
         // TRASHBIN
@@ -197,7 +199,7 @@ fun JournalsListScreen(
 
 @Preview
 @Composable
-private fun JournalsListScreen_Preview() {
+private fun JournalsListJournals_Preview() {
 
     var state = ListState()
     state = state.copy(
@@ -206,7 +208,7 @@ private fun JournalsListScreen_Preview() {
         icalEntries = listOf(IcalEntry.getSampleJournal(), IcalEntry.getSampleJournal())
     )
 
-    JournalsListScreen(
+    JournalsListJournals(
         state = state,
         onAction = {}
     )
@@ -214,7 +216,7 @@ private fun JournalsListScreen_Preview() {
 
 @Preview
 @Composable
-private fun JournalsListScreen_Search_Preview() {
+private fun JournalsListJournals_Search_Preview() {
 
     var state = ListState()
     state = state.copy(
@@ -222,7 +224,7 @@ private fun JournalsListScreen_Search_Preview() {
         icalEntries = listOf(IcalEntry.getSampleIcalEntry(), IcalEntry.getSampleIcalEntry())
     )
 
-    JournalsListScreen(
+    JournalsListJournals(
         state = state,
         onAction = {}
     )
@@ -230,9 +232,9 @@ private fun JournalsListScreen_Search_Preview() {
 
 @Preview
 @Composable
-private fun JournalsListScreen_empty_Preview() {
+private fun JournalsListJournals_empty_Preview() {
 
-    JournalsListScreen(
+    JournalsListJournals(
         state = ListState(),
         onAction = {}
     )

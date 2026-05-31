@@ -113,6 +113,13 @@ fun ListScreenRoot(
         }
     }
 
+    LaunchedEffect(state.navigateToIcalEntryId) {
+        if(state.navigateToIcalEntryId != null) {
+            onNavigate(IcalEntryDetails(state.navigateToIcalEntryId))
+            listViewModel.onAction(ListAction.OnIcalEntryClicked(null))
+        }
+    }
+
     LaunchedEffect(state.isSearchBarExpanded) {
         if (state.isSearchBarExpanded) {
             searchBarFocusRequester.requestFocus()
@@ -336,10 +343,7 @@ fun ListScreenRoot(
 
                 Box(
                     modifier = Modifier
-                        .padding(
-                            top = paddingValues.calculateTopPadding()-8.dp,
-                            bottom = paddingValues.calculateBottomPadding()
-                        )
+                        .padding(paddingValues)
                         .fillMaxSize(),
                     contentAlignment = Alignment.BottomCenter
                 ) {
@@ -408,29 +412,30 @@ fun ListScreenRoot(
                             modifier = Modifier.fillMaxSize()
                         ) {
 
-                            if (listViewModel.spectacledVariant == SpectacledVariant.JOURNALS) {
-                                JournalsListScreen(
-                                    state = state,
-                                    onAction = { action ->
-                                        when (action) {
-                                            is ListAction.OnIcalEntryClicked -> onNavigate(IcalEntryDetails(action.id))
-                                            else -> listViewModel.onAction(action)
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                ListScreen(
-                                    state = state,
-                                    dragAndDropList = listViewModel.dragAndDropList,
-                                    onAction = { action ->
-                                        when (action) {
-                                            is ListAction.OnIcalEntryClicked -> onNavigate(IcalEntryDetails(action.id))
-                                            else -> listViewModel.onAction(action)
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
-                                )
+                            when(listViewModel.spectacledVariant) {
+                                SpectacledVariant.JOURNALS -> {
+                                    JournalsListJournals(
+                                        state = state,
+                                        onAction = { action -> listViewModel.onAction(action) },
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                                SpectacledVariant.NOTES -> {
+                                    ListScreenNotes(
+                                        state = state,
+                                        dragAndDropList = listViewModel.dragAndDropList,
+                                        onAction = { action -> listViewModel.onAction(action) },
+                                        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
+                                    )
+                                }
+                                SpectacledVariant.TASKS -> {
+                                    ListScreenTasks(
+                                        state = state,
+                                        dragAndDropList = listViewModel.dragAndDropList,
+                                        onAction = { action -> listViewModel.onAction(action) },
+                                        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
                             }
                         }
 

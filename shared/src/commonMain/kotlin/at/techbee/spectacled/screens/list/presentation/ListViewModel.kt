@@ -17,6 +17,7 @@ import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
@@ -158,7 +159,7 @@ class ListViewModel(
                 updateList(state.listSortedBy, state.listSortedByAscending, state.searchQuery, action.category)
             }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(state.calendar.id))
-            is ListAction.OnIcalEntryClicked -> { }   // handled in IcalEntryListScreen
+            is ListAction.OnIcalEntryClicked -> {  _state.value = _state.value.copy(navigateToIcalEntryId = action.id) }
             is ListAction.OnSortedByChanged -> {
                 updateList(action.listSortedBy, action.listSortedByAscending, _state.value.searchQuery, _state.value.searchCategory)
                 userAppPreferencesStore.listSortedBy = action.listSortedBy
@@ -209,6 +210,7 @@ class ListViewModel(
             is ListAction.OnUpdateCategoryOfSelected -> { onUpdateCategoryOfSelectedItems(action.addCategory, action.removeCategory) }
             is ListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
             is ListAction.OnGoToSelectedDate -> { onGoToDate(action.selectedDate) }
+            is ListAction.OnToggleProgress -> { onUpdateProgress(action.icalEntryId) }
         }
     }
 
@@ -305,6 +307,36 @@ class ListViewModel(
                 }
             }
             //platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
+        }
+    }
+
+    private fun onUpdateProgress(icalEntryId: Long) {
+
+        viewModelScope.launch {
+
+            val icalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryById(icalEntryId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+
+            val newPercent = if(icalEntry.percentComplete in 0L .. 99L) 100L else 0L
+
+            icalEntry.copy(
+                percentComplete = newPercent,
+                status = when(newPercent) {
+                    0L -> null
+                    in 1L..99L -> Status.IN_PROCESS
+                    100L -> Status.COMPLETED
+                    else -> icalEntry.status
+                },
+                lastModified = IcsDateTime.now(),
+                syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+            ).toDto().let { copyDto ->
+                getDatabase().icalentry_dtoQueries.updateProgress(
+                    newPercent = copyDto.percentComplete,
+                    newStatus = copyDto.status,
+                    lastModified = copyDto.lastModified,
+                    syncState = copyDto.syncState,
+                    id = copyDto.id
+                )
+            }
         }
     }
 
