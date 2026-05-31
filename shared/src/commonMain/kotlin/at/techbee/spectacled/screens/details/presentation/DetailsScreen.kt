@@ -5,6 +5,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -25,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
@@ -164,24 +167,36 @@ fun DetailsScreen(
             }
         }
 
-        BasicTextField(
-            value = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) stringResource(Res.string.summary) else state.icalEntry.summary
-                ?: "",
-            onValueChange = {
-                onAction(DetailsAction.OnUpdateSummary(it))
-            },
-            textStyle = MaterialTheme.typography.headlineMedium.copy(
-                color = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-            ),
-            enabled = state.allowEditing(),
-            visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
-                .onFocusChanged {
-                    summaryIsFocused = it.isFocused
-                }
-        )
+        ) {
+
+            BasicTextField(
+                value = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) stringResource(Res.string.summary) else state.icalEntry.summary
+                    ?: "",
+                onValueChange = {
+                    onAction(DetailsAction.OnUpdateSummary(it))
+                },
+                textStyle = MaterialTheme.typography.headlineMedium.copy(
+                    color = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                ),
+                enabled = state.allowEditing(),
+                visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
+                modifier = Modifier.onFocusChanged {
+                        summaryIsFocused = it.isFocused
+                    }
+                    .weight(1f)
+            )
+
+            if(state.icalEntry.isTask()) {
+                TriStateCheckbox(
+                    state = state.icalEntry.getProgressTriState(),
+                    onClick = { onAction(DetailsAction.OnUpdateProgress(if(state.icalEntry.percentComplete < 100) 100 else 0))}
+                )
+            }
+        }
 
         BasicTextField(
             value = if (!descriptionIsFocused && state.icalEntry.description.isNullOrEmpty()) stringResource(Res.string.description) else state.icalEntry.description
@@ -241,6 +256,24 @@ private fun ListScreen_with_dtstart_and_timezone_Preview() {
             icalEntry = IcalEntry.getSampleJournal().copy(
                 dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna")),
                 status = Status.DRAFT
+            ),
+            originalIcalEntry = IcalEntry.getSampleIcalEntry()
+        ),
+        onAction = {},
+        modifier = Modifier.fillMaxHeight()
+    )
+}
+
+@Preview
+@Composable
+private fun ListScreen_task_Preview() {
+    DetailsScreen(
+        state = DetailsState(
+            icalEntry = IcalEntry.getSampleIcalEntry().copy(
+                calendarComponent = CalendarComponent.VTODO,
+                dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                status = Status.IN_PROCESS,
+                percentComplete = 50
             ),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
         ),

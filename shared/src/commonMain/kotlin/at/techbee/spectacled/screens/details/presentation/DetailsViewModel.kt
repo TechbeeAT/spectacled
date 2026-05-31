@@ -234,10 +234,13 @@ class DetailsViewModel(
             DetailsAction.OnRestoreEntry -> onRestoreEntry()
             is DetailsAction.OnShowDatePickerBottomSheet -> { _state = _state.copy(showDatePickerBottomSheet = action.show) }
             is DetailsAction.OnShowTimePickerBottomSheet -> { _state = _state.copy(showTimePickerBottomSheet = action.show) }
+            is DetailsAction.OnShowJournalStatusPickerBottomSheet -> { _state = _state.copy(showJournalStatusPickerBottomSheet = action.show) }
+            is DetailsAction.OnShowTaskStatusProgressPickerBottomSheet -> { _state = _state.copy(showTaskStatusProgressPickerBottomSheet = action.show) }
             is DetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
             DetailsAction.OnShare -> onShare()
             is DetailsAction.OnPin -> { onPinIcalEntry(action.pin) }
             is DetailsAction.OnUpdateStatus -> { onUpdateStatus(action.status) }
+            is DetailsAction.OnUpdateProgress -> { onUpdateTaskProgress(action.percent) }
         }
     }
 
@@ -310,10 +313,42 @@ class DetailsViewModel(
         )
     }
 
-    private fun onUpdateStatus(status: Status) {
+    private fun onUpdateStatus(status: Status?) {
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(
                 status = status,
+                percentComplete = if(state.icalEntry.isTask()) {
+                    when(status) {
+                        Status.COMPLETED -> 100L
+                        Status.IN_PROCESS -> when(_state.icalEntry.percentComplete) {
+                            0L -> 1L
+                            in 1L .. 99L -> _state.icalEntry.percentComplete
+                            100L -> 99L
+                            else -> _state.icalEntry.percentComplete
+                        }
+                        Status.NEEDS_ACTION -> 0L
+                        else -> _state.icalEntry.percentComplete
+                    }
+                } else 0,
+                lastModified = IcsDateTime.now(),
+                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                    SyncState.USER_DECIDED_CLIENT_WINS
+                else
+                    SyncState.LOCAL_MODIFIED
+            )
+        )
+    }
+
+    private fun onUpdateTaskProgress(percent: Long) {
+        _state = _state.copy(
+            icalEntry = _state.icalEntry.copy(
+                status = when(percent) {
+                    0L -> if(state.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
+                    in 1L..99L -> Status.IN_PROCESS
+                    100L -> Status.COMPLETED
+                    else -> null
+                },
+                percentComplete = percent,
                 lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                     SyncState.USER_DECIDED_CLIENT_WINS

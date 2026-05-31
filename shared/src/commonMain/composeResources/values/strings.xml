@@ -144,6 +144,7 @@
     <string name="theme_dark">Dark</string>
 
     <string name="status">Status</string>
+    <string name="status_no_status">No status</string>
     <string name="status_final">Final</string>
     <string name="status_draft">Draft</string>
     <string name="status_cancelled">Cancelled</string>

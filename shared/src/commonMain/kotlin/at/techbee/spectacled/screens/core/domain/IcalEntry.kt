@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -116,6 +117,17 @@ data class IcalEntry(
 
     fun isNote() = calendarComponent == CalendarComponent.VJOURNAL && dtStart == null
     fun isJournal() = calendarComponent == CalendarComponent.VJOURNAL && dtStart != null
+    fun isTask() = calendarComponent == CalendarComponent.VTODO
+
+    fun getProgressTriState() = when {
+        percentComplete == 0L -> ToggleableState.Off
+        percentComplete in 1L .. 99L -> ToggleableState.Indeterminate
+        percentComplete == 100L -> ToggleableState.On
+        status == null || status == Status.NEEDS_ACTION -> ToggleableState.Off
+        status == Status.IN_PROCESS -> ToggleableState.Indeterminate
+        status == Status.COMPLETED -> ToggleableState.On
+        else -> ToggleableState.Indeterminate   // undefined
+    }
 
     @Composable
     fun getAnnotatedStringForShare(): AnnotatedString {

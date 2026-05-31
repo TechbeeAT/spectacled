@@ -89,9 +89,8 @@ enum class SpectacledVariant(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
-@Preview
 fun SpectacledApp(
-    spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES,
+    spectacledVariant: SpectacledVariant,
     initialCalendarId: Long? = null,
     initialIcalEntryId: Long? = null
 ) {
@@ -224,5 +223,16 @@ fun SpectacledApp(
                 }
             }
         }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
+@Composable
+@Preview
+private fun SpectacledApp_Preview() {
+    val spectacledVariant = SpectacledVariant.NOTES
+    AppTheme(spectacledVariant = spectacledVariant) {
+        SpectacledApp(spectacledVariant = spectacledVariant)
     }
 }

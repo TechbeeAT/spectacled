@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,15 +64,7 @@ fun TaskListItem(
         leadingIcon = { dragHandle() },
         trailingIcon = {
             TriStateCheckbox(
-                state = when {
-                    icalEntry.percentComplete == 0L -> ToggleableState.Off
-                    icalEntry.percentComplete in 1L .. 99L -> ToggleableState.Indeterminate
-                    icalEntry.percentComplete == 100L -> ToggleableState.On
-                    icalEntry.status == null || icalEntry.status == Status.NEEDS_ACTION -> ToggleableState.Off
-                    icalEntry.status == Status.IN_PROCESS -> ToggleableState.Indeterminate
-                    icalEntry.status == Status.COMPLETED -> ToggleableState.On
-                    else -> ToggleableState.Indeterminate   // undefined
-                },
+                state = icalEntry.getProgressTriState(),
                 onClick = {
                     onToggleProgress()
                 })

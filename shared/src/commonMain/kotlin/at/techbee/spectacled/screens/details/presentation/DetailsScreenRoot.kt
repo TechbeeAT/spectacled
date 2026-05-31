@@ -9,20 +9,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -32,14 +31,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
@@ -52,7 +49,9 @@ import at.techbee.spectacled.screens.details.presentation.components.CategorySel
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DetailsTopBar
+import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
+import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.TimePickerBottomSheet
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import at.techbee.spectacled.theme.getThemeForColoredSurfaces
@@ -150,6 +149,26 @@ fun DetailsScreenRoot(
         )
     }
 
+    if(detailsState.showJournalStatusPickerBottomSheet) {
+        JournalStatusPickerBottomSheet(
+            status = detailsState.icalEntry.status,
+            sheetState = rememberModalBottomSheetState(),
+            onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
+            onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(false)) }
+        )
+    }
+
+    if(detailsState.showTaskStatusProgressPickerBottomSheet) {
+        TaskStatusProgressPickerBottomSheet(
+            status = detailsState.icalEntry.status,
+            percentComplete = detailsState.icalEntry.percentComplete,
+            sheetState = rememberModalBottomSheetState(),
+            onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
+            onProgressUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateProgress(it)) },
+            onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(false)) }
+        )
+    }
+
     if (detailsState.showDeleteDialog) {
         DeleteIcalEntryDialog(
             icalEntry = detailsState.icalEntry,
@@ -210,15 +229,14 @@ fun DetailsScreenRoot(
                             )
                         }
 
-                        if(detailsViewModel.state.icalEntry.isJournal()) {
-                            var statusDropddownExpanded by remember { mutableStateOf(false) }
+                        if(detailsState.icalEntry.isJournal()) {
 
                             TextButton(
-                                onClick = { statusDropddownExpanded = true },
+                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(!detailsState.showJournalStatusPickerBottomSheet)) },
                                 enabled = detailsState.allowEditing() && !detailsState.isLoading
                             ) {
                                 Icon(
-                                    imageVector = detailsViewModel.state.icalEntry.status?.vectorIcon ?: Status.FINAL.vectorIcon!!,
+                                    imageVector = detailsState.icalEntry.status?.vectorIcon ?: Status.FINAL.vectorIcon!!,
                                     contentDescription = stringResource(Res.string.more),
                                     tint = when {
                                         !detailsState.allowEditing() || detailsState.isLoading -> LocalContentColor.current
@@ -229,35 +247,28 @@ fun DetailsScreenRoot(
                                         else -> LocalContentColor.current
                                     }
                                 )
+                            }
+                        }
 
-                                if(statusDropddownExpanded) {
+                        if(detailsState.icalEntry.isTask()) {
 
-                                    DropdownMenu(
-                                        expanded = statusDropddownExpanded,
-                                        onDismissRequest = { statusDropddownExpanded = false }
-                                    ) {
-                                        setOf(Status.FINAL, Status.DRAFT, Status.CANCELLED).forEach { status ->
-                                            DropdownMenuItem(
-                                                leadingIcon = { status.vectorIcon?.let { Icon(status.vectorIcon, stringResource(status.stringRes)) } },
-                                                text = { Text(stringResource(status.stringRes)) },
-                                                onClick = {
-                                                    detailsViewModel.onAction(DetailsAction.OnUpdateStatus(status))
-                                                    statusDropddownExpanded = false
-                                                },
-                                                colors = when(status) {
-                                                    Status.FINAL -> MenuDefaults.itemColors().copy(
-                                                        textColor = MaterialTheme.colorScheme.primary,
-                                                        leadingIconColor = MaterialTheme.colorScheme.primary
-                                                    )
-                                                    Status.DRAFT -> MenuDefaults.itemColors().copy(
-                                                        textColor = MaterialTheme.colorScheme.error,
-                                                        leadingIconColor = MaterialTheme.colorScheme.error
-                                                    )
-                                                    else -> MenuDefaults.itemColors()
-                                                }
-                                            )
-                                        }
-                                    }
+                            TextButton(
+                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
+                                enabled = detailsState.allowEditing() && !detailsState.isLoading
+                            ) {
+
+                                Box(contentAlignment = Alignment.Center) {
+
+                                    Text(
+                                        text = detailsState.icalEntry.percentComplete.toString(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontSize = 8.sp
+                                    )
+
+                                    CircularProgressIndicator(
+                                        progress = { detailsState.icalEntry.percentComplete.toFloat()/100 },
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 }
                             }
                         }
