@@ -74,7 +74,7 @@ fun ListItem(
         if (icalEntry.dtStart != null && showDayBlock)
             DayBlock(
                 icsDateTime = icalEntry.dtStart,
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(8.dp).width(28.dp)
             )
 
         SpecialRoundedCard(
