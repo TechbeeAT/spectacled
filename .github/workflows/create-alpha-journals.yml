@@ -50,6 +50,6 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
           packageName: at.techbee.spectacled.journals
-          releaseFiles: app/release/*.aab
+          releaseFiles: release/*.aab
           track: internal
           status: completed
