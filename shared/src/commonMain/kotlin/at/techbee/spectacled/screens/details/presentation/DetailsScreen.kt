@@ -1,7 +1,6 @@
 package at.techbee.spectacled.screens.details.presentation
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -15,17 +14,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
-import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.MoreTime
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,17 +28,16 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
+import at.techbee.spectacled.screens.details.presentation.components.DateSelectionRow
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_time
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.summary
@@ -67,76 +57,43 @@ fun DetailsScreen(
         modifier = modifier.verticalScroll(rememberScrollState())
     ) {
 
-        state.icalEntry.dtStart?.let { dtStart ->
+        if(state.icalEntry.isJournal()) {
+            DateSelectionRow(
+                icsDateTime = state.icalEntry.dtStart,
+                enabled = state.allowEditing(),
+                allowNoDate = false,
+                iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
+                suggestedTimezones = state.latestUsedTimezones,
+                onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) }
+            )
 
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(8.dp)
-            ) {
-                AssistChip(
-                    onClick = { onAction(DetailsAction.OnShowDatePickerBottomSheet(true)) },
-                    leadingIcon = { Icon(Icons.Outlined.CalendarToday, null) },
-                    label = { Text(PlatformInstantFormatter(dtStart).formatLocalizedDate()) },
-                    colors = AssistChipDefaults.assistChipColors()
-                        .copy(leadingIconContentColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary)
-                )
+            HorizontalDivider(modifier = Modifier.padding(4.dp))
 
-                AssistChip(
-                    onClick = { onAction(DetailsAction.OnShowTimePickerBottomSheet(true)) },
-                    leadingIcon = {
-                        if (!dtStart.isDateOnly)
-                            Icon(Icons.Outlined.Schedule, null)
-                    },
-                    label = {
-                        Crossfade(dtStart.isDateOnly) { dateOnly ->
-                            if (dateOnly) {
-                                Icon(
-                                    imageVector = Icons.Outlined.MoreTime,
-                                    contentDescription = stringResource(Res.string.add_time),
-                                    tint = state.icalEntry.color ?: MaterialTheme.colorScheme.primary
-                                )
-                            } else {
-                                Column {
-                                    AnimatedVisibility(dtStart.timeZone != null) {
-                                        Text(
-                                            text = dtStart.timeZone?.id ?: "",
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
-                                    Text(PlatformInstantFormatter(dtStart).formatLocalizedTime())
-                                }
-                            }
-                        }
-                    },
-                    colors = AssistChipDefaults.assistChipColors()
-                        .copy(leadingIconContentColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary)
-                )
+        } else if (state.icalEntry.isTask()) {
+            DateSelectionRow(
+                icsDateTime = state.icalEntry.dtStart,
+                enabled = state.allowEditing(),
+                allowNoDate = true,
+                iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
+                suggestedTimezones = state.latestUsedTimezones,
+                onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) },
+                headerText = "Start"
+            )
 
-                AnimatedVisibility(!dtStart.isDateOnly && dtStart.timeZone != null) {
-                    AssistChip(
-                        onClick = { /* disabled, info only */  },
-                        enabled = false,
-                        leadingIcon = {
-                            Icon(Icons.Outlined.Language, null)
-                        },
-                        label = {
-                            Column {
-                                Text(
-                                    text = TimeZone.currentSystemDefault().id,
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                                Text(
-                                    text = PlatformInstantFormatter(dtStart.copy(timeZone = TimeZone.currentSystemDefault())).formatLocalizedDateTime()
-                                )
-                            }
-                        },
-                        colors = AssistChipDefaults.assistChipColors()
-                            .copy(leadingIconContentColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary)
-                    )
-                }
-            }
-            HorizontalDivider(modifier = Modifier.fillMaxWidth())
+            HorizontalDivider(modifier = Modifier.padding(4.dp))
+
+            DateSelectionRow(
+                icsDateTime = state.icalEntry.due,
+                enabled = state.allowEditing(),
+                allowNoDate = true,
+                iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
+                suggestedTimezones = state.latestUsedTimezones,
+                onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDue(it)) },
+                headerText = "Due"
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(4.dp))
+
         }
 
         AnimatedVisibility(state.icalEntry.categories.isNotEmpty() || state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {

@@ -20,8 +20,6 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val showMoreBottomSheet: Boolean = false,
     val showColorSelectorBottomSheet: Boolean = false,
     val showCategorySelectorBottomSheet: Boolean = false,
-    val showTimePickerBottomSheet: Boolean = false,
-    val showDatePickerBottomSheet: Boolean = false,
     val showJournalStatusPickerBottomSheet: Boolean = false,
     val showTaskStatusProgressPickerBottomSheet: Boolean = false,
 

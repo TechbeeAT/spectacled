@@ -232,11 +232,10 @@ class DetailsViewModel(
             }
             DetailsAction.OnDispose -> onDispose()
             DetailsAction.OnRestoreEntry -> onRestoreEntry()
-            is DetailsAction.OnShowDatePickerBottomSheet -> { _state = _state.copy(showDatePickerBottomSheet = action.show) }
-            is DetailsAction.OnShowTimePickerBottomSheet -> { _state = _state.copy(showTimePickerBottomSheet = action.show) }
             is DetailsAction.OnShowJournalStatusPickerBottomSheet -> { _state = _state.copy(showJournalStatusPickerBottomSheet = action.show) }
             is DetailsAction.OnShowTaskStatusProgressPickerBottomSheet -> { _state = _state.copy(showTaskStatusProgressPickerBottomSheet = action.show) }
             is DetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
+            is DetailsAction.OnUpdateDue -> { onUpdateDue(action.icsDateTime) }
             DetailsAction.OnShare -> onShare()
             is DetailsAction.OnPin -> { onPinIcalEntry(action.pin) }
             is DetailsAction.OnUpdateStatus -> { onUpdateStatus(action.status) }
@@ -374,10 +373,29 @@ class DetailsViewModel(
     }
 
     @OptIn(ExperimentalTime::class)
-    private fun onUpdateDtStart(newDtStart: IcsDateTime) {
+    private fun onUpdateDtStart(newDtStart: IcsDateTime?) {
+
+        if(_state.icalEntry.isJournal() && newDtStart == null)   // for safety only, setting date to null for journals would convert it to a note, not allowed.
+            return
+
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(
                 dtStart = newDtStart,
+                lastModified = IcsDateTime.now(),
+                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                    SyncState.USER_DECIDED_CLIENT_WINS
+                else
+                    SyncState.LOCAL_MODIFIED
+            )
+        )
+    }
+
+    @OptIn(ExperimentalTime::class)
+    private fun onUpdateDue(newDue: IcsDateTime?) {
+
+        _state = _state.copy(
+            icalEntry = _state.icalEntry.copy(
+                due = newDue,
                 lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                     SyncState.USER_DECIDED_CLIENT_WINS

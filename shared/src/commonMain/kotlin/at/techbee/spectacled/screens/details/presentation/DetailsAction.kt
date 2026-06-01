@@ -12,7 +12,8 @@ sealed interface DetailsAction {
     data class OnPin(val pin: Boolean): DetailsAction
     data class OnUpdateColor(val color: Color?): DetailsAction
     data class OnUpdateStatus(val status: Status?): DetailsAction
-    data class OnUpdateDtStart(val icsDateTime: IcsDateTime): DetailsAction
+    data class OnUpdateDtStart(val icsDateTime: IcsDateTime?): DetailsAction
+    data class OnUpdateDue(val icsDateTime: IcsDateTime?): DetailsAction
     data class OnUpdateProgress(val percent: Long): DetailsAction
 
     data class OnSyncConflictUpdateUserDecision(val syncState: SyncState): DetailsAction
@@ -21,8 +22,6 @@ sealed interface DetailsAction {
     data class OnShowDeleteDialog(val show: Boolean): DetailsAction
     data class OnShowColorSelectorBottomSheet(val show: Boolean): DetailsAction
     data class OnShowCategorySelectorBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowTimePickerBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowDatePickerBottomSheet(val show: Boolean): DetailsAction
     data class OnShowJournalStatusPickerBottomSheet(val show: Boolean): DetailsAction
     data class OnShowTaskStatusProgressPickerBottomSheet(val show: Boolean): DetailsAction
 

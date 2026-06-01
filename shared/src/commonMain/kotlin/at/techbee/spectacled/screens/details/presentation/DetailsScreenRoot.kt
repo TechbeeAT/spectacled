@@ -37,14 +37,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
-import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
@@ -52,7 +50,6 @@ import at.techbee.spectacled.screens.details.presentation.components.DetailsTopB
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
-import at.techbee.spectacled.screens.details.presentation.components.TimePickerBottomSheet
 import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 import at.techbee.spectacled.theme.getThemeForColoredSurfaces
 import org.jetbrains.compose.resources.stringResource
@@ -127,25 +124,6 @@ fun DetailsScreenRoot(
             onAction = { action -> detailsViewModel.onAction(action) },
             icalEntry = detailsState.icalEntry,
             canWriteContent = detailsState.allowEditing()
-        )
-    }
-
-    if (detailsState.showDatePickerBottomSheet) {
-        DatePickerBottomSheet(
-            icsDateTime = detailsState.icalEntry.dtStart ?: IcsDateTime.now(),
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            onDateSelected = { detailsViewModel.onAction(DetailsAction.OnUpdateDtStart(it)) },
-            onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowDatePickerBottomSheet(false)) }
-        )
-    }
-
-    if (detailsState.showTimePickerBottomSheet && detailsState.icalEntry.dtStart != null) {
-        TimePickerBottomSheet(
-            icsDateTime = detailsState.icalEntry.dtStart,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            suggestedTimezones = detailsState.latestUsedTimezones,
-            onTimeUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateDtStart(it)) },
-            onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowTimePickerBottomSheet(false)) }
         )
     }
 

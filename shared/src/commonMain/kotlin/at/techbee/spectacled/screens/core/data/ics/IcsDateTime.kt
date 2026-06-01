@@ -25,6 +25,11 @@ data class IcsDateTime(
     companion object {
         fun now() = IcsDateTime(Clock.System.now(), false)
 
+        fun today(): IcsDateTime {
+            val todayInstant = Clock.System.now().toLocalDateTime(TimeZone.UTC).date.atStartOfDayIn(TimeZone.UTC)
+            return IcsDateTime(todayInstant, true)
+        }
+
     }
 
     fun toDatePickerMillis(deviceTimeZone: TimeZone): Long {
