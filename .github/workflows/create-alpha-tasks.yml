@@ -1,8 +1,9 @@
-name: Create alpha
+name: Create alpha spectacled Tasks
 on:
   push:
     tags:
       - 'v*alhpa*'
+  workflow_dispatch:
 jobs:
   build:
     name: Create alpha
