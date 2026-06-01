@@ -1,0 +1,27 @@
+name: Unit tests
+on: push
+jobs:
+  test:
+    name: Tests without emulator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Setup Gradle
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: JVM tests and androidLint
+        run: ./gradlew :shared:cleanJvmTest :shared:jvmTest :androidJournalsApp:lintDebug :androidNotesApp:lintDebug :androidTasksApp:lintDebug
+      - name: Archive results
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results2
+          path: |
+            app/build/outputs/lint*
+            app/build/reports
