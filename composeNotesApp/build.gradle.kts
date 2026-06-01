@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
-    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -125,15 +124,6 @@ compose.desktop {
             linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_png.png")) }
             windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_ico.ico")) }
             macOS { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_icns.icns")) }
-        }
-    }
-}
-
-sqldelight {
-    databases {
-        create("SpectacledDatabase") {
-            packageName.set("at.techbee.spectacled.notes.db")
-            generateAsync.set(true)
         }
     }
 }
