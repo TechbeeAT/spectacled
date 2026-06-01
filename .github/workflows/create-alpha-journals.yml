@@ -2,7 +2,7 @@ name: Create alpha spectacled Journals
 on:
   push:
     tags:
-      - 'v*alhpa*'
+      - 'v*alpha*'
   workflow_dispatch:
 jobs:
   build:
