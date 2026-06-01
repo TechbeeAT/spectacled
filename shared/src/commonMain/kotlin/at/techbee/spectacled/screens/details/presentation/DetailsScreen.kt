@@ -84,7 +84,7 @@ fun DetailsScreen(
                 headerText = stringResource(Res.string.date_start), 
                 selectableDates = if (state.icalEntry.due == null) DatePickerDefaults.AllDates else object : SelectableDates {
                     override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                        return utcTimeMillis <= (state.icalEntry.due.instant.toEpochMilliseconds())
+                        return utcTimeMillis < state.icalEntry.due.toDatePickerMillis(TimeZone.currentSystemDefault())
                     }
                 }
             )
@@ -101,7 +101,7 @@ fun DetailsScreen(
                 headerText = stringResource(Res.string.date_due),
                 selectableDates = if (state.icalEntry.dtStart == null) DatePickerDefaults.AllDates else object : SelectableDates {
                     override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                        return utcTimeMillis >= (state.icalEntry.dtStart.instant.toEpochMilliseconds())
+                        return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis(TimeZone.currentSystemDefault())
                     }
                 }
             )

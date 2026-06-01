@@ -62,7 +62,10 @@ fun DateSelectionRow(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             allowNoDate = allowNoDate,
             selectableDates = selectableDates,
-            onDateSelected = { onIcsDateTimeUpdated(it) },
+            onDateSelected = {
+                if(it == null || selectableDates.isSelectableDate(it.instant.toEpochMilliseconds()))
+                    onIcsDateTimeUpdated(it)
+            },
             onDismiss = { showDatePickerBottomSheet = false }
         )
     }
