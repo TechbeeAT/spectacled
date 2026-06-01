@@ -21,7 +21,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Prepare keystore
-        run: echo ${{ secrets.android_keystore_base64 }} | base64 -d >$GITHUB_WORKSPACE/keystore.jks
+        run: echo "${{ secrets.android_keystore_base64 }}" | base64 -d > "$GITHUB_WORKSPACE/keystore.jks"
+
+      - name: Verify keystore
+        run: |
+          ls -lh "$GITHUB_WORKSPACE/keystore.jks"
+          keytool -list \
+            -keystore "$GITHUB_WORKSPACE/keystore.jks" \
+            -storepass "${{ secrets.android_keystore_password }}"
     
       - name: Build app bundle release (AAB) for Gplay
         run: ./gradlew androidJournalsApp:bundleRelease
