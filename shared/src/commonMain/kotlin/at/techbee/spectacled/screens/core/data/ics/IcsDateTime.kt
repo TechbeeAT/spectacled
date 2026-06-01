@@ -30,6 +30,11 @@ data class IcsDateTime(
             return IcsDateTime(todayInstant, true)
         }
 
+        fun todayAtStartOfDay(): IcsDateTime {
+            val todayInstant = Clock.System.now().toLocalDateTime(TimeZone.UTC).date.atStartOfDayIn(TimeZone.UTC)
+            return IcsDateTime(todayInstant, false)
+        }
+
     }
 
     fun toDatePickerMillis(deviceTimeZone: TimeZone): Long {
@@ -111,6 +116,23 @@ data class IcsDateTime(
         return this.copy(
             instant = local.toInstant(newZone ?: TimeZone.UTC),
             timeZone = newZone
+        )
+    }
+    
+    fun asDateOnly(): IcsDateTime {
+        val localDate = toLocalDateTime().date
+        return IcsDateTime(
+            instant = localDate.atStartOfDayIn(TimeZone.UTC),
+            isDateOnly = true,
+            timeZone = null
+        )
+    }
+
+    fun asDateTime(): IcsDateTime {
+        val localDate = toLocalDateTime().date
+        return this.copy(
+            instant = localDate.atStartOfDayIn(effectiveZone()),
+            isDateOnly = false
         )
     }
 }

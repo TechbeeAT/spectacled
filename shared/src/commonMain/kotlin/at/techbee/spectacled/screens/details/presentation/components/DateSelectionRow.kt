@@ -44,6 +44,7 @@ fun DateSelectionRow(
     icsDateTime: IcsDateTime?,
     enabled: Boolean,
     allowNoDate: Boolean,
+    initializeWithDateOnly: Boolean,
     iconColor: Color?,
     suggestedTimezones: List<TimeZone>,
     onIcsDateTimeUpdated: (IcsDateTime?) -> Unit,
@@ -58,7 +59,7 @@ fun DateSelectionRow(
 
     if (showDatePickerBottomSheet) {
         DatePickerBottomSheet(
-            icsDateTime = icsDateTime ?: IcsDateTime.today(),
+            icsDateTime = icsDateTime ?: if(initializeWithDateOnly) IcsDateTime.today() else IcsDateTime.todayAtStartOfDay(),
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             allowNoDate = allowNoDate,
             selectableDates = selectableDates,
@@ -195,6 +196,7 @@ private fun DateSelectionRow_no_date_Preview() {
         enabled = true,
         iconColor = null,
         allowNoDate = true,
+        initializeWithDateOnly = false,
         suggestedTimezones = emptyList(),
         onIcsDateTimeUpdated = {}
     )
@@ -208,6 +210,7 @@ private fun DateSelectionRow_date_only_Preview() {
         enabled = true,
         iconColor = null,
         allowNoDate = true,
+        initializeWithDateOnly = false,
         suggestedTimezones = emptyList(),
         onIcsDateTimeUpdated = {}
     )
@@ -221,6 +224,7 @@ private fun DateSelectionRow_date_time_Preview() {
         enabled = true,
         iconColor = null,
         allowNoDate = true,
+        initializeWithDateOnly = false,
         suggestedTimezones = emptyList(),
         onIcsDateTimeUpdated = {},
         headerText = "Due"
@@ -235,6 +239,7 @@ private fun DateSelectionRow_with_timezone_Preview() {
         enabled = true,
         iconColor = null,
         allowNoDate = true,
+        initializeWithDateOnly = false,
         suggestedTimezones = emptyList(),
         onIcsDateTimeUpdated = {}
     )

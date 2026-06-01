@@ -378,9 +378,20 @@ class DetailsViewModel(
         if(_state.icalEntry.isJournal() && newDtStart == null)   // for safety only, setting date to null for journals would convert it to a note, not allowed.
             return
 
+        // make sure dtstart and due have the same format (all day or both with time)
+        val newDue = _state.icalEntry.due?.let {
+            if(newDtStart?.isDateOnly == true && !it.isDateOnly)
+                it.asDateOnly()
+            else if(newDtStart?.isDateOnly == false && it.isDateOnly)
+                it.asDateTime()
+            else
+                it
+        }
+
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(
                 dtStart = newDtStart,
+                due = newDue,
                 lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                     SyncState.USER_DECIDED_CLIENT_WINS
@@ -393,8 +404,19 @@ class DetailsViewModel(
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDue(newDue: IcsDateTime?) {
 
+        // make sure dtstart and due have the same format (all day or both with time)
+        val newDtStart = _state.icalEntry.dtStart?.let {
+            if(newDue?.isDateOnly == true && !it.isDateOnly)
+                it.asDateOnly()
+            else if(newDue?.isDateOnly == false && it.isDateOnly)
+                it.asDateTime()
+            else
+                it
+        }
+
         _state = _state.copy(
             icalEntry = _state.icalEntry.copy(
+                dtStart = newDtStart,
                 due = newDue,
                 lastModified = IcsDateTime.now(),
                 syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
