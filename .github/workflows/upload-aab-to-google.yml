@@ -21,28 +21,65 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Prepare keystore
-        run: echo ${{ secrets.android_keystore_base64 }} | base64 -d >$GITHUB_WORKSPACE/keystore.jks
+        run: echo "${{ secrets.android_keystore_base64 }}" | base64 -d > "$GITHUB_WORKSPACE/keystore.jks"
+
+      - name: Verify keystore
+        run: |
+          ls -lh "$GITHUB_WORKSPACE/keystore.jks"
+          keytool -list \
+            -keystore "$GITHUB_WORKSPACE/keystore.jks" \
+            -storepass "${{ secrets.android_keystore_password }}"
     
-      - name: Build app bundle release (AAB) for Gplay
+      - name: Build spectacled Journals app bundle release (AAB) for Gplay
         run: ./gradlew androidJournalsApp:bundleRelease
         env:
           ANDROID_KEYSTORE: ${{ github.workspace }}/keystore.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
           ANDROID_KEY_ALIAS_JOURNALS: ${{ secrets.android_key_alias_journals }}
           ANDROID_KEY_PASSWORD_JOURNALS: ${{ secrets.android_key_password_journals }}
-          ANDROID_KEY_ALIAS_NOTES: ${{ secrets.android_key_alias_notes }}
-          ANDROID_KEY_PASSWORD_NOTES: ${{ secrets.android_key_password_notes }}
-          ANDROID_KEY_ALIAS_TASKS: ${{ secrets.android_key_alias_tasks }}
-          ANDROID_KEY_PASSWORD_TASKS: ${{ secrets.android_key_password_tasks }}
           #CROWDIN_API_KEY: ${{ secrets.crowdin_api_key }}
           #GOOGLE_GEO_API_KEY: ${{ secrets.google_geo_api_key }}
           #GH_CONTRIBUTORS_API_KEY: ${{ secrets.gh_contributors_api_key }}
 
-      - name: Upload jtxBoard-gplay to Google Play
+      - name: Build spectacled Notes app bundle release (AAB) for Gplay
+        run: ./gradlew androidNotesApp:bundleRelease
+        env:
+          ANDROID_KEYSTORE: ${{ github.workspace }}/keystore.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
+          ANDROID_KEY_ALIAS_NOTES: ${{ secrets.android_key_alias_notes }}
+          ANDROID_KEY_PASSWORD_NOTES: ${{ secrets.android_key_password_notes }}
+
+      - name: Build spectacled Tasks app bundle release (AAB) for Gplay
+        run: ./gradlew androidTasksApp:bundleRelease
+        env:
+          ANDROID_KEYSTORE: ${{ github.workspace }}/keystore.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
+          ANDROID_KEY_ALIAS_TASKS: ${{ secrets.android_key_alias_tasks }}
+          ANDROID_KEY_PASSWORD_TASKS: ${{ secrets.android_key_password_tasks }}
+
+      - name: Upload spectacled Journals to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
           packageName: at.techbee.spectacled.journals
-          releaseFiles: app/release/*.aab
+          releaseFiles: ./androidJournalsApp/build/outputs/bundle/release/*.aab
+          track: internal
+          status: completed
+
+      - name: Upload spectacled Notes to Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
+          packageName: at.techbee.spectacled.notes
+          releaseFiles: ./androidNotesApp/build/outputs/bundle/release/*.aab
+          track: internal
+          status: completed
+
+      - name: Upload spectacled Tasks to Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
+          packageName: at.techbee.spectacled.tasks
+          releaseFiles: ./androidTasksApp/build/outputs/bundle/release/*.aab
           track: internal
           status: completed
