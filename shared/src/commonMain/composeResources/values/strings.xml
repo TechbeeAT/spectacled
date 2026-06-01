@@ -116,6 +116,8 @@
     <string name="no_timezone">No timezone</string>
     <string name="add_date">Add date</string>
     <string name="no_date">No date</string>
+    <string name="date_start">Start</string>
+    <string name="date_due">Due</string>
 
     <string name="delete_entry_x">Delete entry "%1$s"?</string>
     <string name="delete_entry_warning">Are you sure you want to delete this entry?</string>

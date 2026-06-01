@@ -14,9 +14,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,6 +41,8 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
+import spectacled.shared.generated.resources.date_due
+import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.summary
 
@@ -77,7 +81,12 @@ fun DetailsScreen(
                 iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
                 suggestedTimezones = state.latestUsedTimezones,
                 onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) },
-                headerText = "Start"
+                headerText = stringResource(Res.string.date_start), 
+                selectableDates = if (state.icalEntry.due == null) DatePickerDefaults.AllDates else object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        return utcTimeMillis <= (state.icalEntry.due.instant.toEpochMilliseconds())
+                    }
+                }
             )
 
             HorizontalDivider(modifier = Modifier.padding(4.dp))
@@ -89,7 +98,12 @@ fun DetailsScreen(
                 iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
                 suggestedTimezones = state.latestUsedTimezones,
                 onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDue(it)) },
-                headerText = "Due"
+                headerText = stringResource(Res.string.date_due),
+                selectableDates = if (state.icalEntry.dtStart == null) DatePickerDefaults.AllDates else object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        return utcTimeMillis >= (state.icalEntry.dtStart.instant.toEpochMilliseconds())
+                    }
+                }
             )
 
             HorizontalDivider(modifier = Modifier.padding(4.dp))

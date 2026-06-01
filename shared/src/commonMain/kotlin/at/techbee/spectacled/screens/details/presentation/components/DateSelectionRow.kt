@@ -13,9 +13,11 @@ import androidx.compose.material.icons.outlined.MoreTime
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -46,8 +48,9 @@ fun DateSelectionRow(
     suggestedTimezones: List<TimeZone>,
     onIcsDateTimeUpdated: (IcsDateTime?) -> Unit,
     modifier: Modifier = Modifier,
-    headerText: String? = null
-) {
+    headerText: String? = null,
+    selectableDates: SelectableDates = DatePickerDefaults.AllDates
+    ) {
 
     var showDatePickerBottomSheet by remember { mutableStateOf(false) }
     var showTimePickerBottomSheet by remember { mutableStateOf(false) }
@@ -58,6 +61,7 @@ fun DateSelectionRow(
             icsDateTime = icsDateTime ?: IcsDateTime.today(),
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             allowNoDate = allowNoDate,
+            selectableDates = selectableDates,
             onDateSelected = { onIcsDateTimeUpdated(it) },
             onDismiss = { showDatePickerBottomSheet = false }
         )
