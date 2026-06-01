@@ -10,7 +10,7 @@ appBuildNumber = "2"
 appVersionString = "1.0.0"
 appVersionCodename = "Love is all around"
 
-aboutLibraries = "14.2.0"
+aboutLibraries = "14.2.1"
 agp = "9.2.1"
 androidx-activity = "1.13.0"
 androidx-appcompat = "1.7.1"
