@@ -21,6 +21,16 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    signingConfigs {
+        create("spectacled") {
+            storeFile = file(System.getenv("ANDROID_KEYSTORE") ?: "/dev/null")
+            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("ANDROID_KEY_ALIAS_JOURNALS")
+            keyPassword = System.getenv("ANDROID_KEY_PASSWORD_JOURNALS")
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
@@ -29,6 +39,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.findByName("spectacled")
         }
     }
     compileOptions {
