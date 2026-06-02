@@ -47,4 +47,6 @@ actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
     }
 
     actual override fun cancel() { /* nothing to cancel */ }
+
+    actual override fun triggerWidgetUpdate() { /* no widgets on web */ }
 }

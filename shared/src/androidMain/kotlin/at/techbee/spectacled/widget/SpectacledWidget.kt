@@ -16,6 +16,7 @@ import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.CheckBox
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
@@ -27,6 +28,7 @@ import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.updateAppWidgetState
+import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
@@ -56,6 +58,9 @@ import at.techbee.spectacled.screens.core.getAndroidLogoResId
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.shared.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -249,6 +254,21 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     companion object {
         const val CALENDAR_ID_KEY = "calendar_id"
         const val ICAL_ENTRY_ID_KEY = "ical_entry_id"
+
+        fun updateAll(context: Context) {
+            CoroutineScope(Dispatchers.IO).launch {
+                val manager = GlanceAppWidgetManager(context)
+                val glanceIds = manager.getGlanceIds(SpectacledWidget::class.java)
+                glanceIds.forEach { glanceId ->
+                    updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
+                        prefs.toMutablePreferences().apply {
+                            this[longPreferencesKey("last_widget_update")] = System.currentTimeMillis()
+                        }
+                    }
+                }
+                SpectacledWidget().updateAll(context)
+            }
+        }
     }
 }
 

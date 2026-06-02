@@ -1,7 +1,6 @@
 package at.techbee.spectacled.screens.core
 
 import android.content.Context
-import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -61,6 +60,10 @@ actual class PlatformSyncTrigger(val context: Context) : SyncTrigger {
     actual override fun cancel() {
         WorkManager.getInstance(context).cancelUniqueWork(CALDAV_PERIODIC_SYNC_WORKER)
     }
+
+    actual override fun triggerWidgetUpdate() {
+        SpectacledWidget.updateAll(context)
+    }
 }
 
 class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params), KoinComponent {
@@ -86,7 +89,7 @@ class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineW
             )
         }
 
-        SpectacledWidget().updateAll(appContext)
+        SpectacledWidget.updateAll(appContext)
 
         return Result.success()
     }

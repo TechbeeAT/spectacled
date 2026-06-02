@@ -459,6 +459,7 @@ class DetailsViewModel(
 
         viewModelScope.launch { 
             getDatabase().insertOrUpdateIcalEntry(_state.icalEntry)
+            platformSyncTrigger.triggerWidgetUpdate()
         }
         Napier.d("Entry saved")
     }

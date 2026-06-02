@@ -35,6 +35,7 @@ actual class PlatformSyncTrigger : SyncTrigger {
 
     actual override fun schedulePeriodic() { /* handled directly in swift code in iOSApp.swift & AppDelegate.swift */ }
     actual override fun cancel() { /* nothing to cancel in iOS */ }
+    actual override fun triggerWidgetUpdate() { /* no widget implemented yet */ }
 }
 
 

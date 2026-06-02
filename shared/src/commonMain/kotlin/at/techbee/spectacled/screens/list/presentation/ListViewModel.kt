@@ -279,6 +279,7 @@ class ListViewModel(
         viewModelScope.launch {
             _state.value.multiselectItems?.let { getDatabase().icalentry_dtoQueries.markAsDeleted(it) }
             syncTrigger.requestImmediatePush(_state.value.calendar.id)
+            syncTrigger.triggerWidgetUpdate()
             _state.value = _state.value.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false)
         }
     }
@@ -336,6 +337,7 @@ class ListViewModel(
                     syncState = copyDto.syncState,
                     id = copyDto.id
                 )
+                syncTrigger.triggerWidgetUpdate()
             }
         }
     }
