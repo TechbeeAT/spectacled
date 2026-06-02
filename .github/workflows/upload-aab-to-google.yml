@@ -63,7 +63,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
           packageName: at.techbee.spectacled.journals
           releaseFiles: ./androidJournalsApp/build/outputs/bundle/release/*.aab
-          track: internal
+          tracks: internal
           status: completed
 
       - name: Upload spectacled Notes to Google Play
@@ -72,7 +72,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
           packageName: at.techbee.spectacled.notes
           releaseFiles: ./androidNotesApp/build/outputs/bundle/release/*.aab
-          track: internal
+          tracks: internal
           status: completed
 
       - name: Upload spectacled Tasks to Google Play
@@ -81,5 +81,5 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
           packageName: at.techbee.spectacled.tasks
           releaseFiles: ./androidTasksApp/build/outputs/bundle/release/*.aab
-          track: internal
+          tracks: internal
           status: completed
