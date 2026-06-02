@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -54,6 +55,7 @@ fun ListScreenTasks(
 
     LazyColumn(
         state = lazyListState,
+        verticalArrangement = Arrangement.spacedBy(1.dp),
         modifier = modifier
     ) {
 
