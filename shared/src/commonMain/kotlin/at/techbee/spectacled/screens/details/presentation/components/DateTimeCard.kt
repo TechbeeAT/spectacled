@@ -4,28 +4,34 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.EditCalendar
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MoreTime
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -37,10 +43,13 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_date
 import spectacled.shared.generated.resources.add_time
+import spectacled.shared.generated.resources.date
+import spectacled.shared.generated.resources.time
+import spectacled.shared.generated.resources.timezone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateSelectionRow(
+fun DateTimeCard(
     icsDateTime: IcsDateTime?,
     enabled: Boolean,
     allowNoDate: Boolean,
@@ -51,20 +60,26 @@ fun DateSelectionRow(
     modifier: Modifier = Modifier,
     headerText: String? = null,
     selectableDates: SelectableDates = DatePickerDefaults.AllDates
-    ) {
+) {
 
     var showDatePickerBottomSheet by remember { mutableStateOf(false) }
     var showTimePickerBottomSheet by remember { mutableStateOf(false) }
 
+    /*
+    val buttonColors = ButtonDefaults.textButtonColors().copy(
+        contentColor = iconColor?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified
+    )
+     */
+    val buttonColors = ButtonDefaults.textButtonColors()
 
     if (showDatePickerBottomSheet) {
         DatePickerBottomSheet(
-            icsDateTime = icsDateTime ?: if(initializeWithDateOnly) IcsDateTime.today() else IcsDateTime.todayAtStartOfDay(),
+            icsDateTime = icsDateTime ?: if (initializeWithDateOnly) IcsDateTime.today() else IcsDateTime.todayAtStartOfDay(),
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             allowNoDate = allowNoDate,
             selectableDates = selectableDates,
             onDateSelected = {
-                if(it == null || selectableDates.isSelectableDate(it.instant.toEpochMilliseconds()))
+                if (it == null || selectableDates.isSelectableDate(it.instant.toEpochMilliseconds()))
                     onIcsDateTimeUpdated(it)
             },
             onDismiss = { showDatePickerBottomSheet = false }
@@ -81,63 +96,67 @@ fun DateSelectionRow(
         )
     }
 
-    Column(
+    ElevatedCard(
         modifier = modifier
     ) {
 
-        headerText?.let {
-            Text(
-                text = headerText,
-                style = MaterialTheme.typography.labelSmall
-            )
-        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
 
-
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            AssistChip(
+            TextButton(
                 onClick = { showDatePickerBottomSheet = true },
-                leadingIcon = {
-                    if (icsDateTime != null)
-                        Icon(Icons.Outlined.CalendarToday, null)
-                },
-                label = {
-                    Crossfade(icsDateTime != null) { datePresent ->
-                        if (datePresent) {
-                            icsDateTime?.let { Text(PlatformInstantFormatter(icsDateTime).formatLocalizedDate()) }
-                        } else {
-                            Icon(
-                                imageVector = Icons.Outlined.EditCalendar,
-                                contentDescription = stringResource(Res.string.add_date),
-                                tint = iconColor ?: MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                },
                 enabled = enabled,
-                colors = AssistChipDefaults.assistChipColors()
-                    .copy(leadingIconContentColor = iconColor ?: MaterialTheme.colorScheme.primary)
-            )
+                colors = buttonColors
+            ) {
+                Text(
+                    text = headerText ?: "",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.rotate(270f)
+                )
+                Crossfade(icsDateTime != null) { datePresent ->
+                    if (datePresent) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.CalendarToday,
+                                contentDescription = stringResource(Res.string.date)
+                            )
+                            icsDateTime?.let { Text(PlatformInstantFormatter(icsDateTime).formatLocalizedDate()) }
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.EditCalendar,
+                            contentDescription = stringResource(Res.string.add_date)
+                        )
+                    }
+                }
+            }
 
             AnimatedVisibility(icsDateTime != null) {
-                AssistChip(
+                VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 2.dp))
+            }
+
+            AnimatedVisibility(icsDateTime != null) {
+
+                TextButton(
                     onClick = { showTimePickerBottomSheet = true },
-                    leadingIcon = {
-                        if (icsDateTime?.isDateOnly == false)
-                            Icon(Icons.Outlined.Schedule, null)
-                    },
                     enabled = enabled,
-                    label = {
-                        Crossfade(icsDateTime?.isDateOnly == true) { dateOnly ->
-                            if (dateOnly) {
+                    colors = buttonColors
+                ) {
+
+                    Crossfade(icsDateTime?.isDateOnly == false) { timePresent ->
+
+                        if (timePresent) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.MoreTime,
-                                    contentDescription = stringResource(Res.string.add_time),
-                                    tint = iconColor ?: MaterialTheme.colorScheme.primary
+                                    imageVector = Icons.Outlined.Schedule,
+                                    contentDescription = stringResource(Res.string.time)
                                 )
-                            } else {
+
                                 Column {
                                     AnimatedVisibility(icsDateTime?.timeZone != null) {
                                         Text(
@@ -148,21 +167,36 @@ fun DateSelectionRow(
                                     icsDateTime?.let { Text(PlatformInstantFormatter(icsDateTime).formatLocalizedTime()) }
                                 }
                             }
+
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.MoreTime,
+                                contentDescription = stringResource(Res.string.add_time)
+                            )
                         }
-                    },
-                    colors = AssistChipDefaults.assistChipColors()
-                        .copy(leadingIconContentColor = iconColor ?: MaterialTheme.colorScheme.primary)
-                )
+                    }
+                }
             }
 
-            AnimatedVisibility(icsDateTime?.isDateOnly == false && icsDateTime.timeZone != null) {
-                AssistChip(
-                    onClick = { /* disabled, info only */ },
-                    enabled = false,
-                    leadingIcon = {
-                        Icon(Icons.Outlined.Language, null)
-                    },
-                    label = {
+
+            // show time in local timeZone
+            AnimatedVisibility(icsDateTime?.timeZone != null) {
+                VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 2.dp))
+            }
+
+            AnimatedVisibility(icsDateTime?.timeZone != null && icsDateTime.timeZone != TimeZone.currentSystemDefault()) {
+                TextButton(
+                    onClick = {  },
+                    enabled = false // info only
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Language,
+                            contentDescription = stringResource(Res.string.timezone))
+
                         Column {
                             Text(
                                 text = TimeZone.currentSystemDefault().id,
@@ -173,25 +207,39 @@ fun DateSelectionRow(
                                     text = PlatformInstantFormatter(icsDateTime.copy(timeZone = TimeZone.currentSystemDefault())).formatLocalizedDateTime()
                                 )
                             }
-
                         }
-                    },
-                    colors = AssistChipDefaults.assistChipColors()
-                        .copy(leadingIconContentColor = iconColor ?: MaterialTheme.colorScheme.primary)
-                )
+                    }
+                }
             }
         }
     }
+
+
+    /*
+                AnimatedVisibility(icsDateTime?.isDateOnly == false && icsDateTime.timeZone != null) {
+                    AssistChip(
+                        onClick = { /* disabled, info only */ },
+                        enabled = false,
+                        leadingIcon = {
+                            Icon(Icons.Outlined.Language, null)
+                        },
+                        label = {
+
+                        },
+                        colors = AssistChipDefaults.assistChipColors()
+                            .copy(leadingIconContentColor = iconColor ?: MaterialTheme.colorScheme.primary)
+                    )
+                }
+     */
+
+
 }
-
-
-
 
 
 @Preview
 @Composable
-private fun DateSelectionRow_no_date_Preview() {
-    DateSelectionRow(
+private fun DateTimeCard_no_date_Preview() {
+    DateTimeCard(
         icsDateTime = null,
         enabled = true,
         iconColor = null,
@@ -204,8 +252,8 @@ private fun DateSelectionRow_no_date_Preview() {
 
 @Preview
 @Composable
-private fun DateSelectionRow_date_only_Preview() {
-    DateSelectionRow(
+private fun DateTimeCard_date_only_Preview() {
+    DateTimeCard(
         icsDateTime = IcsDateTime.now().copy(isDateOnly = true),
         enabled = true,
         iconColor = null,
@@ -218,8 +266,8 @@ private fun DateSelectionRow_date_only_Preview() {
 
 @Preview
 @Composable
-private fun DateSelectionRow_date_time_Preview() {
-    DateSelectionRow(
+private fun DDateTimeCard_date_time_Preview() {
+    DateTimeCard(
         icsDateTime = IcsDateTime.now(),
         enabled = true,
         iconColor = null,
@@ -233,9 +281,9 @@ private fun DateSelectionRow_date_time_Preview() {
 
 @Preview
 @Composable
-private fun DateSelectionRow_with_timezone_Preview() {
-    DateSelectionRow(
-        icsDateTime = IcsDateTime.now().copy(timeZone = TimeZone.currentSystemDefault()),
+private fun DateTimeCard_with_timezone_Preview() {
+    DateTimeCard(
+        icsDateTime = IcsDateTime.now().copy(timeZone = TimeZone.of(TimeZone.availableZoneIds.first())),
         enabled = true,
         iconColor = null,
         allowNoDate = true,

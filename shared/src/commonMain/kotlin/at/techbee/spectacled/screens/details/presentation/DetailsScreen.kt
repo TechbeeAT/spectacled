@@ -35,7 +35,7 @@ import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
-import at.techbee.spectacled.screens.details.presentation.components.DateSelectionRow
+import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
@@ -61,56 +61,62 @@ fun DetailsScreen(
         modifier = modifier.verticalScroll(rememberScrollState())
     ) {
 
-        if(state.icalEntry.isJournal()) {
-            DateSelectionRow(
-                icsDateTime = state.icalEntry.dtStart,
-                enabled = state.allowEditing(),
-                allowNoDate = false,
-                initializeWithDateOnly = true,
-                iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
-                suggestedTimezones = state.latestUsedTimezones,
-                onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) }
-            )
+        if(state.icalEntry.isTask() || state.icalEntry.isJournal()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (state.icalEntry.isJournal()) {
+                    DateTimeCard(
+                        icsDateTime = state.icalEntry.dtStart,
+                        enabled = state.allowEditing(),
+                        allowNoDate = false,
+                        initializeWithDateOnly = true,
+                        iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
+                        suggestedTimezones = state.latestUsedTimezones,
+                        onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) }
+                    )
 
-            HorizontalDivider(modifier = Modifier.padding(4.dp))
+                    //HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 
-        } else if (state.icalEntry.isTask()) {
-            DateSelectionRow(
-                icsDateTime = state.icalEntry.dtStart,
-                enabled = state.allowEditing(),
-                allowNoDate = true,
-                initializeWithDateOnly = state.icalEntry.due?.isDateOnly != false,  // only when due is NOT date only we initialize with time
-                iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
-                suggestedTimezones = state.latestUsedTimezones,
-                onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) },
-                headerText = stringResource(Res.string.date_start), 
-                selectableDates = if (state.icalEntry.due == null) DatePickerDefaults.AllDates else object : SelectableDates {
-                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                        return utcTimeMillis < state.icalEntry.due.toDatePickerMillis(TimeZone.currentSystemDefault())
-                    }
+                } else if (state.icalEntry.isTask()) {
+                    DateTimeCard(
+                        icsDateTime = state.icalEntry.dtStart,
+                        enabled = state.allowEditing(),
+                        allowNoDate = true,
+                        initializeWithDateOnly = state.icalEntry.due?.isDateOnly != false,  // only when due is NOT date only we initialize with time
+                        iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
+                        suggestedTimezones = state.latestUsedTimezones,
+                        onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) },
+                        headerText = stringResource(Res.string.date_start),
+                        selectableDates = if (state.icalEntry.due == null) DatePickerDefaults.AllDates else object : SelectableDates {
+                            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                                return utcTimeMillis < state.icalEntry.due.toDatePickerMillis(TimeZone.currentSystemDefault())
+                            }
+                        }
+                    )
+
+                    //Spacer(modifier = Modifier.height(4.dp))
+
+                    DateTimeCard(
+                        icsDateTime = state.icalEntry.due,
+                        enabled = state.allowEditing(),
+                        allowNoDate = true,
+                        initializeWithDateOnly = state.icalEntry.dtStart?.isDateOnly != false,  // only when dtStart is NOT date only we initialize with time
+                        iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
+                        suggestedTimezones = state.latestUsedTimezones,
+                        onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDue(it)) },
+                        headerText = stringResource(Res.string.date_due),
+                        selectableDates = if (state.icalEntry.dtStart == null) DatePickerDefaults.AllDates else object : SelectableDates {
+                            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                                return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis(TimeZone.currentSystemDefault())
+                            }
+                        }
+                    )
                 }
-            )
 
-            HorizontalDivider(modifier = Modifier.padding(4.dp))
-
-            DateSelectionRow(
-                icsDateTime = state.icalEntry.due,
-                enabled = state.allowEditing(),
-                allowNoDate = true,
-                initializeWithDateOnly = state.icalEntry.dtStart?.isDateOnly != false,  // only when dtStart is NOT date only we initialize with time
-                iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
-                suggestedTimezones = state.latestUsedTimezones,
-                onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDue(it)) },
-                headerText = stringResource(Res.string.date_due),
-                selectableDates = if (state.icalEntry.dtStart == null) DatePickerDefaults.AllDates else object : SelectableDates {
-                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                        return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis(TimeZone.currentSystemDefault())
-                    }
-                }
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(4.dp))
-
+                HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+            }
         }
 
         AnimatedVisibility(state.icalEntry.categories.isNotEmpty() || state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {
@@ -159,15 +165,15 @@ fun DetailsScreen(
                 enabled = state.allowEditing(),
                 visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
                 modifier = Modifier.onFocusChanged {
-                        summaryIsFocused = it.isFocused
-                    }
+                    summaryIsFocused = it.isFocused
+                }
                     .weight(1f)
             )
 
-            if(state.icalEntry.isTask()) {
+            if (state.icalEntry.isTask()) {
                 TriStateCheckbox(
                     state = state.icalEntry.getProgressTriState(),
-                    onClick = { onAction(DetailsAction.OnUpdateProgress(if(state.icalEntry.percentComplete < 100) 100 else 0))}
+                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (state.icalEntry.percentComplete < 100) 100 else 0)) }
                 )
             }
         }
@@ -192,7 +198,6 @@ fun DetailsScreen(
                 }
         )
     }
-
 
 
 }
