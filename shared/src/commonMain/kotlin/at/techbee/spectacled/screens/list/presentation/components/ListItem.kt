@@ -295,6 +295,24 @@ private fun ListItem_withTime_Preview() {
     )
 }
 
+@OptIn(ExperimentalTime::class)
+@Preview
+@Composable
+private fun ListItem_Task_with_dtstart_Preview() {
+    ListItem(
+        icalEntry = IcalEntry.getSampleTask(),
+        isFirst = true,
+        isLast = false,
+        isSelected = false,
+        onClick = {},
+        onLongClick = {},
+        onFilterCategory = {},
+        showDayBlock = false
+    )
+}
+
+
+
 
 
 

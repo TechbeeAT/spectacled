@@ -167,13 +167,13 @@ data class ListState(
     private fun getGroupedMap(icalEntries: List<IcalEntry>) =
         icalEntries.groupBy {
             when (listSortedBy) {
-                ListSortedBy.CREATED -> ListGrouping.getGrouping(it.created)
-                ListSortedBy.LAST_MODIFIED -> ListGrouping.getGrouping(it.lastModified ?: it.created)
-                ListSortedBy.DATE -> ListGrouping.GROUP_NONE
-                ListSortedBy.SUMMARY -> ListGrouping.GROUP_NONE
-                ListSortedBy.DRAGANDDROP -> ListGrouping.GROUP_NONE
-                ListSortedBy.START -> ListGrouping.GROUP_NONE
-                ListSortedBy.DUE -> ListGrouping.GROUP_NONE
+                ListSortedBy.CREATED -> ListGrouping.getGrouping(ListGrouping.createdGroups, it.created)
+                ListSortedBy.LAST_MODIFIED -> ListGrouping.getGrouping(ListGrouping.lastModifiedGroups, it.lastModified ?: it.created)
+                ListSortedBy.DATE -> ListGrouping.GROUP_NO_DATE
+                ListSortedBy.SUMMARY -> ListGrouping.GROUP_NO_DATE
+                ListSortedBy.DRAGANDDROP -> ListGrouping.GROUP_NO_DATE
+                ListSortedBy.START -> ListGrouping.getGrouping(ListGrouping.startGroups, it.dtStart)
+                ListSortedBy.DUE -> ListGrouping.getGrouping(ListGrouping.dueGroups, it.due)
             }
         }
 }

@@ -95,7 +95,7 @@ data class IcalEntry(
 
         fun newJournal() = IcalEntry(dtStart = IcsDateTime.now(), calendarComponent = CalendarComponent.VJOURNAL)
         fun newNote() = IcalEntry(calendarComponent = CalendarComponent.VJOURNAL)
-        fun newTodo() = IcalEntry(calendarComponent = CalendarComponent.VTODO)
+        fun newTask() = IcalEntry(calendarComponent = CalendarComponent.VTODO)
 
         fun getSampleIcalEntry()= IcalEntry(
             summary = sampleParagraphs[0].substring(0, 30),
@@ -110,6 +110,15 @@ data class IcalEntry(
             dtStart = IcsDateTime.now(),
             categories = listOf("Category 1", "Category 2"),
             calendarComponent = CalendarComponent.VJOURNAL
+        )
+
+        fun getSampleTask()= newTask().copy(
+            summary = sampleParagraphs[0].substring(0, 30),
+            description = sampleParagraphs[0],
+            dtStart = IcsDateTime.now(),
+            due = IcsDateTime.now(),
+            categories = listOf("Category 1", "Category 2"),
+            calendarComponent = CalendarComponent.VTODO
         )
 
         fun getRandomUUID() = Uuid.random().toString()

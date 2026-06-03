@@ -58,6 +58,19 @@
     <string name="grouping_last_x_days">Last %1$d days</string>
     <string name="grouping_last_year">Last year</string>
     <string name="grouping_older">Older</string>
+
+    <string name="grouping_due_within_x_hours">Due within %1$d hours</string>
+    <string name="grouping_due_within_x_days">Due within %1$d days</string>
+    <string name="grouping_due_30_plus_days">Due in 30+ days</string>
+    <string name="grouping_overdue">Overdue</string>
+
+    <string name="grouping_start_within_x_hours">Start within %1$d hours</string>
+    <string name="grouping_start_within_x_days">Start within %1$d days</string>
+    <string name="grouping_start_in_30_plus_days">Start in 30+ days</string>
+    <string name="grouping_start_in_past">Start in past</string>
+
+    <string name="grouping_no_date">No date</string>
+
     <string name="trashbin">Trashbin</string>
 
     <string name="search">Search...</string>
