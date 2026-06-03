@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.list.presentation.datastructures
 
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import org.jetbrains.compose.resources.StringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.grouping_last_x_days
@@ -10,8 +11,6 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 enum class ListGrouping(
     val upperThresholdDays: Duration,
@@ -64,12 +63,10 @@ enum class ListGrouping(
     );
 
     companion object {
-        @OptIn(ExperimentalTime::class)
-        fun getGrouping(timestamp: Instant): ListGrouping {
+        fun getGrouping(icsDateTime: IcsDateTime): ListGrouping {
             return entries.find {
-                timestamp in Clock.System.now().minus(it.lowerThresholdDays)..Clock.System.now().minus(it.upperThresholdDays)
+                icsDateTime.toLocalDateTime() in IcsDateTime(Clock.System.now().minus(it.lowerThresholdDays), false).toLocalDateTime() .. IcsDateTime(Clock.System.now().minus(it.upperThresholdDays), false).toLocalDateTime()
             }?: GROUP_NONE
-
         }
     }
 }

@@ -144,24 +144,36 @@ data class ListState(
         when (listSortedBy) {
             ListSortedBy.CREATED -> it.created.instant.toEpochMilliseconds()
             ListSortedBy.LAST_MODIFIED -> it.lastModified?.instant?.toEpochMilliseconds()
-            ListSortedBy.DATE -> it.dtStart?.instant?.toEpochMilliseconds()
-            ListSortedBy.SUMMARY -> it.summary?.uppercase() ?: ""
+            ListSortedBy.DATE -> it.dtStart?.toLocalDateTime()
+            ListSortedBy.START -> it.dtStart?.toLocalDateTime()
+            ListSortedBy.DUE -> it.due?.toLocalDateTime()
+            ListSortedBy.SUMMARY -> it.summary?.uppercase()?: it.description?.uppercase() ?: ""
             ListSortedBy.DRAGANDDROP -> it.orderNo?:-1
         }
     }
 
-    private fun getSortedList(icalEntries: List<IcalEntry>) =
-        if (listSortedByAscending) icalEntries.sortedWith(sortingComparator)
-        else icalEntries.sortedWith(sortingComparator.reversed())
+    private fun getSortedList(icalEntries: List<IcalEntry>) = when(listSortedBy) {
+        ListSortedBy.CREATED, ListSortedBy.LAST_MODIFIED, ListSortedBy.DATE, ListSortedBy.START, ListSortedBy.DUE -> {
+            if (listSortedByAscending) icalEntries.sortedWith(sortingComparator).reversed()
+            else icalEntries.sortedWith(sortingComparator)
+        }
+        ListSortedBy.SUMMARY, ListSortedBy.DRAGANDDROP -> {
+            if (listSortedByAscending) icalEntries.sortedWith(sortingComparator)
+            else icalEntries.sortedWith(sortingComparator).reversed()
+        }
+    }
+
 
     private fun getGroupedMap(icalEntries: List<IcalEntry>) =
         icalEntries.groupBy {
             when (listSortedBy) {
-                ListSortedBy.CREATED -> ListGrouping.getGrouping(it.created.instant)
-                ListSortedBy.LAST_MODIFIED -> ListGrouping.getGrouping(it.lastModified?.instant ?: it.created.instant)
+                ListSortedBy.CREATED -> ListGrouping.getGrouping(it.created)
+                ListSortedBy.LAST_MODIFIED -> ListGrouping.getGrouping(it.lastModified ?: it.created)
                 ListSortedBy.DATE -> ListGrouping.GROUP_NONE
                 ListSortedBy.SUMMARY -> ListGrouping.GROUP_NONE
                 ListSortedBy.DRAGANDDROP -> ListGrouping.GROUP_NONE
+                ListSortedBy.START -> ListGrouping.GROUP_NONE
+                ListSortedBy.DUE -> ListGrouping.GROUP_NONE
             }
         }
 }
