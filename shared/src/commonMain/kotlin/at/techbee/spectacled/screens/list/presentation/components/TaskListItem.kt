@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.DragIndicator
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.Icon
@@ -38,9 +38,10 @@ import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformat
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
+import spectacled.shared.generated.resources.date_due
+import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.no_summary_description
 import spectacled.shared.generated.resources.sync_conflict_detected
-import spectacled.shared.generated.resources.time
 import kotlin.time.ExperimentalTime
 
 @Composable
@@ -121,14 +122,20 @@ fun TaskListItem(
                 ) {
 
                     icalEntry.dtStart?.let {
-                        if (it.isDateOnly)
-                            return@let
-
                         MetaInfoCard(
-                            icon = Icons.Outlined.Schedule,
-                            iconContentDescription = stringResource(Res.string.time),
+                            icon = Icons.Outlined.CalendarToday,
+                            iconContentDescription = stringResource(Res.string.date_start),
                             containerColor = icalEntry.color ?: Color.Unspecified,
-                            text = PlatformInstantFormatter(it).formatLocalizedTime()
+                            text = stringResource(Res.string.date_start) + " " + if(it.isDateOnly) PlatformInstantFormatter(it).formatLocalizedDate() else PlatformInstantFormatter(it).formatLocalizedDateTime()
+                        )
+                    }
+
+                    icalEntry.due?.let {
+                        MetaInfoCard(
+                            icon = Icons.Outlined.CalendarToday,
+                            iconContentDescription = stringResource(Res.string.date_due),
+                            containerColor = icalEntry.color ?: Color.Unspecified,
+                            text = stringResource(Res.string.date_due) + " " + if(it.isDateOnly) PlatformInstantFormatter(it).formatLocalizedDate() else PlatformInstantFormatter(it).formatLocalizedDateTime()
                         )
                     }
 
