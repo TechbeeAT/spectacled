@@ -83,6 +83,8 @@
     <string name="search_add_category">Search/add category</string>
     <string name="delete">Delete</string>
     <string name="remove">Remove</string>
+    <string name="sync_disabled">Sync disabled</string>
+    <string name="sync_enabled">Sync enabled</string>
     <string name="remove_account_x">Remove account "%1$s"?</string>
     <string name="remove_account_warning">Are you sure you want to remove this account? This will remove the account with all its folders.</string>
     <string name="delete_folder_x">Remove folder "%1$s"?</string>

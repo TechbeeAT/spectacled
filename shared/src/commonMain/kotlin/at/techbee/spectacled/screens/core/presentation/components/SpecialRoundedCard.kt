@@ -25,6 +25,7 @@ fun SpecialRoundedCard(
     overrideBottomRoundedCornerSize: Dp? = null,
     isSelected: Boolean = false,
     interactionSource: MutableInteractionSource? = null,
+    enabled: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     colors: CardColors = CardDefaults.cardColors(),
@@ -41,7 +42,8 @@ fun SpecialRoundedCard(
         ),
         colors = colors,
         border = if(isSelected) BorderStroke(3.dp, colors.disabledContentColor) else null,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
+        enabled = enabled
     ) {
         content()
     }
@@ -89,6 +91,7 @@ private fun SpecialRoundedCard_middle_Preview() {
         isLast = false,
         isSelected = false,
         onClick = {},
+        enabled = false,
         content = {
             Text(
                 text = "Hello World",

@@ -20,6 +20,7 @@ import at.techbee.spectacled.screens.account.presentation.components.CalendarCar
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListItem
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import io.ktor.http.Url
@@ -45,6 +46,7 @@ fun AccountListScreen(
         state.principals.forEachIndexed { indexPrincipal, principal ->
 
             val principalHomeCollections = state.homeCollections.filter { it.principalId == principal.id }
+            val principalInEditMode = state.editFoldersOfPrincipal?.id == principal.id
 
             item {
                 PrincipalListItem(
@@ -97,11 +99,14 @@ fun AccountListScreen(
 
                 itemsIndexed(calendars, key = { _, calendar -> calendar.id }) { indexCalendar, calendar ->
 
+                    if(!principalInEditMode && calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
+                        return@itemsIndexed  // skip calendar if disabled unless it's edit mode
+
                     CalendarCard(
                         principal = principal,
                         homeCollection = homeCollection,
                         calendar = calendar,
-                        editEditFoldersModeEnabled = state.editFoldersOfPrincipal?.id == principal.id,
+                        editEditFoldersModeEnabled = principalInEditMode,
                         isFirst = indexCalendar == 0,
                         isLast = indexCalendar == calendars.lastIndex,
                         onAction = onAction,

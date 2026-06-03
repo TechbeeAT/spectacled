@@ -12,20 +12,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.SyncDisabled
 import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,8 +61,11 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.edit
 import spectacled.shared.generated.resources.folders
+import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.open_foldername
 import spectacled.shared.generated.resources.read_only
+import spectacled.shared.generated.resources.sync_disabled
+import spectacled.shared.generated.resources.sync_enabled
 import spectacled.shared.generated.resources.sync_problem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +83,8 @@ fun CalendarCard(
 
     val smallIconSize = 20.dp
 
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
     SpecialRoundedCard(
         overrideTopRoundedCornerSize = if(isFirst) 16.dp else 0.dp,
         overrideBottomRoundedCornerSize = if(isLast) 16.dp else 0.dp,        onClick = {
@@ -77,6 +95,7 @@ fun CalendarCard(
             containerColor = calendar.color ?: Color.Unspecified,
             contentColor = calendar.color?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified
         ),
+        enabled = calendar.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED,
         modifier = modifier,
     ) {
         Row(
@@ -153,6 +172,19 @@ fun CalendarCard(
                 }
             }
 
+            AnimatedVisibility(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED) {
+                IconButton(
+                    onClick = {  },
+                    enabled = false
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.SyncDisabled,
+                        contentDescription = stringResource(Res.string.sync_disabled),
+                        modifier = Modifier.size(smallIconSize)
+                    )
+                }
+            }
+
             AnimatedVisibility(editEditFoldersModeEnabled) {
                 Row {
                     TextButton(
@@ -168,17 +200,69 @@ fun CalendarCard(
                     }
 
                     TextButton(
-                        onClick = {
-                            onAction(AccountListAction.OnShowDeleteCalendarDialog(principal, calendar))
-                        },
+                        onClick = { dropdownExpanded = !dropdownExpanded },
                         colors = ButtonDefaults.textButtonColors().copy(
                             contentColor = calendar.color?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified
-                        ),
-                        enabled = homeCollection.canUnbind()
+                        )
                     ) {
-                            Text(stringResource(Res.string.delete))
-                    }
+                        Icon(Icons.Outlined.MoreVert, stringResource(Res.string.more))
 
+                        DropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false }
+                        ) {
+
+                            DropdownMenuItem(
+                                text = {
+                                    Crossfade(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED) { isDisabled ->
+                                        if(isDisabled)
+                                            Text(stringResource(Res.string.sync_disabled))
+                                        else
+                                            Text(stringResource(Res.string.sync_enabled))
+                                    }
+                                },
+                                leadingIcon = {
+                                    Crossfade(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED) { isDisabled ->
+                                        if (isDisabled)
+                                            Icon(Icons.Outlined.SyncDisabled, stringResource(Res.string.sync_disabled))
+                                        else
+                                            Icon(Icons.Outlined.Sync, stringResource(Res.string.sync_enabled))
+                                    }
+                                },
+                                trailingIcon = {
+                                    Switch(
+                                        checked = calendar.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED,
+                                        onCheckedChange = { checkedState ->
+                                            onAction(AccountListAction.OnToggleSyncEnabled(calendar.id, checkedState))
+                                        },
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    )
+                                },
+                                onClick = {
+                                    if(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
+                                        onAction(AccountListAction.OnToggleSyncEnabled(calendar.id, true))
+                                    else
+                                        onAction(AccountListAction.OnToggleSyncEnabled(calendar.id, false))
+                                },
+                                enabled = true
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.delete)) },
+                                leadingIcon = { Icon(Icons.Outlined.DeleteForever, null) },
+                                onClick = {
+                                    onAction(AccountListAction.OnShowDeleteCalendarDialog(principal, calendar))
+                                },
+                                enabled = homeCollection.canUnbind(),
+                                colors = MenuDefaults.itemColors(
+                                    textColor = MaterialTheme.colorScheme.error,
+                                    leadingIconColor = MaterialTheme.colorScheme.error
+                                )
+                            )
+                        }
+                    }
                 }
             }
 
@@ -253,12 +337,13 @@ private fun FolderCard_no_edit_colored_Preview() {
 
 @Preview
 @Composable
-private fun FolderCard_edit_Preview() {
+private fun FolderCard_edit_disabled_Preview() {
     CalendarCard(
         principal = Principal.getPrincipalForPreview(),
         homeCollection = HomeCollection.getHomeCollectionForPreview(),
         calendar = Calendar.getCalendarForPreview().copy(
-            calDavPrivileges = listOf(CalDavPrivilege.WRITE)
+            calDavPrivileges = listOf(CalDavPrivilege.WRITE),
+            calendarSyncStatus = CalendarSyncStatus(type = CalendarSyncStatusType.DISABLED)
         ),
         editEditFoldersModeEnabled = true,
         isFirst = false,

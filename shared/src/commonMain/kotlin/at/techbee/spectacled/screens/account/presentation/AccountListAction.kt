@@ -38,5 +38,7 @@ sealed interface AccountListAction {
 
     data class OnEditAccountFolders(val principal: Principal?): AccountListAction
 
+    data class OnToggleSyncEnabled(val calendarId: Long, val enabled: Boolean): AccountListAction
+
     data class OnUpdateSnackbar(val message: String?): AccountListAction
 }

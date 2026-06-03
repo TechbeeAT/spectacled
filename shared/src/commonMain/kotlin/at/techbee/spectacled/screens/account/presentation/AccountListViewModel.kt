@@ -32,6 +32,7 @@ import at.techbee.spectacled.screens.core.data.webdav.discoverPrincipalsMultipla
 import at.techbee.spectacled.screens.core.data.webdav.updateCalDavCalendarMultiplatform
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
@@ -124,6 +125,7 @@ class AccountListViewModel(
             AccountListAction.OnDismissUpdatePrincipalPasswordBottomSheet -> { _state.value = _state.value.copy(showUpdatePrincipalPasswordBottomSheet = null) }
             AccountListAction.OnAddLocalCalendar -> addLocalCalendar()
             is AccountListAction.OnShowSettingsBottomSheet -> { _state.value = _state.value.copy(showSettingsBottomSheet = action.show) }
+            is AccountListAction.OnToggleSyncEnabled -> { onToggleSyncEnabled(action.calendarId, action.enabled)}
         }
     }
 
@@ -343,8 +345,19 @@ class AccountListViewModel(
                             is DiscoverCalendarsResult.Success -> {
                                 homeCollection.calDavPrivileges = discoverCalendarsResult.calDavPrivileges
                                 getDatabase().upsertHomeCollection(homeCollection, principal.principalUrl)
-                                discoverCalendarsResult.calendars.forEach {
-                                    getDatabase().upsertCalendar(it, homeCollection.url)
+
+                                val disabledCalendarUrls = _state.value.calendars.filter { it.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED }.map { it.url }
+
+                                discoverCalendarsResult.calendars.forEach { calendar ->
+
+                                    getDatabase().upsertCalendar(
+                                        calendar =
+                                            if(calendar.url in disabledCalendarUrls)    // remember disabled state
+                                                calendar.copy(calendarSyncStatus = CalendarSyncStatus(type = CalendarSyncStatusType.DISABLED))
+                                            else
+                                                calendar,
+                                        homeCollectionUrl = homeCollection.url
+                                    )
                                 }
                                 discoveredCalendars.addAll(discoverCalendarsResult.calendars)
                             }
@@ -420,6 +433,8 @@ class AccountListViewModel(
 
     private fun onSyncCalendars(calendars: List<Calendar>, forgetSyncToken: Boolean = false) {
 
+        val syncRelevantCalendars = calendars.filter { it.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED }
+
         viewModelScope.launch {
 
             if(forgetSyncToken) {
@@ -428,19 +443,33 @@ class AccountListViewModel(
                 }
             }
 
-            platformSyncTrigger.requestImmediate(calendars.map { it.id })
+            platformSyncTrigger.requestImmediate(syncRelevantCalendars.map { it.id })
+
+            val calendarsRelevantForSyncCheck = _state.value.calendars.filter { calendar ->
+                syncRelevantCalendars.any { syncRelevantCalendar -> calendar.id == syncRelevantCalendar.id }
+            }
 
             // TODO: Double-Check if this actually works!
-            val newProcessingState = if(_state.value.calendars.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.SYNCED })
+            val newProcessingState = if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.SYNCED })
                 ProcessingState.Success("Calendars synced")
-            else if(_state.value.calendars.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_AUTHORIZED })
-                ProcessingState.Error(_state.value.calendars.firstOrNull()?.calendarSyncStatus?.message?: "Not authorized", _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
-            else if(_state.value.calendars.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_FOUND })
-                ProcessingState.Error(_state.value.calendars.firstOrNull()?.calendarSyncStatus?.message?: "Not found", _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
+            else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_AUTHORIZED })
+                ProcessingState.Error(calendarsRelevantForSyncCheck.firstOrNull()?.calendarSyncStatus?.message?: "Not authorized", _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
+            else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_FOUND })
+                ProcessingState.Error(calendarsRelevantForSyncCheck.firstOrNull()?.calendarSyncStatus?.message?: "Not found", _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
             else
                 ProcessingState.Error("Some calendars failed to sync. Please check the calendars for details.")
 
             _state.value = _state.value.copy(processingState = newProcessingState)
+        }
+    }
+
+    private fun onToggleSyncEnabled(calendarId: Long, enabled: Boolean) {
+        viewModelScope.launch {
+            getDatabase().calendar_dtoQueries.updateCalendarSyncStatus(
+                calendarSyncStatus = if(enabled) null else CalendarSyncStatus(type = CalendarSyncStatusType.DISABLED).serialize(),
+                syncToken = null,
+                id = calendarId
+            )
         }
     }
 }

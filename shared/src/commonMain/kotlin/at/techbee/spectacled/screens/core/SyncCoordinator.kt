@@ -66,6 +66,9 @@ class SyncCoordinator(
                         .let { calendars ->
                             coroutineScope {
                                 calendars.forEach { calendar ->
+                                    if(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
+                                        return@forEach  // skip disabled calendars
+
                                     launch { SyncCoordinator(database, client).syncCalendar(calendar) }
                                 }
                             }

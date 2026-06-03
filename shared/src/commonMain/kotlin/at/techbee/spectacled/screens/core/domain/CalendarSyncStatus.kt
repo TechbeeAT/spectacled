@@ -32,7 +32,8 @@ enum class CalendarSyncStatusType {
     FAILED,
     NOT_AUTHORIZED,
     NOT_FOUND,
-    SYNCED;
+    SYNCED,
+    DISABLED;
 
     fun isErrorType() = this == FAILED || this == NOT_AUTHORIZED || this == NOT_FOUND
 }
