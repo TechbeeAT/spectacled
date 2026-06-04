@@ -1,13 +1,15 @@
 package at.techbee.spectacled.screens.account.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
-import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.ColorLens
+import androidx.compose.material.icons.outlined.FormatPaint
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -15,6 +17,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -28,7 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.account.presentation.AccountListAction
+import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.ThemeOption
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +41,7 @@ import kotlinx.coroutines.flow.flowOf
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.theme
+import spectacled.shared.generated.resources.theme_dynamic_colors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,10 +99,32 @@ fun SettingsBottomSheet(
                         }
                     }
                 },
-                leadingIcon = { Icon(Icons.Outlined.Language, null) },
+                leadingIcon = { Icon(Icons.Outlined.FormatPaint, null) },
                 trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
                 modifier = Modifier.widthIn(min = 350.dp)
             )
+
+            if(getPlatform().platform == Platforms.ANDROID) {
+                AssistChip(
+                    onClick = { userAppPreferencesStore.themeDynamicColorsEnabled = !userAppPreferencesStore.themeDynamicColorsEnabled },
+                    label = {
+                        Box(
+                            modifier = Modifier.padding(vertical = 14.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(text = stringResource(Res.string.theme_dynamic_colors))
+                        }
+                    },
+                    leadingIcon = { Icon(Icons.Outlined.ColorLens, null) },
+                    trailingIcon = {
+                        Switch(
+                            checked = userAppPreferencesStore.themeDynamicColorsEnabled,
+                            onCheckedChange = { userAppPreferencesStore.themeDynamicColorsEnabled = it }
+                        )
+                    },
+                    modifier = Modifier.widthIn(min = 350.dp)
+                )
+            }
 
         }
     }

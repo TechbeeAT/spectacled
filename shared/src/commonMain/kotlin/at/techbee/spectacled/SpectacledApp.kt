@@ -107,11 +107,13 @@ fun SpectacledApp(
     ) {
         val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
         val themeOption by userAppPreferencesStore.getThemeOptionAsFlow().collectAsState(null)
+        val themeDynamicColorsEnabled by userAppPreferencesStore.getThemeDynamicColorsEnabledAsFlow().collectAsState(null)
         val syncTrigger = koinInject<PlatformSyncTrigger>()
 
         AppTheme(
             spectacledVariant = spectacledVariant,
-            themeOption = ThemeOption.fromString(themeOption)
+            themeOption = ThemeOption.fromString(themeOption),
+            dynamicColor = themeDynamicColorsEnabled?.toBooleanStrictOrNull()?: false
         ) {
 
             val navController = rememberNavController()

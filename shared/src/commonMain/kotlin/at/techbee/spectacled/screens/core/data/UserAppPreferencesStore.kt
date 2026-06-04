@@ -16,6 +16,8 @@ const val LIST_COLLAPSED_GROUP_TRASHBIN = "list_collapsed_group_trashbin"
 const val LIST_COLLAPSED_GROUP_PINNED = "list_collapsed_group_pinned"
 
 const val THEME_OPTION = "theme_option"
+const val THEME_DYNAMIC_COLORS_ENABLED = "theme_dynamic_colors_enabled"
+
 
 interface UserAppPreferencesStore {
     fun save(key: String, value: String)
@@ -53,10 +55,17 @@ interface UserAppPreferencesStore {
             ?.split("|")?.toSet() ?: emptySet()
         set(value) = this.save(LIST_COLLAPSED_GROUPS, value.joinToString("|"))
 
+
+    /* SETTINGS */
     var themeOption: ThemeOption
         get() = this.load(THEME_OPTION)?.let { ThemeOption.entries.find { themeOption -> themeOption.name == it } } ?: ThemeOption.SYSTEM
         set(value) = this.save(THEME_OPTION, value.name)
     fun getThemeOptionAsFlow() = this.loadAsFlow(THEME_OPTION)
+
+    var themeDynamicColorsEnabled: Boolean
+        get() = this.load(THEME_DYNAMIC_COLORS_ENABLED)?.toBooleanStrictOrNull()?: false
+        set(value) = this.save(THEME_DYNAMIC_COLORS_ENABLED, value.toString())
+    fun getThemeDynamicColorsEnabledAsFlow() = this.loadAsFlow(THEME_DYNAMIC_COLORS_ENABLED)
 }
 
 expect class PlatformUserAppPreferencesStore: UserAppPreferencesStore {
