@@ -26,7 +26,6 @@ import at.techbee.spectacled.screens.list.presentation.components.EmptyListScree
 import at.techbee.spectacled.screens.list.presentation.components.ListDragHandle
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -191,9 +190,7 @@ fun ListScreenTasks(
             } else {
                 // No drag and drop. We build the grouped list based on the map
 
-                ListGrouping.entries
-                    .let { if (state.listSortedByAscending) it else it.asReversed() }
-                    .forEach { grouping ->
+                state.displayMap.keys.forEach { grouping ->
 
                         if (state.displayMap[grouping].isNullOrEmpty())
                             return@forEach

@@ -66,12 +66,6 @@ enum class ListGrouping(
         Res.string.grouping_older,
         null
     ),
-    GROUP_NO_DATE(
-        null,
-        null,
-        Res.string.no_date,
-        null
-    ),
 
     /* DUE */
     DUE_OVERDUE(
@@ -147,6 +141,13 @@ enum class ListGrouping(
         null,
         Res.string.grouping_start_in_30_plus_days,
         null
+    ),
+
+    GROUP_NO_DATE(
+        null,
+        null,
+        Res.string.no_date,
+        null
     );
 
 
@@ -154,8 +155,8 @@ enum class ListGrouping(
 
         val createdGroups = setOf(GROUP_24_HOURS, GROUP_48_HOURS, GROUP_7_DAYS, GROUP_30_DAYS, GROUP_YEAR, GROUP_OLDER)
         val lastModifiedGroups = setOf(GROUP_24_HOURS, GROUP_48_HOURS, GROUP_7_DAYS, GROUP_30_DAYS, GROUP_YEAR, GROUP_OLDER)
-        val dueGroups = setOf(DUE_OVERDUE, DUE_WITHIN_24_HOURS, DUE_WITHIN_48_HOURS, DUE_WITHIN_7_DAYS, DUE_WITHIN_30_DAYS, DUE_IN_30_PLUS_DAYS)
-        val startGroups = setOf(START_IN_PAST, START_WITHIN_24_HOURS, START_WITHIN_48_HOURS, START_WITHIN_7_DAYS, START_WITHIN_30_DAYS, START_IN_30_PLUS_DAYS)
+        val dueGroups = setOf(DUE_OVERDUE, DUE_WITHIN_24_HOURS, DUE_WITHIN_48_HOURS, DUE_WITHIN_7_DAYS, DUE_WITHIN_30_DAYS, DUE_IN_30_PLUS_DAYS, GROUP_NO_DATE)
+        val startGroups = setOf(START_IN_PAST, START_WITHIN_24_HOURS, START_WITHIN_48_HOURS, START_WITHIN_7_DAYS, START_WITHIN_30_DAYS, START_IN_30_PLUS_DAYS, GROUP_NO_DATE)
 
         fun getGrouping(baseGroups: Set<ListGrouping>, icsDateTime: IcsDateTime?): ListGrouping {
             return if(icsDateTime == null)

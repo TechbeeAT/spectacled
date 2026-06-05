@@ -31,7 +31,6 @@ import at.techbee.spectacled.screens.list.presentation.components.EmptyListScree
 import at.techbee.spectacled.screens.list.presentation.components.ListDragHandle
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import org.jetbrains.compose.resources.stringResource
@@ -208,9 +207,7 @@ fun ListScreenNotes(
             } else {
                 // No drag and drop. We build the grouped list based on the map
 
-                ListGrouping.entries
-                    .let { if (state.listSortedByAscending) it else it.asReversed() }
-                    .forEach { grouping ->
+                state.displayMap.keys.forEach { grouping ->
 
                         if (state.displayMap[grouping].isNullOrEmpty())
                             return@forEach

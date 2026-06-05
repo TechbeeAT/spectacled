@@ -140,26 +140,39 @@ data class ListState(
         return filteredListByCategory
     }
 
-    private val sortingComparator = compareBy<IcalEntry> {
-        when (listSortedBy) {
-            ListSortedBy.CREATED -> it.created.instant.toEpochMilliseconds()
-            ListSortedBy.LAST_MODIFIED -> it.lastModified?.instant?.toEpochMilliseconds()
-            ListSortedBy.DATE -> it.dtStart?.toLocalDateTime()
-            ListSortedBy.START -> it.dtStart?.toLocalDateTime()
-            ListSortedBy.DUE -> it.due?.toLocalDateTime()
-            ListSortedBy.SUMMARY -> it.summary?.uppercase()?: it.description?.uppercase() ?: ""
-            ListSortedBy.DRAGANDDROP -> it.orderNo?:-1
-        }
-    }
 
-    private fun getSortedList(icalEntries: List<IcalEntry>) = when(listSortedBy) {
-        ListSortedBy.CREATED, ListSortedBy.LAST_MODIFIED, ListSortedBy.DATE, ListSortedBy.START, ListSortedBy.DUE -> {
-            if (listSortedByAscending) icalEntries.sortedWith(sortingComparator).reversed()
-            else icalEntries.sortedWith(sortingComparator)
-        }
-        ListSortedBy.SUMMARY, ListSortedBy.DRAGANDDROP -> {
-            if (listSortedByAscending) icalEntries.sortedWith(sortingComparator)
-            else icalEntries.sortedWith(sortingComparator).reversed()
+    private fun getSortedList(icalEntries: List<IcalEntry>): List<IcalEntry> {
+        val ascending = listSortedByAscending
+        return when (listSortedBy) {
+            ListSortedBy.CREATED -> {
+                if (ascending) icalEntries.sortedByDescending { it.created.instant }
+                else icalEntries.sortedBy { it.created.instant }
+            }
+            ListSortedBy.LAST_MODIFIED -> {
+                if (ascending) icalEntries.sortedByDescending { it.lastModified?.instant ?: it.created.instant }
+                else icalEntries.sortedBy { it.lastModified?.instant ?: it.created.instant }
+            }
+            ListSortedBy.DATE -> {
+                val comparator = compareBy<IcalEntry> { it.dtStart?.toLocalDateTime() }
+                val order = if (ascending) comparator.reversed() else comparator
+                icalEntries.sortedWith(compareBy<IcalEntry> { it.dtStart == null }.then(order))
+            }
+            ListSortedBy.START -> {
+                val comparator = compareBy<IcalEntry> { it.dtStart?.toLocalDateTime() }
+                val order = if (ascending) comparator else comparator.reversed()
+                icalEntries.sortedWith(compareBy<IcalEntry> { it.dtStart == null }.then(order))
+            }
+            ListSortedBy.DUE -> {
+                val comparator = compareBy<IcalEntry> { it.due?.toLocalDateTime() }
+                val order = if (ascending) comparator else comparator.reversed()
+                icalEntries.sortedWith(compareBy<IcalEntry> { it.due == null }.then(order))
+            }
+            ListSortedBy.SUMMARY -> {
+                val selector: (IcalEntry) -> String = { it.summary?.uppercase() ?: it.description?.uppercase() ?: "" }
+                if (ascending) icalEntries.sortedBy(selector)
+                else icalEntries.sortedByDescending(selector)
+            }
+            ListSortedBy.DRAGANDDROP -> { icalEntries.sortedBy { it.orderNo ?: Long.MAX_VALUE } }
         }
     }
 
