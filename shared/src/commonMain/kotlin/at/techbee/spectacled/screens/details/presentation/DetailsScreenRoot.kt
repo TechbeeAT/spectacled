@@ -69,230 +69,232 @@ fun DetailsScreenRoot(
     val detailsState = detailsViewModel.state
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(detailsState.snackbarText) {
-        detailsState.snackbarText?.let { message ->
-            snackbarHostState.showSnackbar(message)
-            detailsViewModel.onAction(DetailsAction.OnUpdateSnackbar(null))
+    MaterialTheme(colorScheme = getThemeForSeedColor(detailsState.icalEntry.color ?: detailsState.calendar?.color)) {
+
+
+        LaunchedEffect(detailsState.snackbarText) {
+            detailsState.snackbarText?.let { message ->
+                snackbarHostState.showSnackbar(message)
+                detailsViewModel.onAction(DetailsAction.OnUpdateSnackbar(null))
+            }
         }
-    }
 
-    LaunchedEffect(detailsState.navigateUp) {
-        if (detailsState.navigateUp) {
-            onNavigateUp()
-            detailsViewModel.onAction(DetailsAction.OnNavigateUp(false))
+        LaunchedEffect(detailsState.navigateUp) {
+            if (detailsState.navigateUp) {
+                onNavigateUp()
+                detailsViewModel.onAction(DetailsAction.OnNavigateUp(false))
+            }
         }
-    }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            detailsViewModel.onAction(DetailsAction.OnDispose)
+        DisposableEffect(Unit) {
+            onDispose {
+                detailsViewModel.onAction(DetailsAction.OnDispose)
+            }
         }
-    }
 
-    if (detailsState.showCategorySelectorBottomSheet) {
-        CategorySelectionBottomSheet(
-            allCategories = detailsState.allCategories.filter { it != IcalEntry.PINNED_CATEGORY },
-            selectedCategories = detailsState.icalEntry.categories.filter { it != IcalEntry.PINNED_CATEGORY },
-            onCategoryAdded = { detailsViewModel.onAction(DetailsAction.OnUpdateCategories(it, null)) },
-            onCategoryRemoved = { detailsViewModel.onAction(DetailsAction.OnUpdateCategories(null, it)) },
-            onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowCategorySelectorBottomSheet(false)) }
-        )
-    }
-
-    if (detailsState.showColorSelectorBottomSheet) {
-        BottomSheetWithMenu(
-            onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(false)) },
-        ) {
-            ColorSelectorElement(
-                recentColors = detailsState.allColors,
-                preselectedColor = detailsState.icalEntry.color,
-                onColorChanged = { detailsViewModel.onAction(DetailsAction.OnUpdateColor(it)) },
-                skipPartialSelection = true,
-                modifier = Modifier.fillMaxWidth()
+        if (detailsState.showCategorySelectorBottomSheet) {
+            CategorySelectionBottomSheet(
+                allCategories = detailsState.allCategories.filter { it != IcalEntry.PINNED_CATEGORY },
+                selectedCategories = detailsState.icalEntry.categories.filter { it != IcalEntry.PINNED_CATEGORY },
+                onCategoryAdded = { detailsViewModel.onAction(DetailsAction.OnUpdateCategories(it, null)) },
+                onCategoryRemoved = { detailsViewModel.onAction(DetailsAction.OnUpdateCategories(null, it)) },
+                onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowCategorySelectorBottomSheet(false)) }
             )
         }
-    }
 
-    if (detailsState.showMoreBottomSheet) {
-        DetailsMoreBottomSheet(
-            onAction = { action -> detailsViewModel.onAction(action) },
-            icalEntry = detailsState.icalEntry,
-            canWriteContent = detailsState.allowEditing()
-        )
-    }
-
-    if(detailsState.showJournalStatusPickerBottomSheet) {
-        JournalStatusPickerBottomSheet(
-            status = detailsState.icalEntry.status,
-            sheetState = rememberModalBottomSheetState(),
-            onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
-            onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(false)) }
-        )
-    }
-
-    if(detailsState.showTaskStatusProgressPickerBottomSheet) {
-        TaskStatusProgressPickerBottomSheet(
-            status = detailsState.icalEntry.status,
-            percentComplete = detailsState.icalEntry.percentComplete,
-            sheetState = rememberModalBottomSheetState(),
-            onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
-            onProgressUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateProgress(it)) },
-            onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(false)) }
-        )
-    }
-
-    if (detailsState.showDeleteDialog) {
-        DeleteIcalEntryDialog(
-            icalEntry = detailsState.icalEntry,
-            onConfirm = {
-                detailsViewModel.onAction(DetailsAction.OnDelete)
-            },
-            onDismiss = {
-                detailsViewModel.showDeleteDialog(false)
-            }
-        )
-    }
-
-    if(detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED
-        || detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED
-        || detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED) {
-        ResolveSyncConflictDialog(
-            syncState = detailsState.icalEntry.syncState,
-            onKeepLocalChanges = { detailsViewModel.onAction(DetailsAction.OnSyncConflictUpdateUserDecision(SyncState.USER_DECIDED_CLIENT_WINS)) },
-            onLoadServerChanges = { detailsViewModel.onAction(DetailsAction.OnSyncConflictUpdateUserDecision(SyncState.USER_DECIDED_SERVER_WINS)) },
-            onDeleteEntry = { detailsViewModel.onAction(DetailsAction.OnSyncConflictUpdateUserDecision(SyncState.REMOTE_DELETED_LOCAL_TRASHBIN)) }
-        )
-    }
-
-    MaterialTheme(colorScheme = getThemeForSeedColor(detailsState.icalEntry.color)) {
-
-            Scaffold(
-                topBar = {
-                    DetailsTopBar(
-                        canWriteContent = detailsState.allowEditing(),
-                        isLoading = detailsState.isLoading,
-                        isPinned = detailsState.icalEntry.categories.any { it == IcalEntry.PINNED_CATEGORY },
-                        onAction = { action -> detailsViewModel.onAction(action) }
-                    )
-                },
-                bottomBar = {
-                    BottomAppBar {
-                        TextButton(
-                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(true)) },
-                            enabled = detailsState.allowEditing() && !detailsState.isLoading
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Palette,
-                                contentDescription = stringResource(Res.string.color)
-                            )
-                        }
-
-                        TextButton(
-                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) },
-                            enabled = detailsState.allowEditing() && !detailsState.isLoading
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.Label,
-                                contentDescription = stringResource(Res.string.category)
-                            )
-                        }
-
-                        if(detailsState.icalEntry.isJournal()) {
-
-                            TextButton(
-                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(!detailsState.showJournalStatusPickerBottomSheet)) },
-                                enabled = detailsState.allowEditing() && !detailsState.isLoading
-                            ) {
-                                Icon(
-                                    imageVector = detailsState.icalEntry.status?.vectorIcon ?: Status.FINAL.vectorIcon!!,
-                                    contentDescription = stringResource(Res.string.more),
-                                    tint = when (detailsState.icalEntry.status) {
-                                        Status.DRAFT -> MaterialTheme.colorScheme.error
-                                        Status.CANCELLED -> MaterialTheme.colorScheme.onSurface
-                                        else -> LocalContentColor.current
-                                    }
-                                )
-                            }
-                        }
-
-                        if(detailsState.icalEntry.isTask()) {
-
-                            TextButton(
-                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
-                                enabled = detailsState.allowEditing() && !detailsState.isLoading
-                            ) {
-
-                                Box(contentAlignment = Alignment.Center) {
-
-                                    Text(
-                                        text = detailsState.icalEntry.percentComplete.toString(),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontSize = 8.sp
-                                    )
-
-                                    CircularProgressIndicator(
-                                        progress = { detailsState.icalEntry.percentComplete.toFloat()/100 },
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        TextButton(
-                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowMoreBottomSheet(true)) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.MoreVert,
-                                contentDescription = stringResource(Res.string.more)
-                            )
-                        }
-                    }
-                },
-                floatingActionButton = {
-                    AnimatedVisibility(detailsState.allowRestore() && !detailsState.isLoading) {
-                        ExtendedFloatingActionButton(
-                            onClick = { detailsViewModel.onAction(DetailsAction.OnRestoreEntry) }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Restore,
-                                    contentDescription = stringResource(Res.string.restore)
-                                )
-                                Text(
-                                    text = stringResource(Res.string.restore)
-                                )
-                            }
-                        }
-                    }
-                }
-            ) { paddingValues ->
-
-                Box(
-                    modifier = Modifier
-                        .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
-                        .padding(paddingValues)
-                        .imePadding()
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    DetailsScreen(
-                        state = detailsState,
-                        onAction = { action -> detailsViewModel.onAction(action) },
-                        modifier = Modifier.fillMaxSize()
-                    )
-
-                    CustomBottomSnackbarHost(
-                        snackbarHostState = snackbarHostState,
-                        keepSpaceForFAB = false
-                    )
-                }
+        if (detailsState.showColorSelectorBottomSheet) {
+            BottomSheetWithMenu(
+                onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(false)) },
+            ) {
+                ColorSelectorElement(
+                    recentColors = detailsState.allColors,
+                    preselectedColor = detailsState.icalEntry.color,
+                    onColorChanged = { detailsViewModel.onAction(DetailsAction.OnUpdateColor(it)) },
+                    skipPartialSelection = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
+
+        if (detailsState.showMoreBottomSheet) {
+            DetailsMoreBottomSheet(
+                onAction = { action -> detailsViewModel.onAction(action) },
+                icalEntry = detailsState.icalEntry,
+                canWriteContent = detailsState.allowEditing()
+            )
+        }
+
+        if (detailsState.showJournalStatusPickerBottomSheet) {
+            JournalStatusPickerBottomSheet(
+                status = detailsState.icalEntry.status,
+                sheetState = rememberModalBottomSheetState(),
+                onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
+                onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(false)) }
+            )
+        }
+
+        if (detailsState.showTaskStatusProgressPickerBottomSheet) {
+            TaskStatusProgressPickerBottomSheet(
+                status = detailsState.icalEntry.status,
+                percentComplete = detailsState.icalEntry.percentComplete,
+                sheetState = rememberModalBottomSheetState(),
+                onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
+                onProgressUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateProgress(it)) },
+                onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(false)) }
+            )
+        }
+
+        if (detailsState.showDeleteDialog) {
+            DeleteIcalEntryDialog(
+                icalEntry = detailsState.icalEntry,
+                onConfirm = {
+                    detailsViewModel.onAction(DetailsAction.OnDelete)
+                },
+                onDismiss = {
+                    detailsViewModel.showDeleteDialog(false)
+                }
+            )
+        }
+
+        if (detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED
+            || detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED
+            || detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED
+        ) {
+            ResolveSyncConflictDialog(
+                syncState = detailsState.icalEntry.syncState,
+                onKeepLocalChanges = { detailsViewModel.onAction(DetailsAction.OnSyncConflictUpdateUserDecision(SyncState.USER_DECIDED_CLIENT_WINS)) },
+                onLoadServerChanges = { detailsViewModel.onAction(DetailsAction.OnSyncConflictUpdateUserDecision(SyncState.USER_DECIDED_SERVER_WINS)) },
+                onDeleteEntry = { detailsViewModel.onAction(DetailsAction.OnSyncConflictUpdateUserDecision(SyncState.REMOTE_DELETED_LOCAL_TRASHBIN)) }
+            )
+        }
+
+        Scaffold(
+            topBar = {
+                DetailsTopBar(
+                    canWriteContent = detailsState.allowEditing(),
+                    isLoading = detailsState.isLoading,
+                    isPinned = detailsState.icalEntry.categories.any { it == IcalEntry.PINNED_CATEGORY },
+                    onAction = { action -> detailsViewModel.onAction(action) }
+                )
+            },
+            bottomBar = {
+                BottomAppBar {
+                    TextButton(
+                        onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(true)) },
+                        enabled = detailsState.allowEditing() && !detailsState.isLoading
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Palette,
+                            contentDescription = stringResource(Res.string.color)
+                        )
+                    }
+
+                    TextButton(
+                        onClick = { detailsViewModel.onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) },
+                        enabled = detailsState.allowEditing() && !detailsState.isLoading
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Label,
+                            contentDescription = stringResource(Res.string.category)
+                        )
+                    }
+
+                    if (detailsState.icalEntry.isJournal()) {
+
+                        TextButton(
+                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(!detailsState.showJournalStatusPickerBottomSheet)) },
+                            enabled = detailsState.allowEditing() && !detailsState.isLoading
+                        ) {
+                            Icon(
+                                imageVector = detailsState.icalEntry.status?.vectorIcon ?: Status.FINAL.vectorIcon!!,
+                                contentDescription = stringResource(Res.string.more),
+                                tint = when (detailsState.icalEntry.status) {
+                                    Status.DRAFT -> MaterialTheme.colorScheme.error
+                                    Status.CANCELLED -> MaterialTheme.colorScheme.onSurface
+                                    else -> LocalContentColor.current
+                                }
+                            )
+                        }
+                    }
+
+                    if (detailsState.icalEntry.isTask()) {
+
+                        TextButton(
+                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
+                            enabled = detailsState.allowEditing() && !detailsState.isLoading
+                        ) {
+
+                            Box(contentAlignment = Alignment.Center) {
+
+                                Text(
+                                    text = detailsState.icalEntry.percentComplete.toString(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 8.sp
+                                )
+
+                                CircularProgressIndicator(
+                                    progress = { detailsState.icalEntry.percentComplete.toFloat() / 100 },
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    TextButton(
+                        onClick = { detailsViewModel.onAction(DetailsAction.OnShowMoreBottomSheet(true)) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MoreVert,
+                            contentDescription = stringResource(Res.string.more)
+                        )
+                    }
+                }
+            },
+            floatingActionButton = {
+                AnimatedVisibility(detailsState.allowRestore() && !detailsState.isLoading) {
+                    ExtendedFloatingActionButton(
+                        onClick = { detailsViewModel.onAction(DetailsAction.OnRestoreEntry) }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Restore,
+                                contentDescription = stringResource(Res.string.restore)
+                            )
+                            Text(
+                                text = stringResource(Res.string.restore)
+                            )
+                        }
+                    }
+                }
+            }
+        ) { paddingValues ->
+
+            Box(
+                modifier = Modifier
+                    .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
+                    .padding(paddingValues)
+                    .imePadding()
+                    .fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                DetailsScreen(
+                    state = detailsState,
+                    onAction = { action -> detailsViewModel.onAction(action) },
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                CustomBottomSnackbarHost(
+                    snackbarHostState = snackbarHostState,
+                    keepSpaceForFAB = false
+                )
+            }
+        }
+    }
 }
 
 

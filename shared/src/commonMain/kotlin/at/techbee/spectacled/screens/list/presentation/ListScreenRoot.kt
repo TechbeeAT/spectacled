@@ -92,97 +92,98 @@ fun ListScreenRoot(
         }
     }
 
+    MaterialTheme(colorScheme = getThemeForSeedColor(state.calendar.color)) {
 
-    LaunchedEffect(state.snackbarText) {
-        state.snackbarText?.let { message ->
-            snackbarHostState.showSnackbar(message)
-            listViewModel.onAction(ListAction.OnUpdateSnackbar(null))
+
+        LaunchedEffect(state.snackbarText) {
+            state.snackbarText?.let { message ->
+                snackbarHostState.showSnackbar(message)
+                listViewModel.onAction(ListAction.OnUpdateSnackbar(null))
+            }
         }
-    }
 
-    LaunchedEffect(state.navigateUp) {
-        if (state.navigateUp) {
-            onNavigateUp()
-            listViewModel.onAction(ListAction.OnNavigateUp(false))
+        LaunchedEffect(state.navigateUp) {
+            if (state.navigateUp) {
+                onNavigateUp()
+                listViewModel.onAction(ListAction.OnNavigateUp(false))
+            }
         }
-    }
 
-    LaunchedEffect(state.navigateToIcalEntryId) {
-        if (state.navigateToIcalEntryId != null) {
-            onNavigate(IcalEntryDetails(state.navigateToIcalEntryId))
-            listViewModel.onAction(ListAction.OnIcalEntryClicked(null))
+        LaunchedEffect(state.navigateToIcalEntryId) {
+            if (state.navigateToIcalEntryId != null) {
+                onNavigate(IcalEntryDetails(state.navigateToIcalEntryId))
+                listViewModel.onAction(ListAction.OnIcalEntryClicked(null))
+            }
         }
-    }
 
-    LaunchedEffect(state.isSearchBarExpanded) {
-        if (state.isSearchBarExpanded) {
-            searchBarFocusRequester.requestFocus()
-            keyboardController?.show()
-        } else {
-            searchBarFocusRequester.freeFocus()
-            keyboardController?.hide()
+        LaunchedEffect(state.isSearchBarExpanded) {
+            if (state.isSearchBarExpanded) {
+                searchBarFocusRequester.requestFocus()
+                keyboardController?.show()
+            } else {
+                searchBarFocusRequester.freeFocus()
+                keyboardController?.hide()
+            }
         }
-    }
 
-    if (state.showDeleteSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
-        DeleteSelectedItemsDialog(
-            multiselectItems = state.multiselectItems,
-            onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
-            onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
-        )
-    }
-
-    if (state.showUpdateColorOfSelectedBottomSheet) {
-        BottomSheetWithMenu(
-            onDismiss = { listViewModel.onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(false)) },
-        ) {
-            ColorSelectorElement(
-                recentColors = state.icalEntries
-                    .mapNotNull { it.color }
-                    .distinct(),
-                preselectedColor = state.icalEntries
-                    .filter { note -> state.multiselectItems?.contains(note.id) == true }
-                    .map { it.color }
-                    .distinct()
-                    .let { colorList -> if (colorList.size == 1) colorList.first() else Color.Transparent },
-                onColorChanged = { listViewModel.onAction(ListAction.OnUpdateColorOfSelected(it)) },
-                skipPartialSelection = true,
-                modifier = Modifier.fillMaxWidth()
+        if (state.showDeleteSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
+            DeleteSelectedItemsDialog(
+                multiselectItems = state.multiselectItems,
+                onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
             )
         }
-    }
 
-    if (state.showUpdateCategoryOfSelectedBottomSheet) {
-        CategorySelectionBottomSheet(
-            allCategories = state.allCategories.filter { it != IcalEntry.PINNED_CATEGORY },
-            selectedCategories = state.multiselectItems?.let { selectedIds ->
-                val selectedEntries = state.icalEntries.filter { it.id in selectedIds }
-                if (selectedEntries.isEmpty()) return@let emptyList()
+        if (state.showUpdateColorOfSelectedBottomSheet) {
+            BottomSheetWithMenu(
+                onDismiss = { listViewModel.onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(false)) },
+            ) {
+                ColorSelectorElement(
+                    recentColors = state.icalEntries
+                        .mapNotNull { it.color }
+                        .distinct(),
+                    preselectedColor = state.icalEntries
+                        .filter { note -> state.multiselectItems?.contains(note.id) == true }
+                        .map { it.color }
+                        .distinct()
+                        .let { colorList -> if (colorList.size == 1) colorList.first() else Color.Transparent },
+                    onColorChanged = { listViewModel.onAction(ListAction.OnUpdateColorOfSelected(it)) },
+                    skipPartialSelection = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
 
-                selectedEntries
-                    .map { it.categories.toSet() }
-                    .reduce { acc, categories -> acc.intersect(categories) }
-                    .filter { it != IcalEntry.PINNED_CATEGORY }
-                    .toList()
-            } ?: emptyList(),
-            onCategoryAdded = { listViewModel.onAction(ListAction.OnUpdateCategoryOfSelected(it, null)) },
-            onCategoryRemoved = { listViewModel.onAction(ListAction.OnUpdateCategoryOfSelected(null, it)) },
-            onDismiss = { listViewModel.onAction(ListAction.OnShowUpdateCategoryOfSelectedBottomSheet(false)) }
-        )
-    }
+        if (state.showUpdateCategoryOfSelectedBottomSheet) {
+            CategorySelectionBottomSheet(
+                allCategories = state.allCategories.filter { it != IcalEntry.PINNED_CATEGORY },
+                selectedCategories = state.multiselectItems?.let { selectedIds ->
+                    val selectedEntries = state.icalEntries.filter { it.id in selectedIds }
+                    if (selectedEntries.isEmpty()) return@let emptyList()
 
-    if (state.showDateSelectorBottomSheet) {
-        DatePickerBottomSheet(
-            icsDateTime = IcsDateTime.now(),
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            allowNoDate = false,
-            selectableDates = selectableDates,
-            onDateSelected = { selectedDate -> listViewModel.onAction(ListAction.OnGoToSelectedDate(selectedDate)) },
-            onDismiss = { listViewModel.onAction(ListAction.OnShowDateSelectorBottomSheet(false)) }
-        )
-    }
+                    selectedEntries
+                        .map { it.categories.toSet() }
+                        .reduce { acc, categories -> acc.intersect(categories) }
+                        .filter { it != IcalEntry.PINNED_CATEGORY }
+                        .toList()
+                } ?: emptyList(),
+                onCategoryAdded = { listViewModel.onAction(ListAction.OnUpdateCategoryOfSelected(it, null)) },
+                onCategoryRemoved = { listViewModel.onAction(ListAction.OnUpdateCategoryOfSelected(null, it)) },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowUpdateCategoryOfSelectedBottomSheet(false)) }
+            )
+        }
 
-    MaterialTheme(colorScheme = getThemeForSeedColor(state.calendar.color)) {
+        if (state.showDateSelectorBottomSheet) {
+            DatePickerBottomSheet(
+                icsDateTime = IcsDateTime.now(),
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                allowNoDate = false,
+                selectableDates = selectableDates,
+                onDateSelected = { selectedDate -> listViewModel.onAction(ListAction.OnGoToSelectedDate(selectedDate)) },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowDateSelectorBottomSheet(false)) }
+            )
+        }
+
 
         Scaffold(
             topBar = {
