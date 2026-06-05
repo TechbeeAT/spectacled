@@ -6,6 +6,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,18 +14,20 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import at.techbee.spectacled.screens.Route
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListScreenRoot
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListViewModel
+import at.techbee.spectacled.screens.account.presentation.AccountListScreenRoot
+import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
-import at.techbee.spectacled.screens.core.data.AppPreferences
+import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.koin.sharedModule
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsScreenRoot
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsViewModel
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.IcalEntryListScreenRoot
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.IcalEntryListViewModel
+import at.techbee.spectacled.screens.details.presentation.DetailsScreenRoot
+import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
+import at.techbee.spectacled.screens.list.presentation.ListScreenRoot
+import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
@@ -35,19 +38,50 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.app_name_spectacled_journals
 import spectacled.shared.generated.resources.app_name_spectacled_notes
 import spectacled.shared.generated.resources.app_name_spectacled_tasks
+import spectacled.shared.generated.resources.logo_spectacled_journals
+import spectacled.shared.generated.resources.logo_spectacled_notes
+import spectacled.shared.generated.resources.logo_spectacled_tasks
 import kotlin.time.ExperimentalTime
 
 
-enum class SpectacledVariant(val dbName: String, val appNameStringRes: StringResource) {
-    JOURNALS("spectacled_journals.db", Res.string.app_name_spectacled_journals),
-    NOTES("spectacled_notes.db", Res.string.app_name_spectacled_notes),
-    TASKS("spectacled_tasks.db", Res.string.app_name_spectacled_tasks);
+enum class SpectacledVariant(
+    val dbName: String,
+    val appNameStringRes: StringResource,
+    val logoDrawableResource: DrawableResource,
+    val syncCalendarComponent: CalendarComponent,
+    val themeSeedColor: Color,
+) {
+
+    JOURNALS(
+        "spectacled_journals.db",
+        Res.string.app_name_spectacled_journals,
+        Res.drawable.logo_spectacled_journals,
+        CalendarComponent.VJOURNAL,
+        Color(0, 104, 150)
+    ),
+    NOTES(
+        "spectacled_notes.db",
+        Res.string.app_name_spectacled_notes,
+        Res.drawable.logo_spectacled_notes,
+        CalendarComponent.VJOURNAL,
+        Color(153, 76, 44)
+    ),
+    TASKS(
+        "spectacled_tasks.db",
+        Res.string.app_name_spectacled_tasks,
+        Res.drawable.logo_spectacled_tasks,
+        CalendarComponent.VTODO,
+        Color(41, 111, 35)
+    );
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
-@Preview
-fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES) {
+fun SpectacledApp(
+    spectacledVariant: SpectacledVariant,
+    initialCalendarId: Long? = null,
+    initialIcalEntryId: Long? = null
+) {
 
     Napier.base(DebugAntilog())  // enables Napier logging for all platforms//onNavigate = { navController.navigate(it) }
     //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
@@ -59,22 +93,23 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
             )
         })
     ) {
+        val syncTrigger = koinInject<PlatformSyncTrigger>()
+        val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
 
-        AppTheme(spectacledVariant = spectacledVariant) {
+        AppTheme(
+            spectacledVariant = spectacledVariant
+        ) {
 
             val navController = rememberNavController()
             //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
-
-            val appPreferences = koinInject<AppPreferences>()
-            val syncTrigger = koinInject<PlatformSyncTrigger>()
 
             LaunchedEffect(Unit) {
                 syncTrigger.schedulePeriodic()
                 syncTrigger.requestImmediate()
             }
 
-            val icalEntryListViewModel = koinViewModel<IcalEntryListViewModel>()
-            val calendarListViewModel = koinViewModel<CalendarListViewModel>()
+            val listViewModel = koinViewModel<ListViewModel>()
+            val accountListViewModel = koinViewModel<AccountListViewModel>()
 
             NavHost(
                 navController = navController,
@@ -83,8 +118,8 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                 navigation<Route.HomeGraph>(Route.AccountsList) {
 
                     composable<Route.AccountsList> {
-                        CalendarListScreenRoot(
-                            viewModel = calendarListViewModel,
+                        AccountListScreenRoot(
+                            viewModel = accountListViewModel,
                             onNavigate = { route -> navController.navigate(route) }
                         )
                     }
@@ -99,11 +134,11 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                         val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
 
                         LaunchedEffect(calendarId) {
-                            icalEntryListViewModel.load(calendarId)
+                            listViewModel.load(calendarId)
                         }
 
-                        IcalEntryListScreenRoot(
-                            icalEntryListViewModel = icalEntryListViewModel,
+                        ListScreenRoot(
+                            listViewModel = listViewModel,
                             onNavigate = { route -> navController.navigate(route) },
                             onNavigateUp = { navController.popBackStack() }
                         )
@@ -111,14 +146,14 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
 
                     composable<Route.IcalEntryDetails> { args ->
                         val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
-                        val icalEntryDetailsViewModel: IcalEntryDetailsViewModel = koinViewModel<IcalEntryDetailsViewModel>()
+                        val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
 
                         LaunchedEffect(icalEntryId) {
-                            icalEntryDetailsViewModel.load(icalEntryId)
+                            detailsViewModel.load(icalEntryId)
                         }
 
-                        IcalEntryDetailsScreenRoot(
-                            icalEntryDetailsViewModel = icalEntryDetailsViewModel,
+                        DetailsScreenRoot(
+                            detailsViewModel = detailsViewModel,
                             onNavigateUp = { navController.popBackStack() }
                             /*
                                 onNavigate = { route ->
@@ -136,17 +171,17 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                         val copyFromId = args.toRoute<Route.AddICalEntry>().copyFromId
                         val calendarId = args.toRoute<Route.AddICalEntry>().calendarId
 
-                        val icalEntryDetailsViewModel: IcalEntryDetailsViewModel = koinViewModel<IcalEntryDetailsViewModel>()
+                        val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
 
                         LaunchedEffect(copyFromId, calendarId) {
                             if (copyFromId != null)
-                                icalEntryDetailsViewModel.loadCopy(copyFromId)
+                                detailsViewModel.loadCopy(copyFromId)
                             else
-                                icalEntryDetailsViewModel.loadNew(calendarId)
+                                detailsViewModel.loadNew(calendarId)
                         }
 
-                        IcalEntryDetailsScreenRoot(
-                            icalEntryDetailsViewModel = icalEntryDetailsViewModel,
+                        DetailsScreenRoot(
+                            detailsViewModel = detailsViewModel,
                             onNavigateUp = { navController.popBackStack() }
                             //onNavigate = { navController.navigate(it) }
                         )
@@ -154,11 +189,36 @@ fun SpectacledApp(spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES
                 }
             }
 
-            LaunchedEffect(Unit) {
-                appPreferences.lastUsedCalendarId?.let { lastUsedCalendarId ->
-                    navController.navigate(Route.IcalEntryList(lastUsedCalendarId))
+            LaunchedEffect(initialCalendarId) {
+                if (initialCalendarId != null) {
+                    userAppPreferencesStore.lastUsedCalendarId = initialCalendarId
+                }
+
+                if(initialIcalEntryId != null && initialCalendarId != null) {
+                    if(initialIcalEntryId == 0L) {
+                        navController.navigate(Route.IcalEntryList(initialCalendarId))
+                        navController.navigate(Route.AddICalEntry(initialCalendarId))
+                    } else {
+                        navController.navigate(Route.IcalEntryList(initialCalendarId))
+                        navController.navigate(Route.IcalEntryDetails(initialIcalEntryId))
+                    }
+                } else {
+                    userAppPreferencesStore.lastUsedCalendarId?.let { lastUsedCalendarId ->
+                        navController.navigate(Route.IcalEntryList(lastUsedCalendarId))
+                    }
                 }
             }
         }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
+@Composable
+@Preview
+private fun SpectacledApp_Preview() {
+    val spectacledVariant = SpectacledVariant.NOTES
+    AppTheme(spectacledVariant = spectacledVariant) {
+        SpectacledApp(spectacledVariant = spectacledVariant)
     }
 }

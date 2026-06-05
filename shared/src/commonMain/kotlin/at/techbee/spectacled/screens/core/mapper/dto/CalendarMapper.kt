@@ -34,7 +34,8 @@ fun CalendarDto.toDomain(): Calendar {
             } ?: emptyList(),
         calDavPrivileges = this.calDavPrivileges?.split(',')?.mapNotNull { CalDavPrivilege.fromTag(it) }?: emptyList(),
         calendarSyncStatus = this.calendarSyncStatus?.let { CalendarSyncStatus.deserialize(it) },
-        syncToken = this.syncToken
+        syncToken = this.syncToken,
+        syncComponent = this.syncComponent?.let { CalendarComponent.entries.find { entry -> entry.name == it }}
     )
 }
 
@@ -50,6 +51,7 @@ fun Calendar.toDto(): CalendarDto {
         supportedComponents = this.supportedComponents.joinToString(","),
         calDavPrivileges = this.calDavPrivileges.joinToString(",") { it.tag },
         calendarSyncStatus = this.calendarSyncStatus?.serialize(),
-        syncToken = this.syncToken
+        syncToken = this.syncToken,
+        syncComponent = this.syncComponent?.name
     )
 }

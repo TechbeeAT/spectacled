@@ -21,7 +21,7 @@
 /* End PBXBuildRule section */
 
 /* Begin PBXFileReference section */
-		77776F19DCDDC655FFD79211 /* iosNotesApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosNotesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		77776F19DCDDC655FFD79211 /* spectacledNotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = spectacledNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -64,7 +64,7 @@
 		7777042A10365E46A9EC9500 /* NotesProducts */ = {
 			isa = PBXGroup;
 			children = (
-				77776F19DCDDC655FFD79211 /* iosNotesApp.app */,
+				77776F19DCDDC655FFD79211 /* spectacledNotes.app */,
 			);
 			name = NotesProducts;
 			sourceTree = "<group>";
@@ -102,7 +102,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosNotesApp;
-			productReference = 77776F19DCDDC655FFD79211 /* iosNotesApp.app */;
+			productReference = 77776F19DCDDC655FFD79211 /* spectacledNotes.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -248,9 +248,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"iosNotesApp/Preview Content\"";
-				DEVELOPMENT_TEAM = CQ24D5B7LP;
+				DEVELOPMENT_TEAM = BZY8AT5K2W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosNotesApp/Info.plist;
@@ -279,9 +279,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"iosNotesApp/Preview Content\"";
-				DEVELOPMENT_TEAM = CQ24D5B7LP;
+				DEVELOPMENT_TEAM = BZY8AT5K2W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosNotesApp/Info.plist;

@@ -1,6 +1,8 @@
 package at.techbee.spectacled.screens.core
 
 import android.os.Build
+import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.shared.R
 
 class AndroidPlatform : Platform {
     override val platform: Platforms = Platforms.ANDROID // = "Android ${Build.VERSION.SDK_INT}"
@@ -8,3 +10,11 @@ class AndroidPlatform : Platform {
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform()
+
+fun SpectacledVariant.getAndroidLogoResId(): Int {
+    return when (this) {
+        SpectacledVariant.JOURNALS -> R.drawable.logo_spectacled_journals_android
+        SpectacledVariant.NOTES -> R.drawable.logo_spectacled_notes_android
+        SpectacledVariant.TASKS -> R.drawable.logo_spectacled_tasks_android
+    }
+}

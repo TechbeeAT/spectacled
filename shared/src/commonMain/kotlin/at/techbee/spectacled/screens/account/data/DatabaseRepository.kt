@@ -4,12 +4,11 @@ import app.cash.sqldelight.async.coroutines.awaitAsOne
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
+import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
-import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import io.ktor.http.Url
 import kotlin.time.ExperimentalTime
-
 
 
 suspend fun SpectacledDatabase.upsertPrincipal(principal: Principal): Long {
@@ -72,7 +71,8 @@ suspend fun SpectacledDatabase.upsertCalendar(calendar: Calendar, homeCollection
             supportedComponents = calendarDto.supportedComponents,
             calDavPrivileges = calendarDto.calDavPrivileges,
             calendarSyncStatus = calendarDto.calendarSyncStatus,
-            syncToken = calendarDto.syncToken
+            syncToken = calendarDto.syncToken,
+            syncComponent = calendarDto.syncComponent
         )
         // insert, but if the entry exists, it will be ignored
         calendar_dtoQueries.insertCalendar(
@@ -85,7 +85,8 @@ suspend fun SpectacledDatabase.upsertCalendar(calendar: Calendar, homeCollection
             supportedComponents = calendarDto.supportedComponents,
             calDavPrivileges = calendarDto.calDavPrivileges,
             calendarSyncStatus = calendarDto.calendarSyncStatus,
-            syncToken = calendarDto.syncToken
+            syncToken = calendarDto.syncToken,
+            syncComponent = calendarDto.syncComponent
         )
     }
 
@@ -96,44 +97,62 @@ suspend fun SpectacledDatabase.upsertCalendar(calendar: Calendar, homeCollection
 suspend fun SpectacledDatabase.insertOrUpdateIcalEntry(icalEntry: IcalEntry) {
     val icalEntryDto = icalEntry.toDto()
 
-    vjournal_dtoQueries.transaction {
+    icalentry_dtoQueries.transaction {
         // first update, if the UID doesn't exist, this is ignored
-        vjournal_dtoQueries.updateVjournal(
+        icalentry_dtoQueries.updateIcalEntry(
             calendarId = icalEntryDto.calendarId,
             uid = icalEntryDto.uid,
             summary = icalEntryDto.summary,
             description = icalEntryDto.description,
             dtstart = icalEntryDto.dtstart,
             dtStartTimeZone = icalEntryDto.dtStartTimeZone,
+            due = icalEntryDto.due,
+            dueTimeZone = icalEntryDto.dueTimeZone,
+            completed = icalEntryDto.completed,
+            completedTimeZone = icalEntryDto.completedTimeZone,
             dtstamp = icalEntryDto.dtstamp,
             color = icalEntryDto.color,
             sequence = icalEntryDto.sequence,
+            status = icalEntryDto.status,
+            percentComplete = icalEntryDto.percentComplete,
+            priority = icalEntryDto.priority,
+            classification = icalEntryDto.classification,
             categories = icalEntryDto.categories,
             created = icalEntryDto.created,
             lastModified = icalEntryDto.lastModified,
             extraProperties = icalEntryDto.extraProperties,
             syncState = icalEntryDto.syncState,
             etag = icalEntryDto.etag,
-            href = icalEntryDto.href
+            href = icalEntryDto.href,
+            calendarComponent = icalEntryDto.calendarComponent
         )
         // insert, but if the UID exists, it will be ignored
-        vjournal_dtoQueries.insertVjournal(
+        icalentry_dtoQueries.insertIcalEntry(
             calendarId = icalEntryDto.calendarId,
             uid = icalEntryDto.uid,
             summary = icalEntryDto.summary,
             description = icalEntryDto.description,
             dtstart = icalEntryDto.dtstart,
             dtStartTimeZone = icalEntryDto.dtStartTimeZone,
+            due = icalEntryDto.due,
+            dueTimeZone = icalEntryDto.dueTimeZone,
+            completed = icalEntryDto.completed,
+            completedTimeZone = icalEntryDto.completedTimeZone,
             dtstamp = icalEntryDto.dtstamp,
             color = icalEntryDto.color,
             sequence = icalEntryDto.sequence,
+            status = icalEntryDto.status,
+            percentComplete = icalEntryDto.percentComplete,
+            priority = icalEntryDto.priority,
+            classification = icalEntryDto.classification,
             categories = icalEntryDto.categories,
             created = icalEntryDto.created,
             lastModified = icalEntryDto.lastModified,
             extraProperties = icalEntryDto.extraProperties,
             syncState = icalEntryDto.syncState,
             etag = icalEntryDto.etag,
-            href = icalEntryDto.href
+            href = icalEntryDto.href,
+            calendarComponent = icalEntryDto.calendarComponent
         )
     }
 }

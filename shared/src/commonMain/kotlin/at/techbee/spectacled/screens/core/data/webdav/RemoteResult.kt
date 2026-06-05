@@ -3,8 +3,8 @@ package at.techbee.spectacled.screens.core.data.webdav
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
+import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
-import at.techbee.spectacled.screens.icalentry.domain.IcalEntry
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 

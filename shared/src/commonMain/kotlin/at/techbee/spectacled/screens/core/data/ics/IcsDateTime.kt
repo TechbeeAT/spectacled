@@ -5,7 +5,13 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -13,10 +19,21 @@ import kotlin.time.Instant
 data class IcsDateTime(
     val instant: Instant,
     val isDateOnly: Boolean,
+    @Serializable(with = TimeZoneSerializer::class)
     val timeZone: TimeZone? = null,
 ) {
     companion object {
         fun now() = IcsDateTime(Clock.System.now(), false)
+
+        fun today(): IcsDateTime {
+            val todayInstant = Clock.System.now().toLocalDateTime(TimeZone.UTC).date.atStartOfDayIn(TimeZone.UTC)
+            return IcsDateTime(todayInstant, true)
+        }
+
+        fun todayAtStartOfDay(): IcsDateTime {
+            val todayInstant = Clock.System.now().toLocalDateTime(TimeZone.UTC).date.atStartOfDayIn(TimeZone.UTC)
+            return IcsDateTime(todayInstant, false)
+        }
 
     }
 
@@ -71,12 +88,11 @@ data class IcsDateTime(
      * The logic follows this priority:
      * 1. If [isDateOnly] is true, [TimeZone.UTC] is returned (standard for floating dates).
      * 2. If a specific [timeZone] is defined, that time zone is returned.
-     * 3. Otherwise, the provided [deviceZone] is returned.
+     * 3. Otherwise [TimeZone.UTC] is returned.
      *
-     * @param deviceZone The fallback time zone to use if no specific zone is set and it is not a date-only value.
      * @return The [TimeZone] to be used for local time calculations.
      */
-    fun effectiveZone(deviceZone: TimeZone = TimeZone.currentSystemDefault()): TimeZone =
+    fun effectiveZone(): TimeZone =
         when {
             isDateOnly -> TimeZone.UTC
             timeZone != null -> timeZone
@@ -91,11 +107,10 @@ data class IcsDateTime(
      * effective time zone to the new one.
      *
      * @param newZone The new [TimeZone] to apply. If null, the time is treated as floating or
-     * defaults to [deviceZone].
-     * @param deviceZone The fallback [TimeZone] to use if the current or new zone is not explicitly defined.
+     * defaults to [TimeZone.UTC].
      * @return A new [IcsDateTime] instance with the updated [instant] and [timeZone].
      */
-    fun withZone(newZone: TimeZone?, deviceZone: TimeZone = TimeZone.currentSystemDefault()): IcsDateTime {
+    fun withZone(newZone: TimeZone?): IcsDateTime {
         val local = instant.toLocalDateTime(timeZone ?: TimeZone.UTC)
 
         return this.copy(
@@ -103,4 +118,27 @@ data class IcsDateTime(
             timeZone = newZone
         )
     }
+    
+    fun asDateOnly(): IcsDateTime {
+        val localDate = toLocalDateTime().date
+        return IcsDateTime(
+            instant = localDate.atStartOfDayIn(TimeZone.UTC),
+            isDateOnly = true,
+            timeZone = null
+        )
+    }
+
+    fun asDateTime(): IcsDateTime {
+        val localDate = toLocalDateTime().date
+        return this.copy(
+            instant = localDate.atStartOfDayIn(effectiveZone()),
+            isDateOnly = false
+        )
+    }
+}
+
+object TimeZoneSerializer : KSerializer<TimeZone> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TimeZone", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TimeZone) = encoder.encodeString(value.id)
+    override fun deserialize(decoder: Decoder): TimeZone = TimeZone.of(decoder.decodeString())
 }

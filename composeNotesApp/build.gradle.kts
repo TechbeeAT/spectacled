@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
-    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -31,7 +30,6 @@ kotlin {
 
     listOf(
         iosArm64(),
-        iosX64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
@@ -122,15 +120,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "at.techbee.spectacled.notes"
             packageVersion = libs.versions.appVersionString.get()
-        }
-    }
-}
 
-sqldelight {
-    databases {
-        create("SpectacledDatabase") {
-            packageName.set("at.techbee.spectacled.notes.db")
-            generateAsync.set(true)
+            linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_png.png")) }
+            windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_ico.ico")) }
+            macOS { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_icns.icns")) }
         }
     }
 }

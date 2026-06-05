@@ -6,6 +6,7 @@ interface SyncTrigger {
     fun requestImmediatePush(calendarId: Long)
     fun schedulePeriodic()
     fun cancel()
+    fun triggerWidgetUpdate()
 }
 
 expect class PlatformSyncTrigger: SyncTrigger {
@@ -14,4 +15,5 @@ expect class PlatformSyncTrigger: SyncTrigger {
     override fun requestImmediatePush(calendarId: Long)  // TODO: REVIEW! Currently not in use!
     override fun schedulePeriodic()
     override fun cancel()
+    override fun triggerWidgetUpdate()
 }

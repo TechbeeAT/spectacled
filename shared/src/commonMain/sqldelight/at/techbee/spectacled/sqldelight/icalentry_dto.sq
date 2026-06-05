@@ -1,0 +1,169 @@
+CREATE TABLE IcalEntryDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    calendarId INTEGER NOT NULL REFERENCES CalendarDto(id) ON DELETE CASCADE,
+    uid TEXT NOT NULL UNIQUE,
+    summary TEXT,
+    description TEXT,
+    dtstart TEXT,
+    dtStartTimeZone TEXT,
+    due TEXT,
+    dueTimeZone TEXT,
+    completed TEXT,
+    completedTimeZone TEXT,
+    status TEXT,
+    percentComplete INTEGER,
+    priority INTEGER,
+    classification TEXT,
+    dtstamp TEXT,
+    color INTEGER,
+    sequence INTEGER,
+    categories TEXT,
+    created TEXT,
+    lastModified TEXT,
+    extraProperties TEXT,
+    orderNo INTEGER,
+    syncState TEXT,
+    etag TEXT,
+    href TEXT,
+    calendarComponent TEXT
+);
+
+getIcalEntriesByCalendar:
+SELECT * FROM IcalEntryDto WHERE calendarId = ?;
+
+getDirtyIcalEntriesByCalendar:
+SELECT * FROM IcalEntryDto WHERE calendarId = ? AND syncState NOT IN ('SYNCED', 'REMOTE_DELETED_LOCAL_TRASHBIN');
+
+getDeletedDeltaHrefs:
+SELECT IcalEntryDto.href FROM IcalEntryDto  WHERE calendarId = ? AND href NOT IN ? AND syncState != 'REMOTE_DELETED_LOCAL_TRASHBIN' AND href NOT NULL;
+
+getIcalEntryByUid:
+SELECT * FROM IcalEntryDto WHERE uid = ?;
+
+getIcalEntryById:
+SELECT * FROM IcalEntryDto WHERE id = ?;
+
+getIcalEntriesByHrefs:
+SELECT * FROM IcalEntryDto WHERE href IN ?;
+
+getIcalEntryByHref:
+SELECT * FROM IcalEntryDto WHERE href = ?;
+
+getAllColors:
+SELECT DISTINCT color FROM IcalEntryDto WHERE color IS NOT NULL ORDER BY lastModified DESC;
+
+getAllCategories:
+SELECT DISTINCT categories FROM IcalEntryDto WHERE categories IS NOT NULL ORDER BY lastModified DESC;
+
+getLastUsedTimezones:
+SELECT DISTINCT dtStartTimeZone FROM IcalEntryDto WHERE dtStartTimeZone IS NOT NULL ORDER BY lastModified DESC LIMIT 5;
+
+insertIcalEntry:
+INSERT OR IGNORE INTO IcalEntryDto (
+    calendarId,
+    uid,
+    summary,
+    description,
+    dtstart,
+    dtStartTimeZone,
+    due,
+    dueTimeZone,
+    completed,
+    completedTimeZone,
+    status,
+    percentComplete,
+    priority,
+    classification,
+    dtstamp,
+    color,
+    sequence,
+    categories,
+    created,
+    lastModified,
+    extraProperties,
+    syncState,
+    etag,
+    href,
+    calendarComponent
+)
+VALUES (
+    :calendarId,
+    :uid,
+    :summary,
+    :description,
+    :dtstart,
+    :dtStartTimeZone,
+    :due,
+    :dueTimeZone,
+    :completed,
+    :completedTimeZone,
+    :status,
+    :percentComplete,
+    :priority,
+    :classification,
+    :dtstamp,
+    :color,
+    :sequence,
+    :categories,
+    :created,
+    :lastModified,
+    :extraProperties,
+    :syncState,
+    :etag,
+    :href,
+    :calendarComponent
+);
+
+updateIcalEntry:
+UPDATE
+    IcalEntryDto
+SET
+    calendarId = :calendarId,
+    uid = :uid,
+    summary = :summary,
+    description = :description,
+    dtstart = :dtstart,
+    dtStartTimeZone = :dtStartTimeZone,
+    due = :due,
+    dueTimeZone = :dueTimeZone,
+    completed = :completed,
+    completedTimeZone = :completedTimeZone,
+    status = :status,
+    percentComplete = :percentComplete,
+    priority = :priority,
+    classification = :classification,
+    dtstamp = :dtstamp,
+    color = :color,
+    sequence = :sequence,
+    categories = :categories,
+    created = :created,
+    lastModified = :lastModified,
+    extraProperties = :extraProperties,
+    syncState = :syncState,
+    etag = :etag,
+    href = :href,
+    calendarComponent = :calendarComponent
+WHERE uid = :uid;
+
+deleteTrashed:
+DELETE FROM IcalEntryDto WHERE lastModified < :cutOffTimestamp AND syncState = 'REMOTE_DELETED_LOCAL_TRASHBIN';
+
+markAsDeleted:
+UPDATE IcalEntryDto SET syncState = 'LOCAL_DELETED' WHERE id IN ?;
+
+updateColor:
+UPDATE IcalEntryDto SET color = :newColor, lastModified = :lastModified, syncState = :syncState WHERE id = :id;
+
+updateProgress:
+UPDATE IcalEntryDto SET percentComplete = :newPercent, status = :newStatus, lastModified = :lastModified, syncState = :syncState WHERE id = :id;
+
+updateCategory:
+UPDATE IcalEntryDto SET categories = :newCategories, lastModified = :lastModified, syncState = :syncState WHERE id = :id;
+
+updateOrderNo:
+UPDATE IcalEntryDto SET orderNo = :orderNo WHERE id = :id;
+
+updateSyncMetadata:
+UPDATE IcalEntryDto
+SET etag = :etag, href = :href, syncState = :syncState
+WHERE id = :id;

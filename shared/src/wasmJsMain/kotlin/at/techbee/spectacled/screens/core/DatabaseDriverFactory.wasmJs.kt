@@ -1,7 +1,6 @@
 package at.techbee.spectacled.screens.core
 
 import app.cash.sqldelight.db.QueryResult
-import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.worker.WebWorkerDriver
 import at.techbee.spectacled.db.SpectacledDatabase
@@ -36,7 +35,7 @@ actual class DatabaseDriverFactory {
                 d.execute(null, "PRAGMA foreign_keys=ON;", 0)
 
                 Napier.d("Driver fully initialized")
-                SpectacledDatabase(d)
+                SpectacledDatabase(d).also { database = it }
             }
         }
     }

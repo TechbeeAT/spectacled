@@ -30,7 +30,6 @@ kotlin {
 
     listOf(
         iosArm64(),
-        iosX64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
@@ -121,6 +120,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "at.techbee.spectacled.journals"
             packageVersion = libs.versions.appVersionString.get()
+
+            linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_png.png")) }
+            windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_ico.ico")) }
+            macOS { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_icns.icns")) }
         }
     }
 }

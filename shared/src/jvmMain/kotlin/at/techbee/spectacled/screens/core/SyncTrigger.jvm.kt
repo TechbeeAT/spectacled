@@ -53,4 +53,8 @@ actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
     actual override fun cancel() {
         job?.cancel()
     }
+
+    actual override fun triggerWidgetUpdate() {
+        // No widgets on JVM
+    }
 }

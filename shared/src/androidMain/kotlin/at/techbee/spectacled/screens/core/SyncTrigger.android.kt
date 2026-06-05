@@ -11,6 +11,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.widget.SpectacledWidget
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.TimeUnit
@@ -59,9 +60,13 @@ actual class PlatformSyncTrigger(val context: Context) : SyncTrigger {
     actual override fun cancel() {
         WorkManager.getInstance(context).cancelUniqueWork(CALDAV_PERIODIC_SYNC_WORKER)
     }
+
+    actual override fun triggerWidgetUpdate() {
+        SpectacledWidget.updateAll(context)
+    }
 }
 
-class SyncWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params), KoinComponent {
+class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params), KoinComponent {
     private val credentialStore: PlatformCredentialStore by inject()
     private val databaseDriverFactory: DatabaseDriverFactory by inject()
 
@@ -83,6 +88,9 @@ class SyncWorker(appContext: Context, params: WorkerParameters) : CoroutineWorke
                 credentialStore
             )
         }
+
+        SpectacledWidget.updateAll(appContext)
+
         return Result.success()
     }
 }

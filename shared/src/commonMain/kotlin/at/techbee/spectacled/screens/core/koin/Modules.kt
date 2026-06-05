@@ -1,19 +1,18 @@
 package at.techbee.spectacled.screens.core.koin
 
-import at.techbee.spectacled.screens.account.presentation.calendars.CalendarListViewModel
-import at.techbee.spectacled.screens.core.data.AppPreferences
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrydetails.IcalEntryDetailsViewModel
-import at.techbee.spectacled.screens.icalentry.presentation.icalentrylist.IcalEntryListViewModel
-import com.russhwolf.settings.Settings
+import at.techbee.spectacled.screens.about.presentation.AboutViewModel
+import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
+import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
+import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val sharedModule = module {
-    viewModelOf(::IcalEntryListViewModel)
-    viewModelOf(::CalendarListViewModel)
-    viewModelOf(::IcalEntryDetailsViewModel)
-    single { AppPreferences(Settings()) }
+    viewModelOf(::ListViewModel)
+    viewModelOf(::AccountListViewModel)
+    viewModelOf(::DetailsViewModel)
+    viewModelOf(::AboutViewModel)
 
     includes(platformModule)
 }

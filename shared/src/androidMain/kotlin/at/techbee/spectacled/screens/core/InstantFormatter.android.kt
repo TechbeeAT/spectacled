@@ -15,29 +15,41 @@ actual class PlatformInstantFormatter actual constructor(val icsDateTime: IcsDat
     actual override fun formatLocalizedDate() = formatLocalized(dateFormatter)
     actual override fun formatLocalizedTime() = formatLocalized(timeFormatter)
     actual override fun formatLocalizedDateTime() = formatLocalized(dateTimeFormatter)
+    actual override fun formatLocalizedDayOfWeekShort() = formatLocalized(dayOfWeekFormatter)
+    actual override fun formatFullMonthName() = formatLocalized(monthNameFormatter)
 
 
     private val dateFormatter = DateTimeFormatter
         .ofLocalizedDate(FormatStyle.MEDIUM)
         .withLocale(Locale.getDefault())
-        .withZone(icsDateTime.effectiveZone(deviceZone).toJavaZoneId())
+        .withZone(icsDateTime.effectiveZone().toJavaZoneId())
 
     private val timeFormatter = DateTimeFormatter
         .ofLocalizedTime(FormatStyle.SHORT)
         .withLocale(Locale.getDefault())
-        .withZone(icsDateTime.effectiveZone(deviceZone).toJavaZoneId())
+        .withZone(icsDateTime.effectiveZone().toJavaZoneId())
 
     private val dateTimeFormatter = DateTimeFormatter
         .ofLocalizedDateTime(FormatStyle.MEDIUM,FormatStyle.SHORT)
         .withLocale(Locale.getDefault())
-        .withZone(icsDateTime.effectiveZone(deviceZone).toJavaZoneId())
+        .withZone(icsDateTime.effectiveZone().toJavaZoneId())
+
+    private val dayOfWeekFormatter = DateTimeFormatter
+        .ofPattern("EEE")
+        .withLocale(Locale.getDefault())
+        .withZone(icsDateTime.effectiveZone().toJavaZoneId())
+
+    private val monthNameFormatter = DateTimeFormatter
+        .ofPattern("MMMM")
+        .withLocale(Locale.getDefault())
+        .withZone(icsDateTime.effectiveZone().toJavaZoneId())
 
 
     private fun formatLocalized(formatter: DateTimeFormatter): String {
         return if (icsDateTime.isDateOnly) {
             // Avoid accidental zone shift
             val localDate = icsDateTime.instant.toLocalDateTime(TimeZone.UTC).date
-            formatter.format(localDate.atStartOfDayIn(icsDateTime.effectiveZone(deviceZone)).toJavaInstant())
+            formatter.format(localDate.atStartOfDayIn(icsDateTime.effectiveZone()).toJavaInstant())
         } else {
             formatter.format(icsDateTime.instant.toJavaInstant())
         }

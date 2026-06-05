@@ -1,35 +1,59 @@
 package at.techbee.spectacled.theme
 
 import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import org.koin.compose.koinInject
 
 @Composable
 actual fun AppTheme(
-    darkTheme: Boolean,
-    dynamicColor: Boolean,
     spectacledVariant: SpectacledVariant,
     content: @Composable (() -> Unit)
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        else -> when(spectacledVariant) {
-            SpectacledVariant.JOURNALS -> if (darkTheme) darkJournalsScheme else lightJournalsScheme
-            SpectacledVariant.NOTES -> if (darkTheme) darkNotesScheme else lightNotesScheme
-            SpectacledVariant.TASKS -> if (darkTheme) darkTasksScheme else lightTasksScheme
-        }
-    }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content
-    )
+    // Simplify to make previews work
+    if(LocalInspectionMode.current) {
+        MaterialTheme(
+            colorScheme = getThemeForSeedColor(spectacledVariant.themeSeedColor),
+            typography = AppTypography,
+            content = content
+        )
+    } else {
+
+        val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
+        val themeOption by userAppPreferencesStore.getThemeOptionAsFlow().collectAsState(userAppPreferencesStore.themeOption)
+        val themeDynamicColorsEnabled by userAppPreferencesStore.getThemeDynamicColorsEnabledAsFlow().collectAsState(userAppPreferencesStore.themeDynamicColorsEnabled)
+
+        val colorScheme = if (themeDynamicColorsEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val context = LocalContext.current
+            val isDark = when (themeOption) {
+                ThemeOption.SYSTEM -> isSystemInDarkTheme()
+                ThemeOption.LIGHT -> false
+                ThemeOption.DARK -> true
+            }
+            if (isDark)
+                dynamicDarkColorScheme(context)
+            else
+                dynamicLightColorScheme(context)
+        } else {
+            getThemeForSeedColor(spectacledVariant.themeSeedColor)
+        }
+
+
+
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppTypography,
+            content = content
+        )
+    }
 }
