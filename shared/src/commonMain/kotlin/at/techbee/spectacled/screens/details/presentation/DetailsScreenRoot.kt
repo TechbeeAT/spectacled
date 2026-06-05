@@ -28,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -50,8 +49,7 @@ import at.techbee.spectacled.screens.details.presentation.components.DetailsTopB
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
-import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
-import at.techbee.spectacled.theme.getThemeForColoredSurfaces
+import at.techbee.spectacled.theme.getThemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
@@ -70,10 +68,6 @@ fun DetailsScreenRoot(
 ) {
     val detailsState = detailsViewModel.state
     val snackbarHostState = remember { SnackbarHostState() }
-
-    val customColors = getThemeForColoredSurfaces(detailsState.icalEntry.color)
-    val iconTint = getContentColorForColoredSurfaces(detailsState.icalEntry.color)
-
 
     LaunchedEffect(detailsState.snackbarText) {
         detailsState.snackbarText?.let { message ->
@@ -170,14 +164,12 @@ fun DetailsScreenRoot(
         )
     }
 
-    CompositionLocalProvider(LocalContentColor provides customColors.onSurface) {
-        MaterialTheme(colorScheme = customColors) {
+    MaterialTheme(colorScheme = getThemeForSeedColor(detailsState.icalEntry.color)) {
 
             Scaffold(
                 topBar = {
                     DetailsTopBar(
                         canWriteContent = detailsState.allowEditing(),
-                        contentColor = iconTint,
                         isLoading = detailsState.isLoading,
                         isPinned = detailsState.icalEntry.categories.any { it == IcalEntry.PINNED_CATEGORY },
                         onAction = { action -> detailsViewModel.onAction(action) }
@@ -191,8 +183,7 @@ fun DetailsScreenRoot(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Palette,
-                                contentDescription = stringResource(Res.string.color),
-                                tint = if(detailsState.allowEditing() && !detailsState.isLoading) iconTint else LocalContentColor.current
+                                contentDescription = stringResource(Res.string.color)
                             )
                         }
 
@@ -202,8 +193,7 @@ fun DetailsScreenRoot(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.Label,
-                                contentDescription = stringResource(Res.string.category),
-                                tint = if(detailsState.allowEditing() && !detailsState.isLoading) iconTint else LocalContentColor.current
+                                contentDescription = stringResource(Res.string.category)
                             )
                         }
 
@@ -216,12 +206,9 @@ fun DetailsScreenRoot(
                                 Icon(
                                     imageVector = detailsState.icalEntry.status?.vectorIcon ?: Status.FINAL.vectorIcon!!,
                                     contentDescription = stringResource(Res.string.more),
-                                    tint = when {
-                                        !detailsState.allowEditing() || detailsState.isLoading -> LocalContentColor.current
-                                        detailsState.icalEntry.status == null -> iconTint
-                                        detailsState.icalEntry.status == Status.FINAL -> iconTint
-                                        detailsState.icalEntry.status == Status.DRAFT -> MaterialTheme.colorScheme.error
-                                        detailsState.icalEntry.status== Status.CANCELLED -> MaterialTheme.colorScheme.onSurface
+                                    tint = when (detailsState.icalEntry.status) {
+                                        Status.DRAFT -> MaterialTheme.colorScheme.error
+                                        Status.CANCELLED -> MaterialTheme.colorScheme.onSurface
                                         else -> LocalContentColor.current
                                     }
                                 )
@@ -258,8 +245,7 @@ fun DetailsScreenRoot(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.MoreVert,
-                                contentDescription = stringResource(Res.string.more),
-                                tint = iconTint
+                                contentDescription = stringResource(Res.string.more)
                             )
                         }
                     }
@@ -275,12 +261,10 @@ fun DetailsScreenRoot(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Restore,
-                                    contentDescription = stringResource(Res.string.restore),
-                                    tint = iconTint
+                                    contentDescription = stringResource(Res.string.restore)
                                 )
                                 Text(
-                                    text = stringResource(Res.string.restore),
-                                    color = iconTint
+                                    text = stringResource(Res.string.restore)
                                 )
                             }
                         }
@@ -309,7 +293,6 @@ fun DetailsScreenRoot(
                 }
             }
         }
-    }
 }
 
 

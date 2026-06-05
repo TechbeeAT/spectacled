@@ -29,14 +29,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,8 +53,8 @@ import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.list.presentation.ListAction
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
-import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
-import at.techbee.spectacled.theme.getThemeForColoredSurfaces
+import at.techbee.spectacled.theme.AppTheme
+import com.materialkolor.dynamicColorScheme
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -91,7 +88,6 @@ fun IcalEntryListTopBar(
     sortedAscending: Boolean,
     listLayout: ListLayout,
     multiselectItems: List<Long>?,
-    onSurfaceTint: Color,
     onAction: (ListAction) -> Unit,
     allSelectedPinned: Boolean,
     modifier: Modifier = Modifier,
@@ -120,22 +116,17 @@ fun IcalEntryListTopBar(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.ChevronLeft,
-                                    contentDescription = stringResource(Res.string.folders),
-                                    tint = onSurfaceTint
+                                    contentDescription = stringResource(Res.string.folders)
                                 )
                                 Text(
                                     text = calendar.displayName?:calendar.url.toString(),
-                                    color = onSurfaceTint,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.widthIn(max = 120.dp).padding(end = 4.dp)
                                 )
 
                                 AnimatedVisibility(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.IN_PROGRESS) {
-                                    CircularProgressIndicator(
-                                        color = if(onSurfaceTint == Color.Unspecified) ProgressIndicatorDefaults.circularColor else onSurfaceTint,
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp))
                                 }
                             }
                         }
@@ -149,12 +140,10 @@ fun IcalEntryListTopBar(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Close,
-                                    contentDescription = stringResource(Res.string.clear_selection),
-                                    tint = onSurfaceTint
+                                    contentDescription = stringResource(Res.string.clear_selection)
                                 )
                                 Text(
                                     text = stringResource(Res.string.x_selected, multiselectItems?.size ?: 0),
-                                    color = onSurfaceTint,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.widthIn(max = 120.dp)
@@ -171,7 +160,6 @@ fun IcalEntryListTopBar(
                         ) {
                             Text(
                                 text = stringResource(Res.string.select_all),
-                                color = onSurfaceTint,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.widthIn(max = 120.dp)
@@ -197,8 +185,7 @@ fun IcalEntryListTopBar(
                     ) {
                         Icon(
                             imageVector = if (isSearchBarExpanded) Icons.Outlined.SearchOff else Icons.Outlined.Search,
-                            contentDescription = stringResource(Res.string.search),
-                            tint = onSurfaceTint
+                            contentDescription = stringResource(Res.string.search)
                         )
                     }
 
@@ -209,8 +196,7 @@ fun IcalEntryListTopBar(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.Sort,
-                                contentDescription = stringResource(listSortedBy.displayName),
-                                tint = onSurfaceTint
+                                contentDescription = stringResource(listSortedBy.displayName)
                             )
 
                             DropdownMenu(
@@ -221,10 +207,7 @@ fun IcalEntryListTopBar(
 
                                     DropdownMenuItem(
                                         text = {
-                                            Text(
-                                                text = stringResource(sortedByOption.displayName),
-                                                color = onSurfaceTint
-                                            )
+                                            Text(text = stringResource(sortedByOption.displayName))
                                         },
                                         onClick = {
                                             // toggle ascending if the same item is selected again
@@ -237,14 +220,12 @@ fun IcalEntryListTopBar(
                                             if (listSortedBy.name == sortedByOption.name && sortedAscending)
                                                 Icon(
                                                     imageVector = Icons.Default.ArrowCircleDown,
-                                                    contentDescription = stringResource(Res.string.sort_ascending),
-                                                    tint = onSurfaceTint
+                                                    contentDescription = stringResource(Res.string.sort_ascending)
                                                 )
                                             else if (listSortedBy.name == sortedByOption.name)
                                                 Icon(
                                                     imageVector = Icons.Outlined.ArrowCircleUp,
-                                                    contentDescription = stringResource(Res.string.sort_descending),
-                                                    tint = onSurfaceTint
+                                                    contentDescription = stringResource(Res.string.sort_descending)
                                                 )
                                         }
                                     )
@@ -269,8 +250,7 @@ fun IcalEntryListTopBar(
                         ) {
                             Icon(
                                 imageVector = listLayout.displayIcon,
-                                contentDescription = stringResource(listLayout.displayName),
-                                tint = onSurfaceTint
+                                contentDescription = stringResource(listLayout.displayName)
                             )
                         }
                     }
@@ -281,8 +261,7 @@ fun IcalEntryListTopBar(
                         ) {
                             Icon(
                                 painter = painterResource(Res.drawable.ic_gotodate),
-                                contentDescription = stringResource(Res.string.date_selector),
-                                tint = onSurfaceTint
+                                contentDescription = stringResource(Res.string.date_selector)
                             )
                         }
                     }
@@ -294,8 +273,7 @@ fun IcalEntryListTopBar(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Checklist,
-                                contentDescription = stringResource(Res.string.select_multiple),
-                                tint = onSurfaceTint
+                                contentDescription = stringResource(Res.string.select_multiple)
                             )
                         }
 
@@ -304,8 +282,7 @@ fun IcalEntryListTopBar(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Refresh,
-                                contentDescription = stringResource(Res.string.refresh),
-                                tint = onSurfaceTint
+                                contentDescription = stringResource(Res.string.refresh)
                             )
                         }
                     }
@@ -322,14 +299,12 @@ fun IcalEntryListTopBar(
                         if(allSelectedPinned)
                             Icon(
                                 painter = painterResource(Res.drawable.ic_unpin),
-                                contentDescription = stringResource(Res.string.unpin),
-                                tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                                contentDescription = stringResource(Res.string.unpin)
                             )
                         else
                             Icon(
                                 painter = painterResource(Res.drawable.ic_pin),
-                                contentDescription = stringResource(Res.string.pin),
-                                tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                                contentDescription = stringResource(Res.string.pin)
                             )
                     }
 
@@ -339,8 +314,7 @@ fun IcalEntryListTopBar(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.MoreVert,
-                            contentDescription = stringResource(Res.string.more),
-                            tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                            contentDescription = stringResource(Res.string.more)
                         )
                     }
 
@@ -352,8 +326,7 @@ fun IcalEntryListTopBar(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = stringResource(Res.string.update_color),
-                                    color = onSurfaceTint
+                                    text = stringResource(Res.string.update_color)
                                 )
                             },
                             enabled = multiselectItems?.isNotEmpty() == true,
@@ -361,26 +334,21 @@ fun IcalEntryListTopBar(
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Palette,
-                                    contentDescription = stringResource(Res.string.update_color),
-                                    tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                                    contentDescription = stringResource(Res.string.update_color)
                                 )
                             }
                         )
 
                         DropdownMenuItem(
                             text = {
-                                Text(
-                                    text = stringResource(Res.string.update_category),
-                                    color = onSurfaceTint
-                                )
+                                Text(text = stringResource(Res.string.update_category))
                             },
                             enabled = multiselectItems?.isNotEmpty() == true,
                             onClick = { onAction(ListAction.OnShowUpdateCategoryOfSelectedBottomSheet(true)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Outlined.Label,
-                                    contentDescription = stringResource(Res.string.update_category),
-                                    tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                                    contentDescription = stringResource(Res.string.update_category)
                                 )
                             }
                         )
@@ -390,8 +358,7 @@ fun IcalEntryListTopBar(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = stringResource(Res.string.delete_selected),
-                                    color = onSurfaceTint
+                                    text = stringResource(Res.string.delete_selected)
                                 )
                             },
                             enabled = multiselectItems?.isNotEmpty() == true,
@@ -399,8 +366,7 @@ fun IcalEntryListTopBar(
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.DeleteOutline,
-                                    contentDescription = stringResource(Res.string.delete_selected),
-                                    tint = onSurfaceTint.copy(alpha = if(multiselectItems?.isNotEmpty()== true) 1f else 0.5f)
+                                    contentDescription = stringResource(Res.string.delete_selected)
                                 )
                             }
                         )
@@ -416,31 +382,27 @@ fun IcalEntryListTopBar(
 @Preview
 @Composable
 private fun IcalEntrySearchBar_Preview() {
-    CompositionLocalProvider(LocalContentColor provides Color.Unspecified) {
-        MaterialTheme(colorScheme = getThemeForColoredSurfaces(Color.Unspecified)) {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
 
-            IcalEntryListTopBar(
-                calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
-                listSortedBy = ListSortedBy.CREATED,
-                sortedAscending = true,
-                listLayout = ListLayout.LIST,
-                isSearchBarExpanded = false,
-                multiselectItems = null,
-                onSurfaceTint = Color.Unspecified,
-                onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES,
-                allSelectedPinned = false
+        IcalEntryListTopBar(
+            calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
+            listSortedBy = ListSortedBy.CREATED,
+            sortedAscending = true,
+            listLayout = ListLayout.LIST,
+            isSearchBarExpanded = false,
+            multiselectItems = null,
+            onAction = {},
+            spectacledVariant = SpectacledVariant.NOTES,
+            allSelectedPinned = false
 
-            )
-        }
+        )
     }
 }
 
 @Preview
 @Composable
 private fun IcalEntrySearchBar_blue_Preview() {
-    CompositionLocalProvider(LocalContentColor provides Color.Blue) {
-        MaterialTheme(colorScheme = getThemeForColoredSurfaces(Color.Blue)) {
+        MaterialTheme(colorScheme = dynamicColorScheme(Color.Blue, false)) {
 
             IcalEntryListTopBar(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "This is a very long folder name that shouldn't cause troubles"),
@@ -449,21 +411,18 @@ private fun IcalEntrySearchBar_blue_Preview() {
                 listLayout = ListLayout.STAGGERED_GRID,
                 isSearchBarExpanded = true,
                 multiselectItems = null,
-                onSurfaceTint = getContentColorForColoredSurfaces(Color.Blue),
                 onAction = {},
                 spectacledVariant = SpectacledVariant.NOTES,
                 allSelectedPinned = false
             )
         }
-    }
 }
 
 
 @Preview
 @Composable
 private fun IcalEntrySearchBar_Multiselect_Preview() {
-    CompositionLocalProvider(LocalContentColor provides Color.Unspecified) {
-        MaterialTheme(colorScheme = getThemeForColoredSurfaces(Color.Unspecified)) {
+        AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
 
             IcalEntryListTopBar(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
@@ -473,20 +432,18 @@ private fun IcalEntrySearchBar_Multiselect_Preview() {
                 listLayout = ListLayout.LIST,
                 isSearchBarExpanded = false,
                 multiselectItems = listOf(1, 2, 3),
-                onSurfaceTint = Color.Unspecified,
                 onAction = {},
                 spectacledVariant = SpectacledVariant.NOTES,
                 allSelectedPinned = false
             )
         }
-    }
 }
 
 @Preview
 @Composable
 private fun IcalEntrySearchBar_yellow_Multiselect_Preview() {
-    CompositionLocalProvider(LocalContentColor provides Color.Yellow) {
-        MaterialTheme(colorScheme = getThemeForColoredSurfaces(Color.Yellow)) {
+
+        MaterialTheme(colorScheme = dynamicColorScheme(Color.Yellow, false)) {
 
             IcalEntryListTopBar(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "This is a very long folder name that shouldn't cause troubles"),
@@ -495,38 +452,33 @@ private fun IcalEntrySearchBar_yellow_Multiselect_Preview() {
                 listLayout = ListLayout.STAGGERED_GRID,
                 isSearchBarExpanded = true,
                 multiselectItems = emptyList(),
-                onSurfaceTint = getContentColorForColoredSurfaces(Color.Yellow),
                 onAction = {},
                 spectacledVariant = SpectacledVariant.NOTES,
                 allSelectedPinned = true
             )
         }
-    }
 }
 
 
 @Preview
 @Composable
 private fun IcalEntrySearchBar_sync_in_progress_Preview() {
-    CompositionLocalProvider(LocalContentColor provides Color.Unspecified) {
         MaterialTheme {
 
-            IcalEntryListTopBar(
-                calendar = Calendar.getCalendarForPreview().copy(
-                    displayName = "This is a very long folder name that shouldn't cause troubles",
-                    calendarSyncStatus = CalendarSyncStatus(CalendarSyncStatusType.IN_PROGRESS)
-                ),
-                listSortedBy = ListSortedBy.CREATED,
-                sortedAscending = true,
-                listLayout = ListLayout.STAGGERED_GRID,
-                isSearchBarExpanded = false,
-                multiselectItems = null,
-                onSurfaceTint = Color.Unspecified,
-                onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES,
-                allSelectedPinned = false
-            )
-        }
+        IcalEntryListTopBar(
+            calendar = Calendar.getCalendarForPreview().copy(
+                displayName = "This is a very long folder name that shouldn't cause troubles",
+                calendarSyncStatus = CalendarSyncStatus(CalendarSyncStatusType.IN_PROGRESS)
+            ),
+            listSortedBy = ListSortedBy.CREATED,
+            sortedAscending = true,
+            listLayout = ListLayout.STAGGERED_GRID,
+            isSearchBarExpanded = false,
+            multiselectItems = null,
+            onAction = {},
+            spectacledVariant = SpectacledVariant.NOTES,
+            allSelectedPinned = false
+        )
     }
 }
 

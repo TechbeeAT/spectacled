@@ -3,12 +3,10 @@ package at.techbee.spectacled
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,13 +25,6 @@ import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
 import at.techbee.spectacled.screens.list.presentation.ListScreenRoot
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
-import at.techbee.spectacled.theme.ThemeOption
-import at.techbee.spectacled.theme.journals.darkJournalsScheme
-import at.techbee.spectacled.theme.journals.lightJournalsScheme
-import at.techbee.spectacled.theme.notes.darkNotesScheme
-import at.techbee.spectacled.theme.notes.lightNotesScheme
-import at.techbee.spectacled.theme.tasks.darkTasksScheme
-import at.techbee.spectacled.theme.tasks.lightTasksScheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.DrawableResource
@@ -58,32 +49,29 @@ enum class SpectacledVariant(
     val appNameStringRes: StringResource,
     val logoDrawableResource: DrawableResource,
     val syncCalendarComponent: CalendarComponent,
-    val darkColorScheme: ColorScheme,
-    val lightColorScheme: ColorScheme
+    val themeSeedColor: Color,
 ) {
+
     JOURNALS(
         "spectacled_journals.db",
         Res.string.app_name_spectacled_journals,
         Res.drawable.logo_spectacled_journals,
         CalendarComponent.VJOURNAL,
-        darkJournalsScheme,
-        lightJournalsScheme
+        Color(0, 104, 150)
     ),
     NOTES(
         "spectacled_notes.db",
         Res.string.app_name_spectacled_notes,
         Res.drawable.logo_spectacled_notes,
         CalendarComponent.VJOURNAL,
-        darkNotesScheme,
-        lightNotesScheme
+        Color(153, 76, 44)
     ),
     TASKS(
         "spectacled_tasks.db",
         Res.string.app_name_spectacled_tasks,
         Res.drawable.logo_spectacled_tasks,
         CalendarComponent.VTODO,
-        darkTasksScheme,
-        lightTasksScheme
+        Color(41, 111, 35)
     );
 }
 
@@ -105,15 +93,11 @@ fun SpectacledApp(
             )
         })
     ) {
-        val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
-        val themeOption by userAppPreferencesStore.getThemeOptionAsFlow().collectAsState(null)
-        val themeDynamicColorsEnabled by userAppPreferencesStore.getThemeDynamicColorsEnabledAsFlow().collectAsState(null)
         val syncTrigger = koinInject<PlatformSyncTrigger>()
+        val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
 
         AppTheme(
-            spectacledVariant = spectacledVariant,
-            themeOption = ThemeOption.fromString(themeOption),
-            dynamicColor = themeDynamicColorsEnabled?.toBooleanStrictOrNull()?: false
+            spectacledVariant = spectacledVariant
         ) {
 
             val navController = rememberNavController()

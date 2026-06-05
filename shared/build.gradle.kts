@@ -92,6 +92,8 @@ kotlin {
 
             // safe storage
             implementation(libs.ksafe)
+
+            implementation(libs.material.kolor)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

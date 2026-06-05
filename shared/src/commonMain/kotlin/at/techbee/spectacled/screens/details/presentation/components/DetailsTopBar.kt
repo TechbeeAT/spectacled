@@ -10,7 +10,7 @@ import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -22,6 +22,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
+import at.techbee.spectacled.theme.AppTheme
+import com.materialkolor.dynamicColorScheme
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -38,15 +40,11 @@ import spectacled.shared.generated.resources.unpin
 fun DetailsTopBar(
     onAction: (DetailsAction) -> Unit,
     canWriteContent: Boolean,
-    contentColor: Color,
     isLoading: Boolean,
     isPinned: Boolean,
     spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>(),
     modifier: Modifier = Modifier
 ) {
-
-
-    //var dropdownMenuExpanded by remember { mutableStateOf(false) }
 
     TopAppBar(
         navigationIcon = {
@@ -64,20 +62,13 @@ fun DetailsTopBar(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ChevronLeft,
-                            contentDescription = stringResource(Res.string.back),
-                            tint = contentColor
+                            contentDescription = stringResource(Res.string.back)
                         )
-                        Text(
-                            text = stringResource(Res.string.back),
-                            color = contentColor
-                        )
+                        Text(text = stringResource(Res.string.back))
                     }
                 }
                 AnimatedVisibility(isLoading) {
-                    CircularProgressIndicator(
-                        color = if(contentColor == Color.Unspecified) ProgressIndicatorDefaults.circularColor else contentColor,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp))
                 }
             }
         },
@@ -89,8 +80,7 @@ fun DetailsTopBar(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.EditOff,
-                        contentDescription = stringResource(Res.string.read_only),
-                        tint = contentColor
+                        contentDescription = stringResource(Res.string.read_only)
                     )
                 }
             } else {
@@ -104,14 +94,12 @@ fun DetailsTopBar(
                             if(isPinned)
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_pin),
-                                    contentDescription = stringResource(Res.string.unpin),
-                                    tint = contentColor
+                                    contentDescription = stringResource(Res.string.unpin)
                                 )
                             else
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_unpin),
-                                    contentDescription = stringResource(Res.string.pin),
-                                    tint = contentColor
+                                    contentDescription = stringResource(Res.string.pin)
                                 )
                         }
                     }
@@ -129,39 +117,63 @@ fun DetailsTopBar(
 @Preview
 @Composable
 private fun DetailsTopBar_Journals_Preview() {
-    DetailsTopBar(
-        canWriteContent = true,
-        contentColor = Color.Unspecified,
-        isLoading = false,
-        isPinned = false,
-        onAction = {},
-        spectacledVariant = SpectacledVariant.JOURNALS
-    )
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        DetailsTopBar(
+            canWriteContent = true,
+            isLoading = false,
+            isPinned = false,
+            onAction = {},
+            spectacledVariant = SpectacledVariant.JOURNALS
+        )
+    }
 }
 
 
 @Preview
 @Composable
 private fun DetailsTopBar_Notes_Preview() {
-    DetailsTopBar(
-        canWriteContent = true,
-        contentColor = Color.Unspecified,
-        isLoading = false,
-        isPinned = false,
-        onAction = {},
-        spectacledVariant = SpectacledVariant.NOTES
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
+
+        DetailsTopBar(
+            canWriteContent = true,
+            isLoading = false,
+            isPinned = false,
+            onAction = {},
+            spectacledVariant = SpectacledVariant.NOTES
+        )
+    }
 }
 
 @Preview
 @Composable
 private fun DetailsTopBar_readonly_Preview() {
-    DetailsTopBar(
-        canWriteContent = false,
-        contentColor = Color.Unspecified,
-        isLoading = true,
-        isPinned = true,
-        onAction = {},
-        spectacledVariant = SpectacledVariant.NOTES
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+
+        DetailsTopBar(
+            canWriteContent = false,
+            isLoading = true,
+            isPinned = true,
+            onAction = {},
+            spectacledVariant = SpectacledVariant.TASKS
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun DetailsTopBar_TASKS_with_color_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        
+        MaterialTheme(dynamicColorScheme(Color.Yellow, false)) {
+
+            DetailsTopBar(
+                canWriteContent = false,
+                isLoading = true,
+                isPinned = true,
+                onAction = {},
+                spectacledVariant = SpectacledVariant.TASKS
+            )
+        }
+    }
 }

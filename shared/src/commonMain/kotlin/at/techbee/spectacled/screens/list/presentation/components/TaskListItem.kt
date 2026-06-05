@@ -31,10 +31,13 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
+import at.techbee.spectacled.theme.AppTheme
+import at.techbee.spectacled.theme.getThemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -59,119 +62,121 @@ fun TaskListItem(
     val hapticFeedback = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
 
-    ElevatedFilterChip(
-        modifier = modifier,
-        interactionSource = interactionSource,
-        leadingIcon = { dragHandle() },
-        trailingIcon = {
-            TriStateCheckbox(
-                state = icalEntry.getProgressTriState(),
-                onClick = {
-                    onToggleProgress()
-                })
-        },
-        label = {
+    MaterialTheme(colorScheme = getThemeForSeedColor(icalEntry.color)) {
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .combinedClickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = onClick,
-                        onLongClick = {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onLongClick()
-                        }
-                    )
-                    .padding(vertical = 4.dp)
-            ) {
+        ElevatedFilterChip(
+            modifier = modifier,
+            interactionSource = interactionSource,
+            leadingIcon = { dragHandle() },
+            trailingIcon = {
+                TriStateCheckbox(
+                    state = icalEntry.getProgressTriState(),
+                    onClick = {
+                        onToggleProgress()
+                    })
+            },
+            label = {
 
-                if (icalEntry.summary?.isBlank() == false)
-                    Text(
-                        text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-
-                if (icalEntry.description?.isBlank() == false)
-                    Text(
-                        text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
-                        maxLines = 5,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-
-                if (icalEntry.summary.isNullOrBlank() && icalEntry.description.isNullOrBlank())
-                    Text(
-                        text = stringResource(Res.string.no_summary_description),
-                        fontStyle = FontStyle.Italic,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = onClick,
+                            onLongClick = {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onLongClick()
+                            }
+                        )
+                        .padding(vertical = 4.dp)
                 ) {
 
-                    icalEntry.dtStart?.let {
-                        MetaInfoCard(
-                            icon = Icons.Outlined.CalendarToday,
-                            iconContentDescription = stringResource(Res.string.date_start),
-                            containerColor = icalEntry.color ?: Color.Unspecified,
-                            text = stringResource(Res.string.date_start) + " " + if(it.isDateOnly) PlatformInstantFormatter(it).formatLocalizedDate() else PlatformInstantFormatter(it).formatLocalizedDateTime()
+                    if (icalEntry.summary?.isBlank() == false)
+                        Text(
+                            text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    }
 
-                    icalEntry.due?.let {
-                        MetaInfoCard(
-                            icon = Icons.Outlined.CalendarToday,
-                            iconContentDescription = stringResource(Res.string.date_due),
-                            containerColor = icalEntry.color ?: Color.Unspecified,
-                            text = stringResource(Res.string.date_due) + " " + if(it.isDateOnly) PlatformInstantFormatter(it).formatLocalizedDate() else PlatformInstantFormatter(it).formatLocalizedDateTime()
-                        )
-                    }
 
-                    if (icalEntry.status in listOf(Status.CANCELLED, Status.DRAFT)) {
-                        MetaInfoCard(
-                            icon = icalEntry.status?.vectorIcon,
-                            iconContentDescription = icalEntry.status?.stringRes?.let { stringResource(it) },
-                            containerColor = icalEntry.color ?: Color.Unspecified,
-                            text = stringResource(icalEntry.status?.stringRes ?: Status.FINAL.stringRes)
+                    if (icalEntry.description?.isBlank() == false)
+                        Text(
+                            text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
+                            maxLines = 5,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    }
 
-                    icalEntry.categories.forEach { category ->
-                        MetaInfoCard(
-                            icon = Icons.AutoMirrored.Outlined.Label,
-                            iconContentDescription = stringResource(Res.string.category),
-                            containerColor = icalEntry.color ?: Color.Unspecified,
-                            text = category,
-                            onClick = { onFilterCategory(category) }
-                        )
-                    }
 
-                    AnimatedVisibility(icalEntry.syncState.isConflictState()) {
-                        MetaInfoCard(
-                            icon = Icons.Outlined.SyncProblem,
-                            iconContentDescription = stringResource(Res.string.sync_conflict_detected),
-                            containerColor = icalEntry.color ?: Color.Unspecified,
-                            text = null
+                    if (icalEntry.summary.isNullOrBlank() && icalEntry.description.isNullOrBlank())
+                        Text(
+                            text = stringResource(Res.string.no_summary_description),
+                            fontStyle = FontStyle.Italic,
+                            modifier = Modifier.fillMaxWidth()
                         )
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+
+                        icalEntry.dtStart?.let {
+                            MetaInfoCard(
+                                icon = Icons.Outlined.CalendarToday,
+                                iconContentDescription = stringResource(Res.string.date_start),
+                                text = stringResource(Res.string.date_start) + " " + if (it.isDateOnly) PlatformInstantFormatter(it).formatLocalizedDate() else PlatformInstantFormatter(
+                                    it
+                                ).formatLocalizedDateTime()
+                            )
+                        }
+
+                        icalEntry.due?.let {
+                            MetaInfoCard(
+                                icon = Icons.Outlined.CalendarToday,
+                                iconContentDescription = stringResource(Res.string.date_due),
+                                text = stringResource(Res.string.date_due) + " " + if (it.isDateOnly) PlatformInstantFormatter(it).formatLocalizedDate() else PlatformInstantFormatter(
+                                    it
+                                ).formatLocalizedDateTime()
+                            )
+                        }
+
+                        if (icalEntry.status in listOf(Status.CANCELLED, Status.DRAFT)) {
+                            MetaInfoCard(
+                                icon = icalEntry.status?.vectorIcon,
+                                iconContentDescription = icalEntry.status?.stringRes?.let { stringResource(it) },
+                                text = stringResource(icalEntry.status?.stringRes ?: Status.FINAL.stringRes)
+                            )
+                        }
+
+                        icalEntry.categories.forEach { category ->
+                            MetaInfoCard(
+                                icon = Icons.AutoMirrored.Outlined.Label,
+                                iconContentDescription = stringResource(Res.string.category),
+                                text = category,
+                                onClick = { onFilterCategory(category) }
+                            )
+                        }
+
+                        AnimatedVisibility(icalEntry.syncState.isConflictState()) {
+                            MetaInfoCard(
+                                icon = Icons.Outlined.SyncProblem,
+                                iconContentDescription = stringResource(Res.string.sync_conflict_detected),
+                                text = null
+                            )
+                        }
                     }
                 }
-            }
-        },
-        selected = isSelected,
-        onClick = { /* Handled by internal Column */ }
-    )
+            },
+            selected = isSelected,
+            onClick = { /* Handled by internal Column */ }
+        )
+    }
 }
 
 
@@ -179,14 +184,36 @@ fun TaskListItem(
 @Preview
 @Composable
 private fun TaskListItem_first_Preview() {
-    TaskListItem(
-        icalEntry = IcalEntry.getSampleIcalEntry(),
-        isSelected = false,
-        onClick = {},
-        onLongClick = {},
-        onFilterCategory = {},
-        onToggleProgress = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        TaskListItem(
+            icalEntry = IcalEntry.getSampleIcalEntry(),
+            isSelected = false,
+            onClick = {},
+            onLongClick = {},
+            onFilterCategory = {},
+            onToggleProgress = {}
+        )
+    }
+}
+
+
+@OptIn(ExperimentalTime::class)
+@Preview
+@Composable
+private fun TaskListItem_colored_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        MaterialTheme(getThemeForSeedColor(Color.Yellow)) {
+
+            TaskListItem(
+                icalEntry = IcalEntry.getSampleIcalEntry(),
+                isSelected = false,
+                onClick = {},
+                onLongClick = {},
+                onFilterCategory = {},
+                onToggleProgress = {}
+            )
+        }
+    }
 }
 
 
@@ -194,19 +221,21 @@ private fun TaskListItem_first_Preview() {
 @Preview
 @Composable
 private fun TaskListItem_drag_Preview() {
-    TaskListItem(
-        icalEntry = IcalEntry.getSampleIcalEntry(),
-        isSelected = false,
-        onClick = {},
-        onLongClick = {},
-        onFilterCategory = {},
-        dragHandle = {
-            IconButton(
-                onClick = {}
-            ) {
-                Icon(Icons.Outlined.DragIndicator, null)
-            }
-        },
-        onToggleProgress = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        TaskListItem(
+            icalEntry = IcalEntry.getSampleIcalEntry(),
+            isSelected = false,
+            onClick = {},
+            onLongClick = {},
+            onFilterCategory = {},
+            dragHandle = {
+                IconButton(
+                    onClick = {}
+                ) {
+                    Icon(Icons.Outlined.DragIndicator, null)
+                }
+            },
+            onToggleProgress = {}
+        )
+    }
 }

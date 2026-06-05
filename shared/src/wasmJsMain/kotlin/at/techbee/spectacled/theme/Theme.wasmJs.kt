@@ -6,17 +6,11 @@ import at.techbee.spectacled.SpectacledVariant
 
 @Composable
 actual fun AppTheme(
-    themeOption: ThemeOption,
-    isSystemInDarkTheme: Boolean,
-    dynamicColor: Boolean,
     spectacledVariant: SpectacledVariant,
     content: @Composable (() -> Unit)
 ) {
-    val applyDarkTheme = themeOption == ThemeOption.DARK || (themeOption == ThemeOption.SYSTEM && isSystemInDarkTheme)
-    val colorScheme = if (applyDarkTheme) spectacledVariant.darkColorScheme else spectacledVariant.lightColorScheme
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = getThemeForSeedColor(spectacledVariant.themeSeedColor),
         typography = AppTypography,
         content = content
     )

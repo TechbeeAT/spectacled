@@ -1,6 +1,5 @@
 package at.techbee.spectacled.screens.list.presentation.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -8,6 +7,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,33 +42,38 @@ fun MonthHeader(
     else
         monthName
 
-    Box(
-        contentAlignment = Alignment.CenterStart,
+    Card(
+        shape = RectangleShape,
+        elevation = CardDefaults.elevatedCardElevation(4.dp),
         modifier = modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .clipToBounds()
     ) {
-
-        Icon(
-            imageVector = Icons.Outlined.CalendarMonth,
-            contentDescription = null,
+        Box(
+            contentAlignment = Alignment.CenterStart,
             modifier = Modifier
-                .offset(x = (-32).dp, y = (4).dp)
-                .rotate(20f)
-                .size(96.dp)
-                .alpha(0.2f),
-            tint = MaterialTheme.colorScheme.onTertiaryContainer
-        )
+                .fillMaxWidth()
+                .height(48.dp)
+                .clipToBounds()
+        ) {
 
-        Text(
-            text = monthText,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+            Icon(
+                imageVector = Icons.Outlined.CalendarMonth,
+                contentDescription = null,
+                modifier = Modifier
+                    .offset(x = (-32).dp, y = (4).dp)
+                    .rotate(20f)
+                    .size(96.dp)
+                    .alpha(0.2f),
+                tint = MaterialTheme.colorScheme.tertiary
+            )
+
+            Text(
+                text = monthText,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 

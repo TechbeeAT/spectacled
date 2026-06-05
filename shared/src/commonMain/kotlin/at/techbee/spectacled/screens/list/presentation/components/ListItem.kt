@@ -18,13 +18,11 @@ import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SyncProblem
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +40,7 @@ import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
-import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
+import at.techbee.spectacled.theme.getThemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -70,122 +68,117 @@ fun ListItem(
 
     val hapticFeedback = LocalHapticFeedback.current
 
-    Row(modifier = modifier) {
-        if (icalEntry.dtStart != null && showDayBlock)
-            DayBlock(
-                icsDateTime = icalEntry.dtStart,
-                modifier = Modifier.padding(8.dp).width(28.dp)
-            )
+    MaterialTheme(colorScheme = getThemeForSeedColor(icalEntry.color)) {
 
-        SpecialRoundedCard(
-            isFirst = isFirst,
-            isLast = isLast,
-            isSelected = isSelected,
-            colors = CardDefaults.cardColors(
-                containerColor = icalEntry.color ?: Color.Unspecified,
-                contentColor = icalEntry.color?.let { getContentColorForColoredSurfaces(it) } ?: contentColorFor(Color.Unspecified)
-            ),
-            interactionSource = interactionSource,
-            onClick = {},
-            overrideTopRoundedCornerSize = overrideTopRoundedCornerSize,
-            overrideBottomRoundedCornerSize = overrideBottomRoundedCornerSize
-        ) {
+        Row(modifier = modifier) {
+            if (icalEntry.dtStart != null && showDayBlock)
+                DayBlock(
+                    icsDateTime = icalEntry.dtStart,
+                    modifier = Modifier.padding(8.dp).width(28.dp)
+                )
 
-            Box(
-                modifier = Modifier
-                    .combinedClickable(
-                        onClick = { onClick() },
-                        onLongClick = {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onLongClick()
-                        }
-                    )
-                    .padding(8.dp)
-                    .fillMaxWidth()
-                //.fillMaxSize()
+            SpecialRoundedCard(
+                isFirst = isFirst,
+                isLast = isLast,
+                isSelected = isSelected,
+                interactionSource = interactionSource,
+                onClick = {},
+                overrideTopRoundedCornerSize = overrideTopRoundedCornerSize,
+                overrideBottomRoundedCornerSize = overrideBottomRoundedCornerSize
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+
+                Box(
+                    modifier = Modifier
+                        .combinedClickable(
+                            onClick = { onClick() },
+                            onLongClick = {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onLongClick()
+                            }
+                        )
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                    //.fillMaxSize()
                 ) {
-                    // workaround to ensure minimum height while having a proper ripple effect on click but also to have the same height as when the drag handle is visible
-                    Spacer(modifier = Modifier.width(0.dp).height(48.dp))
-                    dragHandle()
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(0.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // workaround to ensure minimum height while having a proper ripple effect on click but also to have the same height as when the drag handle is visible
+                        Spacer(modifier = Modifier.width(0.dp).height(48.dp))
+                        dragHandle()
 
-                        if (icalEntry.summary?.isBlank() == false)
-                            Text(
-                                text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
-                                style = MaterialTheme.typography.titleMedium,
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-
-                        if (icalEntry.description?.isBlank() == false)
-                            Text(
-                                text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
-                                maxLines = 5,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-
-                        if (icalEntry.summary.isNullOrBlank() && icalEntry.description.isNullOrBlank())
-                            Text(
-                                text = stringResource(Res.string.no_summary_description),
-                                fontStyle = FontStyle.Italic,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                            verticalArrangement = Arrangement.spacedBy(3.dp),
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(0.dp)
                         ) {
 
-                            icalEntry.dtStart?.let {
-                                if (it.isDateOnly)
-                                    return@let
-
-                                MetaInfoCard(
-                                    icon = Icons.Outlined.Schedule,
-                                    iconContentDescription = stringResource(Res.string.time),
-                                    containerColor = icalEntry.color ?: Color.Unspecified,
-                                    text = PlatformInstantFormatter(it).formatLocalizedTime()
+                            if (icalEntry.summary?.isBlank() == false)
+                                Text(
+                                    text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 3,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-                            }
 
-                            if (icalEntry.status in listOf(Status.CANCELLED, Status.DRAFT)) {
-                                MetaInfoCard(
-                                    icon = icalEntry.status?.vectorIcon,
-                                    iconContentDescription = icalEntry.status?.stringRes?.let { stringResource(it) },
-                                    containerColor = icalEntry.color ?: Color.Unspecified,
-                                    text = stringResource(icalEntry.status?.stringRes ?: Status.FINAL.stringRes)
-                                )
-                            }
 
-                            icalEntry.categories.forEach { category ->
-                                MetaInfoCard(
-                                    icon = Icons.AutoMirrored.Outlined.Label,
-                                    iconContentDescription = stringResource(Res.string.category),
-                                    containerColor = icalEntry.color ?: Color.Unspecified,
-                                    text = category,
-                                    onClick = { onFilterCategory(category) }
+                            if (icalEntry.description?.isBlank() == false)
+                                Text(
+                                    text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
+                                    maxLines = 5,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-                            }
 
-                            AnimatedVisibility(icalEntry.syncState.isConflictState()) {
-                                MetaInfoCard(
-                                    icon = Icons.Outlined.SyncProblem,
-                                    iconContentDescription = stringResource(Res.string.sync_conflict_detected),
-                                    containerColor = icalEntry.color ?: Color.Unspecified,
-                                    text = null
+
+                            if (icalEntry.summary.isNullOrBlank() && icalEntry.description.isNullOrBlank())
+                                Text(
+                                    text = stringResource(Res.string.no_summary_description),
+                                    fontStyle = FontStyle.Italic,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                verticalArrangement = Arrangement.spacedBy(3.dp),
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                            ) {
+
+                                icalEntry.dtStart?.let {
+                                    if (it.isDateOnly)
+                                        return@let
+
+                                    MetaInfoCard(
+                                        icon = Icons.Outlined.Schedule,
+                                        iconContentDescription = stringResource(Res.string.time),
+                                        text = PlatformInstantFormatter(it).formatLocalizedTime()
+                                    )
+                                }
+
+                                if (icalEntry.status in listOf(Status.CANCELLED, Status.DRAFT)) {
+                                    MetaInfoCard(
+                                        icon = icalEntry.status?.vectorIcon,
+                                        iconContentDescription = icalEntry.status?.stringRes?.let { stringResource(it) },
+                                        text = stringResource(icalEntry.status?.stringRes ?: Status.FINAL.stringRes)
+                                    )
+                                }
+
+                                icalEntry.categories.forEach { category ->
+                                    MetaInfoCard(
+                                        icon = Icons.AutoMirrored.Outlined.Label,
+                                        iconContentDescription = stringResource(Res.string.category),
+                                        text = category,
+                                        onClick = { onFilterCategory(category) }
+                                    )
+                                }
+
+                                AnimatedVisibility(icalEntry.syncState.isConflictState()) {
+                                    MetaInfoCard(
+                                        icon = Icons.Outlined.SyncProblem,
+                                        iconContentDescription = stringResource(Res.string.sync_conflict_detected),
+                                        text = null
+                                    )
+                                }
                             }
                         }
                     }
@@ -216,7 +209,7 @@ private fun ListItem_first_Preview() {
 @Composable
 private fun ListItem_last_Preview_with_color() {
     ListItem(
-        icalEntry = IcalEntry.getSampleIcalEntry().copy(color = Color.Blue),
+        icalEntry = IcalEntry.getSampleIcalEntry().copy(color = Color.Green),
         isFirst = false,
         isLast = true,
         isSelected = true,

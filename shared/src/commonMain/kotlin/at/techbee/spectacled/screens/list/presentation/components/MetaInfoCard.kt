@@ -12,7 +12,6 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -21,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.theme.getContentColorForColoredSurfaces
 
 @Composable
 fun MetaInfoCard(
@@ -29,6 +27,7 @@ fun MetaInfoCard(
     iconContentDescription: String?,
     text: String?,
     containerColor: Color? = null,
+    contentColor: Color? = null,
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -40,7 +39,7 @@ fun MetaInfoCard(
             modifier = modifier,
             colors = CardDefaults.cardColors(
                 containerColor = containerColor ?: Color.Unspecified,
-                contentColor = containerColor?.let { getContentColorForColoredSurfaces(it) } ?: contentColorFor(Color.Unspecified)
+                contentColor = contentColor ?: Color.Unspecified
             ),
             onClick = onClick
         ) {
