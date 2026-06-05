@@ -6,7 +6,7 @@ appPackageBaseName = "at.techbee.spectacled"
 appPackageVariantJournals = "journals"
 appPackageVariantNotes = "notes"
 appPackageVariantTasks = "tasks"
-appBuildNumber = "6"
+appBuildNumber = "7"
 appVersionString = "1.0.0"
 appVersionCodename = "Love is all around"
 
