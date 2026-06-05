@@ -158,6 +158,8 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_dynamic_colors">Dynamic colors</string>
+    <string name="theme_amoled">Amoled (true dark)</string>
+    <string name="theme_palette_style">Palette style</string>
 
     <string name="status">Status</string>
     <string name="status_no_status">No status</string>

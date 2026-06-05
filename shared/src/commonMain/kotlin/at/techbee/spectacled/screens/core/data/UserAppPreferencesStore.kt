@@ -3,7 +3,9 @@ package at.techbee.spectacled.screens.core.data
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.ThemeOption
+import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 const val APP_PREFERENCES_FILE_NAME = "app_preferences"
 
@@ -17,7 +19,8 @@ const val LIST_COLLAPSED_GROUP_PINNED = "list_collapsed_group_pinned"
 
 const val THEME_OPTION = "theme_option"
 const val THEME_DYNAMIC_COLORS_ENABLED = "theme_dynamic_colors_enabled"
-
+const val THEME_PALETTE_STYLE = "theme_palette_style"
+const val THEME_AMOLED = "theme_amoled"
 
 interface UserAppPreferencesStore {
     fun save(key: String, value: String)
@@ -60,12 +63,24 @@ interface UserAppPreferencesStore {
     var themeOption: ThemeOption
         get() = this.load(THEME_OPTION)?.let { ThemeOption.entries.find { themeOption -> themeOption.name == it } } ?: ThemeOption.SYSTEM
         set(value) = this.save(THEME_OPTION, value.name)
-    fun getThemeOptionAsFlow() = this.loadAsFlow(THEME_OPTION)
+    fun getThemeOptionAsFlow(): Flow<ThemeOption> = this.loadAsFlow(THEME_OPTION).map { ThemeOption.fromString(it) }
 
     var themeDynamicColorsEnabled: Boolean
         get() = this.load(THEME_DYNAMIC_COLORS_ENABLED)?.toBooleanStrictOrNull()?: false
         set(value) = this.save(THEME_DYNAMIC_COLORS_ENABLED, value.toString())
-    fun getThemeDynamicColorsEnabledAsFlow() = this.loadAsFlow(THEME_DYNAMIC_COLORS_ENABLED)
+    fun getThemeDynamicColorsEnabledAsFlow(): Flow<Boolean> = this.loadAsFlow(THEME_DYNAMIC_COLORS_ENABLED).map { it?.toBooleanStrictOrNull() ?: false }
+
+    var themePaletteStlye: PaletteStyle
+        get() = this.load(THEME_PALETTE_STYLE)?.let { PaletteStyle.entries.find { paletteStyle -> paletteStyle.name == it } } ?: PaletteStyle.Expressive
+        set(value) = this.save(THEME_PALETTE_STYLE, value.name)
+    fun getThemePaletteStlyeAsFlow(): Flow<PaletteStyle> = this.loadAsFlow(THEME_PALETTE_STYLE).map { name ->
+        PaletteStyle.entries.find { it.name == name } ?: PaletteStyle.Expressive
+    }
+
+    var themeAmoled: Boolean
+        get() = this.load(THEME_AMOLED)?.toBooleanStrictOrNull()?: false
+        set(value) = this.save(THEME_AMOLED, value.toString())
+    fun getThemeAmoledAsFlow(): Flow<Boolean> = this.loadAsFlow(THEME_AMOLED).map { it?.toBooleanStrictOrNull() ?: false }
 }
 
 expect class PlatformUserAppPreferencesStore: UserAppPreferencesStore {

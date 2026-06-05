@@ -30,13 +30,10 @@ actual fun AppTheme(
     } else {
 
         val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
-        val themeOptionState by userAppPreferencesStore.getThemeOptionAsFlow().collectAsState(ThemeOption.SYSTEM.name)
-        val themeDynamicColorsEnabledState by userAppPreferencesStore.getThemeDynamicColorsEnabledAsFlow().collectAsState(null)
+        val themeOption by userAppPreferencesStore.getThemeOptionAsFlow().collectAsState(userAppPreferencesStore.themeOption)
+        val themeDynamicColorsEnabled by userAppPreferencesStore.getThemeDynamicColorsEnabledAsFlow().collectAsState(userAppPreferencesStore.themeDynamicColorsEnabled)
 
-        val dynamicColorsEnabled = themeDynamicColorsEnabledState?.toBooleanStrictOrNull() ?: false
-        val themeOption = themeOptionState?.let { ThemeOption.entries.find { themeOption -> themeOption.name == it } } ?: ThemeOption.SYSTEM
-
-        val colorScheme = if (dynamicColorsEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val colorScheme = if (themeDynamicColorsEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val context = LocalContext.current
             val isDark = when (themeOption) {
                 ThemeOption.SYSTEM -> isSystemInDarkTheme()

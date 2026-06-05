@@ -4,12 +4,13 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
-import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamicColorScheme
 import com.materialkolor.dynamiccolor.ColorSpec
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +21,6 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.theme_dark
 import spectacled.shared.generated.resources.theme_light
 import spectacled.shared.generated.resources.theme_system
-
 
 
 @Composable
@@ -36,11 +36,17 @@ fun getThemeForSeedColor(color: Color?): ColorScheme {
             }
         else
             koinInject<PlatformUserAppPreferencesStore>()
-    val overrideIsDark = when(userAppPreferencesStore.themeOption) {
+
+
+    val themeOption by userAppPreferencesStore.getThemeOptionAsFlow().collectAsState(userAppPreferencesStore.themeOption)
+    val overrideIsDark = when(themeOption) {
         ThemeOption.SYSTEM -> null
         ThemeOption.LIGHT -> false
         ThemeOption.DARK -> true
     }
+
+    val themePaletteStyle by userAppPreferencesStore.getThemePaletteStlyeAsFlow().collectAsState(userAppPreferencesStore.themePaletteStlye)
+    val themeAmoledBoolean by userAppPreferencesStore.getThemeAmoledAsFlow().collectAsState(userAppPreferencesStore.themeAmoled)
 
     return if (color == null)
         MaterialTheme.colorScheme
@@ -48,7 +54,8 @@ fun getThemeForSeedColor(color: Color?): ColorScheme {
         dynamicColorScheme(
             primary = color,
             isDark = overrideIsDark ?: isSystemInDarkTheme(),
-            style = PaletteStyle.Expressive,
+            style = themePaletteStyle,
+            isAmoled = themeAmoledBoolean,
             specVersion = ColorSpec.SpecVersion.SPEC_2025
         )
 }
