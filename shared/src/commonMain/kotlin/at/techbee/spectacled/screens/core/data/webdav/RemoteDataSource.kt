@@ -82,6 +82,13 @@ suspend fun discoverPrincipalsMultiplatform(
             )
             //print("Parsed response: $multistatusResponse")
 
+            val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
+            when {
+                allResponseCodes.all { responseCode -> responseCode == "HTTP/1.1 403 Forbidden" } -> return DiscoverPrincipalsResult.NotAuthorized
+                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverPrincipalsResult.Failed(response.status, "Principal couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
+            }
+
+
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
 
@@ -153,6 +160,12 @@ suspend fun discoverHomeCollections(client: HttpClient, principal: Principal): D
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(responseBody)
             )
             //print("Parsed response: $multistatusResponse")
+
+            val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
+            when {
+                allResponseCodes.all { responseCode -> responseCode == "HTTP/1.1 403 Forbidden" } -> return DiscoverHomeCollectionsResult.NotAuthorized
+                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverHomeCollectionsResult.Failed(response.status, "Home Collection couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
+            }
 
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
@@ -245,6 +258,12 @@ suspend fun discoverCalendars(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
             print("Parsed response: $multistatusResponse")
+
+            val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
+            when {
+                allResponseCodes.all { responseCode -> responseCode == "HTTP/1.1 403 Forbidden" } -> return DiscoverCalendarsResult.NotAuthorized
+                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverCalendarsResult.Failed(response.status, "Calendars couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
+            }
 
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->

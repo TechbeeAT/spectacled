@@ -170,4 +170,6 @@
     <string name="status_in_process">In process</string>
     <string name="status_completed">Completed</string>
 
+    <string name="login_message_forbidden">Not authorized. Please check your server, username and password.</string>
+
 </resources>

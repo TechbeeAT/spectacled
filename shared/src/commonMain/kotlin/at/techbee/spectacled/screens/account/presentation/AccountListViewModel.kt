@@ -40,6 +40,9 @@ import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import io.github.aakira.napier.Napier
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.login_message_forbidden
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
@@ -271,7 +274,7 @@ class AccountListViewModel(
                         return@launch
                     }
                     DiscoverPrincipalsResult.NotAuthorized -> {
-                        _state.value = _state.value.copy(processingState = ProcessingState.Error(message = "Not authorized. Please check your username and password."))
+                        _state.value = _state.value.copy(processingState = ProcessingState.Error(message = getString(Res.string.login_message_forbidden)))
                         return@launch
                     }
                     DiscoverPrincipalsResult.NotFound -> {
