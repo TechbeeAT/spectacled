@@ -4,11 +4,16 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,10 +35,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
@@ -73,11 +80,37 @@ fun AddPrincipalBottomSheet(
         Column(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(8.dp).fillMaxSize()
+            modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             Text(
                 text = stringResource(Res.string.add_account),
                 style = MaterialTheme.typography.headlineMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Spectacled works with CalDAV-compatible providers.",
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "You can either sign in with an existing account or create a new account with one of our recommended providers.",
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Option 1",
+                style = MaterialTheme.typography.labelSmall
+            )
+            Text(
+                text = "Use an existing account",
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Text(
+                text = "Connect any CalDAV-compatible server using your existing credentials.",
+                textAlign = TextAlign.Center
             )
 
             val error = processingState as? ProcessingState.Error
@@ -177,12 +210,74 @@ fun AddPrincipalBottomSheet(
                 Text("Set sample nextcloud.techbee.at (caldavnotes/***)")
             }
 
-            /*
-        Crossfade(response) {
-            Text(it)
-        }
-         */
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+
+            Text(
+                text = "Option 2",
+                style = MaterialTheme.typography.labelSmall
+            )
+            Text(
+                text = "Need an account?",
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Text(
+                text = "Spectacled is provider-independent.",
+                style = MaterialTheme.typography.titleMedium
+
+            )
+
+            Text(
+                text = "Choose from a selection of privacy-focused providers that work well with Spectacled.",
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "We recommend services based on privacy, reliability, and compatibility. Some links may generate a referral commission, which helps fund ongoing development. Recommendations are never influenced solely by referral agreements.",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "Recommended providers",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge
+            )
+
+            /*
+            Text(
+                text = "These providers support open standards and have been selected based on privacy, reliability, and compatibility with Spectacled.",
+                textAlign = TextAlign.Center,
+                fontStyle = FontStyle.Italic
+            )
+
+             */
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ElevatedCard() {
+                Column(
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Text(
+                        text = "Fastmail",
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "Fast and reliable email, calendar, and contact synchronization with excellent standards support."
+                    )
+                    TextButton(onClick = { TODO("Not implemented") }) {
+                        Text("Learn more")
+                    }
+                }
+            }
         }
     }
 }
@@ -191,34 +286,40 @@ fun AddPrincipalBottomSheet(
 @Preview
 @Composable
 private fun AddAccountScreen_Preview_Idle() {
-    AddPrincipalBottomSheet(
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        processingState = ProcessingState.Idle,
-        onAction = {},
-        onDismiss = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        AddPrincipalBottomSheet(
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            processingState = ProcessingState.Idle,
+            onAction = {},
+            onDismiss = {}
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun AddAccountScreen_Preview_Processing() {
-    AddPrincipalBottomSheet(
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        processingState = ProcessingState.Processing,
-        onAction = {},
-        onDismiss = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
+        AddPrincipalBottomSheet(
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            processingState = ProcessingState.Processing,
+            onAction = {},
+            onDismiss = {}
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun AddAccountScreen_Preview_Error() {
-    AddPrincipalBottomSheet(
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        processingState = ProcessingState.Error("This is an error"),
-        onAction = {},
-        onDismiss = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        AddPrincipalBottomSheet(
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            processingState = ProcessingState.Error("This is an error"),
+            onAction = {},
+            onDismiss = {}
+        )
+    }
 }
