@@ -195,7 +195,19 @@ enum class Status(
     NEEDS_ACTION("NEEDS-ACTION", Res.string.status_needs_action, null),
     IN_PROCESS("IN-PROCESS", Res.string.status_in_process, null),
     COMPLETED("COMPLETED", Res.string.status_completed, null),
-    CANCELLED("CANCELLED", Res.string.status_cancelled, Icons.Outlined.Cancel)
+    CANCELLED("CANCELLED", Res.string.status_cancelled, Icons.Outlined.Cancel);
+
+    companion object {
+        fun entriesForComponent(calendarComponent: CalendarComponent): List<Status> {
+            return when(calendarComponent) {
+                CalendarComponent.VEVENT -> emptyList()
+                CalendarComponent.VJOURNAL -> listOf(DRAFT, FINAL, CANCELLED)
+                CalendarComponent.VTODO -> listOf(NEEDS_ACTION, IN_PROCESS, COMPLETED, CANCELLED)
+            }
+        }
+    }
+
+
 }
 
 enum class Classification {

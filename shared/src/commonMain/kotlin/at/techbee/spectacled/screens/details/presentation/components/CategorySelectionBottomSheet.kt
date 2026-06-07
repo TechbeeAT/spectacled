@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.NewLabel
@@ -74,6 +72,29 @@ fun CategorySelectionBottomSheet(
                 style = MaterialTheme.typography.titleLarge
             )
 
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                allCategories
+                    .sortedBy { it.uppercase() }
+                    .forEach { category ->
+                        FilterChip(
+                            selected = selectedCategories.contains(category),
+                            onClick = {
+                                if (selectedCategories.contains(category))
+                                    onCategoryRemoved(category)
+                                else
+                                    onCategoryAdded(category)
+                            },
+                            label = { Text(category) },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category)) }
+                        )
+                    }
+            }
+
             TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -108,29 +129,6 @@ fun CategorySelectionBottomSheet(
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
             )
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                itemVerticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(8.dp).fillMaxWidth().verticalScroll(rememberScrollState())
-            ) {
-                allCategories
-                    .sorted()
-                    .forEach { category ->
-                        FilterChip(
-                            selected = selectedCategories.contains(category),
-                            onClick = {
-                                if (selectedCategories.contains(category))
-                                    onCategoryRemoved(category)
-                                else
-                                    onCategoryAdded(category)
-                            },
-                            label = { Text(category) },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category)) }
-                        )
-                    }
-            }
         }
     }
 }

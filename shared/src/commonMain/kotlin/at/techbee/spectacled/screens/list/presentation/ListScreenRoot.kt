@@ -9,13 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -24,7 +20,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -35,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
@@ -51,6 +45,7 @@ import at.techbee.spectacled.screens.core.presentation.components.DatePickerBott
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
+import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
 import at.techbee.spectacled.theme.getThemeForSeedColor
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
@@ -59,12 +54,10 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_journal
 import spectacled.shared.generated.resources.add_note
 import spectacled.shared.generated.resources.add_task
-import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.ic_add_journal
 import spectacled.shared.generated.resources.ic_add_note
 import spectacled.shared.generated.resources.ic_add_task
 import spectacled.shared.generated.resources.read_only
-import spectacled.shared.generated.resources.search
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,13 +181,7 @@ fun ListScreenRoot(
         Scaffold(
             topBar = {
                 IcalEntryListTopBar(
-                    calendar = state.calendar,
-                    //drawerState = drawerState,
-                    isSearchBarExpanded = state.isSearchBarExpanded,
-                    listSortedBy = state.listSortedBy,
-                    sortedAscending = state.listSortedByAscending,
-                    listLayout = state.listLayout,
-                    multiselectItems = state.multiselectItems,
+                    state = state,
                     onAction = { action -> listViewModel.onAction(action) },
                     allSelectedPinned = state.multiselectItems?.all { selectedId ->
                         state.icalEntries.find { entry -> entry.id == selectedId }?.categories?.contains(IcalEntry.PINNED_CATEGORY) == true
@@ -345,48 +332,13 @@ fun ListScreenRoot(
                 Column(modifier = Modifier.fillMaxSize()) {
 
                     AnimatedVisibility(state.isSearchBarExpanded) {
-                        TextField(
-                            placeholder = { Text(stringResource(Res.string.search)) },
-                            value = state.searchQuery ?: "",
-                            onValueChange = { listViewModel.onAction(ListAction.OnSearchQueryChanged(it)) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                                .focusRequester(searchBarFocusRequester)
+                        ListFilterRow(
+                            listFilterCriteria = state.listFilterCriteria,
+                            allCategories = state.icalEntries.flatMap { it.categories }.distinct(),
+                            calendarComponent = state.spectacledVariant.syncCalendarComponent,
+                            onAction = { listViewModel.onAction(it) }
                         )
                     }
-
-                    val allCategories = state.icalEntries.flatMap { it.categories }.distinct()
-
-                    AnimatedVisibility(state.isSearchBarExpanded) {
-                        LazyRow(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
-                        ) {
-                            item {
-                                Icon(
-                                    Icons.AutoMirrored.Outlined.Label,
-                                    stringResource(Res.string.category),
-                                    modifier = Modifier.padding(end = 4.dp)
-                                )
-                            }
-
-                            items(allCategories, key = { it }) { category ->
-                                ElevatedFilterChip(
-                                    selected = state.searchCategory.equals(category, ignoreCase = true),
-                                    onClick = {
-                                        if (category.equals(state.searchCategory, ignoreCase = true))
-                                            listViewModel.onAction(ListAction.OnCategoryFilterChanged(""))
-                                        else
-                                            listViewModel.onAction(ListAction.OnCategoryFilterChanged(category))
-                                    },
-                                    label = { Text(category) },
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                )
-                            }
-                        }
-                    }
-
 
                     PullToRefreshBox(
                         isRefreshing = state.isRefreshing,

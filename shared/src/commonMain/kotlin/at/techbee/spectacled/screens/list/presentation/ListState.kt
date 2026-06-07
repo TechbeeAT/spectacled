@@ -8,6 +8,7 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
@@ -37,13 +38,12 @@ data class ListState(
     ),
     val credentials: Credentials? = null,
     val isRefreshing: Boolean = false,
-    val searchQuery: String? = null,
-    val searchCategory: String? = null,
     val errorMessage: String? = null,
 
     val allColors: List<Color> = emptyList(),
     val allCategories: List<String> = emptyList(),
 
+    val listFilterCriteria: ListFilterCriteria = ListFilterCriteria(),
     val listSortedBy: ListSortedBy = ListSortedBy.CREATED,
     val listSortedByAscending: Boolean = true,
     val listLayout: ListLayout = ListLayout.STAGGERED_GRID,
@@ -67,7 +67,7 @@ data class ListState(
 ) {
 
     val isSearchBarExpanded: Boolean
-        get() = searchQuery != null || searchCategory != null
+        get() = listFilterCriteria.anyFilterActive()
 
 
     val displayMap: Map<ListGrouping, List<IcalEntry>>
@@ -122,22 +122,27 @@ data class ListState(
 
 
     private fun getFilteredList(icalEntries: List<IcalEntry>): List<IcalEntry> {
-        val filteredList =
-            if (searchQuery.isNullOrBlank())
-                icalEntries
-            else
-                icalEntries.filter {
-                    it.summary?.contains(searchQuery, ignoreCase = true) == true
-                            || it.description?.contains(searchQuery, ignoreCase = true) == true
-                }
 
-        val filteredListByCategory =
-            if (searchCategory.isNullOrBlank())
-                filteredList
-            else
-                filteredList.filter { it.categories.any { category -> category.equals(searchCategory, ignoreCase = true) } }
-
-        return filteredListByCategory
+        return icalEntries
+            .filter {
+                if (listFilterCriteria.searchQuery.isNullOrBlank())
+                    true
+                else
+                    it.summary?.contains(listFilterCriteria.searchQuery, ignoreCase = true) == true
+                            || it.description?.contains(listFilterCriteria.searchQuery, ignoreCase = true) == true
+            }
+            .filter {
+                if (listFilterCriteria.searchCategory.isNullOrBlank())
+                    true
+                else
+                    it.categories.any { category -> category.equals(listFilterCriteria.searchCategory, ignoreCase = true) }
+            }
+            .filter {
+                if (listFilterCriteria.filterStatus == null)
+                    true
+                else
+                    it.status == listFilterCriteria.filterStatus
+            }
     }
 
 

@@ -31,6 +31,7 @@ import at.techbee.spectacled.screens.list.presentation.components.EmptyListScree
 import at.techbee.spectacled.screens.list.presentation.components.ListDragHandle
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import org.jetbrains.compose.resources.stringResource
@@ -72,8 +73,7 @@ fun ListScreenNotes(
         // using mutableStateList instead of grouped list for drag and drop
         // this allows us to directly manipulate the list and avoid jitter
         if(state.listSortedBy == ListSortedBy.DRAGANDDROP
-            && state.searchQuery == null
-            && state.searchCategory == null
+            && !state.listFilterCriteria.anyFilterActive()
         ) {
             itemsIndexed(dragAndDropList, key = { _, note -> note.uid }) { index, icalEntry ->
 
@@ -109,7 +109,7 @@ fun ListScreenNotes(
                             if (state.listSortedBy == ListSortedBy.DRAGANDDROP)
                                 ListDragHandle(this)
                         },
-                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
+                        onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
                         modifier = Modifier
                             .widthIn(max = 700.dp)
                             .heightIn(min = 50.dp)
@@ -147,7 +147,7 @@ fun ListScreenNotes(
                                     onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                             },
                             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                            onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
+                            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
                             modifier = Modifier
                                 .widthIn(max = 700.dp)
                                 .heightIn(min = 50.dp)
@@ -193,7 +193,7 @@ fun ListScreenNotes(
                                         onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                                 },
                                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                                onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
+                                onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
                                 modifier = Modifier
                                     .widthIn(max = 700.dp)
                                     .heightIn(min = 50.dp)
@@ -241,7 +241,7 @@ fun ListScreenNotes(
                                             onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                                     },
                                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                                    onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
+                                    onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
                                     modifier = Modifier
                                         .widthIn(max = 700.dp)
                                         .heightIn(min = 50.dp)
@@ -289,7 +289,7 @@ fun ListScreenNotes(
                                 onAction(ListAction.OnToggleMultiselectItem(note.id))
                         },
                         onLongClick = { onAction(ListAction.OnToggleMultiselectItem(note.id)) },
-                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it))},
+                        onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
                         modifier = Modifier
                             .widthIn(max = 700.dp)
                             .heightIn(min = 50.dp)
@@ -329,8 +329,9 @@ private fun ListScreenRoot_Preview() {
 @Composable
 private fun ListScreen_Notes_Preview() {
 
-    var state = ListState()
-    state = state.copy(searchQuery = "test")
+    val state = ListState(
+        listFilterCriteria = ListFilterCriteria(searchQuery = "test")
+    )
 
     ListScreenNotes(
         state = state,

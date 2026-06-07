@@ -27,6 +27,7 @@ import at.techbee.spectacled.screens.list.presentation.components.EmptyListScree
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
 import at.techbee.spectacled.screens.list.presentation.components.MonthHeader
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -119,7 +120,7 @@ fun JournalsListJournals(
                                 onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                         },
                         onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it)) },
+                        onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
                         showDayBlock = icalEntry.isJournal() && (index == 0 || isNewDay),
                         modifier = Modifier
                             .widthIn(max = 700.dp)
@@ -171,7 +172,7 @@ fun JournalsListJournals(
                                 onAction(ListAction.OnToggleMultiselectItem(note.id))
                         },
                         onLongClick = { onAction(ListAction.OnToggleMultiselectItem(note.id)) },
-                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it)) },
+                        onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
                         modifier = Modifier
                             .widthIn(max = 700.dp)
                             .heightIn(min = 50.dp)
@@ -220,7 +221,7 @@ private fun JournalsListJournals_Search_Preview() {
 
     var state = ListState()
     state = state.copy(
-        searchQuery = "Lorem",
+        listFilterCriteria = ListFilterCriteria(searchQuery = "Lorem"),
         icalEntries = listOf(IcalEntry.getSampleIcalEntry(), IcalEntry.getSampleIcalEntry())
     )
 
