@@ -7,8 +7,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -42,9 +41,8 @@ fun MonthHeader(
     else
         monthName
 
-    Card(
+    ElevatedCard(
         shape = RectangleShape,
-        elevation = CardDefaults.elevatedCardElevation(4.dp),
         modifier = modifier
     ) {
         Box(
