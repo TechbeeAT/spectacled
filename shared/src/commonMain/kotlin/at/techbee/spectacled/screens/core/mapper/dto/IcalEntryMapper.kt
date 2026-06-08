@@ -56,7 +56,9 @@ fun IcalEntryDto.toDomain(): IcalEntry {
         syncState = this.syncState?.let { SyncState.entries.find { it.name == this.syncState } } ?: SyncState.LOCAL_MODIFIED,
         etag = this.etag,
         href = this.href?.let { Url(it) },
-        calendarComponent = CalendarComponent.entries.find { it.name == this.calendarComponent } ?: CalendarComponent.VJOURNAL
+        calendarComponent = CalendarComponent.entries.find { it.name == this.calendarComponent } ?: CalendarComponent.VJOURNAL,
+        parentUid = this.parentUid,
+        relType = this.relType
     )
 }
 
@@ -94,6 +96,8 @@ fun IcalEntry.toDto(): IcalEntryDto {
         syncState = this.syncState.name,
         etag = this.etag,
         href = this.href?.toString(),
-        calendarComponent = this.calendarComponent.name
+        calendarComponent = this.calendarComponent.name,
+        parentUid = this.parentUid,
+        relType = this.relType
     )
 }

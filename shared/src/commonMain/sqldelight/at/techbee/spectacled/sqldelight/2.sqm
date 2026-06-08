@@ -1,0 +1,2 @@
+ALTER TABLE IcalEntryDto ADD COLUMN parentUid TEXT;
+ALTER TABLE IcalEntryDto ADD COLUMN relType TEXT;

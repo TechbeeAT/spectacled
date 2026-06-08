@@ -74,7 +74,9 @@ data class IcalEntry(
     val extraProperties: List<RawIcsProperty> = emptyList(),
     val etag: String? = null,
     val href: Url? = null,
-    val calendarComponent: CalendarComponent
+    val calendarComponent: CalendarComponent,
+    val parentUid: String? = null,
+    val relType: String? = "PARENT"
     ) {
 
     companion object {
@@ -127,6 +129,7 @@ data class IcalEntry(
     fun isNote() = calendarComponent == CalendarComponent.VJOURNAL && dtStart == null
     fun isJournal() = calendarComponent == CalendarComponent.VJOURNAL && dtStart != null
     fun isTask() = calendarComponent == CalendarComponent.VTODO
+    fun isSubtask() = parentUid != null
 
     fun getProgressTriState() = when {
         percentComplete == 0L -> ToggleableState.Off

@@ -1,0 +1,58 @@
+CREATE TABLE IF NOT EXISTS PrincipalDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    principalUrl TEXT NOT NULL UNIQUE,
+    displayName TEXT,
+    calendarUserAddressSet TEXT
+);
+
+CREATE TABLE IF NOT EXISTS HomeCollectionDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    principalId INTEGER NOT NULL REFERENCES PrincipalDto(id) ON DELETE CASCADE,
+    url TEXT NOT NULL UNIQUE,
+    calDavPrivileges TEXT
+);
+
+CREATE TABLE IF NOT EXISTS CalendarDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    homeCollectionId INTEGER NOT NULL REFERENCES HomeCollectionDto(id) ON DELETE CASCADE,
+    url TEXT NOT NULL UNIQUE ,
+    displayName TEXT,
+    calendarDescription TEXT,
+    color INTEGER,
+    ctag TEXT,
+    supportedComponents TEXT,
+    calDavPrivileges TEXT,
+    calendarSyncStatus TEXT,
+    syncToken TEXT,
+    syncComponent TEXT
+);
+
+CREATE TABLE IF NOT EXISTS IcalEntryDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    calendarId INTEGER NOT NULL REFERENCES CalendarDto(id) ON DELETE CASCADE,
+    uid TEXT NOT NULL UNIQUE,
+    summary TEXT,
+    description TEXT,
+    dtstart TEXT,
+    dtStartTimeZone TEXT,
+    due TEXT,
+    dueTimeZone TEXT,
+    completed TEXT,
+    completedTimeZone TEXT,
+    status TEXT,
+    percentComplete INTEGER,
+    priority INTEGER,
+    classification TEXT,
+    dtstamp TEXT,
+    color INTEGER,
+    sequence INTEGER,
+    categories TEXT,
+    created TEXT,
+    lastModified TEXT,
+    extraProperties TEXT,
+    orderNo INTEGER,
+    syncState TEXT,
+    etag TEXT,
+    href TEXT,
+    calendarComponent TEXT
+);
