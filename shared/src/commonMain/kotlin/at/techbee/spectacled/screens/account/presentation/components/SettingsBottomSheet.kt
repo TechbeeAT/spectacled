@@ -137,7 +137,7 @@ fun SettingsBottomSheet(
                 )
             }
 
-            AnimatedVisibility(!themeDynamicColorsEnabledBoolean && themeOption != ThemeOption.LIGHT) {
+            AnimatedVisibility(!themeDynamicColorsEnabledBoolean) {
                 AssistChip(
                     onClick = { themePaletteStyleDropdownExpanded = true },
                     label = {
@@ -172,7 +172,7 @@ fun SettingsBottomSheet(
                 )
             }
 
-            AnimatedVisibility(!themeDynamicColorsEnabledBoolean) {
+            AnimatedVisibility(!themeDynamicColorsEnabledBoolean && themeOption != ThemeOption.LIGHT) {
                 AssistChip(
                     onClick = { userAppPreferencesStore.themeAmoled = !themeAmoledBoolean },
                     label = {
