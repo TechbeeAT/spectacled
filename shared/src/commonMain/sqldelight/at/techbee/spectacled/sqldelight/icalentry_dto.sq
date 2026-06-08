@@ -33,9 +33,6 @@ CREATE TABLE IcalEntryDto (
 getIcalEntriesByCalendar:
 SELECT * FROM IcalEntryDto WHERE calendarId = ?;
 
-getSubtasksByParentUid:
-SELECT * FROM IcalEntryDto WHERE parentUid = ?;
-
 getDirtyIcalEntriesByCalendar:
 SELECT * FROM IcalEntryDto WHERE calendarId = ? AND syncState NOT IN ('SYNCED', 'REMOTE_DELETED_LOCAL_TRASHBIN');
 
@@ -53,6 +50,9 @@ SELECT * FROM IcalEntryDto WHERE href IN ?;
 
 getIcalEntryByHref:
 SELECT * FROM IcalEntryDto WHERE href = ?;
+
+getSubtasksByParentUid:
+SELECT * FROM IcalEntryDto WHERE parentUid = :parentUid AND relType = 'PARENT';
 
 getAllColors:
 SELECT DISTINCT color FROM IcalEntryDto WHERE color IS NOT NULL ORDER BY lastModified DESC;

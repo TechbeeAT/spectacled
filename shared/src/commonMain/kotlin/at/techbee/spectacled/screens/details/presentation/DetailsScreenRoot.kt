@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.AddTask
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Restore
@@ -42,6 +43,7 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
@@ -57,6 +59,7 @@ import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.restore
+import spectacled.shared.generated.resources.subtask
 import kotlin.time.ExperimentalTime
 
 
@@ -156,6 +159,15 @@ fun DetailsScreenRoot(
             )
         }
 
+        if (detailsState.showAddSubtaskBottomSheet) {
+            AddSubtaskBottomSheet(
+                onSubtaskAdded = { detailsViewModel.onAction(DetailsAction.OnAddSubtask(it)) },
+                onDismiss = {
+                    detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(false))
+                }
+            )
+        }
+
         if (detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED
             || detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED
             || detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED
@@ -237,6 +249,16 @@ fun DetailsScreenRoot(
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
+                        }
+                    }
+
+                    if (detailsState.icalEntry.isTask()) {
+
+                        TextButton(
+                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
+                            enabled = detailsState.allowEditing() && !detailsState.isLoading
+                        ) {
+                            Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask))
                         }
                     }
 

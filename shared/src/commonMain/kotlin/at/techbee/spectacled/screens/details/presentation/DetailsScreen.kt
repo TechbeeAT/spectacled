@@ -14,17 +14,23 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Text
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.tooling.preview.Preview
@@ -145,8 +151,10 @@ fun DetailsScreen(
         }
 
         Row(
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
-                .fillMaxWidth()
+                //.fillMaxWidth()
                 .padding(vertical = 8.dp)
         ) {
 
@@ -161,9 +169,8 @@ fun DetailsScreen(
                 ),
                 enabled = state.allowEditing(),
                 visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
-                modifier = Modifier.onFocusChanged {
-                    summaryIsFocused = it.isFocused
-                }
+                modifier = Modifier
+                    .onFocusChanged { summaryIsFocused = it.isFocused }
                     .weight(1f)
             )
 
@@ -189,14 +196,33 @@ fun DetailsScreen(
             modifier = Modifier
                 .heightIn(min = 200.dp)
                 .fillMaxWidth()
-                .fillMaxHeight(1f)
+                .heightIn(min = 400.dp)
+                .weight(1f)
                 .onFocusChanged {
                     descriptionIsFocused = it.isFocused
                 }
         )
+
+        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+            state.subtasks.forEach { subtask ->
+
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = {}) {
+                            Icon(Icons.Outlined.DragHandle, null)
+                        }
+                        Text(subtask.summary?: "No summary", modifier = Modifier.weight(1f))
+                        TriStateCheckbox(state = subtask.getProgressTriState(), onClick = {})
+                    }
+                }
+            }
+        }
     }
-
-
 }
 
 
@@ -251,7 +277,12 @@ private fun ListScreen_task_Preview() {
                 status = Status.IN_PROCESS,
                 percentComplete = 50
             ),
-            originalIcalEntry = IcalEntry.getSampleIcalEntry()
+            originalIcalEntry = IcalEntry.getSampleIcalEntry(),
+            subtasks = listOf(
+                IcalEntry.getSampleTask(),
+                IcalEntry.getSampleTask(),
+                IcalEntry.getSampleTask()
+            )
         ),
         onAction = {},
         modifier = Modifier.fillMaxHeight()
