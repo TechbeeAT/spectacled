@@ -32,8 +32,9 @@ fun BottomSheetWithMenu(
     sheetState: SheetState = rememberModalBottomSheetState(),
     menuAction: @Composable () -> Unit = { },
     showLoadingIndicator: Boolean = false,
+    gesturesEnabled: Boolean = true,
     onDismiss: () -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
 
     val header = @Composable {
@@ -55,7 +56,9 @@ fun BottomSheetWithMenu(
             }
 
 
-            BottomSheetDefaults.DragHandle()
+            if (gesturesEnabled) {
+                BottomSheetDefaults.DragHandle()
+            }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -82,7 +85,8 @@ fun BottomSheetWithMenu(
         ModalBottomSheet(
             onDismissRequest = { onDismiss() },
             sheetState = sheetState,
-            dragHandle = header
+            dragHandle = header,
+            sheetGesturesEnabled = gesturesEnabled
         ) {
             content()
         }

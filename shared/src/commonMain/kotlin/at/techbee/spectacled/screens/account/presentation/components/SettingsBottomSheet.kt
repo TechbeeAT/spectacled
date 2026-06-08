@@ -70,6 +70,7 @@ fun SettingsBottomSheet(
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
         sheetState = sheetState,
+        gesturesEnabled = false,
         menuAction = { }
     ) {
         Column(

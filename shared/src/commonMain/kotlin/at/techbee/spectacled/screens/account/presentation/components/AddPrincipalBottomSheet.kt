@@ -88,6 +88,7 @@ fun AddPrincipalBottomSheet(
         onDismiss = { onDismiss() },
         sheetState = sheetState,
         showLoadingIndicator = processingState is ProcessingState.Processing,
+        gesturesEnabled = false,
         menuAction = {
             /*
             TextButton(
