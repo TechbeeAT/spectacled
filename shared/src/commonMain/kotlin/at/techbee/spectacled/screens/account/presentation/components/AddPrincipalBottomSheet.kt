@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextObfuscationMode
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
@@ -29,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SheetState
@@ -44,8 +47,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,7 +55,6 @@ import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProvider
 import at.techbee.spectacled.screens.core.data.Credentials
-import at.techbee.spectacled.screens.core.nativeImeOptions
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
@@ -77,7 +77,7 @@ fun AddPrincipalBottomSheet(
 
     var server by rememberSaveable { mutableStateOf("") }
     var username by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    val passwordState = rememberTextFieldState()
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
 
@@ -92,9 +92,9 @@ fun AddPrincipalBottomSheet(
             /*
             TextButton(
                 onClick = {
-                    onAction(AccountListAction.OnAddPrincipal(Credentials(server, username, password)))
+                    onAction(AccountListAction.OnAddPrincipal(Credentials(server, username, passwordState.text.toString())))
                 },
-                enabled = server.isNotBlank() && username.isNotBlank() && password.isNotBlank() && processingState !is ProcessingState.Processing
+                enabled = server.isNotBlank() && username.isNotBlank() && passwordState.text.isNotEmpty() && processingState !is ProcessingState.Processing
             ) {
                 Text(stringResource(Res.string.add_account))
             }
@@ -178,7 +178,7 @@ fun AddPrincipalBottomSheet(
                                                 text = { Text("Set caldavnotes@baikal") },
                                                 onClick = {
                                                     username = "caldavnotes"
-                                                    password = "caldavnotes"
+                                                    passwordState.setTextAndPlaceCursorAtEnd("caldavnotes")
                                                     server = "https://baikal.techbee.at/html/dav.php/calendars/caldavnotes/"
                                                     testDropdownMenuExpanded = false
                                                 }
@@ -187,7 +187,7 @@ fun AddPrincipalBottomSheet(
                                                 text = { Text("Set tyler@baikal") },
                                                 onClick = {
                                                     username = "tyler"
-                                                    password = "tyler"
+                                                    passwordState.setTextAndPlaceCursorAtEnd("tyler")
                                                     server = "https://baikal.techbee.at/html/dav.php/calendars/"
                                                     testDropdownMenuExpanded = false
                                                 }
@@ -196,7 +196,7 @@ fun AddPrincipalBottomSheet(
                                                 text = { Text("Set caldavnotes@nextcloud") },
                                                 onClick = {
                                                     username = "caldavnotes"
-                                                    password = "caldavnotes"
+                                                    passwordState.setTextAndPlaceCursorAtEnd("caldavnotes")
                                                     server = "https://nextcloud.techbee.at/remote.php/dav"
                                                     testDropdownMenuExpanded = false
                                                 }
@@ -214,20 +214,15 @@ fun AddPrincipalBottomSheet(
                                 //supportingText = { Text("Optional") },
                                 label = { Text(stringResource(Res.string.username)) },
                                 singleLine = true,
-                                keyboardOptions = KeyboardOptions(
-                                    platformImeOptions = nativeImeOptions()
-                                ),
                                 modifier = Modifier.width(400.dp)
                             )
 
-                            OutlinedTextField(
-                                value = password,
-                                onValueChange = { password = it },
+                            OutlinedSecureTextField(
+                                state = passwordState,
                                 //placeholder = { Text("******") },
                                 //supportingText = { Text("Optional") },
                                 label = { Text(stringResource(Res.string.password)) },
-                                singleLine = true,
-                                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                textObfuscationMode = if (isPasswordVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
                                 trailingIcon = {
                                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                                         Crossfade(isPasswordVisible) { visible ->
@@ -246,9 +241,9 @@ fun AddPrincipalBottomSheet(
 
                             TextButton(
                                 onClick = {
-                                    onAction(AccountListAction.OnAddPrincipal(Credentials(server, username, password)))
+                                    onAction(AccountListAction.OnAddPrincipal(Credentials(server, username, passwordState.text.toString())))
                                 },
-                                enabled = server.isNotBlank() && username.isNotBlank() && password.isNotBlank() && processingState !is ProcessingState.Processing
+                                enabled = server.isNotBlank() && username.isNotBlank() && passwordState.text.isNotEmpty() && processingState !is ProcessingState.Processing
                             ) {
                                 Text(stringResource(Res.string.add_account))
                             }

@@ -1,7 +1,6 @@
 package at.techbee.spectacled.screens.core
 
 import android.os.Build
-import androidx.compose.ui.text.input.PlatformImeOptions
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.shared.R
 
@@ -19,5 +18,3 @@ fun SpectacledVariant.getAndroidLogoResId(): Int {
         SpectacledVariant.TASKS -> R.drawable.logo_spectacled_tasks_android
     }
 }
-
-actual fun nativeImeOptions(): PlatformImeOptions? = null

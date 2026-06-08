@@ -1,7 +1,5 @@
 package at.techbee.spectacled.screens.core
 
-import androidx.compose.ui.text.input.PlatformImeOptions
-
 
 class WasmPlatform: Platform {
     override val platform: Platforms = Platforms.WASM
@@ -9,8 +7,6 @@ class WasmPlatform: Platform {
 }
 
 actual fun getPlatform(): Platform = WasmPlatform()
-
-actual fun nativeImeOptions(): PlatformImeOptions? = null
 
 // format datetime. Solution taken over from ChatGPT.
 @OptIn(ExperimentalWasmJsInterop::class)

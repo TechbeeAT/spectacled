@@ -1,7 +1,5 @@
 package at.techbee.spectacled.screens.core
 
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.text.input.PlatformImeOptions
 import platform.UIKit.UIDevice
 
 class IOSPlatform: Platform {
@@ -10,8 +8,3 @@ class IOSPlatform: Platform {
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()
-
-@OptIn(ExperimentalComposeUiApi::class)
-actual fun nativeImeOptions(): PlatformImeOptions? = PlatformImeOptions {
-    usingNativeTextInput(true)
-}
