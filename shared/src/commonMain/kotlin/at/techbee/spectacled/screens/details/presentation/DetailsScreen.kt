@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -175,9 +176,10 @@ fun DetailsScreen(
             )
 
             if (state.icalEntry.isTask()) {
+                val entryTriState = state.icalEntry.getProgressTriState()
                 TriStateCheckbox(
-                    state = state.icalEntry.getProgressTriState(),
-                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (state.icalEntry.percentComplete < 100) 100 else 0)) }
+                    state = entryTriState,
+                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 100 else 0)) }
                 )
             }
         }
@@ -218,7 +220,17 @@ fun DetailsScreen(
                             Icon(Icons.Outlined.DragHandle, null)
                         }
                         Text(subtask.summary?: "No summary", modifier = Modifier.weight(1f))
-                        TriStateCheckbox(state = subtask.getProgressTriState(), onClick = {})
+
+                        val subtaskTriState = subtask.getProgressTriState()
+                        TriStateCheckbox(
+                            state = subtaskTriState,
+                            onClick = {
+                                onAction(DetailsAction.OnUpdateSubtaskProgress(
+                                    if(subtaskTriState == ToggleableState.On) 0L else 100L,
+                                    subtask.id
+                                ))
+                            }
+                        )
                     }
                 }
             }

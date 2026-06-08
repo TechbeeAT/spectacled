@@ -15,6 +15,7 @@ sealed interface DetailsAction {
     data class OnUpdateDtStart(val icsDateTime: IcsDateTime?): DetailsAction
     data class OnUpdateDue(val icsDateTime: IcsDateTime?): DetailsAction
     data class OnUpdateProgress(val percent: Long): DetailsAction
+    data class OnUpdateSubtaskProgress(val percent: Long, val subtaskIcalEntryId: Long): DetailsAction
     data class OnAddSubtask(val summary: String): DetailsAction
 
     data class OnSyncConflictUpdateUserDecision(val syncState: SyncState): DetailsAction

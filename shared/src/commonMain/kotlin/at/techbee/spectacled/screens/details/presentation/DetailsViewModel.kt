@@ -29,6 +29,7 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
+import at.techbee.spectacled.screens.core.mapper.dto.toDto
 import io.github.aakira.napier.Napier
 import io.ktor.http.Url
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -250,6 +251,7 @@ class DetailsViewModel(
             is DetailsAction.OnPin -> { onPinIcalEntry(action.pin) }
             is DetailsAction.OnUpdateStatus -> { onUpdateStatus(action.status) }
             is DetailsAction.OnUpdateProgress -> { onUpdateTaskProgress(action.percent) }
+            is DetailsAction.OnUpdateSubtaskProgress -> { onUpdateSubtaskProgress(action.percent, action.subtaskIcalEntryId) }
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
             is DetailsAction.OnNavigateToIcalEntryId -> { _state = _state.copy(navigateToIcalEntryId = action.id) }
         }
@@ -569,5 +571,35 @@ class DetailsViewModel(
             platformSyncTrigger.triggerWidgetUpdate()
         }
         Napier.d("Entry saved")
+    }
+
+    private fun onUpdateSubtaskProgress(percent: Long, subtaskIcalEntryId: Long) {
+
+        val subtask = _state.subtasks.find { it.id == subtaskIcalEntryId } ?: return
+
+        subtask.copy(
+            status = when(percent) {
+                0L -> if(state.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
+                in 1L..99L -> Status.IN_PROCESS
+                100L -> Status.COMPLETED
+                else -> null
+            },
+            percentComplete = percent,
+            lastModified = IcsDateTime.now(),
+            syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                SyncState.USER_DECIDED_CLIENT_WINS
+            else
+                SyncState.LOCAL_MODIFIED
+        ).toDto().let {
+            viewModelScope.launch {
+                getDatabase().icalentry_dtoQueries.updateProgress(
+                    newPercent = it.percentComplete,
+                    newStatus = it.status,
+                    lastModified = it.lastModified,
+                    syncState = it.syncState,
+                    id = it.id
+                )
+            }
+        }
     }
 }
