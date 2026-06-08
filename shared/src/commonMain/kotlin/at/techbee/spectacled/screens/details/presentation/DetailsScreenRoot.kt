@@ -37,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.techbee.spectacled.screens.Route
+import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -67,6 +69,7 @@ import kotlin.time.ExperimentalTime
 @Composable
 fun DetailsScreenRoot(
     detailsViewModel: DetailsViewModel,
+    onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit
 ) {
     val detailsState = detailsViewModel.state
@@ -86,6 +89,13 @@ fun DetailsScreenRoot(
             if (detailsState.navigateUp) {
                 onNavigateUp()
                 detailsViewModel.onAction(DetailsAction.OnNavigateUp(false))
+            }
+        }
+
+        LaunchedEffect(detailsState.navigateToIcalEntryId) {
+            if (detailsState.navigateToIcalEntryId != null) {
+                onNavigate(IcalEntryDetails(detailsState.navigateToIcalEntryId))
+                detailsViewModel.onAction(DetailsAction.OnNavigateToIcalEntryId(null))
             }
         }
 
@@ -325,6 +335,7 @@ fun DetailsScreenRoot(
 private fun ListScreenRoot_Preview() {
     DetailsScreenRoot(
         detailsViewModel = koinViewModel<DetailsViewModel>(),
+        onNavigate = {},
         onNavigateUp = {}
     )
 }

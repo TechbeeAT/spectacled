@@ -154,6 +154,7 @@ fun SpectacledApp(
 
                         DetailsScreenRoot(
                             detailsViewModel = detailsViewModel,
+                            onNavigate = { route -> navController.navigate(route) },
                             onNavigateUp = { navController.popBackStack() }
                             /*
                                 onNavigate = { route ->
@@ -182,8 +183,8 @@ fun SpectacledApp(
 
                         DetailsScreenRoot(
                             detailsViewModel = detailsViewModel,
+                            onNavigate = { route -> navController.navigate(route) },
                             onNavigateUp = { navController.popBackStack() }
-                            //onNavigate = { navController.navigate(it) }
                         )
                     }
                 }

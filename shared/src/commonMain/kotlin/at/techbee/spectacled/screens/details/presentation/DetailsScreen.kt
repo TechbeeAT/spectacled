@@ -207,6 +207,7 @@ fun DetailsScreen(
             state.subtasks.forEach { subtask ->
 
                 ElevatedCard(
+                    onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
                 ) {
                     Row(

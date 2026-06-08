@@ -28,7 +28,8 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val isLoading: Boolean = true,
 
     val snackbarText: String? = null,
-    val navigateUp: Boolean = false
+    val navigateUp: Boolean = false,
+    val navigateToIcalEntryId: Long? = null
 ) {
 
     fun allowEditing() = calendar?.canWriteContent() == true && !icalEntry.syncState.isDeletedState()

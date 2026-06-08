@@ -251,6 +251,7 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateStatus -> { onUpdateStatus(action.status) }
             is DetailsAction.OnUpdateProgress -> { onUpdateTaskProgress(action.percent) }
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
+            is DetailsAction.OnNavigateToIcalEntryId -> { _state = _state.copy(navigateToIcalEntryId = action.id) }
         }
     }
 
