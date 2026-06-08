@@ -1,5 +1,7 @@
 package at.techbee.spectacled.screens.core
 
+import androidx.compose.ui.text.input.PlatformImeOptions
+
 
 enum class Platforms { ANDROID, IOS, DESKTOP, WASM }
 
@@ -11,3 +13,5 @@ interface Platform {
 }
 
 expect fun getPlatform(): Platform
+
+expect fun nativeImeOptions(): PlatformImeOptions?

@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
@@ -52,6 +54,7 @@ import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProvider
 import at.techbee.spectacled.screens.core.data.Credentials
+import at.techbee.spectacled.screens.core.nativeImeOptions
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
@@ -161,7 +164,6 @@ fun AddPrincipalBottomSheet(
                                 placeholder = { Text("https://") },
                                 //supportingText = { Text("Optional") },
                                 label = { Text("Server (optional)") },
-                                singleLine = true,
                                 trailingIcon = {
                                     TextButton(
                                         onClick = { testDropdownMenuExpanded = !testDropdownMenuExpanded },
@@ -186,7 +188,7 @@ fun AddPrincipalBottomSheet(
                                                 onClick = {
                                                     username = "tyler"
                                                     password = "tyler"
-                                                    server = "https://baikal.techbee.at/html/dav.php/calendars/caldavnotes/"
+                                                    server = "https://baikal.techbee.at/html/dav.php/calendars/"
                                                     testDropdownMenuExpanded = false
                                                 }
                                             )
@@ -201,7 +203,8 @@ fun AddPrincipalBottomSheet(
                                             )
                                         }
                                     }
-                                }
+                                },
+                                modifier = Modifier.width(400.dp)
                             )
 
                             OutlinedTextField(
@@ -210,7 +213,11 @@ fun AddPrincipalBottomSheet(
                                 placeholder = { Text(stringResource(Res.string.username)) },
                                 //supportingText = { Text("Optional") },
                                 label = { Text(stringResource(Res.string.username)) },
-                                singleLine = true
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    platformImeOptions = nativeImeOptions()
+                                ),
+                                modifier = Modifier.width(400.dp)
                             )
 
                             OutlinedTextField(
@@ -233,7 +240,8 @@ fun AddPrincipalBottomSheet(
                                             )
                                         }
                                     }
-                                }
+                                },
+                                modifier = Modifier.width(400.dp)
                             )
 
                             TextButton(
