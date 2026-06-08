@@ -1,7 +1,9 @@
 package at.techbee.spectacled.screens.account.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.NoAccounts
@@ -89,36 +91,42 @@ fun DeleteCalendarDialog(
 @Preview
 @Composable
 private fun DeleteCalendarDialog_Preview_Idle() {
-    DeleteCalendarDialog(
-        principal = Principal.getPrincipalForPreview(),
-        calendar = Calendar.getCalendarForPreview(),
-        processingState = ProcessingState.Idle,
-        onConfirm = { _, _ -> },
-        onDismiss = {}
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        DeleteCalendarDialog(
+            principal = Principal.getPrincipalForPreview(),
+            calendar = Calendar.getCalendarForPreview(),
+            processingState = ProcessingState.Idle,
+            onConfirm = { _, _ -> },
+            onDismiss = {}
+        )
+    }
 }
 
 
 @Preview
 @Composable
 private fun DeleteCalendarDialog_Preview_Processing() {
-    DeleteCalendarDialog(
-        principal = Principal.getPrincipalForPreview(),
-        calendar = Calendar.getCalendarForPreview(),
-        processingState = ProcessingState.Processing,
-        onConfirm = { _, _ -> },
-        onDismiss = {}
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        DeleteCalendarDialog(
+            principal = Principal.getPrincipalForPreview(),
+            calendar = Calendar.getCalendarForPreview(),
+            processingState = ProcessingState.Processing,
+            onConfirm = { _, _ -> },
+            onDismiss = {}
+        )
+    }
 }
 
 @Preview
 @Composable
 private fun DeleteCalendarDialog_Preview_Error() {
-    DeleteCalendarDialog(
-        principal = Principal.getPrincipalForPreview(),
-        calendar = Calendar.getCalendarForPreview(),
-        processingState = ProcessingState.Error("This is an error"),
-        onConfirm = { _, _ -> },
-        onDismiss = {}
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        DeleteCalendarDialog(
+            principal = Principal.getPrincipalForPreview(),
+            calendar = Calendar.getCalendarForPreview(),
+            processingState = ProcessingState.Error("This is an error"),
+            onConfirm = { _, _ -> },
+            onDismiss = {}
+        )
+    }
 }
