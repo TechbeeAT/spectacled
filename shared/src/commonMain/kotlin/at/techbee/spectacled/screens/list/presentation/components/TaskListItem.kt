@@ -98,7 +98,7 @@ fun TaskListItem(
                         Text(
                             text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
                             style = MaterialTheme.typography.titleMedium,
-                            maxLines = 3,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -107,7 +107,7 @@ fun TaskListItem(
                     if (icalEntry.description?.isBlank() == false)
                         Text(
                             text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
-                            maxLines = 5,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.fillMaxWidth()
                         )

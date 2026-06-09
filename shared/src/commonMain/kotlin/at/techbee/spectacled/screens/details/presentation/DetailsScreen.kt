@@ -14,16 +14,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
-import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Text
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,6 +38,7 @@ import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
+import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -208,6 +204,21 @@ fun DetailsScreen(
         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             state.subtasks.forEach { subtask ->
 
+                TaskListItem(subtask,
+                    false,
+                    onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
+                    onLongClick = {},
+                    onToggleProgress = {
+                        onAction(DetailsAction.OnUpdateSubtaskProgress(
+                            if(subtask.getProgressTriState() == ToggleableState.On) 0L else 100L,
+                            subtask.id
+                        ))
+                    },
+                    onFilterCategory = {},
+                    dragHandle = { /* TODO */ })
+
+                /*
+
                 ElevatedCard(
                     onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
@@ -233,6 +244,8 @@ fun DetailsScreen(
                         )
                     }
                 }
+
+                 */
             }
         }
     }
