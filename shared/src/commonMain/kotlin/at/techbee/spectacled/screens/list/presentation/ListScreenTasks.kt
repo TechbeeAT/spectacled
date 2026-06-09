@@ -2,12 +2,16 @@ package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
@@ -52,6 +56,43 @@ fun ListScreenTasks(
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
+    @Composable
+    fun LazyItemScope.getTaskListItem(
+        icalEntry: IcalEntry,
+        subtasks: List<IcalEntry> = emptyList(),
+        isDragging: Boolean = false,
+        dragHandle: @Composable () -> Unit = {},
+        modifier: Modifier = Modifier
+    ) {
+        TaskListItem(
+            icalEntry = icalEntry,
+            isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
+            onClick = {
+                if (state.multiselectItems == null)
+                    onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
+                else
+                    onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
+            },
+            onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
+            onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
+            dragHandle = dragHandle,
+            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+            modifier = Modifier
+                .widthIn(max = 700.dp)
+                .heightIn(min = 50.dp)
+                .then(modifier)
+                .animateItem()
+        )
+
+        subtasks.forEach { subtask ->
+            getTaskListItem(
+                icalEntry = subtask,
+                isDragging = isDragging,
+                modifier = Modifier.padding(start = 48.dp)
+            )
+        }
+    }
+
 
     LazyColumn(
         state = lazyListState,
@@ -78,28 +119,19 @@ fun ListScreenTasks(
                         onAction(ListAction.OnPersistOrderNo)
                         onAction(ListAction.OnDraggingIcalEntry(null))
                     }
+                    val listScope = this
 
-                    TaskListItem(
-                        icalEntry = icalEntry,
-                        isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
-                        onClick = {
-                            if (state.multiselectItems == null)
-                                onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
-                            else
-                                onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-                        },
-                        onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                        onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
-                        dragHandle = {
-                            if (state.listSortedBy == ListSortedBy.DRAGANDDROP)
-                                ListDragHandle(this)
-                        },
-                        onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                        modifier = Modifier
-                            .widthIn(max = 700.dp)
-                            .heightIn(min = 50.dp)
-                            .animateItem()
-                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        this@items.getTaskListItem(
+                            icalEntry = icalEntry,
+                            subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
+                            isDragging = isDragging,
+                            dragHandle = {
+                                if (state.listSortedBy == ListSortedBy.DRAGANDDROP)
+                                    ListDragHandle(listScope)
+                            }
+                        )
+                    }
                 }
             }
         } else {
@@ -119,25 +151,7 @@ fun ListScreenTasks(
                         items = state.pinned,
                         key = { icalEntry -> icalEntry.uid }
                     ) { icalEntry ->
-
-                        TaskListItem(
-                            icalEntry = icalEntry,
-                            isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
-                            onClick = {
-                                if (state.multiselectItems == null)
-                                    onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
-                                else
-                                    onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-                            },
-                            onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                            onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
-                            modifier = Modifier
-                                .widthIn(max = 700.dp)
-                                .heightIn(min = 50.dp)
-                                .animateItem()
-                        )
-
+                        getTaskListItem(icalEntry = icalEntry)
                     }
                 }
             }
@@ -164,25 +178,7 @@ fun ListScreenTasks(
                             items = groupedByDay[dayGroup]!!,
                             key = { icalEntry -> icalEntry.uid }
                         ) { icalEntry ->
-
-                            TaskListItem(
-                                icalEntry = icalEntry,
-                                isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
-                                onClick = {
-                                    if (state.multiselectItems == null)
-                                        onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
-                                    else
-                                        onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-                                },
-                                onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                                onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                                onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
-                                modifier = Modifier
-                                    .widthIn(max = 700.dp)
-                                    .heightIn(min = 50.dp)
-                                    .animateItem()
-                            )
-
+                            getTaskListItem(icalEntry = icalEntry)
                         }
                     }
                 }
@@ -211,25 +207,7 @@ fun ListScreenTasks(
 
                         if (grouping.name !in state.listCollapsedGroups) {
                             items(state.displayMap[grouping]!!, key = { icalEntry -> icalEntry.uid }) { icalEntry ->
-
-                                TaskListItem(
-                                    icalEntry = icalEntry,
-                                    isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
-                                    onClick = {
-                                        if (state.multiselectItems == null)
-                                            onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
-                                        else
-                                            onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-                                    },
-                                    onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                                    onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                                    onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
-                                    modifier = Modifier
-                                        .widthIn(max = 700.dp)
-                                        .heightIn(min = 50.dp)
-                                        .animateItem()
-                                )
-
+                                getTaskListItem(icalEntry = icalEntry)
                             }
                         }
                     }
@@ -258,24 +236,9 @@ fun ListScreenTasks(
                 ) }
             else
                 items(state.trashbin, key = { note -> note.uid }) { icalEntry ->
-
-                    TaskListItem(
+                    getTaskListItem(
                         icalEntry = icalEntry,
-                        isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
-                        onClick = {
-                            if (state.multiselectItems == null)
-                                onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
-                            else
-                                onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-                        },
-                        onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                        onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                        onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
-                        modifier = Modifier
-                            .widthIn(max = 700.dp)
-                            .heightIn(min = 50.dp)
-                            .animateItem()
-                            .alpha(0.33f)
+                        modifier = Modifier.alpha(0.33f)
                     )
                 }
         }

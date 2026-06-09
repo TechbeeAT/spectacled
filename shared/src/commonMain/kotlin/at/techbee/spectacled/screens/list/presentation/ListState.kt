@@ -103,6 +103,9 @@ data class ListState(
             .let { getPinnedFilteredList(it, true) }
             .let { getSortedList(it) }
 
+    val subtasks: Map<String, List<IcalEntry>>
+        get() = getSubtasks(icalEntries)
+
 
     private fun getBaseList(icalEntries: List<IcalEntry>, trashbin: Boolean = false) =
         icalEntries
@@ -111,6 +114,16 @@ data class ListState(
                 SpectacledVariant.NOTES -> it.syncState.isDeletedState() == trashbin && it.dtStart == null
                 SpectacledVariant.TASKS -> it.syncState.isDeletedState() == trashbin && it.parentUid == null
         } }
+
+    private fun getSubtasks(icalEntries: List<IcalEntry>) =
+        when(spectacledVariant) {
+                SpectacledVariant.JOURNALS -> emptyMap()  // not foreseen for Journals
+                SpectacledVariant.NOTES -> emptyMap()  // not foreseen for Notes
+                SpectacledVariant.TASKS -> icalEntries
+                    .filter { !it.syncState.isDeletedState() && it.parentUid != null }
+                    .sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+                    .groupBy { it.parentUid!! }
+            }
 
     private fun getPinnedFilteredList(icalEntries: List<IcalEntry>, pinned: Boolean = false) =
         icalEntries.filter {

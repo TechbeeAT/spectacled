@@ -153,7 +153,6 @@ fun ListScreenNotes(
                                 .heightIn(min = 50.dp)
                                 .animateItem()
                         )
-
                     }
                 }
             }
