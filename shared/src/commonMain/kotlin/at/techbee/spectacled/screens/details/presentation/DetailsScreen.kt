@@ -14,14 +14,18 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -41,11 +45,13 @@ import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
+import sh.calvin.reorderable.ReorderableColumn
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.description
+import spectacled.shared.generated.resources.drag_handle
 import spectacled.shared.generated.resources.summary
 
 
@@ -198,51 +204,47 @@ fun DetailsScreen(
                 }
         )
 
-        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-            state.subtasks.forEach { subtask ->
+        val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+        ReorderableColumn(
+            list = sortedSubtasks,
+            onSettle = { fromIndex, toIndex ->
+                onAction(DetailsAction.OnPersistOrderNo(
+                    sortedSubtasks.toMutableList().apply {
+                        add(toIndex, removeAt(fromIndex))
+                    }.map { it.id }
+                ))
+            },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+        ) { index, subtask, isDragging ->
 
-                TaskListItem(subtask,
-                    false,
-                    onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
-                    onLongClick = {},
-                    onToggleProgress = {
-                        onAction(DetailsAction.OnUpdateSubtaskProgress(
-                            if(subtask.getProgressTriState() == ToggleableState.On) 0L else 100L,
-                            subtask.id
-                        ))
-                    },
-                    onFilterCategory = {},
-                    dragHandle = { /* TODO */ })
-
-                /*
-
-                ElevatedCard(
-                    onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = {}) {
-                            Icon(Icons.Outlined.DragHandle, null)
-                        }
-                        Text(subtask.summary?: "No summary", modifier = Modifier.weight(1f))
-
-                        val subtaskTriState = subtask.getProgressTriState()
-                        TriStateCheckbox(
-                            state = subtaskTriState,
-                            onClick = {
-                                onAction(DetailsAction.OnUpdateSubtaskProgress(
-                                    if(subtaskTriState == ToggleableState.On) 0L else 100L,
-                                    subtask.id
-                                ))
+            key(subtask.id) {
+                ReorderableItem {
+                    TaskListItem(subtask,
+                        false,
+                        onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
+                        onLongClick = {},
+                        onToggleProgress = {
+                            onAction(DetailsAction.OnUpdateSubtaskProgress(
+                                if(subtask.getProgressTriState() == ToggleableState.On) 0L else 100L,
+                                subtask.id
+                            ))
+                        },
+                        onFilterCategory = {},
+                        dragHandle = {
+                            IconButton(
+                                onClick = {},
+                                modifier = with(this) {
+                                    Modifier.draggableHandle()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.DragIndicator,
+                                    contentDescription = stringResource(Res.string.drag_handle)
+                                )
                             }
-                        )
-                    }
+                        }
+                    )
                 }
-
-                 */
             }
         }
     }

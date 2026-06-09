@@ -254,6 +254,7 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateSubtaskProgress -> { onUpdateSubtaskProgress(action.percent, action.subtaskIcalEntryId) }
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
             is DetailsAction.OnNavigateToIcalEntryId -> { _state = _state.copy(navigateToIcalEntryId = action.id) }
+            is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
         }
     }
 
@@ -599,6 +600,16 @@ class DetailsViewModel(
                     syncState = it.syncState,
                     id = it.id
                 )
+            }
+        }
+    }
+
+    private fun onPersistOrderNo(sortedList: List<Long>) {
+        viewModelScope.launch {
+            getDatabase().icalentry_dtoQueries.transaction {
+                sortedList.forEachIndexed { index, icalEntryId ->
+                    getDatabase().icalentry_dtoQueries.updateOrderNo(index.toLong(), icalEntryId)
+                }
             }
         }
     }

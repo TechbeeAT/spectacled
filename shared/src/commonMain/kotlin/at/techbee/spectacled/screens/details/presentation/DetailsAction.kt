@@ -27,6 +27,7 @@ sealed interface DetailsAction {
     data class OnShowJournalStatusPickerBottomSheet(val show: Boolean): DetailsAction
     data class OnShowTaskStatusProgressPickerBottomSheet(val show: Boolean): DetailsAction
     data class OnShowAddSubtaskBottomSheet(val show: Boolean): DetailsAction
+    data class OnPersistOrderNo(val list: List<Long>): DetailsAction
 
     data class OnNavigateToIcalEntryId(val id: Long?): DetailsAction
 
