@@ -233,7 +233,7 @@ fun IcalEntryListTopBar(
                         }
                     }
 
-                    // No staggered grid option for Journals
+                    // No staggered grid option for Journals and Tasks
                     if(spectacledVariant == SpectacledVariant.NOTES) {
                         TextButton(
                             onClick = {
@@ -291,20 +291,22 @@ fun IcalEntryListTopBar(
             AnimatedVisibility(state.multiselectItems != null) {
                 Row {
 
-                    TextButton(
-                        onClick = { onAction(ListAction.OnTogglePinEntry(!allSelectedPinned)) },
-                        enabled = state.multiselectItems?.isNotEmpty() == true
-                    ) {
-                        if(allSelectedPinned)
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_unpin),
-                                contentDescription = stringResource(Res.string.unpin)
-                            )
-                        else
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_pin),
-                                contentDescription = stringResource(Res.string.pin)
-                            )
+                    if(spectacledVariant == SpectacledVariant.NOTES) {
+                        TextButton(
+                            onClick = { onAction(ListAction.OnTogglePinEntry(!allSelectedPinned)) },
+                            enabled = state.multiselectItems?.isNotEmpty() == true
+                        ) {
+                            if (allSelectedPinned)
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_unpin),
+                                    contentDescription = stringResource(Res.string.unpin)
+                                )
+                            else
+                                Icon(
+                                    painter = painterResource(Res.drawable.ic_pin),
+                                    contentDescription = stringResource(Res.string.pin)
+                                )
+                        }
                     }
 
                     TextButton(
@@ -380,15 +382,38 @@ fun IcalEntryListTopBar(
 
 @Preview
 @Composable
-private fun IcalEntrySearchBar_Preview() {
+private fun ListTopBar_Journal_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+
+        IcalEntryListTopBar(
+            state = ListState(
+                calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Journals"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
+                multiselectItems = null,
+                listFilterCriteria = ListFilterCriteria()
+            ),
+            onAction = {},
+            spectacledVariant = SpectacledVariant.JOURNALS,
+            allSelectedPinned = false
+
+        )
+    }
+}
+
+
+@Preview
+@Composable
+private fun ListTopBar_Notes_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
 
         IcalEntryListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
                 listSortedBy = ListSortedBy.CREATED,
                 listSortedByAscending = true,
-                listLayout = ListLayout.LIST,
+                listLayout = ListLayout.STAGGERED_GRID,
                 multiselectItems = null,
                 listFilterCriteria = ListFilterCriteria()
             ),
@@ -402,7 +427,30 @@ private fun IcalEntrySearchBar_Preview() {
 
 @Preview
 @Composable
-private fun IcalEntrySearchBar_blue_Preview() {
+private fun ListTopBar_Tasks_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+
+        IcalEntryListTopBar(
+            state = ListState(
+                calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Tasks"),
+                listSortedBy = ListSortedBy.DRAGANDDROP,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
+                multiselectItems = null,
+                listFilterCriteria = ListFilterCriteria()
+            ),
+            onAction = {},
+            spectacledVariant = SpectacledVariant.TASKS,
+            allSelectedPinned = false
+
+        )
+    }
+}
+
+
+@Preview
+@Composable
+private fun ListTopBar_blue_Preview() {
         MaterialTheme(colorScheme = dynamicColorScheme(Color.Blue, false)) {
 
             IcalEntryListTopBar(
@@ -424,8 +472,8 @@ private fun IcalEntrySearchBar_blue_Preview() {
 
 @Preview
 @Composable
-private fun IcalEntrySearchBar_Multiselect_Preview() {
-        AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
+private fun ListTopBar_Journals_Multiselect_Preview() {
+        AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
 
             IcalEntryListTopBar(
                 state = ListState(
@@ -437,7 +485,7 @@ private fun IcalEntrySearchBar_Multiselect_Preview() {
                     listFilterCriteria = ListFilterCriteria()
                 ),
                 onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES,
+                spectacledVariant = SpectacledVariant.JOURNALS,
                 allSelectedPinned = false
             )
         }
@@ -445,31 +493,52 @@ private fun IcalEntrySearchBar_Multiselect_Preview() {
 
 @Preview
 @Composable
-private fun IcalEntrySearchBar_yellow_Multiselect_Preview() {
+private fun ListTopBar_Notes_Multiselect_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
 
-        MaterialTheme(colorScheme = dynamicColorScheme(Color.Yellow, false)) {
-
-            IcalEntryListTopBar(
-                state = ListState(
-                    calendar = Calendar.getCalendarForPreview().copy(displayName = "This is a very long folder name that shouldn't cause troubles"),
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.STAGGERED_GRID,
-                    multiselectItems = emptyList(),
-                    listFilterCriteria = ListFilterCriteria(searchQuery = "")
-                ),
-                onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES,
-                allSelectedPinned = true
-            )
-        }
+        IcalEntryListTopBar(
+            state = ListState(
+                calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
+                multiselectItems = listOf(1, 2, 3),
+                listFilterCriteria = ListFilterCriteria()
+            ),
+            onAction = {},
+            spectacledVariant = SpectacledVariant.NOTES,
+            allSelectedPinned = false
+        )
+    }
 }
+
+@Preview
+@Composable
+private fun ListTopBar_Tasks_Multiselect_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+
+        IcalEntryListTopBar(
+            state = ListState(
+                calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
+                multiselectItems = listOf(1, 2, 3),
+                listFilterCriteria = ListFilterCriteria()
+            ),
+            onAction = {},
+            spectacledVariant = SpectacledVariant.TASKS,
+            allSelectedPinned = false
+        )
+    }
+}
+
 
 
 @Preview
 @Composable
-private fun IcalEntrySearchBar_sync_in_progress_Preview() {
-        MaterialTheme {
+private fun istTopBar_sync_in_progress_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
 
         IcalEntryListTopBar(
             state = ListState(
@@ -484,7 +553,7 @@ private fun IcalEntrySearchBar_sync_in_progress_Preview() {
                 listFilterCriteria = ListFilterCriteria()
             ),
             onAction = {},
-            spectacledVariant = SpectacledVariant.NOTES,
+            spectacledVariant = SpectacledVariant.TASKS,
             allSelectedPinned = false
         )
     }
