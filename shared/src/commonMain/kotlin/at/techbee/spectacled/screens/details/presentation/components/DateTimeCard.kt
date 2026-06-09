@@ -32,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
@@ -54,7 +53,6 @@ fun DateTimeCard(
     enabled: Boolean,
     allowNoDate: Boolean,
     initializeWithDateOnly: Boolean,
-    iconColor: Color?,
     suggestedTimezones: List<TimeZone>,
     onIcsDateTimeUpdated: (IcsDateTime?) -> Unit,
     modifier: Modifier = Modifier,
@@ -65,11 +63,6 @@ fun DateTimeCard(
     var showDatePickerBottomSheet by remember { mutableStateOf(false) }
     var showTimePickerBottomSheet by remember { mutableStateOf(false) }
 
-    /*
-    val buttonColors = ButtonDefaults.textButtonColors().copy(
-        contentColor = iconColor?.let { getContentColorForColoredSurfaces(it) } ?: Color.Unspecified
-    )
-     */
     val buttonColors = ButtonDefaults.textButtonColors()
 
     if (showDatePickerBottomSheet) {
@@ -242,7 +235,6 @@ private fun DateTimeCard_no_date_Preview() {
     DateTimeCard(
         icsDateTime = null,
         enabled = true,
-        iconColor = null,
         allowNoDate = true,
         initializeWithDateOnly = false,
         suggestedTimezones = emptyList(),
@@ -256,7 +248,6 @@ private fun DateTimeCard_date_only_Preview() {
     DateTimeCard(
         icsDateTime = IcsDateTime.now().copy(isDateOnly = true),
         enabled = true,
-        iconColor = null,
         allowNoDate = true,
         initializeWithDateOnly = false,
         suggestedTimezones = emptyList(),
@@ -270,7 +261,6 @@ private fun DDateTimeCard_date_time_Preview() {
     DateTimeCard(
         icsDateTime = IcsDateTime.now(),
         enabled = true,
-        iconColor = null,
         allowNoDate = true,
         initializeWithDateOnly = false,
         suggestedTimezones = emptyList(),
@@ -285,7 +275,6 @@ private fun DateTimeCard_with_timezone_Preview() {
     DateTimeCard(
         icsDateTime = IcsDateTime.now().copy(timeZone = TimeZone.of(TimeZone.availableZoneIds.first())),
         enabled = true,
-        iconColor = null,
         allowNoDate = true,
         initializeWithDateOnly = false,
         suggestedTimezones = emptyList(),

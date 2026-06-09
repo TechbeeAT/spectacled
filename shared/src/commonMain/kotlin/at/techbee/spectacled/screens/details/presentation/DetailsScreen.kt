@@ -74,7 +74,6 @@ fun DetailsScreen(
                         enabled = state.allowEditing(),
                         allowNoDate = false,
                         initializeWithDateOnly = true,
-                        iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
                         suggestedTimezones = state.latestUsedTimezones,
                         onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) }
                     )
@@ -87,7 +86,6 @@ fun DetailsScreen(
                         enabled = state.allowEditing(),
                         allowNoDate = true,
                         initializeWithDateOnly = state.icalEntry.due?.isDateOnly != false,  // only when due is NOT date only we initialize with time
-                        iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
                         suggestedTimezones = state.latestUsedTimezones,
                         onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) },
                         headerText = stringResource(Res.string.date_start),
@@ -105,7 +103,6 @@ fun DetailsScreen(
                         enabled = state.allowEditing(),
                         allowNoDate = true,
                         initializeWithDateOnly = state.icalEntry.dtStart?.isDateOnly != false,  // only when dtStart is NOT date only we initialize with time
-                        iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
                         suggestedTimezones = state.latestUsedTimezones,
                         onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDue(it)) },
                         headerText = stringResource(Res.string.date_due),
