@@ -81,7 +81,7 @@ fun ListScreenTasks(
 
                     TaskListItem(
                         icalEntry = icalEntry,
-                        isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
+                        isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
                         onClick = {
                             if (state.multiselectItems == null)
                                 onAction(ListAction.OnIcalEntryClicked(icalEntry.id))

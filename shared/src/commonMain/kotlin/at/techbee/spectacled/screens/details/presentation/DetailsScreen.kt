@@ -209,12 +209,12 @@ fun DetailsScreen(
                 ))
             },
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-        ) { index, subtask, isDragging ->
+        ) { _, subtask, isDragging ->
 
             key(subtask.id) {
                 ReorderableItem {
                     TaskListItem(subtask,
-                        false,
+                        isDragging,
                         onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                         onLongClick = {},
                         onToggleProgress = {

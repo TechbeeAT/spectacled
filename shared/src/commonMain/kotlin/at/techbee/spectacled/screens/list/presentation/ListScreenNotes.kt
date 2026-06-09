@@ -96,7 +96,7 @@ fun ListScreenNotes(
                         icalEntry = icalEntry,
                         isFirst = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
                         isLast = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == dragAndDropList.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
-                        isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
+                        isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
                         onClick = {
                             if (state.multiselectItems == null)
                                 onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
