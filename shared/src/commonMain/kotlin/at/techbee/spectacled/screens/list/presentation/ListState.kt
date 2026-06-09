@@ -109,7 +109,7 @@ data class ListState(
             .filter { when(spectacledVariant) {
                 SpectacledVariant.JOURNALS -> it.syncState.isDeletedState() == trashbin && it.dtStart != null
                 SpectacledVariant.NOTES -> it.syncState.isDeletedState() == trashbin && it.dtStart == null
-                SpectacledVariant.TASKS -> it.syncState.isDeletedState() == trashbin
+                SpectacledVariant.TASKS -> it.syncState.isDeletedState() == trashbin && it.parentUid == null
         } }
 
     private fun getPinnedFilteredList(icalEntries: List<IcalEntry>, pinned: Boolean = false) =
