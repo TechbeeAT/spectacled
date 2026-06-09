@@ -84,8 +84,6 @@ fun DetailsScreen(
                         onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) }
                     )
 
-                    //HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
-
                 } else if (state.icalEntry.isTask()) {
                     DateTimeCard(
                         icsDateTime = state.icalEntry.dtStart,
@@ -101,8 +99,6 @@ fun DetailsScreen(
                             }
                         }
                     )
-
-                    //Spacer(modifier = Modifier.height(4.dp))
 
                     DateTimeCard(
                         icsDateTime = state.icalEntry.due,
@@ -153,9 +149,7 @@ fun DetailsScreen(
         Row(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                //.fillMaxWidth()
-                .padding(vertical = 8.dp)
+            modifier = Modifier.padding(vertical = 8.dp)
         ) {
 
             BasicTextField(
