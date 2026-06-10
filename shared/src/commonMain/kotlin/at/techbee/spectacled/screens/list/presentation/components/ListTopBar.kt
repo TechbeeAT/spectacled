@@ -537,7 +537,7 @@ private fun ListTopBar_Tasks_Multiselect_Preview() {
 
 @Preview
 @Composable
-private fun istTopBar_sync_in_progress_Preview() {
+private fun ListTopBar_sync_in_progress_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
 
         IcalEntryListTopBar(
