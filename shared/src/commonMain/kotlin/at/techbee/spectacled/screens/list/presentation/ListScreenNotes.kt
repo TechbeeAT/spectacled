@@ -257,6 +257,7 @@ fun ListScreenNotes(
             if(it)
                 EmptyListScreen(
                     isEmptyFolder = state.icalEntries.isEmpty(),
+                    spectacledVariant = state.spectacledVariant,
                     modifier = Modifier.fillMaxSize()
                 )
         }
