@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
@@ -33,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
@@ -79,9 +81,11 @@ fun TaskListItem(
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .padding(vertical = 4.dp)
                         .combinedClickable(
                             interactionSource = interactionSource,
                             indication = null,
@@ -91,7 +95,7 @@ fun TaskListItem(
                                 onLongClick()
                             }
                         )
-                        .padding(vertical = 4.dp)
+
                 ) {
 
                     if (icalEntry.summary?.isBlank() == false)
@@ -239,3 +243,27 @@ private fun TaskListItem_drag_Preview() {
         )
     }
 }
+
+@OptIn(ExperimentalTime::class)
+@Preview
+@Composable
+private fun TaskListItem_drag_short_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        TaskListItem(
+            icalEntry = IcalEntry(calendarComponent = CalendarComponent.VTODO, summary = "short summary"),
+            isSelected = false,
+            onClick = {},
+            onLongClick = {},
+            onFilterCategory = {},
+            dragHandle = {
+                IconButton(
+                    onClick = {}
+                ) {
+                    Icon(Icons.Outlined.DragIndicator, null)
+                }
+            },
+            onToggleProgress = {}
+        )
+    }
+}
+
