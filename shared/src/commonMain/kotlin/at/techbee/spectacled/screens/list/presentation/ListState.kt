@@ -93,8 +93,8 @@ data class ListState(
 
 
     val trashbin: List<IcalEntry>
-        get() = getBaseList(icalEntries, true)
-            .let { getFilteredList(it) }
+        get() = icalEntries
+            .filter { it.syncState.isDeletedState() }
             .let { getSortedList(it) }
 
     val pinned: List<IcalEntry>

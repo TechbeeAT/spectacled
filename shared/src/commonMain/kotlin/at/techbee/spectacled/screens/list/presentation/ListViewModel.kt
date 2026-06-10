@@ -116,7 +116,7 @@ class ListViewModel(
                 updateList()
                 dragAndDropList.apply {
                     clear()
-                    addAll(emittedIcalEntries.filter { emitted -> !emitted.syncState.isDeletedState() })
+                    addAll(_state.value.displayMap.flatMap { it.value })
                     sortBy { icalEntry -> icalEntry.orderNo }
                 }
             }
