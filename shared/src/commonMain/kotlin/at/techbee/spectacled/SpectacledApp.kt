@@ -80,7 +80,8 @@ enum class SpectacledVariant(
 fun SpectacledApp(
     spectacledVariant: SpectacledVariant,
     initialCalendarId: Long? = null,
-    initialIcalEntryId: Long? = null
+    initialIcalEntryId: Long? = null,
+    onCloseApp: () -> Unit = {}
 ) {
 
     LaunchedEffect(Unit) {
@@ -107,23 +108,27 @@ fun SpectacledApp(
             val navController = rememberNavController()
             //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
 
-            LaunchedEffect(Unit) {
-                syncTrigger.schedulePeriodic()
-                syncTrigger.requestImmediate()
-            }
-
-            val listViewModel = koinViewModel<ListViewModel>()
-            val accountListViewModel = koinViewModel<AccountListViewModel>()
+            val startDestination =
+                if (initialIcalEntryId != null && initialCalendarId != null) {
+                    if (initialIcalEntryId == 0L)
+                        Route.AddICalEntry(initialCalendarId)
+                    else
+                        Route.IcalEntryDetails(initialIcalEntryId)
+                } else if (initialCalendarId != null) {
+                    Route.IcalEntryList(initialCalendarId)
+                } else {
+                    Route.AccountsList
+                }
 
             NavHost(
                 navController = navController,
                 startDestination = Route.HomeGraph
             ) {
-                navigation<Route.HomeGraph>(Route.AccountsList) {
+                navigation<Route.HomeGraph>(startDestination) {
 
                     composable<Route.AccountsList> {
                         AccountListScreenRoot(
-                            viewModel = accountListViewModel,
+                            viewModel = koinViewModel<AccountListViewModel>(),
                             onNavigate = { route -> navController.navigate(route) }
                         )
                     }
@@ -135,6 +140,7 @@ fun SpectacledApp(
                         popExitTransition = { slideOutHorizontally { fullWidth -> fullWidth } }
                     ) { args ->
 
+                        val listViewModel = koinViewModel<ListViewModel>()
                         val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
 
                         LaunchedEffect(calendarId) {
@@ -144,7 +150,10 @@ fun SpectacledApp(
                         ListScreenRoot(
                             listViewModel = listViewModel,
                             onNavigate = { route -> navController.navigate(route) },
-                            onNavigateUp = { navController.popBackStack() }
+                            onNavigateUp = {
+                                if(!navController.popBackStack())   // only relevant when opening app from Android widget
+                                    onCloseApp()
+                            }
                         )
                     }
 
@@ -159,16 +168,11 @@ fun SpectacledApp(
                         DetailsScreenRoot(
                             detailsViewModel = detailsViewModel,
                             onNavigate = { route -> navController.navigate(route) },
-                            onNavigateUp = { navController.popBackStack() }
-                            /*
-                                onNavigate = { route ->
-                                    navController.navigate(route) {
-                                        popUpTo<Route.NoteList> {
-                                            inclusive = false
-                                        }
-                                    }
+                            onNavigateUp = {
+                                if (!navController.popBackStack()) {   // only relevant when opening app from Android widget
+                                    onCloseApp()
                                 }
-                                */
+                            }
                         )
                     }
 
@@ -188,28 +192,23 @@ fun SpectacledApp(
                         DetailsScreenRoot(
                             detailsViewModel = detailsViewModel,
                             onNavigate = { route -> navController.navigate(route) },
-                            onNavigateUp = { navController.popBackStack() }
+                            onNavigateUp = {
+                                if (!navController.popBackStack()) {  // only relevant when opening app from Android widget
+                                    onCloseApp()
+                                }
+                            }
                         )
                     }
                 }
             }
 
-            LaunchedEffect(initialCalendarId) {
-                if (initialCalendarId != null) {
-                    userAppPreferencesStore.lastUsedCalendarId = initialCalendarId
-                }
+            LaunchedEffect(Unit) {
+                syncTrigger.schedulePeriodic()
+                syncTrigger.requestImmediate()
 
-                if(initialIcalEntryId != null && initialCalendarId != null) {
-                    if(initialIcalEntryId == 0L) {
-                        navController.navigate(Route.IcalEntryList(initialCalendarId))
-                        navController.navigate(Route.AddICalEntry(initialCalendarId))
-                    } else {
-                        navController.navigate(Route.IcalEntryList(initialCalendarId))
-                        navController.navigate(Route.IcalEntryDetails(initialIcalEntryId))
-                    }
-                } else {
-                    userAppPreferencesStore.lastUsedCalendarId?.let { lastUsedCalendarId ->
-                        navController.navigate(Route.IcalEntryList(lastUsedCalendarId))
+                if(initialCalendarId == null) {
+                    userAppPreferencesStore.lastUsedCalendarId?.let {
+                        navController.navigate(Route.IcalEntryList(it))
                     }
                 }
             }

@@ -20,7 +20,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             NotesApp(
                 initialCalendarId = initialCalendarId,
-                initialIcalEntryId = initialIcalEntryId
+                initialIcalEntryId = initialIcalEntryId,
+                onCloseApp = { finish() }
             )
         }
     }
