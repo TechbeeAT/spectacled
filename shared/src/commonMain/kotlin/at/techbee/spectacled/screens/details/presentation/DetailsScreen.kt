@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -40,6 +39,7 @@ import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
+import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
@@ -116,7 +116,8 @@ fun DetailsScreen(
                     )
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+                //HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+                WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
             }
         }
 
@@ -189,16 +190,18 @@ fun DetailsScreen(
             enabled = state.allowEditing(),
             visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
             modifier = Modifier
-                .heightIn(min = 200.dp)
                 .fillMaxWidth()
-                .heightIn(min = 400.dp)
-                .weight(1f)
+                .heightIn(min = 100.dp)
                 .onFocusChanged {
                     descriptionIsFocused = it.isFocused
                 }
         )
 
         val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+
+        //HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp))
+        WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+
         ReorderableColumn(
             list = sortedSubtasks,
             onSettle = { fromIndex, toIndex ->
