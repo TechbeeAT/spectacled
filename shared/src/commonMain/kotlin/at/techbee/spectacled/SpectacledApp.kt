@@ -83,7 +83,11 @@ fun SpectacledApp(
     initialIcalEntryId: Long? = null
 ) {
 
-    Napier.base(DebugAntilog())  // enables Napier logging for all platforms//onNavigate = { navController.navigate(it) }
+    LaunchedEffect(Unit) {
+        // in launched effect to initialize it only once
+        Napier.base(DebugAntilog())  // enables Napier logging for all platforms//onNavigate = { navController.navigate(it) }
+    }
+
     //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
     KoinApplication(
         configuration = koinConfiguration(declaration = {
