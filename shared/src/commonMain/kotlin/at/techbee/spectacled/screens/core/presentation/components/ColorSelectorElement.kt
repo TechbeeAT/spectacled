@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.zt64.compose.pipette.CircularColorPicker
@@ -35,6 +36,7 @@ import dev.zt64.compose.pipette.HsvColor
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.color
+import spectacled.shared.generated.resources.color_seed_info
 import spectacled.shared.generated.resources.more_colors
 import spectacled.shared.generated.resources.no_color
 import spectacled.shared.generated.resources.recent_colors
@@ -86,6 +88,15 @@ fun ColorSelectorElement(
             text = stringResource(Res.string.color),
             style = MaterialTheme.typography.titleLarge
         )
+
+        Text(
+            text = stringResource(Res.string.color_seed_info),
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        )
+
+
 
         ColorSelectionBox(
             color = Color.Transparent,

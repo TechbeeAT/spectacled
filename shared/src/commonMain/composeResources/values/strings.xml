@@ -86,6 +86,7 @@
     <string name="summary">Summary</string>
     <string name="description">Description</string>
     <string name="color">Color</string>
+    <string name="color_seed_info">The color is used as a seed color for the theme which might not exactly match your selection.</string>
     <string name="no_color">No color</string>
     <string name="recent_colors">Recent colors</string>
     <string name="more_colors">More colors</string>
