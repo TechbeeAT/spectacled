@@ -82,19 +82,28 @@ data class ListState(
         val filteredList = getFilteredList(baseList)
         val sortedList = getSortedList(filteredList)
 
+        // Optimization: Partition the list once into pinned and unpinned
+        val (pinnedList, unpinnedList) = sortedList.partition {
+            it.categories.contains(IcalEntry.PINNED_CATEGORY)
+        }
+
         return this.copy(
-            displayMap = getGroupedMap(getPinnedFilteredList(sortedList, false)),
-            displayMapByDtStartDay = getPinnedFilteredList(sortedList, false)
+            displayMap = getGroupedMap(unpinnedList),
+            displayMapByDtStartDay = unpinnedList
                 .groupBy { (it.dtStart ?: IcsDateTime.now()).formatLocalized(IcsDateTimeFormat.DATE) },
-            displayMapByDtStartMonth = getPinnedFilteredList(sortedList, false)
-                .groupBy { "${it.dtStart?.toLocalDateTime()?.year}-${it.dtStart?.toLocalDateTime()?.month}" },
+            displayMapByDtStartMonth = unpinnedList
+                .groupBy {
+                    val dateTime = it.dtStart?.toLocalDateTime()
+                    if (dateTime != null) "${dateTime.year}-${dateTime.monthNumber}" else ""
+                },
             trashbin = icalEntries
                 .filter { it.syncState.isDeletedState() }
                 .let { getSortedList(it) },
-            pinned = getPinnedFilteredList(sortedList, true),
+            pinned = pinnedList,
             subtasks = getSubtasksLogic(icalEntries)
         )
     }
+
 
     private fun getBaseList(icalEntries: List<IcalEntry>, trashbin: Boolean = false) =
         icalEntries
