@@ -1,9 +1,5 @@
 package at.techbee.spectacled.screens.details.presentation
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -33,9 +29,13 @@ import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
@@ -61,20 +61,19 @@ class DetailsViewModel(
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
-    private var _state by mutableStateOf(DetailsState())
-    val state: DetailsState get() = _state
+    private val _state = MutableStateFlow(DetailsState())
+    val state = _state.asStateFlow()
 
     private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
     init {
         viewModelScope.launch {
-
-            snapshotFlow { state.icalEntry } // snapshotFlow tracks reads of the entry and emits on change
+            _state.map { it.icalEntry }
                 .debounce(500L) // Wait for 500ms pause in typing
                 .distinctUntilChanged { old, new -> old.lastModified == new.lastModified } // Only save if last modified changed
-                .collect {
-                    if(!state.isLoading && state.icalEntry.calendarId != 0L && state.icalEntry.syncState != SyncState.SYNCED)
-                        saveIcalEntry(state.icalEntry.syncState)
+                .collect { entry ->
+                    if(!_state.value.isLoading && entry.calendarId != 0L && entry.syncState != SyncState.SYNCED)
+                        saveIcalEntry(entry.syncState)
                 }
         }
 
@@ -91,13 +90,13 @@ class DetailsViewModel(
             val icalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryById(icalEntryId).awaitAsOneOrNull()?.toDomain() ?: return@launch
             val calendar = getDatabase().calendar_dtoQueries.getCalendarById(icalEntry.calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
-            _state = _state.copy(
+            _state.update { it.copy(
                 icalEntry = icalEntry,
                 originalIcalEntry = icalEntry,
                 calendar = calendar,
                 isLoading = false,
                 navigateUp = false
-            )
+            ) }
         }
     }
 
@@ -112,14 +111,14 @@ class DetailsViewModel(
             )
             val calendar = getDatabase().calendar_dtoQueries.getCalendarById(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
 
-            _state = _state.copy(
+            _state.update { it.copy(
                 icalEntry = newIcalEntry,
                 originalIcalEntry = newIcalEntry,
                 calendar = calendar,
                 isLoading = false,
                 showDeleteDialog = false,
                 navigateUp = false
-            )
+            ) }
         }
     }
 
@@ -130,11 +129,11 @@ class DetailsViewModel(
             //saveIcalEntry(false)
             val originalIcalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryById(icalEntryIdToCopy).awaitAsOneOrNull()?.toDomain()
             if(originalIcalEntry == null) {
-                _state = _state.copy(
+                _state.update { it.copy(
                     snackbarText = getString(Res.string.unexpected_error_occurred),
                     isLoading = false,
                     navigateUp = true
-                )
+                ) }
                 return@launch
             }
             val copiedIcalEntry = IcalEntry(
@@ -151,12 +150,12 @@ class DetailsViewModel(
                 extraProperties = originalIcalEntry.extraProperties,
                 calendarComponent = originalIcalEntry.calendarComponent
             )
-            _state = _state.copy(
+            _state.update { it.copy(
                 icalEntry = copiedIcalEntry,
                 originalIcalEntry = copiedIcalEntry,
                 isLoading = false,
                 navigateUp = false
-            )
+            ) }
         }
     }
 
@@ -166,9 +165,9 @@ class DetailsViewModel(
             .asFlow()
             .collect { colorsFlow ->
                 val emittedColors = colorsFlow.awaitAsList().map { Color(it) }
-                _state = _state.copy(
+                _state.update { it.copy(
                     allColors = emittedColors
-                )
+                ) }
             }
     }
 
@@ -181,9 +180,9 @@ class DetailsViewModel(
                 categoriesFlow.awaitAsList().let {
                     it.forEach { unsplitCategory -> allCategories.addAll(unsplitCategory.split(CATEGORY_SPLIT_DELIMITER)) }
                 }
-                _state = _state.copy(
+                _state.update { it.copy(
                     allCategories = allCategories.toList()
-                )
+                ) }
             }
     }
 
@@ -193,47 +192,47 @@ class DetailsViewModel(
             .asFlow()
             .collect { timezonesFlow ->
                 timezonesFlow.awaitAsList().let { timezones ->
-                    _state = _state.copy(latestUsedTimezones = timezones.map { TimeZone.of(it) })
+                    _state.update { it.copy(latestUsedTimezones = timezones.map { timezone -> TimeZone.of(timezone) }) }
                 }
             }
     }
 
     private suspend fun observeSubtasks() {
         val database = getDatabase()
-        snapshotFlow { state.icalEntry.uid }
+        _state.map { it.icalEntry.uid }
             .distinctUntilChanged()
             .flatMapLatest { uid ->
                 database.icalentry_dtoQueries.getSubtasksByParentUid(uid).asFlow()
             }
             .collect { subtasksQuery ->
                 val subtasks = subtasksQuery.awaitAsList().map { it.toDomain() }
-                _state = _state.copy(subtasks = subtasks)
+                _state.update { it.copy(subtasks = subtasks) }
             }
     }
 
 
     fun onAction(action: DetailsAction) {
         when(action) {
-            is DetailsAction.OnUpdateSnackbar -> { _state = _state.copy(snackbarText = action.message) }
+            is DetailsAction.OnUpdateSnackbar -> { _state.update { it.copy(snackbarText = action.message) } }
             is DetailsAction.OnUpdateCategories -> onUpdateCategories(action.addCategory, action.removeCategory)
             is DetailsAction.OnUpdateColor -> onUpdateColor(action.color)
             is DetailsAction.OnUpdateDescription -> onUpdateDescription(action.description)
             is DetailsAction.OnUpdateSummary -> onUpdateSummary(action.summary)
             DetailsAction.OnDelete -> saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
-            is DetailsAction.OnShowDeleteDialog -> { _state = _state.copy(showDeleteDialog = action.show) }
-            is DetailsAction.OnShowMoreBottomSheet -> { _state = _state.copy(showMoreBottomSheet = action.show) }
-            is DetailsAction.OnShowCategorySelectorBottomSheet -> { _state = _state.copy(showCategorySelectorBottomSheet = action.show) }
-            is DetailsAction.OnShowColorSelectorBottomSheet -> { _state = _state.copy(showColorSelectorBottomSheet = action.show) }
-            is DetailsAction.OnShowAddSubtaskBottomSheet -> { _state = _state.copy(showAddSubtaskBottomSheet = action.show) }
-            DetailsAction.OnCreateCopy -> { loadCopy(_state.icalEntry.id) }
+            is DetailsAction.OnShowDeleteDialog -> { _state.update { it.copy(showDeleteDialog = action.show) } }
+            is DetailsAction.OnShowMoreBottomSheet -> { _state.update { it.copy(showMoreBottomSheet = action.show) } }
+            is DetailsAction.OnShowCategorySelectorBottomSheet -> { _state.update { it.copy(showCategorySelectorBottomSheet = action.show) } }
+            is DetailsAction.OnShowColorSelectorBottomSheet -> { _state.update { it.copy(showColorSelectorBottomSheet = action.show) } }
+            is DetailsAction.OnShowAddSubtaskBottomSheet -> { _state.update { it.copy(showAddSubtaskBottomSheet = action.show) } }
+            DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
                     SyncState.USER_DECIDED_SERVER_WINS -> saveAndAwaitSync(action.syncState)
                     SyncState.USER_DECIDED_CLIENT_WINS ->
-                        if (state.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED) { // treat like a new entry
+                        if (_state.value.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED) { // treat like a new entry
                             saveIcalEntry(SyncState.REMOTE_DELETED_LOCAL_TRASHBIN)
-                            loadCopy(_state.icalEntry.id, true)
+                            loadCopy(_state.value.icalEntry.id, true)
                         } else {
                             saveIcalEntry(action.syncState)
                         }
@@ -243,8 +242,8 @@ class DetailsViewModel(
             }
             DetailsAction.OnDispose -> onDispose()
             DetailsAction.OnRestoreEntry -> onRestoreEntry()
-            is DetailsAction.OnShowJournalStatusPickerBottomSheet -> { _state = _state.copy(showJournalStatusPickerBottomSheet = action.show) }
-            is DetailsAction.OnShowTaskStatusProgressPickerBottomSheet -> { _state = _state.copy(showTaskStatusProgressPickerBottomSheet = action.show) }
+            is DetailsAction.OnShowJournalStatusPickerBottomSheet -> { _state.update { it.copy(showJournalStatusPickerBottomSheet = action.show) } }
+            is DetailsAction.OnShowTaskStatusProgressPickerBottomSheet -> { _state.update { it.copy(showTaskStatusProgressPickerBottomSheet = action.show) } }
             is DetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
             is DetailsAction.OnUpdateDue -> { onUpdateDue(action.icsDateTime) }
             DetailsAction.OnShare -> onShare()
@@ -253,19 +252,19 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateProgress -> { onUpdateTaskProgress(action.percent) }
             is DetailsAction.OnUpdateSubtaskProgress -> { onUpdateSubtaskProgress(action.percent, action.subtaskIcalEntryId) }
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
-            is DetailsAction.OnNavigateToIcalEntryId -> { _state = _state.copy(navigateToIcalEntryId = action.id) }
+            is DetailsAction.OnNavigateToIcalEntryId -> { _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
         }
     }
 
     private fun onShare() {
-        _state = _state.copy(showMoreBottomSheet = false)
+        _state.update { it.copy(showMoreBottomSheet = false) }
         viewModelScope.launch {
             val categoryLabel = getString(Res.string.category)
             shareManager.share(
                 ShareContent(
-                    subject = state.icalEntry.summary ?: "",
-                    body = state.icalEntry.getPlainTextForShare(categoryLabel)
+                    subject = _state.value.icalEntry.summary ?: "",
+                    body = _state.value.icalEntry.getPlainTextForShare(categoryLabel)
                 )
             )
         }
@@ -274,30 +273,34 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateSummary(newSummary: String) {
-        _state = _state.copy(
-            icalEntry = _state.icalEntry.copy(
-                summary = newSummary,
-                lastModified = IcsDateTime.now(),
-                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                        SyncState.USER_DECIDED_CLIENT_WINS
-                    else
-                        SyncState.LOCAL_MODIFIED
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    summary = newSummary,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                            SyncState.USER_DECIDED_CLIENT_WINS
+                        else
+                            SyncState.LOCAL_MODIFIED
+                )
             )
-        )
+        }
     }
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDescription(newDescription: String) {
-        _state = _state.copy(
-            icalEntry = _state.icalEntry.copy(
-                description = newDescription,
-                lastModified = IcsDateTime.now(),
-                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                    SyncState.USER_DECIDED_CLIENT_WINS
-                else
-                    SyncState.LOCAL_MODIFIED
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    description = newDescription,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                        SyncState.USER_DECIDED_CLIENT_WINS
+                    else
+                        SyncState.LOCAL_MODIFIED
+                )
             )
-        )
+        }
     }
 
     private fun onPinIcalEntry(pin: Boolean) {
@@ -308,172 +311,186 @@ class DetailsViewModel(
     }
 
     private fun onUpdateCategories(addCategory: String?, removeCategory: String?) {
-        _state = _state.copy(
-            icalEntry = _state.icalEntry.copy(
-                categories = _state.icalEntry.categories.let {
-                    if(addCategory != null)
-                        it.plus(addCategory)
-                    else if (removeCategory != null)
-                        it.minus(removeCategory)
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    categories = it.icalEntry.categories.let { categories ->
+                        if(addCategory != null)
+                            categories.plus(addCategory)
+                        else if (removeCategory != null)
+                            categories.minus(removeCategory)
+                        else
+                            categories
+                    },
+                    lastModified = IcsDateTime.now(),
+                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                        SyncState.USER_DECIDED_CLIENT_WINS
                     else
-                        it
-                },
-                lastModified = IcsDateTime.now(),
-                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                    SyncState.USER_DECIDED_CLIENT_WINS
-                else
-                    SyncState.LOCAL_MODIFIED
+                        SyncState.LOCAL_MODIFIED
+                )
             )
-        )
+        }
     }
 
     private fun onUpdateStatus(status: Status?) {
-        _state = _state.copy(
-            icalEntry = _state.icalEntry.copy(
-                status = status,
-                percentComplete = if(state.icalEntry.isTask()) {
-                    when(status) {
-                        Status.COMPLETED -> 100L
-                        Status.IN_PROCESS -> when(_state.icalEntry.percentComplete) {
-                            0L -> 1L
-                            in 1L .. 99L -> _state.icalEntry.percentComplete
-                            100L -> 99L
-                            else -> _state.icalEntry.percentComplete
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    status = status,
+                    percentComplete = if(it.icalEntry.isTask()) {
+                        when(status) {
+                            Status.COMPLETED -> 100L
+                            Status.IN_PROCESS -> when(it.icalEntry.percentComplete) {
+                                0L -> 1L
+                                in 1L .. 99L -> it.icalEntry.percentComplete
+                                100L -> 99L
+                                else -> it.icalEntry.percentComplete
+                            }
+                            Status.NEEDS_ACTION -> 0L
+                            else -> it.icalEntry.percentComplete
                         }
-                        Status.NEEDS_ACTION -> 0L
-                        else -> _state.icalEntry.percentComplete
-                    }
-                } else 0,
-                lastModified = IcsDateTime.now(),
-                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                    SyncState.USER_DECIDED_CLIENT_WINS
-                else
-                    SyncState.LOCAL_MODIFIED
+                    } else 0,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                        SyncState.USER_DECIDED_CLIENT_WINS
+                    else
+                        SyncState.LOCAL_MODIFIED
+                )
             )
-        )
+        }
     }
 
     private fun onUpdateTaskProgress(percent: Long) {
-        _state = _state.copy(
-            icalEntry = _state.icalEntry.copy(
-                status = when(percent) {
-                    0L -> if(state.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
-                    in 1L..99L -> Status.IN_PROCESS
-                    100L -> Status.COMPLETED
-                    else -> null
-                },
-                percentComplete = percent,
-                lastModified = IcsDateTime.now(),
-                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                    SyncState.USER_DECIDED_CLIENT_WINS
-                else
-                    SyncState.LOCAL_MODIFIED
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    status = when(percent) {
+                        0L -> if(it.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
+                        in 1L..99L -> Status.IN_PROCESS
+                        100L -> Status.COMPLETED
+                        else -> null
+                    },
+                    percentComplete = percent,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                        SyncState.USER_DECIDED_CLIENT_WINS
+                    else
+                        SyncState.LOCAL_MODIFIED
+                )
             )
-        )
+        }
     }
 
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateColor(newColor: Color?) {
-        _state = _state.copy(
-            icalEntry = _state.icalEntry.copy(
-                color = newColor,
-                lastModified = IcsDateTime.now(),
-                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                    SyncState.USER_DECIDED_CLIENT_WINS
-                else
-                    SyncState.LOCAL_MODIFIED
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    color = newColor,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                        SyncState.USER_DECIDED_CLIENT_WINS
+                    else
+                        SyncState.LOCAL_MODIFIED
+                )
             )
-        )
+        }
     }
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDtStart(newDtStart: IcsDateTime?) {
 
-        if(_state.icalEntry.isJournal() && newDtStart == null)   // for safety only, setting date to null for journals would convert it to a note, not allowed.
+        if(_state.value.icalEntry.isJournal() && newDtStart == null)   // for safety only, setting date to null for journals would convert it to a note, not allowed.
             return
 
-        // make sure dtstart and due have the same format (all day or both with time)
-        val newDue = _state.icalEntry.due?.let {
-            if(newDtStart?.isDateOnly == true && !it.isDateOnly)
-                it.asDateOnly()
-            else if(newDtStart?.isDateOnly == false && it.isDateOnly)
-                it.asDateTime()
-            else
-                it
-        }
-
-        _state = _state.copy(
-            icalEntry = _state.icalEntry.copy(
-                dtStart = newDtStart,
-                due = newDue,
-                lastModified = IcsDateTime.now(),
-                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                    SyncState.USER_DECIDED_CLIENT_WINS
+        _state.update {
+            // make sure dtstart and due have the same format (all day or both with time)
+            val newDue = it.icalEntry.due?.let { due ->
+                if(newDtStart?.isDateOnly == true && !due.isDateOnly)
+                    due.asDateOnly()
+                else if(newDtStart?.isDateOnly == false && due.isDateOnly)
+                    due.asDateTime()
                 else
-                    SyncState.LOCAL_MODIFIED
+                    due
+            }
+
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    dtStart = newDtStart,
+                    due = newDue,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                        SyncState.USER_DECIDED_CLIENT_WINS
+                    else
+                        SyncState.LOCAL_MODIFIED
+                )
             )
-        )
+        }
     }
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDue(newDue: IcsDateTime?) {
 
-        // make sure dtstart and due have the same format (all day or both with time)
-        val newDtStart = _state.icalEntry.dtStart?.let {
-            if(newDue?.isDateOnly == true && !it.isDateOnly)
-                it.asDateOnly()
-            else if(newDue?.isDateOnly == false && it.isDateOnly)
-                it.asDateTime()
-            else
-                it
-        }
-
-        _state = _state.copy(
-            icalEntry = _state.icalEntry.copy(
-                dtStart = newDtStart,
-                due = newDue,
-                lastModified = IcsDateTime.now(),
-                syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                    SyncState.USER_DECIDED_CLIENT_WINS
+        _state.update {
+            // make sure dtstart and due have the same format (all day or both with time)
+            val newDtStart = it.icalEntry.dtStart?.let { dtStart ->
+                if(newDue?.isDateOnly == true && !dtStart.isDateOnly)
+                    dtStart.asDateOnly()
+                else if(newDue?.isDateOnly == false && dtStart.isDateOnly)
+                    dtStart.asDateTime()
                 else
-                    SyncState.LOCAL_MODIFIED
+                    dtStart
+            }
+
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    dtStart = newDtStart,
+                    due = newDue,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                        SyncState.USER_DECIDED_CLIENT_WINS
+                    else
+                        SyncState.LOCAL_MODIFIED
+                )
             )
-        )
+        }
     }
 
     private fun onNavigateUp(navigateUp: Boolean) {
-        _state = _state.copy(navigateUp = navigateUp)
+        _state.update { it.copy(navigateUp = navigateUp) }
     }
 
     private fun onDispose() {
         if(getPlatform().platform == Platforms.WASM)
             syncAndAwaitResult()
         else
-            platformSyncTrigger.requestImmediatePush(state.icalEntry.calendarId)
+            platformSyncTrigger.requestImmediatePush(_state.value.icalEntry.calendarId)
     }
 
     private fun onRestoreEntry() {
-        if(state.icalEntry.syncState == SyncState.LOCAL_DELETED)
+        if(_state.value.icalEntry.syncState == SyncState.LOCAL_DELETED)
             saveIcalEntry(SyncState.LOCAL_MODIFIED)
         else
-            loadCopy(state.icalEntry.id, true)
+            loadCopy(_state.value.icalEntry.id, true)
     }
 
     fun showDeleteDialog(showDialog: Boolean) {
-        _state = _state.copy(showDeleteDialog = showDialog)
+        _state.update { it.copy(showDeleteDialog = showDialog) }
     }
 
     private fun saveIcalEntry(syncState: SyncState, navigateUp: Boolean = false) {
 
-        _state = _state.copy(
-            icalEntry = _state.icalEntry.copy(syncState = syncState),
-            showDeleteDialog = false,
-            navigateUp = navigateUp
-        )
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(syncState = syncState),
+                showDeleteDialog = false,
+                navigateUp = navigateUp
+            )
+        }
 
         viewModelScope.launch { 
-            getDatabase().insertOrUpdateIcalEntry(_state.icalEntry)
+            getDatabase().insertOrUpdateIcalEntry(_state.value.icalEntry)
             platformSyncTrigger.triggerWidgetUpdate()
         }
         Napier.d("Entry saved")
@@ -485,9 +502,9 @@ class DetailsViewModel(
         syncAndAwaitResult()
     }
 
-    private fun syncAndAwaitResult(icalEntry: IcalEntry = _state.icalEntry) {
+    private fun syncAndAwaitResult(icalEntry: IcalEntry = _state.value.icalEntry) {
 
-        _state = _state.copy(isLoading = true)
+        _state.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
             try {
@@ -501,7 +518,7 @@ class DetailsViewModel(
                         getString(Res.string.unexpected_error_occurred)
                     )
 
-                val calendar = _state.calendar ?: throw Exception(
+                val calendar = _state.value.calendar ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
 
@@ -514,44 +531,44 @@ class DetailsViewModel(
 
                 when(processedIcalEntry.syncState) {
                     SyncState.LOCAL_MODIFIED, SyncState.SYNCED -> {
-                        _state = _state.copy(
+                        _state.update { it.copy(
                             snackbarText = getString(Res.string.entry_successfully_saved),
                             isLoading = false,
                             icalEntry = processedIcalEntry,
                             navigateUp = false
-                        )
+                        ) }
                     }
                     SyncState.LOCAL_DELETED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN -> {
-                        _state = _state.copy(
+                        _state.update { it.copy(
                             snackbarText = getString(Res.string.entry_deleted),
                             isLoading = false,
                             icalEntry = processedIcalEntry,
                             navigateUp = true
-                        )
+                        ) }
                     }
                     SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED, SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED -> {
-                        _state = _state.copy(
+                        _state.update { it.copy(
                             snackbarText = getString(Res.string.sync_conflict_detected),
                             isLoading = false,
                             icalEntry = processedIcalEntry,
                             navigateUp = false
-                        )
+                        ) }
                     }
 
                     SyncState.USER_DECIDED_CLIENT_WINS, SyncState.USER_DECIDED_SERVER_WINS -> {
-                        _state = _state.copy(
+                        _state.update { it.copy(
                             isLoading = false,
                             icalEntry = processedIcalEntry,
                             navigateUp = false
-                        )
+                        ) }
                     }
 
                 }
             } catch (e: Exception) {
-                _state = _state.copy(
+                _state.update { it.copy(
                     snackbarText = e.message,
                     isLoading = false
-                )
+                ) }
             }
         }
     }
@@ -560,9 +577,9 @@ class DetailsViewModel(
 
         val subtask = IcalEntry.newTask().copy(
             summary = summary,
-            parentUid = _state.icalEntry.uid,
+            parentUid = _state.value.icalEntry.uid,
             relType = "PARENT",
-            calendarId = _state.icalEntry.calendarId)
+            calendarId = _state.value.icalEntry.calendarId)
 
         viewModelScope.launch {
             getDatabase().insertOrUpdateIcalEntry(subtask)
@@ -575,18 +592,18 @@ class DetailsViewModel(
 
     private fun onUpdateSubtaskProgress(percent: Long, subtaskIcalEntryId: Long) {
 
-        val subtask = _state.subtasks.find { it.id == subtaskIcalEntryId } ?: return
+        val subtask = _state.value.subtasks.find { it.id == subtaskIcalEntryId } ?: return
 
         subtask.copy(
             status = when(percent) {
-                0L -> if(state.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
+                0L -> if(_state.value.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
                 in 1L..99L -> Status.IN_PROCESS
                 100L -> Status.COMPLETED
                 else -> null
             },
             percentComplete = percent,
             lastModified = IcsDateTime.now(),
-            syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+            syncState = if(_state.value.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
                 SyncState.USER_DECIDED_CLIENT_WINS
             else
                 SyncState.LOCAL_MODIFIED

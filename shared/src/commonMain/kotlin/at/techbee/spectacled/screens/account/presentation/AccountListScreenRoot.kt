@@ -19,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -52,7 +54,7 @@ fun AccountListScreenRoot(
     onNavigate: (Route) -> Unit
 ) {
 
-    val state = viewModel.state
+    val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val aboutBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val addPrincipalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -304,7 +306,7 @@ fun AccountListScreenRoot(
             )
         }
 
-        viewModel.state.showAddOrUpdateCalendarBottomSheet?.let {
+        state.showAddOrUpdateCalendarBottomSheet?.let {
             CreateOrUpdateCalendarBottomSheet(
                 sheetState = createCalendarBottomSheetState,
                 principal = it.principal,

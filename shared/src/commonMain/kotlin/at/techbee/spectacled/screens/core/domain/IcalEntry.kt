@@ -131,6 +131,8 @@ data class IcalEntry(
     fun isTask() = calendarComponent == CalendarComponent.VTODO
     fun isSubtask() = parentUid != null
 
+    fun isPinned() = categories.any { category -> category == PINNED_CATEGORY}
+
     fun getProgressTriState() = when {
         percentComplete == 0L -> ToggleableState.Off
         percentComplete in 1L .. 99L -> ToggleableState.Indeterminate

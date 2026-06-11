@@ -64,49 +64,37 @@ data class ListState(
     val scrollToDate: IcsDateTime? = null,
 
     val listCollapsedGroups: Set<String> = emptySet(),
-    val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES  // must be overwritten immediately on load
+    val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES,  // must be overwritten immediately on load
+
+    val displayMap: Map<ListGrouping, List<IcalEntry>> = emptyMap(),
+    val displayMapByDtStartDay: Map<String, List<IcalEntry>> = emptyMap(),
+    val displayMapByDtStartMonth: Map<String, List<IcalEntry>> = emptyMap(),
+    val trashbin: List<IcalEntry> = emptyList(),
+    val pinned: List<IcalEntry> = emptyList(),
+    val subtasks: Map<String, List<IcalEntry>> = emptyMap()
 ) {
 
     val isSearchBarExpanded: Boolean
         get() = listFilterCriteria.anyFilterActive()
 
+    fun recompute(): ListState {
+        val baseList = getBaseList(icalEntries)
+        val filteredList = getFilteredList(baseList)
+        val sortedList = getSortedList(filteredList)
 
-    val displayMap: Map<ListGrouping, List<IcalEntry>>
-        get() = getBaseList(icalEntries)
-            .let { getFilteredList(it) }
-            .let { getPinnedFilteredList(it) }
-            .let { getSortedList(it) }
-            .let { getGroupedMap(it) }
-
-    val displayMapByDtStartDay: Map<String, List<IcalEntry>>
-        get() = getBaseList(icalEntries)
-            .let { getFilteredList(it) }
-            .let { getPinnedFilteredList(it) }
-            .let { getSortedList(it) }
-            .groupBy { (it.dtStart ?: IcsDateTime.now()).formatLocalized(IcsDateTimeFormat.DATE) }
-
-    val displayMapByDtStartMonth: Map<String, List<IcalEntry>>
-        get() = getBaseList(icalEntries)
-            .let { getFilteredList(it) }
-            .let { getPinnedFilteredList(it) }
-            .let { getSortedList(it) }
-            .groupBy { "${it.dtStart?.toLocalDateTime()?.year}-${it.dtStart?.toLocalDateTime()?.month}" }
-
-
-    val trashbin: List<IcalEntry>
-        get() = icalEntries
-            .filter { it.syncState.isDeletedState() }
-            .let { getSortedList(it) }
-
-    val pinned: List<IcalEntry>
-        get() = getBaseList(icalEntries)
-            .let { getFilteredList(it) }
-            .let { getPinnedFilteredList(it, true) }
-            .let { getSortedList(it) }
-
-    val subtasks: Map<String, List<IcalEntry>>
-        get() = getSubtasks(icalEntries)
-
+        return this.copy(
+            displayMap = getGroupedMap(getPinnedFilteredList(sortedList, false)),
+            displayMapByDtStartDay = getPinnedFilteredList(sortedList, false)
+                .groupBy { (it.dtStart ?: IcsDateTime.now()).formatLocalized(IcsDateTimeFormat.DATE) },
+            displayMapByDtStartMonth = getPinnedFilteredList(sortedList, false)
+                .groupBy { "${it.dtStart?.toLocalDateTime()?.year}-${it.dtStart?.toLocalDateTime()?.month}" },
+            trashbin = icalEntries
+                .filter { it.syncState.isDeletedState() }
+                .let { getSortedList(it) },
+            pinned = getPinnedFilteredList(sortedList, true),
+            subtasks = getSubtasksLogic(icalEntries)
+        )
+    }
 
     private fun getBaseList(icalEntries: List<IcalEntry>, trashbin: Boolean = false) =
         icalEntries
@@ -116,7 +104,7 @@ data class ListState(
                 SpectacledVariant.TASKS -> it.syncState.isDeletedState() == trashbin && it.parentUid == null
         } }
 
-    private fun getSubtasks(icalEntries: List<IcalEntry>) =
+    private fun getSubtasksLogic(icalEntries: List<IcalEntry>) =
         when(spectacledVariant) {
                 SpectacledVariant.JOURNALS -> emptyMap()  // not foreseen for Journals
                 SpectacledVariant.NOTES -> emptyMap()  // not foreseen for Notes
@@ -127,12 +115,7 @@ data class ListState(
             }
 
     private fun getPinnedFilteredList(icalEntries: List<IcalEntry>, pinned: Boolean = false) =
-        icalEntries.filter {
-            if(pinned)
-                it.categories.any { category -> category == IcalEntry.PINNED_CATEGORY}
-            else
-                it.categories.none { category -> category == IcalEntry.PINNED_CATEGORY }
-        }
+        icalEntries.filter { it.isPinned() == pinned }
 
 
     private fun getFilteredList(icalEntries: List<IcalEntry>): List<IcalEntry> {
