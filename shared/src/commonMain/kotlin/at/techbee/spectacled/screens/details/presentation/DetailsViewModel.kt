@@ -3,12 +3,8 @@ package at.techbee.spectacled.screens.details.presentation
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.cash.sqldelight.async.coroutines.awaitAsList
-import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
-import app.cash.sqldelight.coroutines.asFlow
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.db.SpectacledDatabase
-import at.techbee.spectacled.screens.account.data.insertOrUpdateIcalEntry
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.PlatformShareManager
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
@@ -20,10 +16,9 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.getPlatform
-import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
-import at.techbee.spectacled.screens.core.mapper.dto.toDomain
-import at.techbee.spectacled.screens.core.mapper.dto.toDto
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
@@ -53,6 +48,8 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class DetailsViewModel(
+    private val calendarRepository: CalendarRepository,
+    private val icalEntryRepository: IcalEntryRepository,
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
     private val client: HttpClient,
@@ -87,8 +84,8 @@ class DetailsViewModel(
     fun load(icalEntryId: Long) {
 
         viewModelScope.launch {
-            val icalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryById(icalEntryId).awaitAsOneOrNull()?.toDomain() ?: return@launch
-            val calendar = getDatabase().calendar_dtoQueries.getCalendarById(icalEntry.calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+            val icalEntry = icalEntryRepository.getIcalEntryById(icalEntryId) ?: return@launch
+            val calendar = calendarRepository.getCalendarById(icalEntry.calendarId) ?: return@launch
 
             _state.update { it.copy(
                 icalEntry = icalEntry,
@@ -109,7 +106,7 @@ class DetailsViewModel(
                 dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
                 calendarComponent = spectacledVariant.syncCalendarComponent
             )
-            val calendar = getDatabase().calendar_dtoQueries.getCalendarById(calendarId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+            val calendar = calendarRepository.getCalendarById(calendarId) ?: return@launch
 
             _state.update { it.copy(
                 icalEntry = newIcalEntry,
@@ -127,7 +124,7 @@ class DetailsViewModel(
     fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
         viewModelScope.launch {
             //saveIcalEntry(false)
-            val originalIcalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryById(icalEntryIdToCopy).awaitAsOneOrNull()?.toDomain()
+            val originalIcalEntry = icalEntryRepository.getIcalEntryById(icalEntryIdToCopy)
             if(originalIcalEntry == null) {
                 _state.update { it.copy(
                     snackbarText = getString(Res.string.unexpected_error_occurred),
@@ -160,11 +157,8 @@ class DetailsViewModel(
     }
 
     private suspend fun observeColors() {
-        getDatabase()
-            .icalentry_dtoQueries.getAllColors()
-            .asFlow()
-            .collect { colorsFlow ->
-                val emittedColors = colorsFlow.awaitAsList().map { Color(it) }
+        icalEntryRepository.getAllColors()
+            .collect { emittedColors ->
                 _state.update { it.copy(
                     allColors = emittedColors
                 ) }
@@ -172,40 +166,28 @@ class DetailsViewModel(
     }
 
     private suspend fun observeCategories() {
-        getDatabase()
-            .icalentry_dtoQueries.getAllCategories()
-            .asFlow()
-            .collect { categoriesFlow ->
-                val allCategories = mutableSetOf<String>()
-                categoriesFlow.awaitAsList().let {
-                    it.forEach { unsplitCategory -> allCategories.addAll(unsplitCategory.split(CATEGORY_SPLIT_DELIMITER)) }
-                }
+        icalEntryRepository.getAllCategories()
+            .collect { allCategories ->
                 _state.update { it.copy(
-                    allCategories = allCategories.toList()
+                    allCategories = allCategories
                 ) }
             }
     }
 
     private suspend fun observeTimezones() {
-        getDatabase()
-            .icalentry_dtoQueries.getLastUsedTimezones()
-            .asFlow()
-            .collect { timezonesFlow ->
-                timezonesFlow.awaitAsList().let { timezones ->
-                    _state.update { it.copy(latestUsedTimezones = timezones.map { timezone -> TimeZone.of(timezone) }) }
-                }
+        icalEntryRepository.getLastUsedTimezones()
+            .collect { timezones ->
+                _state.update { it.copy(latestUsedTimezones = timezones.map { TimeZone.of(it) }) }
             }
     }
 
     private suspend fun observeSubtasks() {
-        val database = getDatabase()
         _state.map { it.icalEntry.uid }
             .distinctUntilChanged()
             .flatMapLatest { uid ->
-                database.icalentry_dtoQueries.getSubtasksByParentUid(uid).asFlow()
+                icalEntryRepository.getSubtasksByParentUid(uid)
             }
-            .collect { subtasksQuery ->
-                val subtasks = subtasksQuery.awaitAsList().map { it.toDomain() }
+            .collect { subtasks ->
                 _state.update { it.copy(subtasks = subtasks) }
             }
     }
@@ -490,7 +472,7 @@ class DetailsViewModel(
         }
 
         viewModelScope.launch { 
-            getDatabase().insertOrUpdateIcalEntry(_state.value.icalEntry)
+            icalEntryRepository.insertOrUpdateIcalEntry(_state.value.icalEntry)
             platformSyncTrigger.triggerWidgetUpdate()
         }
         Napier.d("Entry saved")
@@ -509,10 +491,7 @@ class DetailsViewModel(
         viewModelScope.launch {
             try {
 
-                val principalUrl = getDatabase()
-                    .calendar_dtoQueries
-                    .getPrincipalUrlForCalendarId(icalEntry.calendarId)
-                    .awaitAsOneOrNull()
+                val principalUrl = calendarRepository.getPrincipalUrlForCalendarId(icalEntry.calendarId)
                     ?.let { Url(it) }
                     ?: throw Exception(
                         getString(Res.string.unexpected_error_occurred)
@@ -524,8 +503,8 @@ class DetailsViewModel(
 
                 val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
-                SyncCoordinator(getDatabase(), client, credentials).pushDirtyIcalEntry(icalEntry, calendar)
-                val processedIcalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
+                SyncCoordinator(calendarRepository, icalEntryRepository, client, credentials).pushDirtyIcalEntry(icalEntry, calendar)
+                val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.uid) ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
 
@@ -582,7 +561,7 @@ class DetailsViewModel(
             calendarId = _state.value.icalEntry.calendarId)
 
         viewModelScope.launch {
-            getDatabase().insertOrUpdateIcalEntry(subtask)
+            icalEntryRepository.insertOrUpdateIcalEntry(subtask)
             if(getPlatform().platform == Platforms.WASM)
                 syncAndAwaitResult(subtask)
             platformSyncTrigger.triggerWidgetUpdate()
@@ -594,7 +573,7 @@ class DetailsViewModel(
 
         val subtask = _state.value.subtasks.find { it.id == subtaskIcalEntryId } ?: return
 
-        subtask.copy(
+        val updatedSubtask = subtask.copy(
             status = when(percent) {
                 0L -> if(_state.value.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
                 in 1L..99L -> Status.IN_PROCESS
@@ -607,25 +586,22 @@ class DetailsViewModel(
                 SyncState.USER_DECIDED_CLIENT_WINS
             else
                 SyncState.LOCAL_MODIFIED
-        ).toDto().let {
-            viewModelScope.launch {
-                getDatabase().icalentry_dtoQueries.updateProgress(
-                    newPercent = it.percentComplete,
-                    newStatus = it.status,
-                    lastModified = it.lastModified,
-                    syncState = it.syncState,
-                    id = it.id
-                )
-            }
+        )
+        viewModelScope.launch {
+            icalEntryRepository.updateProgress(
+                id = updatedSubtask.id,
+                percentComplete = updatedSubtask.percentComplete,
+                status = updatedSubtask.status,
+                lastModified = updatedSubtask.lastModified,
+                syncState = updatedSubtask.syncState
+            )
         }
     }
 
     private fun onPersistOrderNo(sortedList: List<Long>) {
         viewModelScope.launch {
-            getDatabase().icalentry_dtoQueries.transaction {
-                sortedList.forEachIndexed { index, icalEntryId ->
-                    getDatabase().icalentry_dtoQueries.updateOrderNo(index.toLong(), icalEntryId)
-                }
+            sortedList.forEachIndexed { index, icalEntryId ->
+                icalEntryRepository.updateOrderNo(icalEntryId, index.toLong())
             }
         }
     }

@@ -4,12 +4,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.cash.sqldelight.async.coroutines.awaitAsList
-import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
-import app.cash.sqldelight.coroutines.asFlow
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.db.SpectacledDatabase
-import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
@@ -17,9 +12,8 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
-import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
-import at.techbee.spectacled.screens.core.mapper.dto.toDomain
-import at.techbee.spectacled.screens.core.mapper.dto.toDto
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
@@ -32,7 +26,8 @@ import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
 class ListViewModel(
-    private val databaseDriverFactory: DatabaseDriverFactory,
+    private val calendarRepository: CalendarRepository,
+    private val icalEntryRepository: IcalEntryRepository,
     private val credentialStore: PlatformCredentialStore,
     private val syncTrigger: PlatformSyncTrigger,
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
@@ -44,8 +39,6 @@ class ListViewModel(
     val dragAndDropList = mutableStateListOf<IcalEntry>()
 
     private var observationJob: Job? = null
-
-    private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
 
     fun load(calendarId: Long) {
@@ -75,7 +68,7 @@ class ListViewModel(
 
         observationJob = viewModelScope.launch {
             try {
-                val principal = getDatabase().principal_dtoQueries.getPrincipalForCalendar(calendarId).awaitAsOneOrNull()?.toDomain() ?: throw NullPointerException("Principal not found")
+                val principal = calendarRepository.getPrincipalForCalendar(calendarId) ?: throw NullPointerException("Principal not found")
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw NullPointerException("Credentials not found")
 
                 _state.update { it.copy(
@@ -95,11 +88,9 @@ class ListViewModel(
     }
 
     private suspend fun observeCalendar(calendarId: Long) {
-        getDatabase()
-            .calendar_dtoQueries.getCalendarById(calendarId)
-            .asFlow()
-            .collect { calendarFlow ->
-                val emittedCalendar = calendarFlow.awaitAsOneOrNull()?.toDomain() ?: return@collect
+        calendarRepository.getAllCalendarsFlow()
+            .collect { calendars ->
+                val emittedCalendar = calendars.find { it.id == calendarId } ?: return@collect
                 _state.update { it.copy(
                     calendar = emittedCalendar
                 ).recompute() }
@@ -107,11 +98,8 @@ class ListViewModel(
     }
 
     private suspend fun observeIcalentries() {
-        getDatabase()
-            .icalentry_dtoQueries.getIcalEntriesByCalendar(_state.value.calendar.id)
-            .asFlow()
-            .collect { journalsFlow ->
-                val emittedIcalEntries = journalsFlow.awaitAsList().map { vjournalDto -> vjournalDto.toDomain() }
+        icalEntryRepository.getIcalEntriesByCalendar(_state.value.calendar.id)
+            .collect { emittedIcalEntries ->
                 _state.update { it.copy(
                     icalEntries = emittedIcalEntries,
                     isRefreshing = false,
@@ -129,11 +117,8 @@ class ListViewModel(
     }
 
     private suspend fun observeColors() {
-        getDatabase()
-            .icalentry_dtoQueries.getAllColors()
-            .asFlow()
-            .collect { colorsFlow ->
-                val emittedColors = colorsFlow.awaitAsList().map { Color(it) }
+        icalEntryRepository.getAllColors()
+            .collect { emittedColors ->
                 _state.update { it.copy(
                     allColors = emittedColors
                 ).recompute() }
@@ -141,16 +126,10 @@ class ListViewModel(
     }
 
     private suspend fun observeCategories() {
-        getDatabase()
-            .icalentry_dtoQueries.getAllCategories()
-            .asFlow()
-            .collect { categoriesFlow ->
-                val allCategories = mutableSetOf<String>()
-                categoriesFlow.awaitAsList().let { unsplitCategories ->
-                    unsplitCategories.forEach { allCategories.addAll(it.split(CATEGORY_SPLIT_DELIMITER)) }
-                }
+        icalEntryRepository.getAllCategories()
+            .collect { allCategories ->
                 _state.update { it.copy(
-                    allCategories = allCategories.toList()
+                    allCategories = allCategories
                 ).recompute() }
             }
     }
@@ -235,31 +214,28 @@ class ListViewModel(
 
     private fun onUpdateCategoryOfSelectedItems(addCategory: String?, removeCategory: String?) {
         viewModelScope.launch {
-            getDatabase().icalentry_dtoQueries.transaction {
-                _state.value.multiselectItems?.forEach { id ->
-                    _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
-                        var newCategories = icalEntry.categories
-                        if (addCategory?.isNotBlank() == true && !newCategories.contains(addCategory)) {
-                            newCategories = newCategories + addCategory
-                        }
-                        if (removeCategory?.isNotBlank() == true && newCategories.contains(removeCategory)) {
-                            newCategories = newCategories - removeCategory
-                        }
+            _state.value.multiselectItems?.forEach { id ->
+                _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
+                    var newCategories = icalEntry.categories
+                    if (addCategory?.isNotBlank() == true && !newCategories.contains(addCategory)) {
+                        newCategories = newCategories + addCategory
+                    }
+                    if (removeCategory?.isNotBlank() == true && newCategories.contains(removeCategory)) {
+                        newCategories = newCategories - removeCategory
+                    }
 
-                        if (newCategories != icalEntry.categories) {
-                            icalEntry.copy(
-                                categories = newCategories,
-                                lastModified = IcsDateTime.now(),
-                                syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
-                            ).toDto().let { copyDto ->
-                                getDatabase().icalentry_dtoQueries.updateCategory(
-                                    newCategories = copyDto.categories,
-                                    lastModified = copyDto.lastModified,
-                                    syncState = copyDto.syncState,
-                                    id = copyDto.id
-                                )
-                            }
-                        }
+                    if (newCategories != icalEntry.categories) {
+                        val updatedEntry = icalEntry.copy(
+                            categories = newCategories,
+                            lastModified = IcsDateTime.now(),
+                            syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+                        )
+                        icalEntryRepository.updateCategory(
+                            id = updatedEntry.id,
+                            categories = updatedEntry.categories,
+                            lastModified = updatedEntry.lastModified,
+                            syncState = updatedEntry.syncState
+                        )
                     }
                 }
             }
@@ -280,7 +256,7 @@ class ListViewModel(
 
     private fun onDeleteSelectedItems() {
         viewModelScope.launch {
-            _state.value.multiselectItems?.let { getDatabase().icalentry_dtoQueries.markAsDeleted(it) }
+            _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(it) }
             syncTrigger.requestImmediatePush(_state.value.calendar.id)
             syncTrigger.triggerWidgetUpdate()
             _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false).recompute() }
@@ -290,24 +266,19 @@ class ListViewModel(
 
     private fun onUpdateColorOfSelectedItems(color: Color?) {
         viewModelScope.launch {
-
-            getDatabase().icalentry_dtoQueries.transaction {
-                _state.value.multiselectItems?.forEach { id ->
-                    _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
-
-                        icalEntry.copy(
-                            color = if(color == Color.Unspecified) null else color,
-                            lastModified = IcsDateTime.now(),
-                            syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
-                        ).toDto().let { copyDto ->
-                            getDatabase().icalentry_dtoQueries.updateColor(
-                                newColor = copyDto.color,
-                                lastModified = copyDto.lastModified,
-                                syncState = copyDto.syncState,
-                                id = copyDto.id
-                            )
-                        }
-                    }
+            _state.value.multiselectItems?.forEach { id ->
+                _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
+                    val updatedEntry = icalEntry.copy(
+                        color = if(color == Color.Unspecified) null else color,
+                        lastModified = IcsDateTime.now(),
+                        syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+                    )
+                    icalEntryRepository.updateColor(
+                        id = updatedEntry.id,
+                        color = updatedEntry.color,
+                        lastModified = updatedEntry.lastModified,
+                        syncState = updatedEntry.syncState
+                    )
                 }
             }
             //platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
@@ -318,11 +289,11 @@ class ListViewModel(
 
         viewModelScope.launch {
 
-            val icalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryById(icalEntryId).awaitAsOneOrNull()?.toDomain() ?: return@launch
+            val icalEntry = icalEntryRepository.getIcalEntryById(icalEntryId) ?: return@launch
 
             val newPercent = if(icalEntry.percentComplete in 0L .. 99L) 100L else 0L
 
-            icalEntry.copy(
+            val updatedEntry = icalEntry.copy(
                 percentComplete = newPercent,
                 status = when(newPercent) {
                     0L -> null
@@ -332,16 +303,15 @@ class ListViewModel(
                 },
                 lastModified = IcsDateTime.now(),
                 syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
-            ).toDto().let { copyDto ->
-                getDatabase().icalentry_dtoQueries.updateProgress(
-                    newPercent = copyDto.percentComplete,
-                    newStatus = copyDto.status,
-                    lastModified = copyDto.lastModified,
-                    syncState = copyDto.syncState,
-                    id = copyDto.id
-                )
-                syncTrigger.triggerWidgetUpdate()
-            }
+            )
+            icalEntryRepository.updateProgress(
+                id = updatedEntry.id,
+                percentComplete = updatedEntry.percentComplete,
+                status = updatedEntry.status,
+                lastModified = updatedEntry.lastModified,
+                syncState = updatedEntry.syncState
+            )
+            syncTrigger.triggerWidgetUpdate()
         }
     }
 
@@ -380,10 +350,8 @@ class ListViewModel(
 
     private fun onPersistOrderNo() {
         viewModelScope.launch {
-            getDatabase().icalentry_dtoQueries.transaction {
-                dragAndDropList.forEachIndexed { index, icalEntry ->
-                    getDatabase().icalentry_dtoQueries.updateOrderNo(index.toLong(), icalEntry.id)
-                }
+            dragAndDropList.forEachIndexed { index, icalEntry ->
+                icalEntryRepository.updateOrderNo(icalEntry.id, index.toLong())
             }
         }
     }

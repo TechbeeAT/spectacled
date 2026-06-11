@@ -1,10 +1,5 @@
 package at.techbee.spectacled.screens.core
 
-import app.cash.sqldelight.async.coroutines.awaitAsList
-import app.cash.sqldelight.async.coroutines.awaitAsOne
-import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
-import at.techbee.spectacled.db.SpectacledDatabase
-import at.techbee.spectacled.screens.account.data.insertOrUpdateIcalEntry
 import at.techbee.spectacled.screens.core.data.CredentialStore
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -25,8 +20,8 @@ import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
-import at.techbee.spectacled.screens.core.mapper.dto.toDomain
-import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException
@@ -43,7 +38,8 @@ import kotlin.time.ExperimentalTime
 
 
 class SyncCoordinator(
-    val database: SpectacledDatabase,
+    val calendarRepository: CalendarRepository,
+    val icalEntryRepository: IcalEntryRepository,
     val client: HttpClient,
     val credentials: Credentials?
 ) {
@@ -52,47 +48,47 @@ class SyncCoordinator(
 
         @OptIn(ExperimentalTime::class)
         suspend fun syncAllPrincipals(
-            database: SpectacledDatabase,
+            calendarRepository: CalendarRepository,
+            icalEntryRepository: IcalEntryRepository,
             credentialStore: CredentialStore,
             client: HttpClient
         ) {
-            database.principal_dtoQueries.getAllPrincipals().awaitAsList().map { it.toDomain() }.forEach { principal ->
+            calendarRepository.getAllPrincipals().forEach { principal ->
                 val credentials = credentialStore.load(principal.principalUrl)
-                database.calendar_dtoQueries
+                calendarRepository
                     .getCalendarsForPrincipalUrl(principal.principalUrl.toString())
-                    .awaitAsList()
-                    .map { it.toDomain() }
                     .let { calendars ->
                         coroutineScope {
                             calendars.forEach { calendar ->
                                 if (calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
                                     return@forEach  // skip disabled calendars
 
-                                launch { SyncCoordinator(database, client, credentials).syncCalendar(calendar) }
+                                launch { SyncCoordinator(calendarRepository, icalEntryRepository, client, credentials).syncCalendar(calendar) }
                             }
                         }
                     }
             }
 
             // empty trashbin for items older than 30 days
-            val cutoffDate = formatIcsDateTime(IcsDateTime(Clock.System.now().minus(30.days), false))?.first
-            database.icalentry_dtoQueries.deleteTrashed(cutoffDate)
+            val cutoffDate = IcsDateTime(Clock.System.now().minus(30.days), false)
+            icalEntryRepository.deleteTrashed(cutoffDate)
         }
 
         suspend fun syncSpecificCalendars(
             calendarIds: List<Long>,
-            database: SpectacledDatabase,
+            calendarRepository: CalendarRepository,
+            icalEntryRepository: IcalEntryRepository,
             credentialStore: CredentialStore,
             client: HttpClient
         ) {
-            val calendars = database.calendar_dtoQueries.getCalendarsByIds(calendarIds).awaitAsList().map { it.toDomain() }
+            val calendars = calendarRepository.getCalendarsByIds(calendarIds)
 
             coroutineScope {
                 calendars.forEach { calendar ->
                     launch {
-                        val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendar.id).awaitAsOne().toDomain()
+                        val principal = calendarRepository.getPrincipalForCalendar(calendar.id) ?: return@launch  // TODO: Maybe better enter sync-problem in DB
                         val credentials = credentialStore.load(principal.principalUrl)
-                        SyncCoordinator(database, client, credentials).syncCalendar(calendar)
+                        SyncCoordinator(calendarRepository, icalEntryRepository, client, credentials).syncCalendar(calendar)
                     }
                 }
             }
@@ -100,15 +96,16 @@ class SyncCoordinator(
 
         suspend fun pushLocalChanges(
             calendarId: Long,
-            database: SpectacledDatabase,
+            calendarRepository: CalendarRepository,
+            icalEntryRepository: IcalEntryRepository,
             credentialStore: CredentialStore,
             client: HttpClient
         ) {
-            val calendar = database.calendar_dtoQueries.getCalendarById(calendarId).awaitAsOne().toDomain()
-            val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendar.id).awaitAsOne().toDomain()
+            val calendar = calendarRepository.getCalendarById(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
+            val principal = calendarRepository.getPrincipalForCalendar(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
             val credentials = credentialStore.load(principal.principalUrl)
 
-            SyncCoordinator(database, client, credentials).pushLocalChanges(calendar)
+            SyncCoordinator(calendarRepository, icalEntryRepository, client, credentials).pushLocalChanges(calendar)
         }
     }
 
@@ -127,7 +124,7 @@ class SyncCoordinator(
                 return
             }
 
-            database.calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(CalendarSyncStatusType.IN_PROGRESS).serialize(),
                 calendar.syncToken,
                 calendar.id
@@ -146,7 +143,7 @@ class SyncCoordinator(
             when (syncCollectionResponse) {
 
                 is MultigetSyncCollectionResult.Failed -> {
-                    database.calendar_dtoQueries.updateCalendarSyncStatus(
+                    calendarRepository.updateCalendarSyncStatus(
                         CalendarSyncStatus(
                             CalendarSyncStatusType.FAILED,
                             syncCollectionResponse.message,
@@ -160,7 +157,7 @@ class SyncCoordinator(
                 }
 
                 MultigetSyncCollectionResult.NotAuthorized -> {
-                    database.calendar_dtoQueries.updateCalendarSyncStatus(
+                    calendarRepository.updateCalendarSyncStatus(
                         CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, "Not authorized").serialize(),
                         calendar.syncToken,
                         calendar.id
@@ -169,7 +166,7 @@ class SyncCoordinator(
                 }
 
                 MultigetSyncCollectionResult.NotFound -> {
-                    database.calendar_dtoQueries.updateCalendarSyncStatus(
+                    calendarRepository.updateCalendarSyncStatus(
                         CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, "Not found").serialize(),
                         calendar.syncToken,
                         calendar.id
@@ -184,7 +181,7 @@ class SyncCoordinator(
                         syncCollectionResponse.hrefs.mapNotNull { (url, eTag) -> eTag?.let { url to it } }.toMap()
                     )
                     pushLocalChanges(calendar)
-                    database.calendar_dtoQueries.updateCalendarSyncStatus(
+                    calendarRepository.updateCalendarSyncStatus(
                         CalendarSyncStatus(CalendarSyncStatusType.SYNCED).serialize(),
                         syncCollectionResponse.syncToken,
                         calendar.id
@@ -193,7 +190,7 @@ class SyncCoordinator(
             }
 
         } catch (e: HttpRequestTimeoutException) { // Thrown when a request exceeds the configured timeout period.
-            database.calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
                     "Connection timed out. Please check your internet connection and try again.",
@@ -201,7 +198,7 @@ class SyncCoordinator(
                 ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: SocketTimeoutException) { // Standard Java/Kotlin IO exceptions often encountered during connectivity issues (e.g., airplane mode).
-            database.calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
                     "Connection timed out. Please check your internet connection and try again.",
@@ -209,7 +206,7 @@ class SyncCoordinator(
                 ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: ConnectTimeoutException) { // Standard Java/Kotlin IO exceptions often encountered during connectivity issues (e.g., airplane mode).
-            database.calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
                     "Connection timed out. Please check your internet connection and try again.",
@@ -217,7 +214,7 @@ class SyncCoordinator(
                 ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: ClientRequestException) {  // Thrown for 4xx status codes (Client errors like 404 Not Found or 401 Unauthorized).
-            database.calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
                     "Request error. Please check your server, username and password and try again.",
@@ -225,7 +222,7 @@ class SyncCoordinator(
                 ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: ServerResponseException) {  // Thrown for 5xx status codes (Server errors).
-            database.calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
                     "An unexpected server error occurred. Please try again.",
@@ -233,7 +230,7 @@ class SyncCoordinator(
                 ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: ResponseException) {   //The base class for all exceptions related to non-success HTTP responses.
-            database.calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
                     "Connection error. Please check your internet connection and try again.",
@@ -241,7 +238,7 @@ class SyncCoordinator(
                 ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: NullPointerException) {   // Seems to be thrown when not authenticated
-            database.calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.NOT_AUTHORIZED,
                     "Connection error. Please check your internet connection, username and password and try again.",
@@ -249,7 +246,7 @@ class SyncCoordinator(
                 ).serialize(), calendar.syncToken, calendar.id
             )
         } catch (e: Exception) {   //The base class for all exceptions related to non-success HTTP responses.
-            database.calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
                     "Connection error. Please check your internet connection and try again.",
@@ -263,7 +260,7 @@ class SyncCoordinator(
         when (val multigetResourceHrefsMultiplatformResult = multigetResourceHrefsMultiplatform(client, calendar, credentials)) {
 
             is MultigetResourceHrefETagResult.Failed -> {
-                database.calendar_dtoQueries.updateCalendarSyncStatus(
+                calendarRepository.updateCalendarSyncStatus(
                     CalendarSyncStatus(
                         CalendarSyncStatusType.FAILED,
                         multigetResourceHrefsMultiplatformResult.message,
@@ -276,7 +273,7 @@ class SyncCoordinator(
             }
 
             MultigetResourceHrefETagResult.NotAuthorized -> {
-                database.calendar_dtoQueries.updateCalendarSyncStatus(
+                calendarRepository.updateCalendarSyncStatus(
                     CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, "Not authorized").serialize(),
                     calendar.syncToken,
                     calendar.id
@@ -285,7 +282,7 @@ class SyncCoordinator(
             }
 
             MultigetResourceHrefETagResult.NotFound -> {
-                database.calendar_dtoQueries.updateCalendarSyncStatus(
+                calendarRepository.updateCalendarSyncStatus(
                     CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, "Not found").serialize(),
                     calendar.syncToken,
                     calendar.id
@@ -296,7 +293,7 @@ class SyncCoordinator(
             is MultigetResourceHrefETagResult.Success -> {
                 applyServerchanges(calendar, multigetResourceHrefsMultiplatformResult.hrefs)
                 pushLocalChanges(calendar)
-                database.calendar_dtoQueries.updateCalendarSyncStatus(
+                calendarRepository.updateCalendarSyncStatus(
                     CalendarSyncStatus(CalendarSyncStatusType.SYNCED).serialize(),
                     multigetResourceHrefsMultiplatformResult.syncToken,
                     calendar.id
@@ -307,9 +304,7 @@ class SyncCoordinator(
 
     private suspend fun applyServerchanges(calendar: Calendar, allServerHrefs: Map<Url, String?>) {
 
-        val deletedHrefs =
-            database.icalentry_dtoQueries.getDeletedDeltaHrefs(calendar.id, allServerHrefs.map { it.key.toString() }).awaitAsList()
-                .mapNotNull { it.href }
+        val deletedHrefs = icalEntryRepository.getDeletedDeltaHrefs(calendar.id, allServerHrefs.map { it.key })
         removeLocalByHrefs(deletedHrefs)
 
         allServerHrefs.forEach { serverHref ->
@@ -319,7 +314,7 @@ class SyncCoordinator(
 
     private suspend fun applyServerchanges(calendar: Calendar, deleteHrefs: List<Url>, updateHrefs: Map<Url, String>) {
 
-        removeLocalByHrefs(deleteHrefs.map { it.toString() })
+        removeLocalByHrefs(deleteHrefs)
 
         updateHrefs.forEach { serverHref ->
             upsertLocalByHrefs(calendar, serverHref.key, serverHref.value)
@@ -328,7 +323,7 @@ class SyncCoordinator(
 
     private suspend fun upsertLocalByHrefs(calendar: Calendar, href: Url, eTag: String?) {
 
-        var localIcalEntry = database.icalentry_dtoQueries.getIcalEntryByHref(href.toString()).awaitAsOneOrNull()?.toDomain()
+        var localIcalEntry = icalEntryRepository.getIcalEntryByHref(href)
 
         if (localIcalEntry?.href != null && localIcalEntry.etag == eTag)
             return    // no eTag change, we skip
@@ -341,25 +336,25 @@ class SyncCoordinator(
         }
 
         if (localIcalEntry == null) {
-            localIcalEntry = database.icalentry_dtoQueries.getIcalEntryByUid(serverIcalEntry.uid).awaitAsOneOrNull()?.toDomain()
+            localIcalEntry = icalEntryRepository.getIcalEntryByUid(serverIcalEntry.uid)
         }
 
         if (localIcalEntry == null) {     // Local IcalEntry doesn't exist, we insert
-            database.insertOrUpdateIcalEntry(serverIcalEntry.copy(calendarId = calendar.id, syncState = SyncState.SYNCED))
+            icalEntryRepository.insertOrUpdateIcalEntry(serverIcalEntry.copy(calendarId = calendar.id, syncState = SyncState.SYNCED))
         } else {    //Local IcalEntry exists, but eTag is different. It is unchanged locally, but was changed on the server.
 
             when (localIcalEntry.syncState) {
                 SyncState.SYNCED, SyncState.USER_DECIDED_SERVER_WINS ->
-                    database.insertOrUpdateIcalEntry(serverIcalEntry.copy(id = localIcalEntry.id, calendarId = calendar.id, syncState = SyncState.SYNCED))
+                    icalEntryRepository.insertOrUpdateIcalEntry(serverIcalEntry.copy(id = localIcalEntry.id, calendarId = calendar.id, syncState = SyncState.SYNCED))
 
                 SyncState.LOCAL_MODIFIED ->
-                    database.insertOrUpdateIcalEntry(localIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
+                    icalEntryRepository.insertOrUpdateIcalEntry(localIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
 
                 SyncState.LOCAL_DELETED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN ->
-                    database.insertOrUpdateIcalEntry(localIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED))
+                    icalEntryRepository.insertOrUpdateIcalEntry(localIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED))
 
                 SyncState.USER_DECIDED_CLIENT_WINS ->
-                    database.insertOrUpdateIcalEntry(
+                    icalEntryRepository.insertOrUpdateIcalEntry(
                         localIcalEntry.copy(
                             syncState = SyncState.LOCAL_MODIFIED,
                             etag = serverIcalEntry.etag,
@@ -374,16 +369,15 @@ class SyncCoordinator(
         }
     }
 
-    private suspend fun removeLocalByHrefs(hrefs: List<String>) {
-        database.transaction {
+    private suspend fun removeLocalByHrefs(hrefs: List<Url>) {
 
-            val deletedIcalEntry = database.icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs).awaitAsList().map { it.toDomain() }
+            val deletedIcalEntry = icalEntryRepository.getIcalEntriesByHrefs(hrefs)
 
             deletedIcalEntry.forEach { deletedIcalEntry ->
 
                 when (deletedIcalEntry.syncState) {
                     SyncState.LOCAL_DELETED, SyncState.SYNCED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN ->
-                        database.insertOrUpdateIcalEntry(
+                        icalEntryRepository.insertOrUpdateIcalEntry(
                             deletedIcalEntry.copy(
                                 syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
                                 lastModified = IcsDateTime.now()
@@ -393,7 +387,7 @@ class SyncCoordinator(
                     SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.USER_DECIDED_SERVER_WINS ->
                         // conflict1, but now it's also deleted on the server, we can delete it now
                         // conflict2, user decided to keep remote changes (delete), we can delete it now
-                        database.insertOrUpdateIcalEntry(
+                        icalEntryRepository.insertOrUpdateIcalEntry(
                             deletedIcalEntry.copy(
                                 syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
                                 lastModified = IcsDateTime.now()
@@ -401,7 +395,7 @@ class SyncCoordinator(
                         )
 
                     SyncState.LOCAL_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED ->
-                        database.insertOrUpdateIcalEntry(
+                        icalEntryRepository.insertOrUpdateIcalEntry(
                             deletedIcalEntry.copy(
                                 syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED,
                                 lastModified = IcsDateTime.now()
@@ -409,7 +403,7 @@ class SyncCoordinator(
                         )
 
                     SyncState.USER_DECIDED_CLIENT_WINS ->
-                        database.insertOrUpdateIcalEntry(
+                        icalEntryRepository.insertOrUpdateIcalEntry(
                             deletedIcalEntry.copy(
                                 syncState = SyncState.LOCAL_MODIFIED,
                                 href = null,
@@ -419,7 +413,6 @@ class SyncCoordinator(
                         )  // treat like a new entry
                 }
             }
-        }
     }
 
 
@@ -427,7 +420,7 @@ class SyncCoordinator(
         calendar: Calendar
     ) {
 
-        val dirtyIcalEntries = database.icalentry_dtoQueries.getDirtyIcalEntriesByCalendar(calendar.id).awaitAsList().map { it.toDomain() }
+        val dirtyIcalEntries = icalEntryRepository.getDirtyIcalEntriesByCalendar(calendar.id)
 
         dirtyIcalEntries.forEach { dirtyIcalEntry ->
             pushSingleLocalChange(dirtyIcalEntry, calendar)
@@ -454,10 +447,10 @@ class SyncCoordinator(
                             is GetResourceResult.Failed -> Unit   // failed will be kept for another retry TODO: Review if this is sufficient in future
 
                             // Resource wasn't found, deleted on server
-                            GetResourceResult.NotFound -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
+                            GetResourceResult.NotFound -> icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
 
                             // A newer version exists
-                            is GetResourceResult.Success -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
+                            is GetResourceResult.Success -> icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
                         }
                     }
 
@@ -465,13 +458,13 @@ class SyncCoordinator(
                     is PutResourceResult.Failed -> Unit   // leave for retry // TODO: Review in future, maybe store info why it failed
 
                     // The entry was deleted in the meantime, we also delete it locally
-                    PutResourceResult.NotFound -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
+                    PutResourceResult.NotFound -> icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
 
                     // The locally modified entry was successfully pushed to the server, we just update the local entry as synced and store the new eTag
-                    is PutResourceResult.Success -> database.icalentry_dtoQueries.updateSyncMetadata(
+                    is PutResourceResult.Success -> icalEntryRepository.updateSyncMetadata(
                         etag = insertOrUpdateIcalEntryResult.icalEntry.etag,
-                        href = insertOrUpdateIcalEntryResult.icalEntry.href?.toString(),
-                        syncState = SyncState.SYNCED.name,
+                        href = insertOrUpdateIcalEntryResult.icalEntry.href,
+                        syncState = SyncState.SYNCED,
                         id = dirtyIcalEntry.id
                     )
                 }
@@ -493,7 +486,7 @@ class SyncCoordinator(
                             // Resource wasn't found, deleted on server
                             GetResourceResult.NotFound -> {
                                 val clientIcalEntry = dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
-                                database.insertOrUpdateIcalEntry(clientIcalEntry)
+                                icalEntryRepository.insertOrUpdateIcalEntry(clientIcalEntry)
                                 pushSingleLocalChange(clientIcalEntry, calendar)
                             }
 
@@ -501,7 +494,7 @@ class SyncCoordinator(
                             is GetResourceResult.Success -> {
                                 val clientIcalEntry =
                                     dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = conflictingServerIcalEntryResult.icalEntry.etag)
-                                database.insertOrUpdateIcalEntry(clientIcalEntry)
+                                icalEntryRepository.insertOrUpdateIcalEntry(clientIcalEntry)
                                 pushSingleLocalChange(clientIcalEntry, calendar)
                             }
                         }
@@ -513,16 +506,16 @@ class SyncCoordinator(
                     // The entry was deleted in the meantime, recreate it to push it again
                     PutResourceResult.NotFound -> {
                         val clientIcalEntry = dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
-                        database.insertOrUpdateIcalEntry(clientIcalEntry)
+                        icalEntryRepository.insertOrUpdateIcalEntry(clientIcalEntry)
                         pushSingleLocalChange(clientIcalEntry, calendar)
                     }
 
                     // The locally modified entry was successfully pushed to the server, we just update the local entry as synced and store the new eTag
                     is PutResourceResult.Success ->
-                        database.icalentry_dtoQueries.updateSyncMetadata(
+                        icalEntryRepository.updateSyncMetadata(
                             etag = insertOrUpdateIcalEntryResult.icalEntry.etag,
-                            href = insertOrUpdateIcalEntryResult.icalEntry.href?.toString(),
-                            syncState = SyncState.SYNCED.name,
+                            href = insertOrUpdateIcalEntryResult.icalEntry.href,
+                            syncState = SyncState.SYNCED,
                             id = dirtyIcalEntry.id
                         )
                 }
@@ -537,11 +530,11 @@ class SyncCoordinator(
                     is GetResourceResult.Failed -> Unit   // Retry
 
                     // Resource wasn't found, deleted on server, we delete as user decided to keep server version
-                    GetResourceResult.NotFound -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                    GetResourceResult.NotFound -> icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
 
                     // The new entry was fetched, we overwrite the local changes, server wins
                     is GetResourceResult.Success -> {
-                        database.insertOrUpdateIcalEntry(
+                        icalEntryRepository.insertOrUpdateIcalEntry(
                             conflictingServerIcalEntryResult.icalEntry.copy(
                                 id = dirtyIcalEntry.id,
                                 calendarId = dirtyIcalEntry.calendarId,
@@ -558,7 +551,7 @@ class SyncCoordinator(
 
                     // The entry was already deleted or successfully deleted on the server. We delete it locally.
                     DeleteResourceResult.AlreadyDeleted, DeleteResourceResult.Success ->
-                        database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                        icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
 
                     // There was a conflict, the resourcew as changed on the server, we discard the local delete and update the entry instead
                     // TODO: Review in future
@@ -570,12 +563,12 @@ class SyncCoordinator(
                             is GetResourceResult.Failed -> Unit   // Retry
 
                             // Resource wasn't found, we delete the local copy, this should have been Success though
-                            GetResourceResult.NotFound -> database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
+                            GetResourceResult.NotFound -> icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN))
 
                             // The new entry was fetched
                             is GetResourceResult.Success -> {
                                 // server returns updated entry
-                                database.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED))
+                                icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED))
                             }
                         }
                     }
