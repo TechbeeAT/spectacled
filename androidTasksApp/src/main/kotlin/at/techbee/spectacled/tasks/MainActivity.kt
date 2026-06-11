@@ -20,7 +20,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             TasksApp(
                 initialCalendarId = initialCalendarId,
-                initialIcalEntryId = initialIcalEntryId
+                initialIcalEntryId = initialIcalEntryId,
+                onCloseApp = { finish() }
             )
         }
     }

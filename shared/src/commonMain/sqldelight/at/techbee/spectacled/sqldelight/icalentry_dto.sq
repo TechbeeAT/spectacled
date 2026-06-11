@@ -25,7 +25,9 @@ CREATE TABLE IcalEntryDto (
     syncState TEXT,
     etag TEXT,
     href TEXT,
-    calendarComponent TEXT
+    calendarComponent TEXT,
+    parentUid TEXT,
+    relType TEXT
 );
 
 getIcalEntriesByCalendar:
@@ -48,6 +50,9 @@ SELECT * FROM IcalEntryDto WHERE href IN ?;
 
 getIcalEntryByHref:
 SELECT * FROM IcalEntryDto WHERE href = ?;
+
+getSubtasksByParentUid:
+SELECT * FROM IcalEntryDto WHERE parentUid = :parentUid AND relType = 'PARENT';
 
 getAllColors:
 SELECT DISTINCT color FROM IcalEntryDto WHERE color IS NOT NULL ORDER BY lastModified DESC;
@@ -84,7 +89,9 @@ INSERT OR IGNORE INTO IcalEntryDto (
     syncState,
     etag,
     href,
-    calendarComponent
+    calendarComponent,
+    parentUid,
+    relType
 )
 VALUES (
     :calendarId,
@@ -111,7 +118,9 @@ VALUES (
     :syncState,
     :etag,
     :href,
-    :calendarComponent
+    :calendarComponent,
+    :parentUid,
+    :relType
 );
 
 updateIcalEntry:
@@ -142,7 +151,9 @@ SET
     syncState = :syncState,
     etag = :etag,
     href = :href,
-    calendarComponent = :calendarComponent
+    calendarComponent = :calendarComponent,
+    parentUid = :parentUid,
+    relType = :relType
 WHERE uid = :uid;
 
 deleteTrashed:

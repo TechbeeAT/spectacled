@@ -51,6 +51,7 @@ fun CalendarSyncInfoDialog(
             TextButton(
                 onClick = {
                     onRetry()
+                    onDismiss()
                 }
             ) {
                 Text(stringResource(Res.string.retry))

@@ -71,11 +71,16 @@ fun ListItem(
     MaterialTheme(colorScheme = getThemeForSeedColor(icalEntry.color)) {
 
         Row(modifier = modifier) {
-            if (icalEntry.dtStart != null && showDayBlock)
-                DayBlock(
-                    icsDateTime = icalEntry.dtStart,
-                    modifier = Modifier.padding(8.dp).width(28.dp)
-                )
+            if(icalEntry.isJournal()) {
+                if (icalEntry.dtStart != null && showDayBlock)
+                    DayBlock(
+                        icsDateTime = icalEntry.dtStart,
+                        modifier = Modifier.padding(8.dp).width(28.dp)
+                    )
+                else
+                    Spacer(modifier = Modifier.padding(8.dp).width(28.dp))
+            }
+
 
             SpecialRoundedCard(
                 isFirst = isFirst,

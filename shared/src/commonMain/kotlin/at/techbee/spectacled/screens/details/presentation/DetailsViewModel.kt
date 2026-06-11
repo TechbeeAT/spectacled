@@ -19,9 +19,7 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
-import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
-import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
@@ -29,10 +27,15 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
+import at.techbee.spectacled.screens.core.mapper.dto.toDto
 import io.github.aakira.napier.Napier
+import io.ktor.client.HttpClient
+import io.ktor.http.Url
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
@@ -48,10 +51,11 @@ import spectacled.shared.generated.resources.unexpected_error_occurred
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class DetailsViewModel(
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
+    private val client: HttpClient,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
     private val spectacledVariant: SpectacledVariant
@@ -73,6 +77,11 @@ class DetailsViewModel(
                         saveIcalEntry(state.icalEntry.syncState)
                 }
         }
+
+        viewModelScope.launch { observeColors() }
+        viewModelScope.launch { observeCategories() }
+        viewModelScope.launch { observeTimezones() }
+        viewModelScope.launch { observeSubtasks() }
     }
 
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
@@ -89,10 +98,6 @@ class DetailsViewModel(
                 isLoading = false,
                 navigateUp = false
             )
-
-            launch { observeColors() }
-            launch { observeCategories() }
-            launch { observeTimezones() }
         }
     }
 
@@ -115,10 +120,6 @@ class DetailsViewModel(
                 showDeleteDialog = false,
                 navigateUp = false
             )
-
-            launch { observeColors() }
-            launch { observeCategories() }
-            launch { observeTimezones() }
         }
     }
 
@@ -156,10 +157,6 @@ class DetailsViewModel(
                 isLoading = false,
                 navigateUp = false
             )
-
-            launch { observeColors() }
-            launch { observeCategories() }
-            launch { observeTimezones() }
         }
     }
 
@@ -201,6 +198,19 @@ class DetailsViewModel(
             }
     }
 
+    private suspend fun observeSubtasks() {
+        val database = getDatabase()
+        snapshotFlow { state.icalEntry.uid }
+            .distinctUntilChanged()
+            .flatMapLatest { uid ->
+                database.icalentry_dtoQueries.getSubtasksByParentUid(uid).asFlow()
+            }
+            .collect { subtasksQuery ->
+                val subtasks = subtasksQuery.awaitAsList().map { it.toDomain() }
+                _state = _state.copy(subtasks = subtasks)
+            }
+    }
+
 
     fun onAction(action: DetailsAction) {
         when(action) {
@@ -215,6 +225,7 @@ class DetailsViewModel(
             is DetailsAction.OnShowMoreBottomSheet -> { _state = _state.copy(showMoreBottomSheet = action.show) }
             is DetailsAction.OnShowCategorySelectorBottomSheet -> { _state = _state.copy(showCategorySelectorBottomSheet = action.show) }
             is DetailsAction.OnShowColorSelectorBottomSheet -> { _state = _state.copy(showColorSelectorBottomSheet = action.show) }
+            is DetailsAction.OnShowAddSubtaskBottomSheet -> { _state = _state.copy(showAddSubtaskBottomSheet = action.show) }
             DetailsAction.OnCreateCopy -> { loadCopy(_state.icalEntry.id) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
@@ -240,6 +251,10 @@ class DetailsViewModel(
             is DetailsAction.OnPin -> { onPinIcalEntry(action.pin) }
             is DetailsAction.OnUpdateStatus -> { onUpdateStatus(action.status) }
             is DetailsAction.OnUpdateProgress -> { onUpdateTaskProgress(action.percent) }
+            is DetailsAction.OnUpdateSubtaskProgress -> { onUpdateSubtaskProgress(action.percent, action.subtaskIcalEntryId) }
+            is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
+            is DetailsAction.OnNavigateToIcalEntryId -> { _state = _state.copy(navigateToIcalEntryId = action.id) }
+            is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
         }
     }
 
@@ -470,27 +485,30 @@ class DetailsViewModel(
         syncAndAwaitResult()
     }
 
-    private fun syncAndAwaitResult() {     // TODO: Take SyncConflictStrategy from Settings
+    private fun syncAndAwaitResult(icalEntry: IcalEntry = _state.icalEntry) {
 
         _state = _state.copy(isLoading = true)
 
         viewModelScope.launch {
             try {
-                val calendar = getDatabase().calendar_dtoQueries.getCalendarById(_state.icalEntry.calendarId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
-                    getString(Res.string.unexpected_error_occurred)
-                )
-                val homeCollection = getDatabase().home_collection_dtoQueries.getHomeCollectionsById(calendar.homeCollectionId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
-                    getString(Res.string.unexpected_error_occurred)
-                )
-                val principal = getDatabase().principal_dtoQueries.getPrincipalById(homeCollection.principalId).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
+
+                val principalUrl = getDatabase()
+                    .calendar_dtoQueries
+                    .getPrincipalUrlForCalendarId(icalEntry.calendarId)
+                    .awaitAsOneOrNull()
+                    ?.let { Url(it) }
+                    ?: throw Exception(
+                        getString(Res.string.unexpected_error_occurred)
+                    )
+
+                val calendar = _state.calendar ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
 
-                val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
-                val client = HttpClientFactory.create(getPlatformEngine(), credentials.username, credentials.password)
+                val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
-                SyncCoordinator(getDatabase(), client).pushDirtyIcalEntry(_state.icalEntry, calendar)
-                val processedIcalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryByUid(_state.icalEntry.uid).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
+                SyncCoordinator(getDatabase(), client, credentials).pushDirtyIcalEntry(icalEntry, calendar)
+                val processedIcalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
 
@@ -534,6 +552,63 @@ class DetailsViewModel(
                     snackbarText = e.message,
                     isLoading = false
                 )
+            }
+        }
+    }
+
+    private fun insertSubtask(summary: String) {
+
+        val subtask = IcalEntry.newTask().copy(
+            summary = summary,
+            parentUid = _state.icalEntry.uid,
+            relType = "PARENT",
+            calendarId = _state.icalEntry.calendarId)
+
+        viewModelScope.launch {
+            getDatabase().insertOrUpdateIcalEntry(subtask)
+            if(getPlatform().platform == Platforms.WASM)
+                syncAndAwaitResult(subtask)
+            platformSyncTrigger.triggerWidgetUpdate()
+        }
+        Napier.d("Entry saved")
+    }
+
+    private fun onUpdateSubtaskProgress(percent: Long, subtaskIcalEntryId: Long) {
+
+        val subtask = _state.subtasks.find { it.id == subtaskIcalEntryId } ?: return
+
+        subtask.copy(
+            status = when(percent) {
+                0L -> if(state.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
+                in 1L..99L -> Status.IN_PROCESS
+                100L -> Status.COMPLETED
+                else -> null
+            },
+            percentComplete = percent,
+            lastModified = IcsDateTime.now(),
+            syncState = if(state.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
+                SyncState.USER_DECIDED_CLIENT_WINS
+            else
+                SyncState.LOCAL_MODIFIED
+        ).toDto().let {
+            viewModelScope.launch {
+                getDatabase().icalentry_dtoQueries.updateProgress(
+                    newPercent = it.percentComplete,
+                    newStatus = it.status,
+                    lastModified = it.lastModified,
+                    syncState = it.syncState,
+                    id = it.id
+                )
+            }
+        }
+    }
+
+    private fun onPersistOrderNo(sortedList: List<Long>) {
+        viewModelScope.launch {
+            getDatabase().icalentry_dtoQueries.transaction {
+                sortedList.forEachIndexed { index, icalEntryId ->
+                    getDatabase().icalentry_dtoQueries.updateOrderNo(index.toLong(), icalEntryId)
+                }
             }
         }
     }

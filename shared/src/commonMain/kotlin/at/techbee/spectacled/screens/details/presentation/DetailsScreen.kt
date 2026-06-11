@@ -14,19 +14,24 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -34,15 +39,19 @@ import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
+import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
+import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
+import sh.calvin.reorderable.ReorderableColumn
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.description
+import spectacled.shared.generated.resources.drag_handle
 import spectacled.shared.generated.resources.summary
 
 
@@ -71,12 +80,9 @@ fun DetailsScreen(
                         enabled = state.allowEditing(),
                         allowNoDate = false,
                         initializeWithDateOnly = true,
-                        iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
                         suggestedTimezones = state.latestUsedTimezones,
                         onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) }
                     )
-
-                    //HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 
                 } else if (state.icalEntry.isTask()) {
                     DateTimeCard(
@@ -84,7 +90,6 @@ fun DetailsScreen(
                         enabled = state.allowEditing(),
                         allowNoDate = true,
                         initializeWithDateOnly = state.icalEntry.due?.isDateOnly != false,  // only when due is NOT date only we initialize with time
-                        iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
                         suggestedTimezones = state.latestUsedTimezones,
                         onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) },
                         headerText = stringResource(Res.string.date_start),
@@ -95,14 +100,11 @@ fun DetailsScreen(
                         }
                     )
 
-                    //Spacer(modifier = Modifier.height(4.dp))
-
                     DateTimeCard(
                         icsDateTime = state.icalEntry.due,
                         enabled = state.allowEditing(),
                         allowNoDate = true,
                         initializeWithDateOnly = state.icalEntry.dtStart?.isDateOnly != false,  // only when dtStart is NOT date only we initialize with time
-                        iconColor = state.icalEntry.color ?: MaterialTheme.colorScheme.primary,
                         suggestedTimezones = state.latestUsedTimezones,
                         onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDue(it)) },
                         headerText = stringResource(Res.string.date_due),
@@ -114,7 +116,8 @@ fun DetailsScreen(
                     )
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+                //HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+                WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
             }
         }
 
@@ -145,9 +148,9 @@ fun DetailsScreen(
         }
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(vertical = 8.dp)
         ) {
 
             BasicTextField(
@@ -161,16 +164,16 @@ fun DetailsScreen(
                 ),
                 enabled = state.allowEditing(),
                 visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
-                modifier = Modifier.onFocusChanged {
-                    summaryIsFocused = it.isFocused
-                }
+                modifier = Modifier
+                    .onFocusChanged { summaryIsFocused = it.isFocused }
                     .weight(1f)
             )
 
             if (state.icalEntry.isTask()) {
+                val entryTriState = state.icalEntry.getProgressTriState()
                 TriStateCheckbox(
-                    state = state.icalEntry.getProgressTriState(),
-                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (state.icalEntry.percentComplete < 100) 100 else 0)) }
+                    state = entryTriState,
+                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 100 else 0)) }
                 )
             }
         }
@@ -187,16 +190,61 @@ fun DetailsScreen(
             enabled = state.allowEditing(),
             visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
             modifier = Modifier
-                .heightIn(min = 200.dp)
                 .fillMaxWidth()
-                .fillMaxHeight(1f)
+                .heightIn(min = 100.dp)
                 .onFocusChanged {
                     descriptionIsFocused = it.isFocused
                 }
         )
+
+        val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+
+        //HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp))
+        WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+
+        ReorderableColumn(
+            list = sortedSubtasks,
+            onSettle = { fromIndex, toIndex ->
+                onAction(DetailsAction.OnPersistOrderNo(
+                    sortedSubtasks.toMutableList().apply {
+                        add(toIndex, removeAt(fromIndex))
+                    }.map { it.id }
+                ))
+            },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+        ) { _, subtask, isDragging ->
+
+            key(subtask.id) {
+                ReorderableItem {
+                    TaskListItem(subtask,
+                        isDragging,
+                        onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
+                        onLongClick = {},
+                        onToggleProgress = {
+                            onAction(DetailsAction.OnUpdateSubtaskProgress(
+                                if(subtask.getProgressTriState() == ToggleableState.On) 0L else 100L,
+                                subtask.id
+                            ))
+                        },
+                        onFilterCategory = {},
+                        dragHandle = {
+                            IconButton(
+                                onClick = {},
+                                modifier = with(this) {
+                                    Modifier.draggableHandle()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.DragIndicator,
+                                    contentDescription = stringResource(Res.string.drag_handle)
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
-
-
 }
 
 
@@ -251,7 +299,12 @@ private fun ListScreen_task_Preview() {
                 status = Status.IN_PROCESS,
                 percentComplete = 50
             ),
-            originalIcalEntry = IcalEntry.getSampleIcalEntry()
+            originalIcalEntry = IcalEntry.getSampleIcalEntry(),
+            subtasks = listOf(
+                IcalEntry.getSampleTask(),
+                IcalEntry.getSampleTask(),
+                IcalEntry.getSampleTask()
+            )
         ),
         onAction = {},
         modifier = Modifier.fillMaxHeight()

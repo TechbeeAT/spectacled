@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
@@ -18,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
@@ -27,6 +31,7 @@ import at.techbee.spectacled.screens.list.presentation.components.EmptyListScree
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
 import at.techbee.spectacled.screens.list.presentation.components.MonthHeader
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -43,6 +48,43 @@ fun JournalsListJournals(
 
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+
+    @Composable
+    fun LazyItemScope.getListItem(
+        icalEntry: IcalEntry,
+        index: Int,
+        lastIndex: Int,
+        showDayBlock: Boolean = false,
+        overrideTopRoundedCornerSize: Dp? = null,
+        overrideBottomRoundedCornerSize: Dp? = null,
+        isFirst: Boolean = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,
+        isLast: Boolean = (state.listLayout == ListLayout.LIST && index == lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
+        modifier: Modifier = Modifier
+    ) {
+        ListItem(
+            icalEntry = icalEntry,
+            isFirst = isFirst,
+            isLast = isLast,
+            overrideTopRoundedCornerSize = overrideTopRoundedCornerSize,
+            overrideBottomRoundedCornerSize = overrideBottomRoundedCornerSize,
+            isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
+            onClick = {
+                if (state.multiselectItems == null)
+                    onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
+                else
+                    onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
+            },
+            onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
+            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+            showDayBlock = showDayBlock,
+            modifier = Modifier
+                .widthIn(max = 700.dp)
+                .heightIn(min = 50.dp)
+                .padding(end = 8.dp)
+                .then(modifier)
+                .animateItem()
+        )
+    }
 
     LaunchedEffect(state.scrollToDate) {
         state.scrollToDate?.let { scrollToIcsDateTime ->
@@ -78,7 +120,7 @@ fun JournalsListJournals(
 
 
     LazyColumn(
-        //horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
         state = lazyListState,
         modifier = modifier
     ) {
@@ -103,29 +145,15 @@ fun JournalsListJournals(
                     key = { _, icalEntry -> icalEntry.uid }
                 ) { index, icalEntry ->
 
-                    val isNewDay = index == 0 || icalEntry.dtStart?.toLocalDateTime()?.date != groupedByMonth[monthGroup]!!.get(index - 1)
+                    val isNewDay = index == 0 || icalEntry.dtStart?.toLocalDateTime()?.date != groupedByMonth[monthGroup]!![index - 1].dtStart?.toLocalDateTime()?.date
 
-                    ListItem(
+                    getListItem(
                         icalEntry = icalEntry,
-                        //isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
-                        //isLast = (state.listLayout == ListLayout.LIST && index == groupedByDay[dayGroup]!!.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
+                        index = index,
+                        lastIndex = groupedByMonth[monthGroup]!!.lastIndex,
                         overrideTopRoundedCornerSize = if (index == 0) 16.dp else 0.dp,
                         overrideBottomRoundedCornerSize = if (index == groupedByMonth[monthGroup]!!.lastIndex) 16.dp else 0.dp,
-                        isSelected = state.multiselectItems?.contains(icalEntry.id) == true,
-                        onClick = {
-                            if (state.multiselectItems == null)
-                                onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
-                            else
-                                onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-                        },
-                        onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it)) },
-                        showDayBlock = icalEntry.isJournal() && (index == 0 || isNewDay),
-                        modifier = Modifier
-                            .widthIn(max = 700.dp)
-                            .heightIn(min = 50.dp)
-                            .padding(end = 8.dp)
-                            .animateItem()
+                        showDayBlock = icalEntry.isJournal() && (index == 0 || isNewDay)
                     )
 
                 }
@@ -157,26 +185,13 @@ fun JournalsListJournals(
                     )
                 }
             else
-                itemsIndexed(state.trashbin, key = { _, note -> note.uid }) { index, note ->
-
-                    ListItem(
+                items(state.trashbin, key = { note -> note.uid }) { note ->
+                    getListItem(
                         icalEntry = note,
-                        isFirst = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,   // first and last are only used for list, not for the staggered grid
-                        isLast = (state.listLayout == ListLayout.LIST && index == state.trashbin.lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
-                        isSelected = state.multiselectItems?.contains(note.id) == true,
-                        onClick = {
-                            if (state.multiselectItems == null)
-                                onAction(ListAction.OnIcalEntryClicked(note.id))
-                            else
-                                onAction(ListAction.OnToggleMultiselectItem(note.id))
-                        },
-                        onLongClick = { onAction(ListAction.OnToggleMultiselectItem(note.id)) },
-                        onFilterCategory = { onAction(ListAction.OnCategoryFilterChanged(it)) },
-                        modifier = Modifier
-                            .widthIn(max = 700.dp)
-                            .heightIn(min = 50.dp)
-                            .animateItem()
-                            .alpha(0.33f)
+                        index = 0,
+                        lastIndex = 0,
+                        showDayBlock = true,
+                        modifier = Modifier.alpha(0.33f)
                     )
                 }
         }
@@ -190,6 +205,7 @@ fun JournalsListJournals(
         if (it)
             EmptyListScreen(
                 isEmptyFolder = state.icalEntries.isEmpty(),
+                spectacledVariant = state.spectacledVariant,
                 modifier = Modifier.fillMaxSize()
             )
     }
@@ -220,7 +236,7 @@ private fun JournalsListJournals_Search_Preview() {
 
     var state = ListState()
     state = state.copy(
-        searchQuery = "Lorem",
+        listFilterCriteria = ListFilterCriteria(searchQuery = "Lorem"),
         icalEntries = listOf(IcalEntry.getSampleIcalEntry(), IcalEntry.getSampleIcalEntry())
     )
 

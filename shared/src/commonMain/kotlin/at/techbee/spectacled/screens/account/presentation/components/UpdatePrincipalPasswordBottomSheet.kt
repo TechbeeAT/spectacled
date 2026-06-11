@@ -61,6 +61,7 @@ fun UpdatePrincipalPasswordBottomSheet(
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
         sheetState = sheetState,
+        gesturesEnabled = false,
         showLoadingIndicator = processingState is ProcessingState.Processing,
         menuAction = {
             TextButton(

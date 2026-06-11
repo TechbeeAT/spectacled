@@ -166,6 +166,11 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
         icalEntry.categories.let { lines += "${KnownIcsPropertyName.CATEGORIES.propertyName}:${it.joinToString(",")}" }
     icalEntry.sequence?.let { lines += "${KnownIcsPropertyName.SEQUENCE.propertyName}:${it}" }
 
+    icalEntry.parentUid?.let { parentUid ->
+        val relTypePart = icalEntry.relType?.let { ";RELTYPE=$it" } ?: ""
+        lines += "${KnownIcsPropertyName.RELATED_TO.propertyName}$relTypePart:${escapeIcsValue(parentUid)}"
+    }
+
     icalEntry.extraProperties.forEach {
         lines += it.unfoldedLine
     }

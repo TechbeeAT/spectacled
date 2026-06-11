@@ -15,6 +15,8 @@ sealed interface DetailsAction {
     data class OnUpdateDtStart(val icsDateTime: IcsDateTime?): DetailsAction
     data class OnUpdateDue(val icsDateTime: IcsDateTime?): DetailsAction
     data class OnUpdateProgress(val percent: Long): DetailsAction
+    data class OnUpdateSubtaskProgress(val percent: Long, val subtaskIcalEntryId: Long): DetailsAction
+    data class OnAddSubtask(val summary: String): DetailsAction
 
     data class OnSyncConflictUpdateUserDecision(val syncState: SyncState): DetailsAction
 
@@ -24,6 +26,10 @@ sealed interface DetailsAction {
     data class OnShowCategorySelectorBottomSheet(val show: Boolean): DetailsAction
     data class OnShowJournalStatusPickerBottomSheet(val show: Boolean): DetailsAction
     data class OnShowTaskStatusProgressPickerBottomSheet(val show: Boolean): DetailsAction
+    data class OnShowAddSubtaskBottomSheet(val show: Boolean): DetailsAction
+    data class OnPersistOrderNo(val list: List<Long>): DetailsAction
+
+    data class OnNavigateToIcalEntryId(val id: Long?): DetailsAction
 
     object OnDelete: DetailsAction
     object OnCreateCopy: DetailsAction

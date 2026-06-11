@@ -184,6 +184,9 @@ fun parseIcalEntryBlock(lines: List<String>, calendarComponent: CalendarComponen
     val priority = knownProps[KnownIcsPropertyName.PRIORITY.propertyName]?.value?.toLongOrNull()
     val percentComplete = knownProps[KnownIcsPropertyName.PERCENT_COMPLETE.propertyName]?.value?.toLongOrNull() ?: 0
 
+    val parentUid = knownProps[KnownIcsPropertyName.RELATED_TO.propertyName]?.value
+    val relType = knownProps[KnownIcsPropertyName.RELATED_TO.propertyName]?.params?.get(KnownIcsParamName.RELTYPE.paramName) ?: if(parentUid != null) "PARENT" else null
+
     return IcalEntry(
         uid = uid,
         summary = knownProps[KnownIcsPropertyName.SUMMARY.propertyName]?.value,
@@ -203,7 +206,9 @@ fun parseIcalEntryBlock(lines: List<String>, calendarComponent: CalendarComponen
         lastModified = lastModified,
         extraProperties = extraProps,
         syncState = SyncState.SYNCED,
-        calendarComponent = calendarComponent
+        calendarComponent = calendarComponent,
+        parentUid = parentUid,
+        relType = relType
     )
 }
 

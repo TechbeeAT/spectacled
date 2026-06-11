@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.data.webdav
 
 import androidx.compose.ui.graphics.Color
+import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
@@ -12,6 +13,7 @@ import at.techbee.spectacled.screens.core.mapper.ics.parseIcalEntries
 import at.techbee.spectacled.screens.core.mapper.ics.serializeVCalendar
 import io.ktor.client.HttpClient
 import io.ktor.client.request.accept
+import io.ktor.client.request.basicAuth
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.put
@@ -37,14 +39,10 @@ import nl.adaptivity.xmlutil.xmlStreaming
 import kotlin.uuid.ExperimentalUuidApi
 
 
-//expect suspend fun getCalDavCalendarsDavX5(client: HttpClient, location: Url): List<Principal>
-
-//expect suspend fun getCalendarEntriesDavX5(client: HttpClient, calendar: Calendar): List<Note>
-
-
 suspend fun discoverPrincipalsMultiplatform(
     client: HttpClient,
-    location: Url
+    location: Url,
+    credentials: Credentials?
 ): DiscoverPrincipalsResult {
 
     val principals = mutableSetOf<Principal>()
@@ -57,6 +55,9 @@ suspend fun discoverPrincipalsMultiplatform(
     val xmlString = calDavXml.encodeToString(propfindRequest)
 
     client.request(location) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
@@ -81,6 +82,13 @@ suspend fun discoverPrincipalsMultiplatform(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
             //print("Parsed response: $multistatusResponse")
+
+            val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
+            when {
+                allResponseCodes.all { responseCode -> responseCode == "HTTP/1.1 403 Forbidden" } -> return DiscoverPrincipalsResult.NotAuthorized
+                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverPrincipalsResult.Failed(response.status, "Principal couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
+            }
+
 
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
@@ -112,7 +120,11 @@ suspend fun discoverPrincipalsMultiplatform(
 
 
 
-suspend fun discoverHomeCollections(client: HttpClient, principal: Principal): DiscoverHomeCollectionsResult {
+suspend fun discoverHomeCollections(
+    client: HttpClient,
+    principal: Principal,
+    credentials: Credentials?
+): DiscoverHomeCollectionsResult {
 
     val homeCollections = mutableSetOf<HomeCollection>()
     var principalDisplayName: String? = null
@@ -128,6 +140,9 @@ suspend fun discoverHomeCollections(client: HttpClient, principal: Principal): D
     val xmlString = calDavXml.encodeToString(propfindRequest)
 
     client.request(principal.principalUrl) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
@@ -153,6 +168,12 @@ suspend fun discoverHomeCollections(client: HttpClient, principal: Principal): D
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(responseBody)
             )
             //print("Parsed response: $multistatusResponse")
+
+            val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
+            when {
+                allResponseCodes.all { responseCode -> responseCode == "HTTP/1.1 403 Forbidden" } -> return DiscoverHomeCollectionsResult.NotAuthorized
+                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverHomeCollectionsResult.Failed(response.status, "Home Collection couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
+            }
 
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
@@ -195,7 +216,8 @@ suspend fun discoverHomeCollections(client: HttpClient, principal: Principal): D
 suspend fun discoverCalendars(
     client: HttpClient,
     homeCollection: HomeCollection,
-    supportedCalendarComponent: CalendarComponent
+    supportedCalendarComponent: CalendarComponent,
+    credentials: Credentials?
 ): DiscoverCalendarsResult {
 
     val calendars = mutableListOf<Calendar>()
@@ -217,6 +239,9 @@ suspend fun discoverCalendars(
     val xmlString = calDavXml.encodeToString(propfindRequest)
 
     client.request(homeCollection.url) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         headers.append(HttpHeaders.Depth, "1")
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
@@ -245,6 +270,12 @@ suspend fun discoverCalendars(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
             print("Parsed response: $multistatusResponse")
+
+            val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
+            when {
+                allResponseCodes.all { responseCode -> responseCode == "HTTP/1.1 403 Forbidden" } -> return DiscoverCalendarsResult.NotAuthorized
+                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverCalendarsResult.Failed(response.status, "Calendars couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
+            }
 
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
@@ -309,7 +340,8 @@ suspend fun discoverCalendars(
 
 suspend fun multigetResourceHrefsMultiplatform(
     client: HttpClient,
-    calendar: Calendar
+    calendar: Calendar,
+    credentials: Credentials?
 ): MultigetResourceHrefETagResult {
 
     if(calendar.syncComponent?.name == null)
@@ -326,6 +358,9 @@ suspend fun multigetResourceHrefsMultiplatform(
     val xmlString = calDavXml.encodeToString(calendarQuery)
 
     client.request(calendar.url) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         headers.append(HttpHeaders.Depth, "1")
         method = HttpMethod.parse("REPORT")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
@@ -370,13 +405,17 @@ suspend fun multigetResourceHrefsMultiplatform(
 
 suspend fun syncCollectionMultiplatform(
     client: HttpClient,
-    calendar: Calendar
+    calendar: Calendar,
+    credentials: Credentials?
 ): MultigetSyncCollectionResult {
 
     val syncCollection = SyncCollection(syncToken = calendar.syncToken ?: "")
     val xmlString = calDavXml.encodeToString(syncCollection)
 
     client.request(calendar.url) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         headers.append(HttpHeaders.Depth, "1")
         method = HttpMethod.parse("REPORT")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
@@ -417,7 +456,8 @@ suspend fun syncCollectionMultiplatform(
 suspend fun fetchSingleEntryMultiplatform(
     client: HttpClient,
     calendar: Calendar,
-    href: Url
+    href: Url,
+    credentials: Credentials?
 ): MultigetResourceResult {
 
     // 1. Define the properties to fetch for the multiget request.
@@ -437,6 +477,9 @@ suspend fun fetchSingleEntryMultiplatform(
     val xmlBody = calDavXml.encodeToString(calendarMultigetRequest)
 
     client.request(calendar.url) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         method = HttpMethod.parse("REPORT")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
         setBody(xmlBody)
@@ -481,7 +524,8 @@ suspend fun fetchSingleEntryMultiplatform(
 @OptIn(ExperimentalUuidApi::class)
 suspend fun createCalendarMultiplatform(
     client: HttpClient,
-    newCalendar: Calendar
+    newCalendar: Calendar,
+    credentials: Credentials?
 ): UpsertCalendarResult {
     if(newCalendar.syncComponent == null)
         return UpsertCalendarResult.Failed(HttpStatusCode.Forbidden, "syncComponent not provided")
@@ -506,6 +550,9 @@ suspend fun createCalendarMultiplatform(
     val xmlString = calDavXml.encodeToString(mkColRequest)
 
     client.request(newCalendar.url.toString().trimEnd('/')+"/") {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         //headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("MKCOL")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
@@ -547,6 +594,9 @@ suspend fun createCalendarMultiplatform(
     val xmlString2 = calDavXml.encodeToString(propfindRequest)
 
     client.request(newCalendar.url) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
@@ -619,7 +669,8 @@ suspend fun createCalendarMultiplatform(
 @OptIn(ExperimentalUuidApi::class)
 suspend fun updateCalDavCalendarMultiplatform(
     client: HttpClient,
-    calendar: Calendar
+    calendar: Calendar,
+    credentials: Credentials?
 ): UpsertCalendarResult {
 
     val propertyupdateRequest = CalendarPropertyupdate(
@@ -641,6 +692,9 @@ suspend fun updateCalDavCalendarMultiplatform(
     val xmlString = calDavXml.encodeToString(propertyupdateRequest)
 
     client.request(calendar.url.toString().trimEnd('/')+"/") {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         method = HttpMethod.parse("PROPPATCH")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
         accept(ContentType.Application.Xml)
@@ -674,6 +728,9 @@ suspend fun updateCalDavCalendarMultiplatform(
     val xmlString2 = calDavXml.encodeToString(propfindRequest)
 
     client.request(calendar.url) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
@@ -723,10 +780,14 @@ suspend fun updateCalDavCalendarMultiplatform(
 @OptIn(ExperimentalUuidApi::class)
 suspend fun deleteCalendarMultiplatform(
     client: HttpClient,
-    calendar: Calendar
+    calendar: Calendar,
+    credentials: Credentials?
 ): DeleteCalendarResult {
 
     client.request(calendar.url.toString().trimEnd('/')+"/") {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         //headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.Delete
         accept(ContentType.Application.Xml)
@@ -752,12 +813,16 @@ suspend fun deleteCalendarMultiplatform(
 suspend fun putResourceMultiplatform(
     client: HttpClient,
     calendar: Calendar,
-    icalEntry: IcalEntry
+    icalEntry: IcalEntry,
+    credentials: Credentials?
 ): PutResourceResult {
 
     val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
 
     client.put(href) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
         setBody(serializeVCalendar(icalEntry))
         headers.apply {
@@ -789,12 +854,16 @@ suspend fun putResourceMultiplatform(
 suspend fun deleteResourceMultiplatform(
     client: HttpClient,
     calendar: Calendar,
-    icalEntry: IcalEntry
+    icalEntry: IcalEntry,
+    credentials: Credentials?
 ): DeleteResourceResult {
 
     val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
 
     client.delete(href) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
         headers.append(HttpHeaders.IfMatch, icalEntry.etag?:"*")
     }.let { response ->
@@ -812,12 +881,16 @@ suspend fun deleteResourceMultiplatform(
 suspend fun getResourceMultiplatform(
     client: HttpClient,
     calendar: Calendar,
-    icalEntry: IcalEntry
+    icalEntry: IcalEntry,
+    credentials: Credentials?
 ): GetResourceResult {
 
     val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
 
     client.get(href) {
+        if (credentials != null) {
+            basicAuth(credentials.username, credentials.password)
+        }
         headers.append(HttpHeaders.IfNoneMatch, icalEntry.etag?:"*")
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
     }.let { response ->

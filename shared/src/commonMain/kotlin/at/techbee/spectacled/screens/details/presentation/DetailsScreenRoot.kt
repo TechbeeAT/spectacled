@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.AddTask
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Restore
@@ -36,12 +37,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.techbee.spectacled.screens.Route
+import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
@@ -57,6 +61,7 @@ import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.restore
+import spectacled.shared.generated.resources.subtask
 import kotlin.time.ExperimentalTime
 
 
@@ -64,6 +69,7 @@ import kotlin.time.ExperimentalTime
 @Composable
 fun DetailsScreenRoot(
     detailsViewModel: DetailsViewModel,
+    onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit
 ) {
     val detailsState = detailsViewModel.state
@@ -83,6 +89,13 @@ fun DetailsScreenRoot(
             if (detailsState.navigateUp) {
                 onNavigateUp()
                 detailsViewModel.onAction(DetailsAction.OnNavigateUp(false))
+            }
+        }
+
+        LaunchedEffect(detailsState.navigateToIcalEntryId) {
+            if (detailsState.navigateToIcalEntryId != null) {
+                onNavigate(IcalEntryDetails(detailsState.navigateToIcalEntryId))
+                detailsViewModel.onAction(DetailsAction.OnNavigateToIcalEntryId(null))
             }
         }
 
@@ -152,6 +165,15 @@ fun DetailsScreenRoot(
                 },
                 onDismiss = {
                     detailsViewModel.showDeleteDialog(false)
+                }
+            )
+        }
+
+        if (detailsState.showAddSubtaskBottomSheet) {
+            AddSubtaskBottomSheet(
+                onSubtaskAdded = { detailsViewModel.onAction(DetailsAction.OnAddSubtask(it)) },
+                onDismiss = {
+                    detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(false))
                 }
             )
         }
@@ -240,6 +262,16 @@ fun DetailsScreenRoot(
                         }
                     }
 
+                    if (detailsState.icalEntry.isTask()) {
+
+                        TextButton(
+                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
+                            enabled = detailsState.allowEditing() && !detailsState.isLoading
+                        ) {
+                            Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask))
+                        }
+                    }
+
                     Spacer(modifier = Modifier.weight(1f))
 
                     TextButton(
@@ -303,6 +335,7 @@ fun DetailsScreenRoot(
 private fun ListScreenRoot_Preview() {
     DetailsScreenRoot(
         detailsViewModel = koinViewModel<DetailsViewModel>(),
+        onNavigate = {},
         onNavigateUp = {}
     )
 }

@@ -22,6 +22,7 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import kotlinx.coroutines.launch
@@ -115,7 +116,7 @@ class ListViewModel(
                 updateList()
                 dragAndDropList.apply {
                     clear()
-                    addAll(emittedIcalEntries.filter { emitted -> !emitted.syncState.isDeletedState() })
+                    addAll(_state.value.displayMap.flatMap { it.value })
                     sortBy { icalEntry -> icalEntry.orderNo }
                 }
             }
@@ -152,16 +153,13 @@ class ListViewModel(
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     fun onAction(action: ListAction) {
         when(action) {
-            is ListAction.OnSearchQueryChanged -> {
-                updateList(state.listSortedBy, state.listSortedByAscending, action.query, state.searchCategory)
-            }
-            is ListAction.OnCategoryFilterChanged -> {
-                updateList(state.listSortedBy, state.listSortedByAscending, state.searchQuery, action.category)
+            is ListAction.OnListFilterCriteriaChanged -> {
+                updateList(state.listSortedBy, state.listSortedByAscending, action.listFilterCriteria)
             }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(state.calendar.id))
             is ListAction.OnIcalEntryClicked -> {  _state.value = _state.value.copy(navigateToIcalEntryId = action.id) }
             is ListAction.OnSortedByChanged -> {
-                updateList(action.listSortedBy, action.listSortedByAscending, _state.value.searchQuery, _state.value.searchCategory)
+                updateList(action.listSortedBy, action.listSortedByAscending, _state.value.listFilterCriteria)
                 userAppPreferencesStore.listSortedBy = action.listSortedBy
                 userAppPreferencesStore.listSortedByAscending = action.listSortedByAscending
             }
@@ -171,8 +169,11 @@ class ListViewModel(
             }
             is ListAction.OnSearchBarExpanded -> {
                 _state.value = _state.value.copy(
-                    searchQuery = if(action.isExpanded) "" else null,
-                    searchCategory = if(action.isExpanded) "" else null
+                    listFilterCriteria = _state.value.listFilterCriteria.copy(
+                        searchQuery = if(action.isExpanded) "" else null,
+                        searchCategory = if(action.isExpanded) "" else null,
+                        filterStatus = if(action.isExpanded) _state.value.listFilterCriteria.filterStatus else null,
+                    )
                 )
             }
             is ListAction.OnNavigateUp -> {
@@ -260,17 +261,15 @@ class ListViewModel(
     private fun updateList() = updateList(
         _state.value.listSortedBy,
         _state.value.listSortedByAscending,
-        _state.value.searchQuery,
-        _state.value.searchCategory
+        _state.value.listFilterCriteria
     )
     @OptIn(ExperimentalTime::class)
-    private fun updateList(listSortedBy: ListSortedBy, listSortedByAscending: Boolean, searchQuery: String?, searchCategory: String?) {
+    private fun updateList(listSortedBy: ListSortedBy, listSortedByAscending: Boolean, listFilterCriteria: ListFilterCriteria) {
 
         _state.value = _state.value.copy(
             listSortedBy = listSortedBy,
             listSortedByAscending = listSortedByAscending,
-            searchQuery = searchQuery,
-            searchCategory = searchCategory,
+            listFilterCriteria = listFilterCriteria,
             isRefreshing = false
         )
     }

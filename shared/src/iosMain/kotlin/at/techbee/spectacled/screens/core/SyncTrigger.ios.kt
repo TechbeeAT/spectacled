@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.core
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import io.github.aakira.napier.Napier
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,6 +44,7 @@ object IOSSyncEntryPoint : KoinComponent {
 
     private val credentialStore: PlatformCredentialStore by inject()
     private val databaseDriverFactory: DatabaseDriverFactory by inject()
+    private val client: HttpClient by inject()
     private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun runBackgroundSync(onFinished: () -> Unit) {
@@ -50,7 +52,7 @@ object IOSSyncEntryPoint : KoinComponent {
             val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
             try {
                 Napier.d("BG Sync coroutine started")
-                SyncCoordinator.syncAllPrincipals(database, credentialStore)
+                SyncCoordinator.syncAllPrincipals(database, credentialStore, client)
                 Napier.d("BG Sync coroutine finished")
             } finally {
                 onFinished()
@@ -63,7 +65,7 @@ object IOSSyncEntryPoint : KoinComponent {
             val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
             try {
                 Napier.d("BG Sync for specific calendars coroutine started")
-                SyncCoordinator.syncSpecificCalendars(calendarIds, database, credentialStore)
+                SyncCoordinator.syncSpecificCalendars(calendarIds, database, credentialStore, client)
                 Napier.d("BG Sync for specific calendars coroutine finished")
             } finally {
                 onFinished()
@@ -76,7 +78,7 @@ object IOSSyncEntryPoint : KoinComponent {
             val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
             try {
                 Napier.d("BG Push for specific calendar coroutine started")
-                SyncCoordinator.pushLocalChanges(calendarId, database, credentialStore)
+                SyncCoordinator.pushLocalChanges(calendarId, database, credentialStore, client)
                 Napier.d("BG Push for specific calendar coroutine finished")
             } finally {
                 onFinished()

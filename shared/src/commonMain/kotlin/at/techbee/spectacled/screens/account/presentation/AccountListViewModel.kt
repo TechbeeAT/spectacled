@@ -15,10 +15,8 @@ import at.techbee.spectacled.screens.account.data.upsertPrincipal
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.Credentials
-import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
-import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.webdav.DeleteCalendarResult
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverCalendarsResult
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverHomeCollectionsResult
@@ -38,8 +36,12 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import io.github.aakira.napier.Napier
+import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.login_message_forbidden
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
@@ -49,6 +51,7 @@ class AccountListViewModel(
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
+    private val client: HttpClient,
     val spectacledVariant: SpectacledVariant,
     val userAppPreferencesStore: PlatformUserAppPreferencesStore
     ): ViewModel() {
@@ -151,9 +154,8 @@ class AccountListViewModel(
 
             try {
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
-                val client = HttpClientFactory.create(getPlatformEngine(), credentials.username, credentials.password)
 
-                deleteCalendarMultiplatform(client, calendar).let { remoteResult ->
+                deleteCalendarMultiplatform(client, calendar, credentials).let { remoteResult ->
 
                     when (remoteResult) {
                         is DeleteCalendarResult.SuccessfullyDeleted, is DeleteCalendarResult.AlreadyDeleted -> {
@@ -261,17 +263,16 @@ class AccountListViewModel(
 
         viewModelScope.launch {
             try {
-                val client = HttpClientFactory.create(getPlatformEngine(), credentials.username, credentials.password)
 
                 // STEP 1: Discover principals
-                val discoverPrincipalsResult = discoverPrincipalsMultiplatform(client, Url(credentials.server))
+                val discoverPrincipalsResult = discoverPrincipalsMultiplatform(client, Url(credentials.server), credentials)
                 when(discoverPrincipalsResult) {
                     is DiscoverPrincipalsResult.Failed -> {
                         _state.value = _state.value.copy(processingState = ProcessingState.Error(message = discoverPrincipalsResult.message, detail = discoverPrincipalsResult.details))
                         return@launch
                     }
                     DiscoverPrincipalsResult.NotAuthorized -> {
-                        _state.value = _state.value.copy(processingState = ProcessingState.Error(message = "Not authorized. Please check your username and password."))
+                        _state.value = _state.value.copy(processingState = ProcessingState.Error(message = getString(Res.string.login_message_forbidden)))
                         return@launch
                     }
                     DiscoverPrincipalsResult.NotFound -> {
@@ -292,7 +293,7 @@ class AccountListViewModel(
                 val discoveredCalendars = mutableListOf<Calendar>()
                 discoverPrincipalsResult.principals.forEach { principal ->
 
-                    when(val discoverHomeCollectionsResult = discoverHomeCollections(client, principal)) {
+                    when(val discoverHomeCollectionsResult = discoverHomeCollections(client, principal, credentials)) {
                         is DiscoverHomeCollectionsResult.Failed -> {
                             _state.value = _state.value.copy(
                                 processingState = ProcessingState.Error(
@@ -326,7 +327,8 @@ class AccountListViewModel(
                         when(val discoverCalendarsResult = discoverCalendars(
                             client = client,
                             homeCollection = homeCollection,
-                            supportedCalendarComponent = spectacledVariant.syncCalendarComponent
+                            supportedCalendarComponent = spectacledVariant.syncCalendarComponent,
+                            credentials = credentials
                         )) {
                             is DiscoverCalendarsResult.Failed -> {
                                 _state.value = _state.value.copy(
@@ -399,14 +401,14 @@ class AccountListViewModel(
 
             try {
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
-                val client = HttpClientFactory.create(getPlatformEngine(), credentials.username, credentials.password)
                 val upsertCalendarResult = if(calendar.id == 0L) {
                     createCalendarMultiplatform(
                         client = client,
-                        newCalendar = calendar.copy(syncComponent = spectacledVariant.syncCalendarComponent)
+                        newCalendar = calendar.copy(syncComponent = spectacledVariant.syncCalendarComponent),
+                        credentials = credentials
                     )
                 } else {
-                    updateCalDavCalendarMultiplatform(client, calendar)
+                    updateCalDavCalendarMultiplatform(client, calendar, credentials)
                 }
 
                 when(upsertCalendarResult) {

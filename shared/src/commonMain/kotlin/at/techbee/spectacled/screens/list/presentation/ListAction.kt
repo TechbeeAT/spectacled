@@ -2,12 +2,12 @@ package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 
 sealed interface ListAction {
-    data class OnSearchQueryChanged(val query: String): ListAction
-    data class OnCategoryFilterChanged(val category: String): ListAction
+    data class OnListFilterCriteriaChanged(val listFilterCriteria: ListFilterCriteria): ListAction
     data class OnIcalEntryClicked(val id: Long?): ListAction
     data class OnSortedByChanged(val listSortedBy: ListSortedBy, val listSortedByAscending: Boolean): ListAction
     data class OnViewModeChanged(val listLayout: ListLayout): ListAction

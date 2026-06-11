@@ -6,8 +6,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.account.data.insertOrUpdateIcalEntry
 import at.techbee.spectacled.screens.core.data.CredentialStore
-import at.techbee.spectacled.screens.core.data.HttpClientFactory
-import at.techbee.spectacled.screens.core.data.getPlatformEngine
+import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.DeleteResourceResult
 import at.techbee.spectacled.screens.core.data.webdav.GetResourceResult
@@ -45,7 +44,8 @@ import kotlin.time.ExperimentalTime
 
 class SyncCoordinator(
     val database: SpectacledDatabase,
-    val client: HttpClient
+    val client: HttpClient,
+    val credentials: Credentials?
 ) {
 
     companion object {
@@ -53,29 +53,25 @@ class SyncCoordinator(
         @OptIn(ExperimentalTime::class)
         suspend fun syncAllPrincipals(
             database: SpectacledDatabase,
-            credentialStore: CredentialStore
+            credentialStore: CredentialStore,
+            client: HttpClient
         ) {
             database.principal_dtoQueries.getAllPrincipals().awaitAsList().map { it.toDomain() }.forEach { principal ->
                 val credentials = credentialStore.load(principal.principalUrl)
-                val client = HttpClientFactory.create(getPlatformEngine(), credentials?.username, credentials?.password)
-                try {
-                    database.calendar_dtoQueries
-                        .getCalendarsForPrincipalUrl(principal.principalUrl.toString())
-                        .awaitAsList()
-                        .map { it.toDomain() }
-                        .let { calendars ->
-                            coroutineScope {
-                                calendars.forEach { calendar ->
-                                    if(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
-                                        return@forEach  // skip disabled calendars
+                database.calendar_dtoQueries
+                    .getCalendarsForPrincipalUrl(principal.principalUrl.toString())
+                    .awaitAsList()
+                    .map { it.toDomain() }
+                    .let { calendars ->
+                        coroutineScope {
+                            calendars.forEach { calendar ->
+                                if (calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
+                                    return@forEach  // skip disabled calendars
 
-                                    launch { SyncCoordinator(database, client).syncCalendar(calendar) }
-                                }
+                                launch { SyncCoordinator(database, client, credentials).syncCalendar(calendar) }
                             }
                         }
-                } finally {
-                    client.close()
-                }
+                    }
             }
 
             // empty trashbin for items older than 30 days
@@ -86,7 +82,8 @@ class SyncCoordinator(
         suspend fun syncSpecificCalendars(
             calendarIds: List<Long>,
             database: SpectacledDatabase,
-            credentialStore: CredentialStore
+            credentialStore: CredentialStore,
+            client: HttpClient
         ) {
             val calendars = database.calendar_dtoQueries.getCalendarsByIds(calendarIds).awaitAsList().map { it.toDomain() }
 
@@ -95,12 +92,7 @@ class SyncCoordinator(
                     launch {
                         val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendar.id).awaitAsOne().toDomain()
                         val credentials = credentialStore.load(principal.principalUrl)
-                        val client = HttpClientFactory.create(getPlatformEngine(), credentials?.username, credentials?.password)
-                        try {
-                            SyncCoordinator(database, client).syncCalendar(calendar)
-                        } finally {
-                            client.close()
-                        }
+                        SyncCoordinator(database, client, credentials).syncCalendar(calendar)
                     }
                 }
             }
@@ -109,18 +101,14 @@ class SyncCoordinator(
         suspend fun pushLocalChanges(
             calendarId: Long,
             database: SpectacledDatabase,
-            credentialStore: CredentialStore
+            credentialStore: CredentialStore,
+            client: HttpClient
         ) {
             val calendar = database.calendar_dtoQueries.getCalendarById(calendarId).awaitAsOne().toDomain()
             val principal = database.principal_dtoQueries.getPrincipalForCalendar(calendar.id).awaitAsOne().toDomain()
             val credentials = credentialStore.load(principal.principalUrl)
-            val client = HttpClientFactory.create(getPlatformEngine(), credentials?.username, credentials?.password)
 
-            try {
-                SyncCoordinator(database, client).pushLocalChanges(calendar)
-            } finally {
-                client.close()
-            }
+            SyncCoordinator(database, client, credentials).pushLocalChanges(calendar)
         }
     }
 
@@ -153,7 +141,7 @@ class SyncCoordinator(
 
              */
 
-            val syncCollectionResponse = syncCollectionMultiplatform(client, calendar)
+            val syncCollectionResponse = syncCollectionMultiplatform(client, calendar, credentials)
             println(syncCollectionResponse)
             when (syncCollectionResponse) {
 
@@ -272,7 +260,7 @@ class SyncCoordinator(
     }
 
     private suspend fun syncWithoutSyncToken(calendar: Calendar) {
-        when (val multigetResourceHrefsMultiplatformResult = multigetResourceHrefsMultiplatform(client, calendar)) {
+        when (val multigetResourceHrefsMultiplatformResult = multigetResourceHrefsMultiplatform(client, calendar, credentials)) {
 
             is MultigetResourceHrefETagResult.Failed -> {
                 database.calendar_dtoQueries.updateCalendarSyncStatus(
@@ -345,7 +333,7 @@ class SyncCoordinator(
         if (localIcalEntry?.href != null && localIcalEntry.etag == eTag)
             return    // no eTag change, we skip
 
-        val serverIcalEntry = when (val fetchSingleResult = fetchSingleEntryMultiplatform(client, calendar, href)) {
+        val serverIcalEntry = when (val fetchSingleResult = fetchSingleEntryMultiplatform(client, calendar, href, credentials)) {
             is MultigetResourceResult.Failed -> return   // skip failed entries
             MultigetResourceResult.NotAuthorized -> return   // skip failed entries
             MultigetResourceResult.NotFound -> return   // skip failed entries
@@ -456,11 +444,11 @@ class SyncCoordinator(
             SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED -> Unit // do nothing, conflicts need to be resolved by user
 
             SyncState.LOCAL_MODIFIED -> {
-                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
                 when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
-                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
                         when (conflictingServerIcalEntryResult) {
 
                             is GetResourceResult.Failed -> Unit   // failed will be kept for another retry TODO: Review if this is sufficient in future
@@ -492,11 +480,11 @@ class SyncCoordinator(
 
             // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_CLIENT_WINS -> {
-                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
                 when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
-                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
                         when (conflictingServerIcalEntryResult) {
 
                             // failed will be kept for another retry TODO: Review if this is sufficient in future
@@ -542,7 +530,7 @@ class SyncCoordinator(
 
             // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_SERVER_WINS -> {   //TODO!!
-                val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
                 when (conflictingServerIcalEntryResult) {
 
                     // failed will be kept for another retry TODO: Review if this is sufficient in future
@@ -565,7 +553,7 @@ class SyncCoordinator(
             }
 
             SyncState.LOCAL_DELETED -> {
-                val deleteResourceResult = deleteResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                val deleteResourceResult = deleteResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
                 when (deleteResourceResult) {
 
                     // The entry was already deleted or successfully deleted on the server. We delete it locally.
@@ -575,7 +563,7 @@ class SyncCoordinator(
                     // There was a conflict, the resourcew as changed on the server, we discard the local delete and update the entry instead
                     // TODO: Review in future
                     DeleteResourceResult.Conflict -> {
-                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry)
+                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
                         when (conflictingServerIcalEntryResult) {
 
                             // failed will be kept for another retry TODO: Review if this is sufficient in future

@@ -70,6 +70,7 @@ fun SettingsBottomSheet(
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
         sheetState = sheetState,
+        gesturesEnabled = false,
         menuAction = { }
     ) {
         Column(
@@ -137,7 +138,7 @@ fun SettingsBottomSheet(
                 )
             }
 
-            AnimatedVisibility(!themeDynamicColorsEnabledBoolean && themeOption != ThemeOption.LIGHT) {
+            AnimatedVisibility(!themeDynamicColorsEnabledBoolean) {
                 AssistChip(
                     onClick = { themePaletteStyleDropdownExpanded = true },
                     label = {
@@ -172,7 +173,7 @@ fun SettingsBottomSheet(
                 )
             }
 
-            AnimatedVisibility(!themeDynamicColorsEnabledBoolean) {
+            AnimatedVisibility(!themeDynamicColorsEnabledBoolean && themeOption != ThemeOption.LIGHT) {
                 AssistChip(
                     onClick = { userAppPreferencesStore.themeAmoled = !themeAmoledBoolean },
                     label = {

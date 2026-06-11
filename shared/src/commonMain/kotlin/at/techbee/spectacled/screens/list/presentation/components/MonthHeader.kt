@@ -5,10 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,8 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformInstantFormatter
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import org.jetbrains.compose.resources.painterResource
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -42,9 +41,8 @@ fun MonthHeader(
     else
         monthName
 
-    Card(
+    ElevatedCard(
         shape = RectangleShape,
-        elevation = CardDefaults.elevatedCardElevation(4.dp),
         modifier = modifier
     ) {
         Box(
@@ -56,19 +54,20 @@ fun MonthHeader(
         ) {
 
             Icon(
-                imageVector = Icons.Outlined.CalendarMonth,
+                painter = painterResource(SpectacledVariant.JOURNALS.logoDrawableResource),
                 contentDescription = null,
                 modifier = Modifier
-                    .offset(x = (-32).dp, y = (4).dp)
+                    .offset(x = (-36).dp, y = (16).dp)
                     .rotate(20f)
                     .size(96.dp)
                     .alpha(0.2f),
-                tint = MaterialTheme.colorScheme.tertiary
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
             Text(
                 text = monthText,
                 style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),

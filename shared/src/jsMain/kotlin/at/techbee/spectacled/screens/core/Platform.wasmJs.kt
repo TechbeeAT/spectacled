@@ -8,8 +8,6 @@ class WasmPlatform: Platform {
 
 actual fun getPlatform(): Platform = WasmPlatform()
 
-
-
 // format datetime. Solution taken over from ChatGPT.
 @OptIn(ExperimentalWasmJsInterop::class)
 @JsFun("lang => new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeStyle: 'short' })")

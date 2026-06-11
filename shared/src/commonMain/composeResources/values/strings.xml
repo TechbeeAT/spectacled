@@ -86,6 +86,7 @@
     <string name="summary">Summary</string>
     <string name="description">Description</string>
     <string name="color">Color</string>
+    <string name="color_seed_info">The color is used as a seed color for the theme which might not exactly match your selection.</string>
     <string name="no_color">No color</string>
     <string name="recent_colors">Recent colors</string>
     <string name="more_colors">More colors</string>
@@ -112,6 +113,7 @@
     <string name="entry_copy">Copy</string>
     <string name="entry_successfully_saved">Entry successfully saved</string>
     <string name="entry_deleted">Entry deleted</string>
+    <string name="subtask">Subtask</string>
 
     <string name="sync_conflict_entry_modified_while_server_modified">This entry has been modified locally while it was modified on the server.</string>
     <string name="sync_conflict_entry_deleted_while_server_modified">This entry has been deleted locally while it was modified on the server.</string>
@@ -169,5 +171,7 @@
     <string name="status_needs_action">Needs actions</string>
     <string name="status_in_process">In process</string>
     <string name="status_completed">Completed</string>
+
+    <string name="login_message_forbidden">Not authorized. Please check your server, username and password.</string>
 
 </resources>
