@@ -2,12 +2,13 @@ package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
+import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
@@ -82,7 +83,7 @@ data class ListState(
             .let { getFilteredList(it) }
             .let { getPinnedFilteredList(it) }
             .let { getSortedList(it) }
-            .groupBy { PlatformInstantFormatter(it.dtStart ?: IcsDateTime.now()).formatLocalizedDate() }
+            .groupBy { (it.dtStart ?: IcsDateTime.now()).formatLocalized(IcsDateTimeFormat.DATE) }
 
     val displayMapByDtStartMonth: Map<String, List<IcalEntry>>
         get() = getBaseList(icalEntries)

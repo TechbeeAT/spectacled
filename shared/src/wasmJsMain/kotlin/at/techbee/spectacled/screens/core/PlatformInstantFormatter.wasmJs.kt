@@ -44,57 +44,37 @@ private external fun formatWithFormatter(formatter: JsAny, millis: Double): Stri
 private external fun getNavigatorLanguage(): String
 
 
+
+
 @OptIn(ExperimentalWasmJsInterop::class)
-actual class PlatformInstantFormatter actual constructor(
-    private val icsDateTime: IcsDateTime,
-    private val deviceZone: TimeZone
-) : InstantFormatter {
+private val formatterCache = mutableMapOf<String, JsAny>()
 
-    private val effectiveZone: TimeZone = icsDateTime.effectiveZone()
+@OptIn(ExperimentalWasmJsInterop::class)
+actual fun IcsDateTime.formatLocalized(icsDateTimeFormat: IcsDateTimeFormat): String {
 
-    private val timeZoneId: String =
-        when {
-            icsDateTime.isDateOnly -> "UTC"
-            else -> effectiveZone.id
+    val lang = getNavigatorLanguage()
+    val effectiveZone = this.effectiveZone()
+    val timeZoneId = if (this.isDateOnly) "UTC" else effectiveZone.id
+
+    val cacheKey = "$icsDateTimeFormat-$lang-$timeZoneId"
+
+    val formatter = formatterCache.getOrPut(cacheKey) {
+        when(icsDateTimeFormat) {
+            IcsDateTimeFormat.DATE_TIME -> createDateTimeFormatter(lang, timeZoneId)
+            IcsDateTimeFormat.DATE -> createDateFormatter(lang, timeZoneId)
+            IcsDateTimeFormat.TIME -> createTimeFormatter(lang, timeZoneId)
+            IcsDateTimeFormat.DAY_OF_WEEK_SHORT -> createDayOfWeekFormatter(lang, timeZoneId)
+            IcsDateTimeFormat.FULL_MONTH_NAME -> createMonthNameFormatter(lang, timeZoneId)
         }
-
-    private fun format(
-        formatterFactory: (String, String) -> JsAny
-    ): String {
-
-        val lang = getNavigatorLanguage()
-        val formatter = formatterFactory(lang, timeZoneId)
-
-        val millis = if (icsDateTime.isDateOnly) {
-
-            // Prevent day shift for all-day
-            val localDate = icsDateTime.instant
-                .toLocalDateTime(TimeZone.UTC)
-                .date
-
-            localDate
-                .atStartOfDayIn(effectiveZone)
-                .toEpochMilliseconds()
-
-        } else {
-            icsDateTime.instant.toEpochMilliseconds()
-        }
-
-        return formatWithFormatter(formatter, millis.toDouble())
     }
 
-    actual override fun formatLocalizedDateTime(): String =
-        format(::createDateTimeFormatter)
+    val millis = if (this.isDateOnly) {
+        this.instant.toLocalDateTime(TimeZone.UTC).date
+            .atStartOfDayIn(effectiveZone)
+            .toEpochMilliseconds()
+    } else {
+        this.instant.toEpochMilliseconds()
+    }
 
-    actual override fun formatLocalizedDate(): String =
-        format(::createDateFormatter)
-
-    actual override fun formatLocalizedTime(): String =
-        format(::createTimeFormatter)
-
-    actual override fun formatLocalizedDayOfWeekShort(): String =
-        format(::createDayOfWeekFormatter)
-
-    actual override fun formatFullMonthName(): String =
-        format(::createMonthNameFormatter)
+    return formatWithFormatter(formatter, millis.toDouble())
 }

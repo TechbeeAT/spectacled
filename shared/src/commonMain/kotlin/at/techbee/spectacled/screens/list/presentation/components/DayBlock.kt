@@ -10,8 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.formatLocalized
 
 @Composable
 fun DayBlock(
@@ -24,7 +25,7 @@ fun DayBlock(
         modifier = modifier.widthIn(max = 48.dp)
     ) {
         Text(
-            text = PlatformInstantFormatter(icsDateTime).formatLocalizedDayOfWeekShort(),
+            text = icsDateTime.formatLocalized(IcsDateTimeFormat.DAY_OF_WEEK_SHORT),
             style = MaterialTheme.typography.labelSmall
         )
         Text(

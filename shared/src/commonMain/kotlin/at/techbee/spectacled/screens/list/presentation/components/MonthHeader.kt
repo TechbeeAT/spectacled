@@ -21,8 +21,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.formatLocalized
 import org.jetbrains.compose.resources.painterResource
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -33,8 +34,7 @@ fun MonthHeader(
     modifier: Modifier = Modifier
 ) {
 
-    val formatter = PlatformInstantFormatter(icsDateTime)
-    val monthName = formatter.formatFullMonthName()
+    val monthName = icsDateTime.formatLocalized(IcsDateTimeFormat.FULL_MONTH_NAME)
 
     val monthText = if(icsDateTime.toLocalDateTime().year != IcsDateTime.now().toLocalDateTime().year)
         "$monthName ${icsDateTime.toLocalDateTime().year}"

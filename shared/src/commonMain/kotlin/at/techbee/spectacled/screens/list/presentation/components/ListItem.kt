@@ -34,10 +34,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.getThemeForSeedColor
@@ -156,7 +157,7 @@ fun ListItem(
                                     MetaInfoCard(
                                         icon = Icons.Outlined.Schedule,
                                         iconContentDescription = stringResource(Res.string.time),
-                                        text = PlatformInstantFormatter(it).formatLocalizedTime()
+                                        text = it.formatLocalized(IcsDateTimeFormat.TIME)
                                     )
                                 }
 

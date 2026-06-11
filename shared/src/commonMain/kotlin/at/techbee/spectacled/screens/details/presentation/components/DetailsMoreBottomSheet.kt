@@ -24,9 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
@@ -146,12 +147,12 @@ fun DetailsMoreBottomSheet(
             modifier = Modifier.padding(top = 24.dp, bottom = 8.dp, start = 16.dp, end = 16.dp).fillMaxWidth()
         ) {
             Text(
-                text = "${stringResource(Res.string.created)}: ${PlatformInstantFormatter(icalEntry.created).formatLocalizedDateTime()}",
+                text = "${stringResource(Res.string.created)}: ${icalEntry.created.formatLocalized(IcsDateTimeFormat.DATE_TIME) }",
                 style = MaterialTheme.typography.labelSmall,
                 color = LocalContentColor.current.copy(alpha = 0.5f)
             )
             Text(
-                text = "${stringResource(Res.string.last_modified)}: ${PlatformInstantFormatter(icalEntry.lastModified?:icalEntry.created).formatLocalizedDateTime()}",
+                text = "${stringResource(Res.string.last_modified)}: ${(icalEntry.lastModified?:icalEntry.created).formatLocalized(IcsDateTimeFormat.DATE_TIME)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = LocalContentColor.current.copy(alpha = 0.5f)
             )
