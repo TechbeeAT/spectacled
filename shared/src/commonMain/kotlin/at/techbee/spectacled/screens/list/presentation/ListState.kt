@@ -119,27 +119,32 @@ data class ListState(
 
 
     private fun getFilteredList(icalEntries: List<IcalEntry>): List<IcalEntry> {
+        val criteria = listFilterCriteria
 
-        return icalEntries
-            .filter {
-                if (listFilterCriteria.searchQuery.isNullOrBlank())
-                    true
-                else
-                    it.summary?.contains(listFilterCriteria.searchQuery, ignoreCase = true) == true
-                            || it.description?.contains(listFilterCriteria.searchQuery, ignoreCase = true) == true
-            }
-            .filter {
-                if (listFilterCriteria.searchCategory.isNullOrBlank())
-                    true
-                else
-                    it.categories.any { category -> category.equals(listFilterCriteria.searchCategory, ignoreCase = true) }
-            }
-            .filter {
-                if (listFilterCriteria.filterStatus == null)
-                    true
-                else
-                    it.status == listFilterCriteria.filterStatus
-            }
+        // Early exit if no filter is active
+        if (!criteria.anyFilterActive()) return icalEntries
+
+        val query = criteria.searchQuery
+        val category = criteria.searchCategory
+        val status = criteria.filterStatus
+
+        return icalEntries.filter { item ->
+            // Single pass check for all conditions
+            val matchesQuery = query.isNullOrBlank() ||
+                    item.summary?.contains(query, ignoreCase = true) == true ||
+                    item.description?.contains(query, ignoreCase = true) == true
+
+            if (!matchesQuery) return@filter false
+
+            val matchesCategory = category.isNullOrBlank() ||
+                    item.categories.any { it.equals(category, ignoreCase = true) }
+
+            if (!matchesCategory) return@filter false
+
+            val matchesStatus = status == null || item.status == status
+
+            matchesStatus
+        }
     }
 
 
