@@ -4,11 +4,6 @@ import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BasicAuthCredentials
-import io.ktor.client.plugins.auth.providers.DigestAuthCredentials
-import io.ktor.client.plugins.auth.providers.basic
-import io.ktor.client.plugins.auth.providers.digest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
@@ -21,9 +16,7 @@ object HttpClientFactory {
 
     fun create(
         engine: HttpClientEngine,
-        username: String? = null,
-        password: String? = null,
-        jsonContentNegotiation: Boolean = false
+        jsonContentNegotiation: Boolean = true
     ): HttpClient {
         return HttpClient(engine) {
             install(Logging) {
@@ -39,28 +32,6 @@ object HttpClientFactory {
                 requestTimeoutMillis = 30_000
                 connectTimeoutMillis = 10_000
                 socketTimeoutMillis = 30_000
-            }
-
-            if (username != null && password != null) {
-                install(Auth) {
-                    basic {
-                        credentials {
-                            BasicAuthCredentials(
-                                username = username,
-                                password = password
-                            )
-                        }
-                        sendWithoutRequest { true }
-                    }
-                    digest {
-                        credentials {
-                            DigestAuthCredentials(
-                                username = username,
-                                password = password
-                            )
-                        }
-                    }
-                }
             }
 
             if (jsonContentNegotiation) {

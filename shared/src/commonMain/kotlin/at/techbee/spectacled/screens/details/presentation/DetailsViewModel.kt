@@ -19,9 +19,7 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
-import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
-import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
@@ -31,6 +29,7 @@ import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
 import io.github.aakira.napier.Napier
+import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -56,6 +55,7 @@ import kotlin.uuid.ExperimentalUuidApi
 class DetailsViewModel(
     private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
+    private val client: HttpClient,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
     private val spectacledVariant: SpectacledVariant
@@ -506,9 +506,8 @@ class DetailsViewModel(
                 )
 
                 val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
-                val client = HttpClientFactory.create(getPlatformEngine(), credentials.username, credentials.password)
 
-                SyncCoordinator(getDatabase(), client).pushDirtyIcalEntry(icalEntry, calendar)
+                SyncCoordinator(getDatabase(), client, credentials).pushDirtyIcalEntry(icalEntry, calendar)
                 val processedIcalEntry = getDatabase().icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).awaitAsOneOrNull()?.toDomain() ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )

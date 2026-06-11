@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.widget.SpectacledWidget
+import io.ktor.client.HttpClient
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.TimeUnit
@@ -69,6 +70,7 @@ actual class PlatformSyncTrigger(val context: Context) : SyncTrigger {
 class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params), KoinComponent {
     private val credentialStore: PlatformCredentialStore by inject()
     private val databaseDriverFactory: DatabaseDriverFactory by inject()
+    private val client: HttpClient by inject()
 
     override suspend fun doWork(): Result {
 
@@ -78,14 +80,15 @@ class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineW
 
         if (targetCalendarIds.isNullOrEmpty()) {
             // Default behavior: Sync everything
-            SyncCoordinator.syncAllPrincipals(database, credentialStore)
+            SyncCoordinator.syncAllPrincipals(database, credentialStore, client)
         } else if(pushOnly && targetCalendarIds.size == 1) {
-            SyncCoordinator.pushLocalChanges(targetCalendarIds.first(), database, credentialStore)
+            SyncCoordinator.pushLocalChanges(targetCalendarIds.first(), database, credentialStore, client)
         } else {
             SyncCoordinator.syncSpecificCalendars(
                 targetCalendarIds,
                 database,
-                credentialStore
+                credentialStore,
+                client
             )
         }
 
