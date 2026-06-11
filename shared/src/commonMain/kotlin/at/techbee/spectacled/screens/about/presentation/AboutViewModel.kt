@@ -7,14 +7,14 @@ import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.about.data.KtorRemoteGitHubContributorDataSource
 import at.techbee.spectacled.screens.about.data.KtorRemoteGitHubReleaseDataSource
+import at.techbee.spectacled.screens.core.data.HttpClientFactory
+import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import com.mikepenz.aboutlibraries.Libs
-import io.ktor.client.HttpClient
 import kotlinx.coroutines.launch
 import spectacled.shared.generated.resources.Res
 
 
 class AboutViewModel(
-    private val client: HttpClient,
     val spectacledVariant: SpectacledVariant,
 ): ViewModel() {
 
@@ -25,14 +25,19 @@ class AboutViewModel(
         viewModelScope.launch {
 
             launch {
-                KtorRemoteGitHubContributorDataSource(client).getContributors().let {
-                    _state.value = state.copy(gitHubContributors = it)
-                }
-            }
 
-            launch {
-                KtorRemoteGitHubReleaseDataSource(client).getReleases().let {
-                    _state.value = state.copy(gitHubReleases = it)
+                HttpClientFactory.create(
+                    getPlatformEngine(),
+                    true,
+                    null       // creating a separate client as proxy should never be used
+                ).use { client ->
+                    KtorRemoteGitHubContributorDataSource(client).getContributors().let {
+                        _state.value = state.copy(gitHubContributors = it)
+                    }
+
+                    KtorRemoteGitHubReleaseDataSource(client).getReleases().let {
+                        _state.value = state.copy(gitHubReleases = it)
+                    }
                 }
             }
 

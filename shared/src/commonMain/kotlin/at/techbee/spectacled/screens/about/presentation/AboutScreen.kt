@@ -15,8 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.data.HttpClientFactory
-import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -76,7 +74,6 @@ fun AboutScreen(
 private fun AboutScreen_Preview() {
     AboutScreen(
         AboutViewModel(
-            client = HttpClientFactory.create(getPlatformEngine()),
             spectacledVariant = SpectacledVariant.JOURNALS)
     )
 }
