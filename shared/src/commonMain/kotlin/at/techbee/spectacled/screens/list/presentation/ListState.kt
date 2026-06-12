@@ -14,6 +14,7 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListGroupi
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import io.ktor.http.Url
+import kotlinx.datetime.number
 
 data class ListState(
     val icalEntries: List<IcalEntry> = emptyList(),
@@ -94,7 +95,7 @@ data class ListState(
             displayMapByDtStartMonth = unpinnedList
                 .groupBy {
                     val dateTime = it.dtStart?.toLocalDateTime()
-                    if (dateTime != null) "${dateTime.year}-${dateTime.monthNumber}" else ""
+                    if (dateTime != null) "${dateTime.year}-${dateTime.month.number}" else ""
                 },
             trashbin = icalEntries
                 .filter { it.syncState.isDeletedState() }

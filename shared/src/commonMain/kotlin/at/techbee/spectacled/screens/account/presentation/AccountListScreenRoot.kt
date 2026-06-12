@@ -301,8 +301,7 @@ fun AccountListScreenRoot(
             SettingsBottomSheet(
                 sheetState = settingsBottomSheet,
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
-                onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) },
-                onAction = { }
+                onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) }
             )
         }
 

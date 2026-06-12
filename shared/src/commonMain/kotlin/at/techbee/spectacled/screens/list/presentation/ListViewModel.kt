@@ -185,7 +185,7 @@ class ListViewModel(
                 }
             }
             is ListAction.OnUpdateColorOfSelected -> { onUpdateColorOfSelectedItems(action.color) }
-            ListAction.OnSelectAllMultiselectItems -> { _state.update { it.copy(multiselectItems = it.displayMap.flatMap { it.value }.map { it.id }).recompute() } }
+            ListAction.OnSelectAllMultiselectItems -> { _state.update { it.copy(multiselectItems = it.displayMap.flatMap { map -> map.value }.map { icalEntry -> icalEntry.id }).recompute() } }
             is ListAction.OnDraggingIcalEntry -> { _state.update { it.copy(draggingIcalEntryId = action.icalEntryId).recompute() } }
             is ListAction.OnShowUpdateCategoryOfSelectedBottomSheet -> {
                 _state.update {

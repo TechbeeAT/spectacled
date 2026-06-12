@@ -172,7 +172,9 @@ class DetailsViewModel(
     private suspend fun observeTimezones() {
         icalEntryRepository.getLastUsedTimezones()
             .collect { timezones ->
-                _state.update { it.copy(latestUsedTimezones = timezones.map { TimeZone.of(it) }) }
+                _state.update { state ->
+                    state.copy(latestUsedTimezones = timezones.map { tz -> TimeZone.of(tz) })
+                }
             }
     }
 

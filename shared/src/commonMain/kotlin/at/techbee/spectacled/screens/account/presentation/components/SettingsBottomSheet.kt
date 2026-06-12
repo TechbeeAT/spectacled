@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.getPlatform
@@ -54,7 +53,6 @@ import spectacled.shared.generated.resources.theme_palette_style
 fun SettingsBottomSheet(
     sheetState: SheetState,
     userAppPreferencesStore: UserAppPreferencesStore,
-    onAction: (AccountListAction) -> Unit,
     onDismiss: () -> Unit,
 ) {
 
@@ -210,7 +208,6 @@ private fun SettingsBottomSheet_Preview() {
             override fun loadAsFlow(key: String): Flow<String?> { return flowOf(null ) }
             override fun remove(key: String) { }
         },
-        onAction = {},
         onDismiss = {}
     )
 }
