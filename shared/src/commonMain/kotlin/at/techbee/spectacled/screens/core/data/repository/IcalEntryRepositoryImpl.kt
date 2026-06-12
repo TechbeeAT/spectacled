@@ -33,7 +33,7 @@ class IcalEntryRepositoryImpl(
         emit(getDatabase())
     }
 
-    override fun getIcalEntriesByCalendar(calendarId: Long): Flow<List<IcalEntry>> {
+    override fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>> {
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).asFlow()
                 .map { query -> query.awaitAsList().map { it.toDomain() } }
@@ -58,6 +58,10 @@ class IcalEntryRepositoryImpl(
 
     override suspend fun getIcalEntriesByHrefs(hrefs: List<Url>): List<IcalEntry> {
         return getDatabase().icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs.map { it.toString() }).awaitAsList().map { it.toDomain() }
+    }
+
+    override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> {
+        return getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
     }
 
     override suspend fun getDeletedDeltaHrefs(

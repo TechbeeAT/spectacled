@@ -98,7 +98,7 @@ class ListViewModel(
     }
 
     private suspend fun observeIcalentries() {
-        icalEntryRepository.getIcalEntriesByCalendar(_state.value.calendar.id)
+        icalEntryRepository.getIcalEntriesByCalendarFlow(_state.value.calendar.id)
             .collect { emittedIcalEntries ->
                 _state.update { it.copy(
                     icalEntries = emittedIcalEntries,

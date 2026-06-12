@@ -9,8 +9,8 @@ import io.ktor.http.Url
 import kotlinx.coroutines.flow.Flow
 
 interface IcalEntryRepository {
-    fun getIcalEntriesByCalendar(calendarId: Long): Flow<List<IcalEntry>>
 
+    fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>>
     fun getAllColors(): Flow<List<Color>>
     fun getAllCategories(): Flow<List<String>>
     fun getLastUsedTimezones(): Flow<List<String>>
@@ -22,6 +22,7 @@ interface IcalEntryRepository {
     suspend fun getDirtyIcalEntriesByCalendar(calendarId: Long): List<IcalEntry>
     suspend fun getIcalEntriesByHrefs(hrefs: List<Url>): List<IcalEntry>
     suspend fun getDeletedDeltaHrefs(calendarId: Long, allServerHrefs: List<Url>): List<Url>
+    suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry>
     
     suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry)
     suspend fun markAsDeleted(ids: List<Long>)
