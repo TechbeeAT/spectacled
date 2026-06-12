@@ -4,8 +4,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.db.SpectacledDatabase
-import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.PlatformShareManager
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
@@ -50,7 +48,6 @@ import kotlin.uuid.ExperimentalUuidApi
 class DetailsViewModel(
     private val calendarRepository: CalendarRepository,
     private val icalEntryRepository: IcalEntryRepository,
-    private val databaseDriverFactory: DatabaseDriverFactory,
     private val credentialStore: PlatformCredentialStore,
     private val client: HttpClient,
     private val platformSyncTrigger: PlatformSyncTrigger,
@@ -60,8 +57,6 @@ class DetailsViewModel(
 
     private val _state = MutableStateFlow(DetailsState())
     val state = _state.asStateFlow()
-
-    private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
     init {
         viewModelScope.launch {
