@@ -27,7 +27,7 @@ interface IcalEntryRepository {
     suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry)
     suspend fun markAsDeleted(ids: List<Long>)
     suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState)
-    suspend fun updateOrderNo(id: Long, orderNo: Long)
+    suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>)
     suspend fun updateColor(id: Long, color: Color?, lastModified: IcsDateTime?, syncState: SyncState)
     suspend fun updateCategory(id: Long, categories: List<String>, lastModified: IcsDateTime?, syncState: SyncState)
     suspend fun deleteTrashed(cutoffDateTime: IcsDateTime)

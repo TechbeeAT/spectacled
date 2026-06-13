@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.data.repository
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
@@ -190,13 +191,17 @@ class IcalEntryRepositoryImpl(
         )
     }
 
-    override suspend fun updateOrderNo(id: Long, orderNo: Long) {
-        getDatabase().icalentry_dtoQueries.updateOrderNo(orderNo, id)
+    override suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>) {
+        getDatabase().icalentry_dtoQueries.transaction {
+            sortedIcalEntryIds.forEachIndexed { index, icalEntryId ->
+                getDatabase().icalentry_dtoQueries.updateOrderNo(orderNo = index.toLong(), id = icalEntryId)
+            }
+        }
     }
 
     override suspend fun updateColor(id: Long, color: Color?, lastModified: IcsDateTime?, syncState: SyncState) {
         getDatabase().icalentry_dtoQueries.updateColor(
-            newColor = color?.value?.toLong(),
+            newColor = color?.toArgb()?.toLong(),
             lastModified = lastModified?.let { formatIcsDateTime(it)?.first },
             syncState = syncState.name,
             id = id
@@ -205,7 +210,7 @@ class IcalEntryRepositoryImpl(
 
     override suspend fun updateCategory(id: Long, categories: List<String>, lastModified: IcsDateTime?, syncState: SyncState) {
         getDatabase().icalentry_dtoQueries.updateCategory(
-            newCategories = categories.joinToString(CATEGORY_SPLIT_DELIMITER),
+            newCategories = categories.joinToString(CATEGORY_SPLIT_DELIMITER).ifEmpty { null },
             lastModified = lastModified?.let { formatIcsDateTime(it)?.first },
             syncState = syncState.name,
             id = id

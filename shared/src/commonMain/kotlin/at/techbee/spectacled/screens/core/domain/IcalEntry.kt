@@ -133,6 +133,21 @@ data class IcalEntry(
 
     fun isPinned() = categories.any { category -> category == PINNED_CATEGORY}
 
+    fun withProgressUpdated(newPercent: Long): IcalEntry {
+
+        return this.copy(
+            percentComplete = newPercent,
+            status = when(newPercent) {
+                0L -> null
+                in 1L..99L -> Status.IN_PROCESS
+                100L -> Status.COMPLETED
+                else -> this.status
+            },
+            lastModified = IcsDateTime.now(),
+            syncState = if (this.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else this.syncState
+        )
+    }
+
     fun getProgressTriState() = when {
         percentComplete == 0L -> ToggleableState.Off
         percentComplete in 1L .. 99L -> ToggleableState.Indeterminate

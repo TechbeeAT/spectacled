@@ -257,10 +257,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     summary = newSummary,
                     lastModified = IcsDateTime.now(),
-                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                            SyncState.USER_DECIDED_CLIENT_WINS
-                        else
-                            SyncState.LOCAL_MODIFIED
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
                 )
             )
         }
@@ -273,10 +270,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     description = newDescription,
                     lastModified = IcsDateTime.now(),
-                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                        SyncState.USER_DECIDED_CLIENT_WINS
-                    else
-                        SyncState.LOCAL_MODIFIED
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
                 )
             )
         }
@@ -302,10 +296,7 @@ class DetailsViewModel(
                             categories
                     },
                     lastModified = IcsDateTime.now(),
-                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                        SyncState.USER_DECIDED_CLIENT_WINS
-                    else
-                        SyncState.LOCAL_MODIFIED
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
                 )
             )
         }
@@ -330,31 +321,7 @@ class DetailsViewModel(
                         }
                     } else 0,
                     lastModified = IcsDateTime.now(),
-                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                        SyncState.USER_DECIDED_CLIENT_WINS
-                    else
-                        SyncState.LOCAL_MODIFIED
-                )
-            )
-        }
-    }
-
-    private fun onUpdateTaskProgress(percent: Long) {
-        _state.update {
-            it.copy(
-                icalEntry = it.icalEntry.copy(
-                    status = when(percent) {
-                        0L -> if(it.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
-                        in 1L..99L -> Status.IN_PROCESS
-                        100L -> Status.COMPLETED
-                        else -> null
-                    },
-                    percentComplete = percent,
-                    lastModified = IcsDateTime.now(),
-                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                        SyncState.USER_DECIDED_CLIENT_WINS
-                    else
-                        SyncState.LOCAL_MODIFIED
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
                 )
             )
         }
@@ -368,10 +335,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     color = newColor,
                     lastModified = IcsDateTime.now(),
-                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                        SyncState.USER_DECIDED_CLIENT_WINS
-                    else
-                        SyncState.LOCAL_MODIFIED
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
                 )
             )
         }
@@ -399,10 +363,7 @@ class DetailsViewModel(
                     dtStart = newDtStart,
                     due = newDue,
                     lastModified = IcsDateTime.now(),
-                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                        SyncState.USER_DECIDED_CLIENT_WINS
-                    else
-                        SyncState.LOCAL_MODIFIED
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
                 )
             )
         }
@@ -427,10 +388,7 @@ class DetailsViewModel(
                     dtStart = newDtStart,
                     due = newDue,
                     lastModified = IcsDateTime.now(),
-                    syncState = if(it.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                        SyncState.USER_DECIDED_CLIENT_WINS
-                    else
-                        SyncState.LOCAL_MODIFIED
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
                 )
             )
         }
@@ -566,24 +524,17 @@ class DetailsViewModel(
         Napier.d("Entry saved")
     }
 
+    private fun onUpdateTaskProgress(percent: Long) {
+        _state.update {
+            it.copy(icalEntry = it.icalEntry.withProgressUpdated(percent))
+        }
+    }
+
     private fun onUpdateSubtaskProgress(percent: Long, subtaskIcalEntryId: Long) {
 
         val subtask = _state.value.subtasks.find { it.id == subtaskIcalEntryId } ?: return
 
-        val updatedSubtask = subtask.copy(
-            status = when(percent) {
-                0L -> if(_state.value.icalEntry.status == Status.NEEDS_ACTION) Status.NEEDS_ACTION else null
-                in 1L..99L -> Status.IN_PROCESS
-                100L -> Status.COMPLETED
-                else -> null
-            },
-            percentComplete = percent,
-            lastModified = IcsDateTime.now(),
-            syncState = if(_state.value.icalEntry.syncState == SyncState.USER_DECIDED_CLIENT_WINS)
-                SyncState.USER_DECIDED_CLIENT_WINS
-            else
-                SyncState.LOCAL_MODIFIED
-        )
+        val updatedSubtask = subtask.withProgressUpdated(percent)
         viewModelScope.launch {
             icalEntryRepository.updateProgress(
                 id = updatedSubtask.id,
@@ -597,9 +548,7 @@ class DetailsViewModel(
 
     private fun onPersistOrderNo(sortedList: List<Long>) {
         viewModelScope.launch {
-            sortedList.forEachIndexed { index, icalEntryId ->
-                icalEntryRepository.updateOrderNo(icalEntryId, index.toLong())
-            }
+            icalEntryRepository.updateOrderNo(sortedList)
         }
     }
 }

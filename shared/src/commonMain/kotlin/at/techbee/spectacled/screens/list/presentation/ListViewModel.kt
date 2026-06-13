@@ -10,7 +10,6 @@ import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
@@ -225,16 +224,11 @@ class ListViewModel(
                     }
 
                     if (newCategories != icalEntry.categories) {
-                        val updatedEntry = icalEntry.copy(
+                        icalEntryRepository.updateCategory(
+                            id = icalEntry.id,
                             categories = newCategories,
                             lastModified = IcsDateTime.now(),
                             syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
-                        )
-                        icalEntryRepository.updateCategory(
-                            id = updatedEntry.id,
-                            categories = updatedEntry.categories,
-                            lastModified = updatedEntry.lastModified,
-                            syncState = updatedEntry.syncState
                         )
                     }
                 }
@@ -268,16 +262,12 @@ class ListViewModel(
         viewModelScope.launch {
             _state.value.multiselectItems?.forEach { id ->
                 _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
-                    val updatedEntry = icalEntry.copy(
+
+                    icalEntryRepository.updateColor(
+                        id = icalEntry.id,
                         color = if(color == Color.Unspecified) null else color,
                         lastModified = IcsDateTime.now(),
                         syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
-                    )
-                    icalEntryRepository.updateColor(
-                        id = updatedEntry.id,
-                        color = updatedEntry.color,
-                        lastModified = updatedEntry.lastModified,
-                        syncState = updatedEntry.syncState
                     )
                 }
             }
@@ -290,20 +280,9 @@ class ListViewModel(
         viewModelScope.launch {
 
             val icalEntry = icalEntryRepository.getIcalEntryById(icalEntryId) ?: return@launch
-
             val newPercent = if(icalEntry.percentComplete in 0L .. 99L) 100L else 0L
+            val updatedEntry = icalEntry.withProgressUpdated(newPercent)
 
-            val updatedEntry = icalEntry.copy(
-                percentComplete = newPercent,
-                status = when(newPercent) {
-                    0L -> null
-                    in 1L..99L -> Status.IN_PROCESS
-                    100L -> Status.COMPLETED
-                    else -> icalEntry.status
-                },
-                lastModified = IcsDateTime.now(),
-                syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
-            )
             icalEntryRepository.updateProgress(
                 id = updatedEntry.id,
                 percentComplete = updatedEntry.percentComplete,
@@ -350,9 +329,7 @@ class ListViewModel(
 
     private fun onPersistOrderNo() {
         viewModelScope.launch {
-            dragAndDropList.forEachIndexed { index, icalEntry ->
-                icalEntryRepository.updateOrderNo(icalEntry.id, index.toLong())
-            }
+            icalEntryRepository.updateOrderNo(dragAndDropList.map { it.id })
         }
     }
 

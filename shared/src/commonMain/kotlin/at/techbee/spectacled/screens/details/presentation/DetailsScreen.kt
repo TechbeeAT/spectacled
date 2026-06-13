@@ -173,7 +173,7 @@ fun DetailsScreen(
                 val entryTriState = state.icalEntry.getProgressTriState()
                 TriStateCheckbox(
                     state = entryTriState,
-                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 100 else 0)) }
+                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 0 else 100)) }
                 )
             }
         }
