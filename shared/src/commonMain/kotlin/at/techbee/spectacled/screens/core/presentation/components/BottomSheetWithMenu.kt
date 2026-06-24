@@ -33,6 +33,7 @@ fun BottomSheetWithMenu(
     menuAction: @Composable () -> Unit = { },
     showLoadingIndicator: Boolean = false,
     gesturesEnabled: Boolean = true,
+    allowClose: Boolean = true,
     onDismiss: () -> Unit,
     content: @Composable () -> Unit,
 ) {
@@ -49,7 +50,8 @@ fun BottomSheetWithMenu(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 TextButton(
-                    onClick = { onDismiss() }
+                    onClick = { onDismiss() },
+                    enabled = allowClose
                 ) {
                     Text(stringResource(Res.string.close))
                 }

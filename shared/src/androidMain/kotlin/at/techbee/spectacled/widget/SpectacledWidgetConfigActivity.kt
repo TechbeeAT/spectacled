@@ -10,13 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowDropDown
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
@@ -48,6 +41,7 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.presentation.components.CalendarSelector
 import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.CALENDAR_ID_KEY
 import kotlinx.coroutines.launch
@@ -154,7 +148,6 @@ fun WidgetConfigContent(
             }
         }
     }
-    var calendarsExpanded by remember { mutableStateOf(false) }
 
     AppTheme(spectacledVariant = spectacledVariant) {
         Scaffold (
@@ -185,66 +178,12 @@ fun WidgetConfigContent(
                     style = MaterialTheme.typography.headlineSmall
                 )
 
-                ElevatedAssistChip(
-                    onClick = { calendarsExpanded = !calendarsExpanded },
-                    label = {
-                        Column(modifier = Modifier.padding(8.dp)) {
-                            Text(
-                                text = "Selected calendar",
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                            calendars.find { calendar -> calendar.id == selectedCalendarId }?.let {
-                                Text(it.displayName ?: it.url.toString())
-                            } ?: Text("-")
-                        }
-
-
-                        DropdownMenu(
-                            expanded = calendarsExpanded,
-                            onDismissRequest = { calendarsExpanded = false }
-                        ) {
-
-                            val calendarsGroups = calendars.groupBy { calendar ->
-                                homeCollections.find { homeCollection -> homeCollection.id == calendar.homeCollectionId }.let {
-                                        homeCollection -> principals.find { principal -> homeCollection?.principalId == principal.id }
-                                }
-                            }
-                            calendarsGroups.keys.forEach { principal ->
-
-                                calendarsGroups[principal]?.forEach { calendar ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Column(modifier = Modifier.padding(vertical = 2.dp)) {
-                                                Text(
-                                                    text = principal?.displayName?:"No account name",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontStyle = FontStyle.Italic
-                                                )
-                                                Text(text = calendar.displayName ?: "Unnamed Calendar")
-                                                calendar.calendarDescription?.let {
-                                                    Text(
-                                                        text = it,
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        onClick = {
-                                            selectedCalendarId = calendar.id
-                                            calendarsExpanded = false
-                                        }
-                                    )
-
-                                }
-
-                            }
-                        }
-
-                    },
-                    trailingIcon = {
-                        Icon(Icons.Outlined.ArrowDropDown, null)
-                    },
+                CalendarSelector(
+                    principals = principals,
+                    homeCollections = homeCollections,
+                    calendars = calendars,
+                    selectedCalendarId = selectedCalendarId,
+                    onCalendarIdSelected = { selectedCalendarId = it },
                     modifier = Modifier.fillMaxWidth().padding (16.dp)
                 )
 

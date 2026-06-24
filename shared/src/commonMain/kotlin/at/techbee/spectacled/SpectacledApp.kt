@@ -184,15 +184,17 @@ fun SpectacledApp(
                     LaunchedEffect(copyFromId, calendarId) {
                         if (copyFromId != null)
                             detailsViewModel.loadCopy(copyFromId)
-                        else
+                        else if(calendarId != 0L)
                             detailsViewModel.loadNew(calendarId)
+                        else
+                            detailsViewModel.prepareNew()
                     }
 
                     DetailsScreenRoot(
                         detailsViewModel = detailsViewModel,
                         onNavigate = { route -> navController.navigate(route) },
                         onNavigateUp = {
-                            if (!navController.popBackStack()) {  // only relevant when opening app from Android widget
+                            if (!navController.popBackStack()) {  // only relevant when opening app from Android widget or shortcut
                                 onCloseApp()
                             }
                         }

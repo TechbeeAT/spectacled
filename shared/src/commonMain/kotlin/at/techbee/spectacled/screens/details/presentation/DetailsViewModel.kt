@@ -75,6 +75,18 @@ class DetailsViewModel(
         viewModelScope.launch { observeCategories() }
         viewModelScope.launch { observeTimezones() }
         viewModelScope.launch { observeSubtasks() }
+
+        viewModelScope.launch {
+            val allPrincipals = calendarRepository.getAllPrincipals()
+            val allHomeCollections = calendarRepository.getAllHomeCollections()
+            val allCalendars = calendarRepository.getAllCalendars()
+
+            _state.update { it.copy(
+                allPrincipals = allPrincipals,
+                allHomeCollections = allHomeCollections,
+                allCalendars = allCalendars
+            ) }
+        }
     }
 
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
@@ -94,7 +106,6 @@ class DetailsViewModel(
         }
     }
 
-    @OptIn(ExperimentalTime::class)
     fun loadNew(calendarId: Long) {
 
         viewModelScope.launch {
@@ -116,8 +127,26 @@ class DetailsViewModel(
         }
     }
 
+    fun prepareNew() {
 
-    @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
+        viewModelScope.launch {
+            val newIcalEntry = IcalEntry(
+                calendarId = 0L,
+                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
+                calendarComponent = spectacledVariant.syncCalendarComponent
+            )
+
+            _state.update { it.copy(
+                icalEntry = newIcalEntry,
+                originalIcalEntry = newIcalEntry,
+                isLoading = false,
+                showDeleteDialog = false,
+                navigateUp = false
+            ) }
+        }
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
     fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
         viewModelScope.launch {
             //saveIcalEntry(false)
@@ -236,6 +265,7 @@ class DetailsViewModel(
             is DetailsAction.OnNavigateToIcalEntryId -> { _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
             DetailsAction.OnProcessWithAI -> { onProcessWithAI() }
+            is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
         }
     }
 
@@ -592,5 +622,9 @@ class DetailsViewModel(
                 }
             }
         }
+    }
+
+    private fun onNewCalendarIdSelected(calendarId: Long) {
+        loadNew(calendarId)
     }
 }

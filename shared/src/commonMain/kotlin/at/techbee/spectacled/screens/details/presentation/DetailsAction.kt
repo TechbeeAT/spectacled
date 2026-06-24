@@ -18,6 +18,8 @@ sealed interface DetailsAction {
     data class OnUpdateSubtaskProgress(val percent: Long, val subtaskIcalEntryId: Long): DetailsAction
     data class OnAddSubtask(val summary: String): DetailsAction
 
+    data class OnNewCalendarIdSelected(val calendarId: Long): DetailsAction
+
     data class OnSyncConflictUpdateUserDecision(val syncState: SyncState): DetailsAction
 
     data class OnShowMoreBottomSheet(val show: Boolean): DetailsAction

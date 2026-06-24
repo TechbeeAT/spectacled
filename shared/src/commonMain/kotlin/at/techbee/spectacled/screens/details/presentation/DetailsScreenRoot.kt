@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,6 +46,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
@@ -177,6 +179,18 @@ fun DetailsScreenRoot(
                 onDismiss = {
                     detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(false))
                 }
+            )
+        }
+
+        if(detailsState.icalEntry.calendarId == 0L) {
+            CalendarSelectorBottomSheet(
+                sheetState = rememberModalBottomSheetState(confirmValueChange = { it != SheetValue.Hidden }),
+                principals = detailsState.allPrincipals,
+                homeCollections = detailsState.allHomeCollections,
+                calendars = detailsState.allCalendars,
+                selectedCalendarId = if(detailsState.icalEntry.calendarId == 0L) null else detailsState.icalEntry.calendarId,
+                onCalendarIdSelected = { detailsViewModel.onAction(DetailsAction.OnNewCalendarIdSelected(it)) },
+                onDismiss = { }
             )
         }
 
