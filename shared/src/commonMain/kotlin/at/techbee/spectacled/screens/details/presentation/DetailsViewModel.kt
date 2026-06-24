@@ -580,8 +580,8 @@ class DetailsViewModel(
                             icalEntry = currentEntry.copy(
                                 summary = currentEntry.summary ?: processedEntry.summary,
                                 //description = processedEntry.description,
-                                dtStart = if(currentEntry.dtStart == null && (currentEntry.isJournal() || currentEntry.isTask())) processedEntry.dtStart else null ,
-                                due = if(currentEntry.due == null && currentEntry.isTask()) processedEntry.due else null ,
+                                dtStart = if(currentEntry.dtStart == null && currentEntry.isTask()) processedEntry.dtStart else currentEntry.dtStart ,
+                                due = if(currentEntry.due == null && currentEntry.isTask()) processedEntry.due else currentEntry.due ,
                                 categories = currentEntry.categories.plus(processedEntry.categories).distinct(),
                                 lastModified = IcsDateTime.now(),
                                 syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
