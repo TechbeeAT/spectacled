@@ -10,6 +10,8 @@ import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
+import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
@@ -233,6 +235,7 @@ class DetailsViewModel(
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
             is DetailsAction.OnNavigateToIcalEntryId -> { _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
+            DetailsAction.OnProcessWithAI -> { onProcessWithAI() }
         }
     }
 
@@ -549,6 +552,45 @@ class DetailsViewModel(
     private fun onPersistOrderNo(sortedList: List<Long>) {
         viewModelScope.launch {
             icalEntryRepository.updateOrderNo(sortedList)
+        }
+    }
+
+    private fun onProcessWithAI() {
+        _state.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            val remoteResult = KtorRemoteClaudeDataSource(client).applyAiMetadata(_state.value.icalEntry)
+
+            when(remoteResult) {
+                is ClaudeRemoteResponseResult.Failed -> {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            snackbarText = remoteResult.message + if(!remoteResult.details.isNullOrBlank()) "(${remoteResult.details})" else ""
+                        )
+                    }
+                }
+                is ClaudeRemoteResponseResult.Success -> {
+
+                    val processedEntry = remoteResult.icalEntry
+                    val currentEntry = _state.value.icalEntry
+
+                    _state.update {
+                        it.copy(
+                            icalEntry = currentEntry.copy(
+                                summary = currentEntry.summary ?: processedEntry.summary,
+                                //description = processedEntry.description,
+                                dtStart = if(currentEntry.dtStart == null && (currentEntry.isJournal() || currentEntry.isTask())) processedEntry.dtStart else null ,
+                                due = if(currentEntry.due == null && currentEntry.isTask()) processedEntry.due else null ,
+                                categories = currentEntry.categories.plus(processedEntry.categories).distinct(),
+                                lastModified = IcsDateTime.now(),
+                                syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                            ),
+                            isLoading = false
+                        )
+                    }
+                }
+            }
         }
     }
 }

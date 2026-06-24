@@ -31,6 +31,8 @@ sealed interface DetailsAction {
 
     data class OnNavigateToIcalEntryId(val id: Long?): DetailsAction
 
+    object OnProcessWithAI: DetailsAction
+
     object OnDelete: DetailsAction
     object OnCreateCopy: DetailsAction
     object OnDispose: DetailsAction

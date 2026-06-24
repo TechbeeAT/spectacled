@@ -124,6 +124,7 @@ fun DetailsScreen(
         AnimatedVisibility(state.icalEntry.categories.isNotEmpty() || state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             ) {
 
