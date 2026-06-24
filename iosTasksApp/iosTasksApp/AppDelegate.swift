@@ -14,7 +14,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
     ) -> Bool {
-        KoinIOSKt.initKoinIos(spectacledVariant: .tasks)
+        SpectacledAppKt.doInitKoin(spectacledVariant: .tasks)
         log.info("App did finish launching")
 
         // Registration must happen before didFinishLaunchingWithOptions returns
