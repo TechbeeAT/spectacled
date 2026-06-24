@@ -37,7 +37,7 @@ kotlin {
             //isStatic = true
             export(projects.shared)
             linkerOpts.add("-lsqlite3")
-            //freeCompilerArgs += listOf("-Xbinary=bundleId=at.techbee.spectacled.notes")
+            freeCompilerArgs += listOf("-Xbinary=bundleId=at.techbee.spectacled.notes.ios")
         }
     }
 
