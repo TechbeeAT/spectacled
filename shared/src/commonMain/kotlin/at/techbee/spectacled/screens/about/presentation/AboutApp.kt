@@ -38,7 +38,9 @@ import at.techbee.spectacled.shared.BuildKonfig
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.about_codename
 import spectacled.shared.generated.resources.about_nlnet_thanks
+import spectacled.shared.generated.resources.about_version
 import spectacled.shared.generated.resources.copyright_info
 import spectacled.shared.generated.resources.logo_nlnet
 import spectacled.shared.generated.resources.logo_techbee_xml
@@ -88,12 +90,16 @@ fun AboutApp(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Version: ${BuildKonfig.APP_VERSION_STRING} (${BuildKonfig.APP_BUILD_NUMBER})",
+                text = stringResource(
+                    Res.string.about_version,
+                    BuildKonfig.APP_VERSION_STRING,
+                    BuildKonfig.APP_BUILD_NUMBER
+                ),
                 style = MaterialTheme.typography.bodyLarge,
             )
 
             Text(
-                text = "Codename: ${BuildKonfig.APP_VERSION_CODENAME}",
+                text = stringResource(Res.string.about_codename, BuildKonfig.APP_VERSION_CODENAME),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
