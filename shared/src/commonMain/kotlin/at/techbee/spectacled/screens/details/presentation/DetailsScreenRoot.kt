@@ -57,7 +57,7 @@ import at.techbee.spectacled.screens.details.presentation.components.DetailsTopB
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
-import at.techbee.spectacled.theme.getThemeForSeedColor
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
@@ -79,7 +79,7 @@ fun DetailsScreenRoot(
     val detailsState by detailsViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    MaterialTheme(colorScheme = getThemeForSeedColor(detailsState.icalEntry.color ?: detailsState.calendar?.color)) {
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(detailsState.icalEntry.color ?: detailsState.calendar?.color)) {
 
 
         LaunchedEffect(detailsState.snackbarText) {

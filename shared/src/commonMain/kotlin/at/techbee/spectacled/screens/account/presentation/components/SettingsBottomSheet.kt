@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.Colorize
+import androidx.compose.material.icons.outlined.FontDownload
 import androidx.compose.material.icons.outlined.FormatPaint
 import androidx.compose.material.icons.outlined.ModeNight
 import androidx.compose.material3.AssistChip
@@ -37,6 +38,7 @@ import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.Flow
@@ -46,6 +48,7 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.theme
 import spectacled.shared.generated.resources.theme_amoled
 import spectacled.shared.generated.resources.theme_dynamic_colors
+import spectacled.shared.generated.resources.theme_font
 import spectacled.shared.generated.resources.theme_palette_style
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,6 +67,9 @@ fun SettingsBottomSheet(
 
     val themeDynamicColorsEnabledBoolean by userAppPreferencesStore.getThemeDynamicColorsEnabledAsFlow().collectAsState(userAppPreferencesStore.themeDynamicColorsEnabled)
     val themeAmoledBoolean by userAppPreferencesStore.getThemeAmoledAsFlow().collectAsState(userAppPreferencesStore.themeAmoled)
+
+    var themeFontDropDownExpanded by remember { mutableStateOf(false) }
+    val themeFont by userAppPreferencesStore.getThemeFontAsFlow().collectAsState(userAppPreferencesStore.themeFont)
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
@@ -192,6 +198,39 @@ fun SettingsBottomSheet(
                     modifier = Modifier.widthIn(min = 350.dp)
                 )
             }
+
+            AssistChip(
+                onClick = { themeFontDropDownExpanded = true },
+                label = {
+
+                    Column(modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp)) {
+                        Text(
+                            text = stringResource(Res.string.theme_font),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                        Text(themeFont.fontName)
+                    }
+
+                    DropdownMenu(
+                        expanded = themeFontDropDownExpanded,
+                        onDismissRequest = { themeFontDropDownExpanded = false },
+                    ) {
+
+                        ThemeFont.entries.forEach { themeFont ->
+                            DropdownMenuItem(
+                                text = { Text(themeFont.fontName) },
+                                onClick = {
+                                    userAppPreferencesStore.themeFont = themeFont
+                                    themeFontDropDownExpanded = false
+                                },
+                            )
+                        }
+                    }
+                },
+                leadingIcon = { Icon(Icons.Outlined.FontDownload, null) },
+                trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
+                modifier = Modifier.widthIn(min = 350.dp)
+            )
         }
     }
 }

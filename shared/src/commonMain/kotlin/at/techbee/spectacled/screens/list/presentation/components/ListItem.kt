@@ -41,7 +41,7 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
-import at.techbee.spectacled.theme.getThemeForSeedColor
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -69,7 +69,7 @@ fun ListItem(
 
     val hapticFeedback = LocalHapticFeedback.current
 
-    MaterialTheme(colorScheme = getThemeForSeedColor(icalEntry.color)) {
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
 
         Row(modifier = modifier) {
             if(icalEntry.isJournal()) {

@@ -48,7 +48,7 @@ import at.techbee.spectacled.screens.details.presentation.components.CategorySel
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
-import at.techbee.spectacled.theme.getThemeForSeedColor
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -87,7 +87,7 @@ fun ListScreenRoot(
         }
     }
 
-    MaterialTheme(colorScheme = getThemeForSeedColor(state.calendar.color)) {
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(state.calendar.color)) {
 
 
         LaunchedEffect(state.snackbarText) {

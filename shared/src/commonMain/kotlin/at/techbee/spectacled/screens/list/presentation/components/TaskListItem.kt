@@ -40,7 +40,7 @@ import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.theme.AppTheme
-import at.techbee.spectacled.theme.getThemeForSeedColor
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -65,7 +65,7 @@ fun TaskListItem(
     val hapticFeedback = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
 
-    MaterialTheme(colorScheme = getThemeForSeedColor(icalEntry.color)) {
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
 
         ElevatedFilterChip(
             modifier = modifier,
@@ -203,7 +203,7 @@ private fun TaskListItem_first_Preview() {
 @Composable
 private fun TaskListItem_colored_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
-        MaterialTheme(getThemeForSeedColor(Color.Yellow)) {
+        MaterialTheme(getColorSchemeForSeedColor(Color.Yellow)) {
 
             TaskListItem(
                 icalEntry = IcalEntry.getSampleIcalEntry(),
