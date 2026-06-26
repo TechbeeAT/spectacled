@@ -31,6 +31,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val showTaskStatusProgressPickerBottomSheet: Boolean = false,
     val showAddSubtaskBottomSheet: Boolean = false,
     val showEditUrlBottomSheet: Boolean = false,
+    val showDrawingCanvasBottomSheet: Boolean = false,
 
     val isLoading: Boolean = true,
 

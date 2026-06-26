@@ -190,7 +190,7 @@ fun ColorSelectorElement(
 }
 
 @Composable
-private fun ColorSelectionBox(
+fun ColorSelectionBox(
     color: Color,
     selected: Boolean,
     onColorSelected: () -> Unit,

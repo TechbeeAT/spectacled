@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.AddTask
+import androidx.compose.material.icons.outlined.Gesture
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Restore
@@ -61,6 +62,7 @@ import at.techbee.spectacled.screens.details.presentation.components.CategorySel
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DetailsTopBar
+import at.techbee.spectacled.screens.details.presentation.components.DrawingCanvasBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.EditUrlBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
@@ -69,6 +71,7 @@ import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_drawing
 import spectacled.shared.generated.resources.add_edit_url
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.category
@@ -202,6 +205,14 @@ fun DetailsScreenRoot(
             )
         }
 
+        if (detailsState.showDrawingCanvasBottomSheet) {
+            DrawingCanvasBottomSheet(
+                onDismiss = {
+                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(false))
+                }
+            )
+        }
+
         if(detailsState.icalEntry.calendarId == 0L) {
             CalendarSelectorBottomSheet(
                 sheetState = rememberModalBottomSheetState(confirmValueChange = { it != SheetValue.Hidden }),
@@ -314,6 +325,15 @@ fun DetailsScreenRoot(
                                 leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_edit_url)) },
                                 onClick = {
                                     detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
+                                    addMoreExpanded = false
+                                },
+                            )
+
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.add_drawing)) },
+                                leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
+                                onClick = {
+                                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(!detailsState.showDrawingCanvasBottomSheet))
                                     addMoreExpanded = false
                                 },
                             )
