@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,10 +33,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.password
@@ -59,6 +62,7 @@ fun UpdatePrincipalPasswordBottomSheet(
     var showMore by remember { mutableStateOf(false) }
 
     BottomSheetWithMenu(
+        headline = stringResource(Res.string.update_password),
         onDismiss = { onDismiss() },
         sheetState = sheetState,
         gesturesEnabled = false,
@@ -79,15 +83,11 @@ fun UpdatePrincipalPasswordBottomSheet(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(8.dp).fillMaxSize()
         ) {
-            Text(
-                text = stringResource(Res.string.update_password),
-                style = MaterialTheme.typography.headlineMedium
-            )
 
             principal.displayName?.let {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.titleSmall
                 )
             }
 
@@ -179,40 +179,55 @@ fun UpdatePrincipalPasswordBottomSheet(
 @Preview
 @Composable
 private fun UpdatePrincipalPasswordBottomSheet_Preview_Idle() {
-    UpdatePrincipalPasswordBottomSheet(
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        principal = Principal.getPrincipalForPreview(),
-        //credentials = Credentials("https://localhost/dav", "my username", "my password"),
-        processingState = ProcessingState.Idle,
-        onAction = {},
-        onDismiss = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            UpdatePrincipalPasswordBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                principal = Principal.getPrincipalForPreview(),
+                //credentials = Credentials("https://localhost/dav", "my username", "my password"),
+                processingState = ProcessingState.Idle,
+                onAction = {},
+                onDismiss = {}
+            )
+        }
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun UpdatePrincipalPasswordBottomSheet_Preview_Processing() {
-    UpdatePrincipalPasswordBottomSheet(
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        principal = Principal.getPrincipalForPreview(),
-        //credentials = Credentials("https://localhost/dav", "my username", "my password"),
-        processingState = ProcessingState.Processing,
-        onAction = {},
-        onDismiss = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            UpdatePrincipalPasswordBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                principal = Principal.getPrincipalForPreview(),
+                //credentials = Credentials("https://localhost/dav", "my username", "my password"),
+                processingState = ProcessingState.Processing,
+                onAction = {},
+                onDismiss = {}
+            )
+        }
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun UpdatePrincipalPasswordBottomSheet_Preview_Error() {
-    UpdatePrincipalPasswordBottomSheet(
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        principal = Principal.getPrincipalForPreview(),
-        //credentials = Credentials("https://localhost/dav", "my username", "my password"),
-        processingState = ProcessingState.Error("This is an error", "Here are the details"),
-        onAction = {},
-        onDismiss = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            UpdatePrincipalPasswordBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                principal = Principal.getPrincipalForPreview(),
+                //credentials = Credentials("https://localhost/dav", "my username", "my password"),
+                processingState = ProcessingState.Error("This is an error", "Here are the details"),
+                onAction = {},
+                onDismiss = {}
+            )
+        }
+    }
+
 }

@@ -54,7 +54,7 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.AppTheme
-import at.techbee.spectacled.theme.getThemeForSeedColor
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -85,7 +85,7 @@ fun CalendarCard(
 
     var dropdownExpanded by remember { mutableStateOf(false) }
 
-    MaterialTheme(colorScheme = getThemeForSeedColor(calendar.color)) {
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(calendar.color)) {
 
         SpecialRoundedCard(
             overrideTopRoundedCornerSize = if (isFirst) 16.dp else 0.dp,

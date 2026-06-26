@@ -1,7 +1,8 @@
 package at.techbee.spectacled.screens.core
 
-import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,30 +17,28 @@ import kotlin.time.Duration.Companion.minutes
 actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
 
     private val credentialStore: PlatformCredentialStore by inject()
-    private val databaseDriverFactory: DatabaseDriverFactory by inject()
     private val client: HttpClient by inject()
+    private val calendarRepository: CalendarRepository by inject()
+    private val icalEntryRepository: IcalEntryRepository by inject()
     private val scope = CoroutineScope(Dispatchers.Default)
     private var job: Job? = null
 
 
     actual override fun requestImmediate() {
         scope.launch {
-            val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
-            SyncCoordinator.syncAllPrincipals(database, credentialStore, client)
+            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, credentialStore, client)
         }
     }
 
     actual override fun requestImmediate(calendarIds: List<Long>) {
         scope.launch {
-            val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
-            SyncCoordinator.syncSpecificCalendars(calendarIds, database, credentialStore, client)
+            SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, credentialStore, client)
         }
     }
 
     actual override fun requestImmediatePush(calendarId: Long) {
         scope.launch {
-            val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
-            SyncCoordinator.pushLocalChanges(calendarId, database, credentialStore, client)
+            SyncCoordinator.pushLocalChanges(calendarId, calendarRepository, icalEntryRepository, credentialStore, client)
         }
     }
 

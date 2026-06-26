@@ -26,6 +26,8 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,7 +48,7 @@ import at.techbee.spectacled.screens.details.presentation.components.CategorySel
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
-import at.techbee.spectacled.theme.getThemeForSeedColor
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -67,7 +69,7 @@ fun ListScreenRoot(
     onNavigateUp: () -> Unit
 ) {
 
-    val state = listViewModel.state
+    val state by listViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val pullToRefreshState = rememberPullToRefreshState()
 
@@ -85,7 +87,7 @@ fun ListScreenRoot(
         }
     }
 
-    MaterialTheme(colorScheme = getThemeForSeedColor(state.calendar.color)) {
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(state.calendar.color)) {
 
 
         LaunchedEffect(state.snackbarText) {
@@ -103,8 +105,8 @@ fun ListScreenRoot(
         }
 
         LaunchedEffect(state.navigateToIcalEntryId) {
-            if (state.navigateToIcalEntryId != null) {
-                onNavigate(IcalEntryDetails(state.navigateToIcalEntryId))
+            state.navigateToIcalEntryId?.let {
+                onNavigate(IcalEntryDetails(it))
                 listViewModel.onAction(ListAction.OnIcalEntryClicked(null))
             }
         }
@@ -121,7 +123,7 @@ fun ListScreenRoot(
 
         if (state.showDeleteSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
             DeleteSelectedItemsDialog(
-                multiselectItems = state.multiselectItems,
+                multiselectItems = state.multiselectItems?: emptyList(),
                 onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
                 onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
             )

@@ -1,7 +1,8 @@
 package at.techbee.spectacled.screens.core
 
-import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
@@ -43,16 +44,16 @@ actual class PlatformSyncTrigger : SyncTrigger {
 object IOSSyncEntryPoint : KoinComponent {
 
     private val credentialStore: PlatformCredentialStore by inject()
-    private val databaseDriverFactory: DatabaseDriverFactory by inject()
     private val client: HttpClient by inject()
+    private val calendarRepository: CalendarRepository by inject()
+    private val icalEntryRepository: IcalEntryRepository by inject()
     private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun runBackgroundSync(onFinished: () -> Unit) {
         bgScope.launch {
-            val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
             try {
                 Napier.d("BG Sync coroutine started")
-                SyncCoordinator.syncAllPrincipals(database, credentialStore, client)
+                SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, credentialStore, client)
                 Napier.d("BG Sync coroutine finished")
             } finally {
                 onFinished()
@@ -62,10 +63,9 @@ object IOSSyncEntryPoint : KoinComponent {
 
     fun runBackgroundSyncForSpecificCalendars(calendarIds: List<Long>, onFinished: () -> Unit) {
         bgScope.launch {
-            val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
             try {
                 Napier.d("BG Sync for specific calendars coroutine started")
-                SyncCoordinator.syncSpecificCalendars(calendarIds, database, credentialStore, client)
+                SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, credentialStore, client)
                 Napier.d("BG Sync for specific calendars coroutine finished")
             } finally {
                 onFinished()
@@ -75,10 +75,9 @@ object IOSSyncEntryPoint : KoinComponent {
 
     fun runBackgroundPushForSpecificCalendar(calendarId: Long, onFinished: () -> Unit) {
         bgScope.launch {
-            val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
             try {
                 Napier.d("BG Push for specific calendar coroutine started")
-                SyncCoordinator.pushLocalChanges(calendarId, database, credentialStore, client)
+                SyncCoordinator.pushLocalChanges(calendarId, calendarRepository, icalEntryRepository, credentialStore, client)
                 Napier.d("BG Push for specific calendar coroutine finished")
             } finally {
                 onFinished()

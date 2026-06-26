@@ -32,13 +32,7 @@ import spectacled.shared.generated.resources.more_on_github
 //TODO: Change for Release!!!
 private const val GITHUB_RELEASES_URL = "https://github.com/TechbeeAT/jtxBoard/releases"
 
-@Composable
-fun GitHubReleasesRoot(
-    viewModel: AboutViewModel
-) {
 
-    GitHubReleases(viewModel.state.gitHubReleases)
-}
 
 @Composable
 fun GitHubReleases(

@@ -1,18 +1,9 @@
 package at.techbee.spectacled.screens.account.presentation
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.cash.sqldelight.async.coroutines.awaitAsList
-import app.cash.sqldelight.coroutines.asFlow
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.db.SpectacledDatabase
-import at.techbee.spectacled.screens.account.data.upsertCalendar
-import at.techbee.spectacled.screens.account.data.upsertHomeCollection
-import at.techbee.spectacled.screens.account.data.upsertPrincipal
-import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
@@ -34,10 +25,14 @@ import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
-import at.techbee.spectacled.screens.core.mapper.dto.toDomain
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
@@ -48,7 +43,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 
 class AccountListViewModel(
-    private val databaseDriverFactory: DatabaseDriverFactory,
+    private val calendarRepository: CalendarRepository,
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val client: HttpClient,
@@ -56,13 +51,18 @@ class AccountListViewModel(
     val userAppPreferencesStore: PlatformUserAppPreferencesStore
     ): ViewModel() {
 
-    private val _state = mutableStateOf(AccountListState())
-    val state by _state
+    private val _state = MutableStateFlow(AccountListState())
+    val state = _state.asStateFlow()
 
-    private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
+    private var observationJob: Job? = null
 
     init {
-        viewModelScope.launch {
+        load()
+    }
+
+    fun load() {
+        observationJob?.cancel()
+        observationJob = viewModelScope.launch {
             launch { observePrincipals() }
             launch { observeHomeCollections() }
             launch { observeCalendars() }
@@ -71,63 +71,62 @@ class AccountListViewModel(
 
     private suspend fun observePrincipals() {
         Napier.d("Observing principals")
-        getDatabase().principal_dtoQueries.getAllPrincipals().asFlow().collect {
-            _state.value = _state.value.copy(
-                principals = it.awaitAsList().map { principalDto -> principalDto.toDomain() }
-            )
+        calendarRepository.getAllPrincipalsFlow().collect { principals ->
+            _state.update { state -> state.copy(
+                principals = principals
+            ) }
         }
     }
 
     private suspend fun observeHomeCollections() {
         Napier.d("Observing homeCollections")
-        getDatabase().home_collection_dtoQueries.getAllHomeCollections().asFlow().collect {
-            _state.value = _state.value.copy(
-                homeCollections = it.awaitAsList().map { homeCollectionDto -> homeCollectionDto.toDomain() }
-            )
+        calendarRepository.getAllHomeCollectionsFlow().collect { homeCollections ->
+            _state.update { state -> state.copy(
+                homeCollections = homeCollections
+            ) }
         }
     }
 
     private suspend fun observeCalendars() {
         Napier.d("Observing calendars")
-        getDatabase().calendar_dtoQueries.getAllCalendars().asFlow().collect {
-            _state.value = _state.value.copy(
-                calendars = it.awaitAsList().map { calendarDto -> calendarDto.toDomain() }
-            )
+        calendarRepository.getAllCalendarsFlow().collect { calendars ->
+            _state.update { state -> state.copy(
+                calendars = calendars
+            ) }
         }
     }
 
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     fun onAction(action: AccountListAction) {
         when (action) {
-            is AccountListAction.OnShowAboutBottomSheet -> { _state.value = _state.value.copy(showAboutBottomSheet = action.show ?: !state.showAboutBottomSheet) }
-            is AccountListAction.OnShowAddPrincipalBottomSheet -> { _state.value = _state.value.copy(showAddPrincipalBottomSheet = action.show ?: !state.showAddPrincipalBottomSheet, processingState = ProcessingState.Idle) }
-            is AccountListAction.OnShowDeleteCalendarDialog -> { _state.value = _state.value.copy(showDeleteCalendarDialog = action) }
-            is AccountListAction.OnShowRemovePrincipalDialog -> { _state.value = _state.value.copy(showRemovePrincipalDialog = action) }
-            is AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet -> { _state.value = _state.value.copy(showAddOrUpdateCalendarBottomSheet = action, processingState = ProcessingState.Idle) }
-            is AccountListAction.OnEditAccountFolders -> { _state.value = _state.value.copy(editFoldersOfPrincipal = action.principal) }
-            is AccountListAction.OnUpdateSnackbar -> { _state.value = _state.value.copy(snackbarText = action.message) }
-            //CalendarListAction.OnAddLocalCalendar -> addLocalCalendar()
+            is AccountListAction.OnShowAboutBottomSheet -> { _state.update { it.copy(showAboutBottomSheet = action.show ?: !it.showAboutBottomSheet) } }
+            is AccountListAction.OnShowAddPrincipalBottomSheet -> { _state.update { it.copy(showAddPrincipalBottomSheet = action.show ?: !it.showAddPrincipalBottomSheet, processingState = ProcessingState.Idle) } }
+            is AccountListAction.OnShowDeleteCalendarDialog -> { _state.update { it.copy(showDeleteCalendarDialog = action) } }
+            is AccountListAction.OnShowRemovePrincipalDialog -> { _state.update { it.copy(showRemovePrincipalDialog = action) } }
+            is AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet -> { _state.update { it.copy(showAddOrUpdateCalendarBottomSheet = action, processingState = ProcessingState.Idle) } }
+            is AccountListAction.OnEditAccountFolders -> { _state.update { it.copy(editFoldersOfPrincipal = action.principal) } }
+            is AccountListAction.OnUpdateSnackbar -> { _state.update { it.copy(snackbarText = action.message) } }
             is AccountListAction.OnRemovePrincipal -> { removePrincipal(action.principal) }
             is AccountListAction.OnCalendarClicked -> {} // handled in screen
             is AccountListAction.OnDeleteCalendar -> { deleteCalendar(action.principal, action.calendar) }
             is AccountListAction.OnAddPrincipal -> { runAccountDiscovery(action.credentials) }
             is AccountListAction.OnCreateOrUpdateCalendar -> { createOrUpdateCalendar(action.principal, action.homeCollection, action.calendar) }
-            is AccountListAction.OnDismissCreateOrUpdateCalendarBottomSheet -> { _state.value = _state.value.copy(showAddOrUpdateCalendarBottomSheet = null) }
+            is AccountListAction.OnDismissCreateOrUpdateCalendarBottomSheet -> { _state.update { it.copy(showAddOrUpdateCalendarBottomSheet = null) } }
             is AccountListAction.OnSyncCalendars -> { onSyncCalendars(action.calendars, true) }
             is AccountListAction.OnRerunAccountDiscovery -> { rerunAccountDiscovery(action.principals) }
             is AccountListAction.OnUpdatePrincipalPassword -> { rerunAccountDiscovery(action.principal, action.newPassword) }
-            is AccountListAction.OnShowSyncInfoDialog -> { _state.value = _state.value.copy(showSyncInfoDialog = action) }
+            is AccountListAction.OnShowSyncInfoDialog -> { _state.update { it.copy(showSyncInfoDialog = action) } }
             is AccountListAction.OnShowUpdatePrincipalPasswordBottomSheet -> {
-                _state.value = _state.value.copy(
+                _state.update { it.copy(
                     showUpdatePrincipalPasswordBottomSheet = action,
                     showSyncInfoDialog = null,
                     processingState = ProcessingState.Idle
-                )
+                ) }
             }
-            is AccountListAction.OnDismissSyncInfoDialog -> { _state.value = _state.value.copy(showSyncInfoDialog = null) }
-            AccountListAction.OnDismissUpdatePrincipalPasswordBottomSheet -> { _state.value = _state.value.copy(showUpdatePrincipalPasswordBottomSheet = null) }
+            is AccountListAction.OnDismissSyncInfoDialog -> { _state.update { it.copy(showSyncInfoDialog = null) } }
+            AccountListAction.OnDismissUpdatePrincipalPasswordBottomSheet -> { _state.update { it.copy(showUpdatePrincipalPasswordBottomSheet = null) } }
             AccountListAction.OnAddLocalCalendar -> addLocalCalendar()
-            is AccountListAction.OnShowSettingsBottomSheet -> { _state.value = _state.value.copy(showSettingsBottomSheet = action.show) }
+            is AccountListAction.OnShowSettingsBottomSheet -> { _state.update { it.copy(showSettingsBottomSheet = action.show) } }
             is AccountListAction.OnToggleSyncEnabled -> { onToggleSyncEnabled(action.calendarId, action.enabled)}
         }
     }
@@ -135,21 +134,21 @@ class AccountListViewModel(
 
     private fun removePrincipal(principal: Principal) {
 
-        _state.value = _state.value.copy(processingState = ProcessingState.Processing)
+        _state.update { it.copy(processingState = ProcessingState.Processing) }
         viewModelScope.launch {
             credentialStore.clear(principal.principalUrl)
-            getDatabase().principal_dtoQueries.delete(principal.id)
-            _state.value = _state.value.copy(
+            calendarRepository.deletePrincipal(principal.id)
+            _state.update { it.copy(
                 processingState = ProcessingState.Success(message = "Account successfully removed"),
                 showRemovePrincipalDialog = null,
                 snackbarText = "Account successfully removed"
-            )
+            ) }
         }
     }
 
 
     private fun deleteCalendar(principal: Principal, calendar: Calendar) {
-        _state.value = _state.value.copy(processingState = ProcessingState.Processing)
+        _state.update { it.copy(processingState = ProcessingState.Processing) }
         viewModelScope.launch {
 
             try {
@@ -159,23 +158,23 @@ class AccountListViewModel(
 
                     when (remoteResult) {
                         is DeleteCalendarResult.SuccessfullyDeleted, is DeleteCalendarResult.AlreadyDeleted -> {
-                            getDatabase().calendar_dtoQueries.delete(calendar.id)
-                            _state.value = _state.value.copy(
+                            calendarRepository.deleteCalendar(calendar.id)
+                            _state.update { it.copy(
                                 processingState = ProcessingState.Success(message = "Calendar successfully deleted"),
                                 showDeleteCalendarDialog = null,
                                 snackbarText = "Calendar successfully deleted",
-                            )
+                            ) }
                         }
-                        is DeleteCalendarResult.Failed -> _state.value = _state.value.copy(
+                        is DeleteCalendarResult.Failed -> _state.update { it.copy(
                             processingState = ProcessingState.Error(message = remoteResult.message, detail = remoteResult.details),
                             snackbarText = remoteResult.message
-                        )
+                        ) }
                     }
                 }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
+                _state.update { it.copy(
                     processingState = ProcessingState.Error(message = e.message?:"")
-                )
+                ) }
             }
         }
     }
@@ -188,7 +187,7 @@ class AccountListViewModel(
 
             val testUrl = Url("https://localhost/${Random.nextInt(100)}")
 
-            getDatabase().upsertPrincipal(
+            calendarRepository.upsertPrincipal(
                 Principal(
                     id = 0,
                     principalUrl = testUrl,
@@ -197,7 +196,7 @@ class AccountListViewModel(
                 )
             )
 
-            getDatabase().upsertHomeCollection(
+            calendarRepository.upsertHomeCollection(
                 HomeCollection(
                     id = 0,
                     principalId = 0,
@@ -207,7 +206,7 @@ class AccountListViewModel(
                 testUrl
             )
 
-            getDatabase().upsertCalendar(
+            calendarRepository.upsertCalendar(
                 Calendar(
                     id = 0,
                     homeCollectionId = 0,
@@ -247,10 +246,10 @@ class AccountListViewModel(
             }
 
             if(credentials == null)
-                _state.value = _state.value.copy(
+                _state.update { it.copy(
                     processingState = ProcessingState.Error(message = "Credentials not found"),
                     snackbarText = "Credentials not found, please remove this account and add it again."
-                )
+                ) }
             else
                 runAccountDiscovery(credentials)
         }
@@ -259,7 +258,7 @@ class AccountListViewModel(
     private fun runAccountDiscovery(credentials: Credentials) {
 
         Napier.d("Adding principals")
-        _state.value = _state.value.copy(processingState = ProcessingState.Processing)
+        _state.update { it.copy(processingState = ProcessingState.Processing) }
 
         viewModelScope.launch {
             try {
@@ -268,20 +267,20 @@ class AccountListViewModel(
                 val discoverPrincipalsResult = discoverPrincipalsMultiplatform(client, Url(credentials.server), credentials)
                 when(discoverPrincipalsResult) {
                     is DiscoverPrincipalsResult.Failed -> {
-                        _state.value = _state.value.copy(processingState = ProcessingState.Error(message = discoverPrincipalsResult.message, detail = discoverPrincipalsResult.details))
+                        _state.update { it.copy(processingState = ProcessingState.Error(message = discoverPrincipalsResult.message, detail = discoverPrincipalsResult.details)) }
                         return@launch
                     }
                     DiscoverPrincipalsResult.NotAuthorized -> {
-                        _state.value = _state.value.copy(processingState = ProcessingState.Error(message = getString(Res.string.login_message_forbidden)))
+                        _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.login_message_forbidden))) }
                         return@launch
                     }
                     DiscoverPrincipalsResult.NotFound -> {
-                        _state.value = _state.value.copy(processingState = ProcessingState.Error(message = "Server not found."))
+                        _state.update { it.copy(processingState = ProcessingState.Error(message = "Server not found.")) }
                         return@launch
                     }
                     is DiscoverPrincipalsResult.Success -> {
                         discoverPrincipalsResult.principals.forEach { principal ->
-                            //getDatabase().upsertPrincipal(principal)    // principals are upserted with the discovery of homesets to avoid double db operations
+                            //principals are upserted with the discovery of homesets to avoid double db operations
                             credentialStore.save(Credentials(principal.principalUrl.toString(), credentials.username, credentials.password))
                             Napier.d("Principal added")
                         }
@@ -295,29 +294,24 @@ class AccountListViewModel(
 
                     when(val discoverHomeCollectionsResult = discoverHomeCollections(client, principal, credentials)) {
                         is DiscoverHomeCollectionsResult.Failed -> {
-                            _state.value = _state.value.copy(
+                            _state.update { it.copy(
                                 processingState = ProcessingState.Error(
                                     message = discoverHomeCollectionsResult.message,
                                     detail = discoverHomeCollectionsResult.details
                                 )
-                            )
+                            ) }
                         }
                         DiscoverHomeCollectionsResult.NotAuthorized -> {
-                            _state.value = _state.value.copy(processingState = ProcessingState.Error(message = "Not authorized. Please check your username and password."))
+                            _state.update { it.copy(processingState = ProcessingState.Error(message = "Not authorized. Please check your username and password.")) }
                         }
                         DiscoverHomeCollectionsResult.NotFound -> {
-                            _state.value = _state.value.copy(processingState = ProcessingState.Error(message = "Server not found."))
+                            _state.update { it.copy(processingState = ProcessingState.Error(message = "Server not found.")) }
                         }
                         is DiscoverHomeCollectionsResult.Success -> {
                             principal.displayName = discoverHomeCollectionsResult.principalDisplayName
                             principal.calendarUserAddressSet = discoverHomeCollectionsResult.principalCalendarUserAddressSet
 
-                            getDatabase().upsertPrincipal(principal)
-                            /*   // home collections are upserted with calendars to avoid double db operations
-                            discoverHomeCollectionsResult.homeCollections.forEach { homeCollection ->
-                                getDatabase().upsertHomeCollection(homeCollection, principal.principalUrl)
-                            }
-                             */
+                            calendarRepository.upsertPrincipal(principal)
                             discoveredHomeCollections.addAll(discoverHomeCollectionsResult.homeCollections)
                         }
                     }
@@ -331,28 +325,28 @@ class AccountListViewModel(
                             credentials = credentials
                         )) {
                             is DiscoverCalendarsResult.Failed -> {
-                                _state.value = _state.value.copy(
+                                _state.update { it.copy(
                                     processingState = ProcessingState.Error(
                                         message = discoverCalendarsResult.message,
                                         detail = discoverCalendarsResult.details
                                     )
-                                )
+                                ) }
                             }
                             DiscoverCalendarsResult.NotAuthorized -> {
-                                _state.value = _state.value.copy(processingState = ProcessingState.Error(message = "Not authorized. Please check your username and password."))
+                                _state.update { it.copy(processingState = ProcessingState.Error(message = "Not authorized. Please check your username and password.")) }
                             }
                             DiscoverCalendarsResult.NotFound -> {
-                                _state.value = _state.value.copy(processingState = ProcessingState.Error(message = "Server not found."))
+                                _state.update { it.copy(processingState = ProcessingState.Error(message = "Server not found.")) }
                             }
                             is DiscoverCalendarsResult.Success -> {
                                 homeCollection.calDavPrivileges = discoverCalendarsResult.calDavPrivileges
-                                getDatabase().upsertHomeCollection(homeCollection, principal.principalUrl)
+                                calendarRepository.upsertHomeCollection(homeCollection, principal.principalUrl)
 
                                 val disabledCalendarUrls = _state.value.calendars.filter { it.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED }.map { it.url }
 
                                 discoverCalendarsResult.calendars.forEach { calendar ->
 
-                                    getDatabase().upsertCalendar(
+                                    calendarRepository.upsertCalendar(
                                         calendar =
                                             if(calendar.url in disabledCalendarUrls)    // remember disabled state
                                                 calendar.copy(calendarSyncStatus = CalendarSyncStatus(type = CalendarSyncStatusType.DISABLED))
@@ -372,30 +366,30 @@ class AccountListViewModel(
                 //reload calendars from DB, remove calendars that haven't been returned
                 // theoretically there should be only one principal. but just in case...
                 discoverPrincipalsResult.principals.forEach { principal ->
-                    val localCalendars = getDatabase().calendar_dtoQueries.getCalendarsForPrincipalUrl(principal.principalUrl.toString()).awaitAsList().map { it.toDomain() }
+                    val localCalendars = calendarRepository.getCalendarsForPrincipalUrl(principal.principalUrl.toString())
                     val removedCalendars = localCalendars.filter { localCalendar -> discoveredCalendars.none { calendar -> calendar.url == localCalendar.url}  }
-                    removedCalendars.forEach { getDatabase().calendar_dtoQueries.delete(it.id) }
+                    removedCalendars.forEach { calendarRepository.deleteCalendar(it.id) }
                     // Todo: infom user that calendar was removed!
 
-                    _state.value = _state.value.copy(
+                    _state.update { it.copy(
                         showAddPrincipalBottomSheet = false,
                         processingState = ProcessingState.Success("Account added/updated"),
                         snackbarText = "Account added/updated"
-                    )
+                    ) }
                     onSyncCalendars(localCalendars)
                 }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
+                _state.update { it.copy(
                     processingState = ProcessingState.Error(message = e.message ?: "Unknown error"),
                     snackbarText = e.message
-                )
+                ) }
             }
         }
     }
 
     private fun createOrUpdateCalendar(principal: Principal, homeCollection: HomeCollection, calendar: Calendar) {
         Napier.d("Adding calendar")
-        _state.value = _state.value.copy(processingState = ProcessingState.Processing)
+        _state.update { it.copy(processingState = ProcessingState.Processing) }
 
         viewModelScope.launch {
 
@@ -414,20 +408,20 @@ class AccountListViewModel(
                 when(upsertCalendarResult) {
                     is UpsertCalendarResult.Success -> {
                         Napier.d("Saving Calendar")
-                        getDatabase().upsertCalendar(upsertCalendarResult.calendar, homeCollection.url)
+                        calendarRepository.upsertCalendar(upsertCalendarResult.calendar, homeCollection.url)
                         Napier.d("Calendar ${calendar.displayName} added")
-                        _state.value = state.copy(
+                        _state.update { it.copy(
                             snackbarText = "Calendar successfully added/updated",
                             showAddOrUpdateCalendarBottomSheet = null,
                             processingState = ProcessingState.Success("Calendar successfully added/updated"),
-                        )
+                        ) }
                     }
                     UpsertCalendarResult.NotFound -> deleteCalendar(principal, calendar)  // TODO: Inform user that the calendar was deleted in the background
-                    is UpsertCalendarResult.Failed -> _state.value = _state.value.copy(processingState = ProcessingState.Error(message = upsertCalendarResult.message, detail = upsertCalendarResult.details))
+                    is UpsertCalendarResult.Failed -> _state.update { it.copy(processingState = ProcessingState.Error(message = upsertCalendarResult.message, detail = upsertCalendarResult.details)) }
                 }
 
             } catch (e: Exception) {
-                _state.value = _state.value.copy(processingState = ProcessingState.Error(message = e.message ?: "Unknown error", detail = e.stackTraceToString()))
+                _state.update { it.copy(processingState = ProcessingState.Error(message = e.message ?: "Unknown error", detail = e.stackTraceToString())) }
                 println(e.stackTraceToString())
             }
         }
@@ -441,7 +435,7 @@ class AccountListViewModel(
 
             if(forgetSyncToken) {
                 calendars.forEach { calendar ->
-                    getDatabase().calendar_dtoQueries.updateCalendarSyncStatus(calendar.calendarSyncStatus?.serialize(), calendar.syncToken, calendar.id)
+                    calendarRepository.updateCalendarSyncStatus(calendar.calendarSyncStatus?.serialize(), calendar.syncToken, calendar.id)
                 }
             }
 
@@ -461,13 +455,13 @@ class AccountListViewModel(
             else
                 ProcessingState.Error("Some calendars failed to sync. Please check the calendars for details.")
 
-            _state.value = _state.value.copy(processingState = newProcessingState)
+            _state.update { it.copy(processingState = newProcessingState) }
         }
     }
 
     private fun onToggleSyncEnabled(calendarId: Long, enabled: Boolean) {
         viewModelScope.launch {
-            getDatabase().calendar_dtoQueries.updateCalendarSyncStatus(
+            calendarRepository.updateCalendarSyncStatus(
                 calendarSyncStatus = if(enabled) null else CalendarSyncStatus(type = CalendarSyncStatusType.DISABLED).serialize(),
                 syncToken = null,
                 id = calendarId

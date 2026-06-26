@@ -41,8 +41,10 @@ import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
+import at.techbee.spectacled.screens.details.presentation.components.UrlCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
+import io.ktor.http.Url
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableColumn
@@ -124,6 +126,7 @@ fun DetailsScreen(
         AnimatedVisibility(state.icalEntry.categories.isNotEmpty() || state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             ) {
 
@@ -173,7 +176,7 @@ fun DetailsScreen(
                 val entryTriState = state.icalEntry.getProgressTriState()
                 TriStateCheckbox(
                     state = entryTriState,
-                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 100 else 0)) }
+                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 0 else 100)) }
                 )
             }
         }
@@ -197,10 +200,25 @@ fun DetailsScreen(
                 }
         )
 
-        val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+
+
+        AnimatedVisibility(state.icalEntry.url != null) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                //WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+
+                UrlCard(
+                    url = state.icalEntry.url ?: Url(""),
+                    //onUrlChanged = { onAction(DetailsAction.OnUpdateUrl(it)) },
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+        }
 
         //HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp))
         WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+
+        val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+
 
         ReorderableColumn(
             list = sortedSubtasks,
@@ -265,7 +283,7 @@ private fun ListScreen_Preview() {
 private fun ListScreen_with_dtstart_Preview() {
     DetailsScreen(
         state = DetailsState(
-            icalEntry = IcalEntry.getSampleIcalEntry().copy(dtStart = IcsDateTime.now()),
+            icalEntry = IcalEntry.getSampleIcalEntry().copy(dtStart = IcsDateTime.now(), url = Url("https://spectacled.techbee.at")),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
         ),
         onAction = {}

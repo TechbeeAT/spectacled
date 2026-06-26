@@ -34,8 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
@@ -115,7 +116,7 @@ fun DateTimeCard(
                                 imageVector = Icons.Outlined.CalendarToday,
                                 contentDescription = stringResource(Res.string.date)
                             )
-                            icsDateTime?.let { Text(PlatformInstantFormatter(icsDateTime).formatLocalizedDate()) }
+                            icsDateTime?.let { Text(it.formatLocalized(IcsDateTimeFormat.DATE)) }
                         }
                     } else {
                         Icon(
@@ -157,7 +158,7 @@ fun DateTimeCard(
                                             style = MaterialTheme.typography.labelSmall
                                         )
                                     }
-                                    icsDateTime?.let { Text(PlatformInstantFormatter(icsDateTime).formatLocalizedTime()) }
+                                    icsDateTime?.let { Text(icsDateTime.formatLocalized(IcsDateTimeFormat.TIME)) }
                                 }
                             }
 
@@ -197,7 +198,7 @@ fun DateTimeCard(
                             )
                             icsDateTime?.let {
                                 Text(
-                                    text = PlatformInstantFormatter(icsDateTime.copy(timeZone = TimeZone.currentSystemDefault())).formatLocalizedDateTime()
+                                    text = icsDateTime.copy(timeZone = TimeZone.currentSystemDefault()).formatLocalized(IcsDateTimeFormat.DATE_TIME)
                                 )
                             }
                         }

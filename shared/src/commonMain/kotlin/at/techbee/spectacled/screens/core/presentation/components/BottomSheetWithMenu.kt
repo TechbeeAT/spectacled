@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,9 +21,10 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.close
@@ -30,10 +33,13 @@ import spectacled.shared.generated.resources.close
 @Composable
 fun BottomSheetWithMenu(
     sheetState: SheetState = rememberModalBottomSheetState(),
+    headline: String? = null,
     menuAction: @Composable () -> Unit = { },
     showLoadingIndicator: Boolean = false,
     gesturesEnabled: Boolean = true,
+    allowClose: Boolean = true,
     onDismiss: () -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth().padding(16.dp),
     content: @Composable () -> Unit,
 ) {
 
@@ -49,7 +55,8 @@ fun BottomSheetWithMenu(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 TextButton(
-                    onClick = { onDismiss() }
+                    onClick = { onDismiss() },
+                    enabled = allowClose
                 ) {
                     Text(stringResource(Res.string.close))
                 }
@@ -76,20 +83,28 @@ fun BottomSheetWithMenu(
         }
     }
 
-    if (LocalInspectionMode.current) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            header()
-            content()
-        }
-    } else {
-        ModalBottomSheet(
-            onDismissRequest = { onDismiss() },
-            sheetState = sheetState,
-            dragHandle = header,
-            sheetGesturesEnabled = gesturesEnabled
+
+    ModalBottomSheet(
+        onDismissRequest = { onDismiss() },
+        sheetState = sheetState,
+        dragHandle = header,
+        sheetGesturesEnabled = gesturesEnabled
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = modifier
         ) {
+
+            headline?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
             content()
         }
+
     }
 }
 
@@ -98,21 +113,52 @@ fun BottomSheetWithMenu(
 @Composable
 private fun BottomSheetWithMenu_Preview() {
 
-    BottomSheetWithMenu(
-        sheetState = rememberModalBottomSheetState(),
-        showLoadingIndicator = true,
-        menuAction = {
-            TextButton(
-                onClick = {  },
-            ) {
-                Text("Action")
-            }
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
 
-        },
-        onDismiss = {}
-    ) {
-        Column(modifier = Modifier.padding(16.dp)){
-            Text("Sample content")
+            BottomSheetWithMenu(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                showLoadingIndicator = true,
+                menuAction = {
+                    TextButton(
+                        onClick = { },
+                    ) {
+                        Text("Action")
+                    }
+
+                },
+                onDismiss = {}
+            ) {
+                Text("Sample content")
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+private fun BottomSheetWithMenu_Headline_Preview() {
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+
+            BottomSheetWithMenu(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                headline = "Headline",
+                showLoadingIndicator = true,
+                menuAction = {
+                    TextButton(
+                        onClick = { },
+                    ) {
+                        Text("Action")
+                    }
+
+                },
+                onDismiss = {}
+            ) {
+                Text("Sample content")
+            }
         }
     }
 }

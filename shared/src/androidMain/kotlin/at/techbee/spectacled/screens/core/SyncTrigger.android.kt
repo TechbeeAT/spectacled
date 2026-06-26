@@ -9,8 +9,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.widget.SpectacledWidget
 import io.ktor.client.HttpClient
 import org.koin.core.component.KoinComponent
@@ -69,24 +70,25 @@ actual class PlatformSyncTrigger(val context: Context) : SyncTrigger {
 
 class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params), KoinComponent {
     private val credentialStore: PlatformCredentialStore by inject()
-    private val databaseDriverFactory: DatabaseDriverFactory by inject()
     private val client: HttpClient by inject()
+    private val calendarRepository: CalendarRepository by inject()
+    private val icalEntryRepository: IcalEntryRepository by inject()
 
     override suspend fun doWork(): Result {
 
         val targetCalendarIds = inputData.getLongArray(WORKER_TARGET_CALENDAR_IDS)?.toList()
         val pushOnly = inputData.getBoolean(WORKER_PUSH_ONLY, false)
-        val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
         if (targetCalendarIds.isNullOrEmpty()) {
             // Default behavior: Sync everything
-            SyncCoordinator.syncAllPrincipals(database, credentialStore, client)
+            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, credentialStore, client)
         } else if(pushOnly && targetCalendarIds.size == 1) {
-            SyncCoordinator.pushLocalChanges(targetCalendarIds.first(), database, credentialStore, client)
+            SyncCoordinator.pushLocalChanges(targetCalendarIds.first(), calendarRepository, icalEntryRepository, credentialStore, client)
         } else {
             SyncCoordinator.syncSpecificCalendars(
                 targetCalendarIds,
-                database,
+                calendarRepository,
+                icalEntryRepository,
                 credentialStore,
                 client
             )

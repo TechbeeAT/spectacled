@@ -76,7 +76,8 @@ data class IcalEntry(
     val href: Url? = null,
     val calendarComponent: CalendarComponent,
     val parentUid: String? = null,
-    val relType: String? = "PARENT"
+    val relType: String? = "PARENT",
+    val url: Url? = null
     ) {
 
     companion object {
@@ -130,6 +131,23 @@ data class IcalEntry(
     fun isJournal() = calendarComponent == CalendarComponent.VJOURNAL && dtStart != null
     fun isTask() = calendarComponent == CalendarComponent.VTODO
     fun isSubtask() = parentUid != null
+
+    fun isPinned() = categories.any { category -> category == PINNED_CATEGORY}
+
+    fun withProgressUpdated(newPercent: Long): IcalEntry {
+
+        return this.copy(
+            percentComplete = newPercent,
+            status = when(newPercent) {
+                0L -> null
+                in 1L..99L -> Status.IN_PROCESS
+                100L -> Status.COMPLETED
+                else -> this.status
+            },
+            lastModified = IcsDateTime.now(),
+            syncState = if (this.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else this.syncState
+        )
+    }
 
     fun getProgressTriState() = when {
         percentComplete == 0L -> ToggleableState.Off

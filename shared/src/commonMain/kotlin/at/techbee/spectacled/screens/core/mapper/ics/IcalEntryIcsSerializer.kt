@@ -171,6 +171,10 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
         lines += "${KnownIcsPropertyName.RELATED_TO.propertyName}$relTypePart:${escapeIcsValue(parentUid)}"
     }
 
+    icalEntry.url?.let {
+        lines += "${KnownIcsPropertyName.URL.propertyName}:${it}"
+    }
+
     icalEntry.extraProperties.forEach {
         lines += it.unfoldedLine
     }

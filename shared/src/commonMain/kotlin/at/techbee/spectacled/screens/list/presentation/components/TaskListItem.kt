@@ -33,13 +33,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
+import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.theme.AppTheme
-import at.techbee.spectacled.theme.getThemeForSeedColor
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -64,7 +65,7 @@ fun TaskListItem(
     val hapticFeedback = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
 
-    MaterialTheme(colorScheme = getThemeForSeedColor(icalEntry.color)) {
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
 
         ElevatedFilterChip(
             modifier = modifier,
@@ -134,9 +135,7 @@ fun TaskListItem(
                             MetaInfoCard(
                                 icon = Icons.Outlined.CalendarToday,
                                 iconContentDescription = stringResource(Res.string.date_start),
-                                text = stringResource(Res.string.date_start) + " " + if (it.isDateOnly) PlatformInstantFormatter(it).formatLocalizedDate() else PlatformInstantFormatter(
-                                    it
-                                ).formatLocalizedDateTime()
+                                text = stringResource(Res.string.date_start) + " " + it.formatLocalized(if(it.isDateOnly) IcsDateTimeFormat.DATE else IcsDateTimeFormat.DATE_TIME)
                             )
                         }
 
@@ -144,9 +143,7 @@ fun TaskListItem(
                             MetaInfoCard(
                                 icon = Icons.Outlined.CalendarToday,
                                 iconContentDescription = stringResource(Res.string.date_due),
-                                text = stringResource(Res.string.date_due) + " " + if (it.isDateOnly) PlatformInstantFormatter(it).formatLocalizedDate() else PlatformInstantFormatter(
-                                    it
-                                ).formatLocalizedDateTime()
+                                text = stringResource(Res.string.date_due) + " " + it.formatLocalized(if(it.isDateOnly) IcsDateTimeFormat.DATE else IcsDateTimeFormat.DATE_TIME)
                             )
                         }
 
@@ -206,7 +203,7 @@ private fun TaskListItem_first_Preview() {
 @Composable
 private fun TaskListItem_colored_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
-        MaterialTheme(getThemeForSeedColor(Color.Yellow)) {
+        MaterialTheme(getColorSchemeForSeedColor(Color.Yellow)) {
 
             TaskListItem(
                 icalEntry = IcalEntry.getSampleIcalEntry(),

@@ -27,7 +27,8 @@ CREATE TABLE IcalEntryDto (
     href TEXT,
     calendarComponent TEXT,
     parentUid TEXT,
-    relType TEXT
+    relType TEXT,
+    url TEXT
 );
 
 getIcalEntriesByCalendar:
@@ -91,7 +92,8 @@ INSERT OR IGNORE INTO IcalEntryDto (
     href,
     calendarComponent,
     parentUid,
-    relType
+    relType,
+    url
 )
 VALUES (
     :calendarId,
@@ -120,7 +122,8 @@ VALUES (
     :href,
     :calendarComponent,
     :parentUid,
-    :relType
+    :relType,
+    :url
 );
 
 updateIcalEntry:
@@ -153,7 +156,8 @@ SET
     href = :href,
     calendarComponent = :calendarComponent,
     parentUid = :parentUid,
-    relType = :relType
+    relType = :relType,
+    url = :url
 WHERE uid = :uid;
 
 deleteTrashed:

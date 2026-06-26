@@ -2,17 +2,19 @@ package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
+import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import io.ktor.http.Url
+import kotlinx.datetime.number
 
 data class ListState(
     val icalEntries: List<IcalEntry> = emptyList(),
@@ -63,48 +65,45 @@ data class ListState(
     val scrollToDate: IcsDateTime? = null,
 
     val listCollapsedGroups: Set<String> = emptySet(),
-    val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES  // must be overwritten immediately on load
+    val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES,  // must be overwritten immediately on load
+
+    val displayMap: Map<ListGrouping, List<IcalEntry>> = emptyMap(),
+    val displayMapByDtStartDay: Map<String, List<IcalEntry>> = emptyMap(),
+    val displayMapByDtStartMonth: Map<String, List<IcalEntry>> = emptyMap(),
+    val trashbin: List<IcalEntry> = emptyList(),
+    val pinned: List<IcalEntry> = emptyList(),
+    val subtasks: Map<String, List<IcalEntry>> = emptyMap()
 ) {
 
     val isSearchBarExpanded: Boolean
         get() = listFilterCriteria.anyFilterActive()
 
+    fun recompute(): ListState {
+        val baseList = getBaseList(icalEntries)
+        val filteredList = getFilteredList(baseList)
+        val sortedList = getSortedList(filteredList)
 
-    val displayMap: Map<ListGrouping, List<IcalEntry>>
-        get() = getBaseList(icalEntries)
-            .let { getFilteredList(it) }
-            .let { getPinnedFilteredList(it) }
-            .let { getSortedList(it) }
-            .let { getGroupedMap(it) }
+        // Optimization: Partition the list once into pinned and unpinned
+        val (pinnedList, unpinnedList) = sortedList.partition {
+            it.categories.contains(IcalEntry.PINNED_CATEGORY)
+        }
 
-    val displayMapByDtStartDay: Map<String, List<IcalEntry>>
-        get() = getBaseList(icalEntries)
-            .let { getFilteredList(it) }
-            .let { getPinnedFilteredList(it) }
-            .let { getSortedList(it) }
-            .groupBy { PlatformInstantFormatter(it.dtStart ?: IcsDateTime.now()).formatLocalizedDate() }
-
-    val displayMapByDtStartMonth: Map<String, List<IcalEntry>>
-        get() = getBaseList(icalEntries)
-            .let { getFilteredList(it) }
-            .let { getPinnedFilteredList(it) }
-            .let { getSortedList(it) }
-            .groupBy { "${it.dtStart?.toLocalDateTime()?.year}-${it.dtStart?.toLocalDateTime()?.month}" }
-
-
-    val trashbin: List<IcalEntry>
-        get() = icalEntries
-            .filter { it.syncState.isDeletedState() }
-            .let { getSortedList(it) }
-
-    val pinned: List<IcalEntry>
-        get() = getBaseList(icalEntries)
-            .let { getFilteredList(it) }
-            .let { getPinnedFilteredList(it, true) }
-            .let { getSortedList(it) }
-
-    val subtasks: Map<String, List<IcalEntry>>
-        get() = getSubtasks(icalEntries)
+        return this.copy(
+            displayMap = getGroupedMap(unpinnedList),
+            displayMapByDtStartDay = unpinnedList
+                .groupBy { (it.dtStart ?: IcsDateTime.now()).formatLocalized(IcsDateTimeFormat.DATE) },
+            displayMapByDtStartMonth = unpinnedList
+                .groupBy {
+                    val dateTime = it.dtStart?.toLocalDateTime()
+                    if (dateTime != null) "${dateTime.year}-${dateTime.month.number}" else ""
+                },
+            trashbin = icalEntries
+                .filter { it.syncState.isDeletedState() }
+                .let { getSortedList(it) },
+            pinned = pinnedList,
+            subtasks = getSubtasksLogic(icalEntries)
+        )
+    }
 
 
     private fun getBaseList(icalEntries: List<IcalEntry>, trashbin: Boolean = false) =
@@ -115,7 +114,7 @@ data class ListState(
                 SpectacledVariant.TASKS -> it.syncState.isDeletedState() == trashbin && it.parentUid == null
         } }
 
-    private fun getSubtasks(icalEntries: List<IcalEntry>) =
+    private fun getSubtasksLogic(icalEntries: List<IcalEntry>) =
         when(spectacledVariant) {
                 SpectacledVariant.JOURNALS -> emptyMap()  // not foreseen for Journals
                 SpectacledVariant.NOTES -> emptyMap()  // not foreseen for Notes
@@ -126,36 +125,36 @@ data class ListState(
             }
 
     private fun getPinnedFilteredList(icalEntries: List<IcalEntry>, pinned: Boolean = false) =
-        icalEntries.filter {
-            if(pinned)
-                it.categories.any { category -> category == IcalEntry.PINNED_CATEGORY}
-            else
-                it.categories.none { category -> category == IcalEntry.PINNED_CATEGORY }
-        }
+        icalEntries.filter { it.isPinned() == pinned }
 
 
     private fun getFilteredList(icalEntries: List<IcalEntry>): List<IcalEntry> {
+        val criteria = listFilterCriteria
 
-        return icalEntries
-            .filter {
-                if (listFilterCriteria.searchQuery.isNullOrBlank())
-                    true
-                else
-                    it.summary?.contains(listFilterCriteria.searchQuery, ignoreCase = true) == true
-                            || it.description?.contains(listFilterCriteria.searchQuery, ignoreCase = true) == true
-            }
-            .filter {
-                if (listFilterCriteria.searchCategory.isNullOrBlank())
-                    true
-                else
-                    it.categories.any { category -> category.equals(listFilterCriteria.searchCategory, ignoreCase = true) }
-            }
-            .filter {
-                if (listFilterCriteria.filterStatus == null)
-                    true
-                else
-                    it.status == listFilterCriteria.filterStatus
-            }
+        // Early exit if no filter is active
+        if (!criteria.anyFilterActive()) return icalEntries
+
+        val query = criteria.searchQuery
+        val category = criteria.searchCategory
+        val status = criteria.filterStatus
+
+        return icalEntries.filter { item ->
+            // Single pass check for all conditions
+            val matchesQuery = query.isNullOrBlank() ||
+                    item.summary?.contains(query, ignoreCase = true) == true ||
+                    item.description?.contains(query, ignoreCase = true) == true
+
+            if (!matchesQuery) return@filter false
+
+            val matchesCategory = category.isNullOrBlank() ||
+                    item.categories.any { it.equals(category, ignoreCase = true) }
+
+            if (!matchesCategory) return@filter false
+
+            val matchesStatus = status == null || item.status == status
+
+            matchesStatus
+        }
     }
 
 

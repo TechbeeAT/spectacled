@@ -75,6 +75,18 @@ enum class SpectacledVariant(
     );
 }
 
+fun doInitKoin(spectacledVariant: SpectacledVariant) {
+    if (KoinPlatform.getKoinOrNull() == null) {
+        Napier.base(DebugAntilog())
+        startKoin {
+            modules(
+                module { single { spectacledVariant } },
+                sharedModule
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun SpectacledApp(
@@ -83,22 +95,7 @@ fun SpectacledApp(
     initialIcalEntryId: Long? = null,
     onCloseApp: () -> Unit = {}
 ) {
-
-    LaunchedEffect(Unit) {
-        // in launched effect to initialize it only once
-        Napier.base(DebugAntilog())  // enables Napier logging for all platforms//onNavigate = { navController.navigate(it) }
-    }
-
-    // Safe Koin initialization: If Koin is not started (e.g. JVM/Web/iOS), start it now.
-    // If it is already started (e.g. Android Application), this will do nothing.
-    if (KoinPlatform.getKoinOrNull() == null) {
-        startKoin {
-            modules(
-                module { single { spectacledVariant } },
-                sharedModule
-            )
-        }
-    }
+    doInitKoin(spectacledVariant)
 
     val syncTrigger = koinInject<PlatformSyncTrigger>()
     val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
@@ -187,15 +184,17 @@ fun SpectacledApp(
                     LaunchedEffect(copyFromId, calendarId) {
                         if (copyFromId != null)
                             detailsViewModel.loadCopy(copyFromId)
-                        else
+                        else if(calendarId != 0L)
                             detailsViewModel.loadNew(calendarId)
+                        else
+                            detailsViewModel.prepareNew()
                     }
 
                     DetailsScreenRoot(
                         detailsViewModel = detailsViewModel,
                         onNavigate = { route -> navController.navigate(route) },
                         onNavigateUp = {
-                            if (!navController.popBackStack()) {  // only relevant when opening app from Android widget
+                            if (!navController.popBackStack()) {  // only relevant when opening app from Android widget or shortcut
                                 onCloseApp()
                             }
                         }

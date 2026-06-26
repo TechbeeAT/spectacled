@@ -24,9 +24,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.list.presentation.components.EmptyListScreen
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
@@ -88,7 +89,7 @@ fun JournalsListJournals(
 
     LaunchedEffect(state.scrollToDate) {
         state.scrollToDate?.let { scrollToIcsDateTime ->
-            val scrollToDayGroup = PlatformInstantFormatter(scrollToIcsDateTime).formatLocalizedDate()
+            val scrollToDayGroup = scrollToIcsDateTime.formatLocalized(IcsDateTimeFormat.DATE)
 
             var targetIndex = -1
             var currentIndex = 0

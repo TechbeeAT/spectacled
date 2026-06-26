@@ -28,12 +28,6 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_libraries
 
 
-@Composable
-fun AboutLibrariesRoot(
-    viewModel: AboutViewModel
-) {
-    AboutLibraries(viewModel.state.libraries)
-}
 
 @Composable
 fun AboutLibraries(

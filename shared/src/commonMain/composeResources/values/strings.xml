@@ -6,6 +6,8 @@
     <string name="app_name_spectacled_tasks">spectacled Tasks</string>
 
     <string name="about">About</string>
+    <string name="about_version">Version: %1$s (%2$s)</string>
+    <string name="about_codename">Codename: %1$s</string>
     <string name="about_release_notes">Release Notes</string>
     <string name="about_libraries">Libraries</string>
     <string name="about_contributors">Contributors</string>
@@ -114,6 +116,9 @@
     <string name="entry_successfully_saved">Entry successfully saved</string>
     <string name="entry_deleted">Entry deleted</string>
     <string name="subtask">Subtask</string>
+    <string name="add_subtask">Add subtask</string>
+    <string name="url">URL</string>
+    <string name="add_edit_url">Add/edit URL</string>
 
     <string name="sync_conflict_entry_modified_while_server_modified">This entry has been modified locally while it was modified on the server.</string>
     <string name="sync_conflict_entry_deleted_while_server_modified">This entry has been deleted locally while it was modified on the server.</string>
@@ -162,6 +167,7 @@
     <string name="theme_dynamic_colors">Dynamic colors</string>
     <string name="theme_amoled">Amoled (true dark)</string>
     <string name="theme_palette_style">Palette style</string>
+    <string name="theme_font">Font</string>
 
     <string name="status">Status</string>
     <string name="status_no_status">No status</string>

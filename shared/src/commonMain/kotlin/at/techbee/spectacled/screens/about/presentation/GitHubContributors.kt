@@ -39,12 +39,7 @@ import spectacled.shared.generated.resources.more_on_github
 //TODO: Change for Release!!!
 private const val GITHUB_CONTRIBUTORS_URL = "https://github.com/TechbeeAT/jtxBoard/graphs/contributors"
 
-@Composable
-fun GitHubContributorsRoot(
-    viewModel: AboutViewModel
-) {
-    GitHubContributors(viewModel.state.gitHubContributors)
-}
+
 
 @Composable
 fun GitHubContributors(

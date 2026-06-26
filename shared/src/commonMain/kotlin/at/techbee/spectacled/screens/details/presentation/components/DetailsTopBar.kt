@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.EditOff
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +18,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -73,7 +80,7 @@ fun DetailsTopBar(
             }
         },
         actions = {
-            if(!canWriteContent) {
+            if (!canWriteContent) {
                 TextButton(
                     onClick = {},
                     enabled = false
@@ -85,13 +92,13 @@ fun DetailsTopBar(
                 }
             } else {
 
-                when(spectacledVariant) {
-                    SpectacledVariant.JOURNALS -> { }
+                when (spectacledVariant) {
+                    SpectacledVariant.JOURNALS -> {}
                     SpectacledVariant.NOTES -> {
                         TextButton(
                             onClick = { onAction(DetailsAction.OnPin(!isPinned)) }
                         ) {
-                            if(isPinned)
+                            if (isPinned)
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_pin),
                                     contentDescription = stringResource(Res.string.unpin)
@@ -103,7 +110,28 @@ fun DetailsTopBar(
                                 )
                         }
                     }
-                    SpectacledVariant.TASKS -> { }
+
+                    SpectacledVariant.TASKS -> {}
+                }
+
+                var dropdownExpanded by remember { mutableStateOf(false) }
+
+                TextButton(onClick = { dropdownExpanded = true }) {
+
+                    Icon(Icons.Outlined.MoreVert, null)
+
+                    DropdownMenu(
+                        expanded = dropdownExpanded,
+                        onDismissRequest = { dropdownExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("AI Extract (Claude; experimental)") },
+                            onClick = {
+                                dropdownExpanded = false
+                                onAction(DetailsAction.OnProcessWithAI)
+                            }
+                        )
+                    }
                 }
             }
         },
@@ -164,7 +192,7 @@ private fun DetailsTopBar_readonly_Preview() {
 @Composable
 private fun DetailsTopBar_TASKS_with_color_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
-        
+
         MaterialTheme(dynamicColorScheme(Color.Yellow, false)) {
 
             DetailsTopBar(

@@ -3,12 +3,18 @@ package at.techbee.spectacled.widget
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.action.ActionParameters
@@ -34,12 +40,14 @@ import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
@@ -47,56 +55,56 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.db.SpectacledDatabase
-import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.getAndroidLogoResId
-import at.techbee.spectacled.screens.core.mapper.dto.toDomain
-import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.shared.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
-    private val databaseDriverFactory: DatabaseDriverFactory by inject()
     private val spectacledVariant: SpectacledVariant by inject()
+    private val calendarRepository: CalendarRepository by inject()
+    private val icalEntryRepository: IcalEntryRepository by inject()
 
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
 
-        val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
         provideContent {
             val prefs = currentState<Preferences>()
             val calendarId = prefs[longPreferencesKey(CALENDAR_ID_KEY)]
 
-            val entries = if (calendarId != null) {
-                database
-                    .icalentry_dtoQueries
-                    .getIcalEntriesByCalendar(calendarId)
-                    .executeAsList()
-                    .map { it.toDomain() }
-                    .filter { !it.syncState.isDeletedState() }
-                    .sortedByDescending { it.dtStart?.instant?.toEpochMilliseconds() ?: it.created.instant.toEpochMilliseconds() }
-            } else {
-                emptyList()
+
+            val calendar by produceState<Calendar?>(initialValue = null, key1 = calendarId) {
+                value = calendarId?.let { calendarRepository.getCalendarById(it) }
             }
 
-            val calendar = if (calendarId != null) {
-                database
-                    .calendar_dtoQueries
-                    .getCalendarById(calendarId)
-                    .executeAsOneOrNull()?.toDomain()
-            } else null
+            val entries by remember(calendarId) {
+                if (calendarId != null) {
+                    icalEntryRepository
+                        .getIcalEntriesByCalendarFlow(calendarId)
+                        .map { list ->
+                            list.filter { !it.syncState.isDeletedState() }
+                                .sortedByDescending { it.dtStart?.instant?.toEpochMilliseconds() ?: it.created.instant.toEpochMilliseconds() }
+                                .groupBy { it.parentUid }
+                        }
+                } else {
+                    flowOf(emptyMap())
+                }
+            }.collectAsState(emptyMap())
 
             GlanceTheme {
                 SpectacledWidgetContent(entries, calendar)
@@ -105,7 +113,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     }
 
     @Composable
-    fun SpectacledWidgetContent(entries: List<IcalEntry>, calendar: Calendar?) {
+    fun SpectacledWidgetContent(entries: Map<String?, List<IcalEntry>>, calendar: Calendar?) {
 
         val context = LocalContext.current
 
@@ -114,7 +122,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                 TitleBar(
                     startIcon = ImageProvider(spectacledVariant.getAndroidLogoResId()),
                     iconColor = GlanceTheme.colors.primary,
-                    title = calendar?.displayName ?:calendar?.url?.toString() ?: "",
+                    title = calendar?.displayName ?: calendar?.url?.toString() ?: "",
                     actions = {
                         if (calendar != null) {
                             SquareIconButton(
@@ -137,8 +145,6 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                                 contentColor = GlanceTheme.colors.onBackground
                             )
                         }
-
-
                     }
                 )
             },
@@ -150,9 +156,11 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                 contentAlignment = Alignment.Center
             ) {
 
+                val mainEntries = entries[null] ?: emptyList()    // no subtasks
+
                 if (calendar == null) {
                     WidgetEmptyState("Please select a calendar in widget settings")
-                } else if (entries.isEmpty()) {
+                } else if (mainEntries.isEmpty()) {
                     WidgetEmptyState("No entries found")
                 } else {
                     LazyColumn(
@@ -160,16 +168,33 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                             .cornerRadius(8.dp)
                             .fillMaxSize()
                     ) {
-                        itemsIndexed(entries) { index, entry ->
+                        itemsIndexed(mainEntries) { index, entry ->
 
-                            Column(modifier = GlanceModifier.clickable(
-                                onClick = actionStartActivity(
-                                    getLaunchIntent(context, calendar.id, entry.id)
+                            Column(modifier = GlanceModifier.fillMaxWidth()) {
+
+                                IcalEntryItem(
+                                    entry = entry,
+                                    modifier = GlanceModifier.clickable(
+                                        onClick = actionStartActivity(
+                                            getLaunchIntent(context, entry.calendarId, entry.id)
+                                        )
+                                    )
                                 )
-                            )) {
-                                IcalEntryItem(entry)
 
-                                if (index != entries.lastIndex) {
+                                entries[entry.uid]?.forEach { subEntry ->
+                                    IcalEntryItem(
+                                        entry = subEntry,
+                                        showSubtaskIcon = true,
+                                        modifier = GlanceModifier
+                                            .clickable(
+                                                onClick = actionStartActivity(
+                                                    getLaunchIntent(context, subEntry.calendarId, subEntry.id)
+                                                )
+                                            )
+                                    )
+                                }
+
+                                if (index != mainEntries.lastIndex) {
                                     Box(
                                         modifier = GlanceModifier
                                             .fillMaxWidth()
@@ -199,12 +224,28 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     }
 
     @Composable
-    private fun IcalEntryItem(entry: IcalEntry) {
+    private fun IcalEntryItem(
+        entry: IcalEntry,
+        showSubtaskIcon: Boolean = false,
+        modifier: GlanceModifier = GlanceModifier
+    ) {
 
         Row(modifier = GlanceModifier
             .fillMaxWidth()
             .padding(vertical = 8.dp, horizontal = 12.dp)
-            .background(GlanceTheme.colors.surface)) {
+            .background(GlanceTheme.colors.surface)
+            .then(modifier),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            if(showSubtaskIcon)
+                Image(
+                    provider = ImageProvider(R.drawable.ic_sub),
+                    contentDescription = "Descriptive text of your icon",
+                    modifier = GlanceModifier.size(16.dp).padding(end = 4.dp),
+                    contentScale = ContentScale.FillBounds,
+                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onBackground)
+                )
 
 
             Column(modifier = GlanceModifier.defaultWeight()) {
@@ -278,29 +319,31 @@ class ToggleTaskAction : ActionCallback, KoinComponent {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
+        val icalEntryRepository: IcalEntryRepository by inject()
+
         val entryId = parameters[EntryIdKey] ?: return
         val isChecked = parameters[IsCheckedKey] ?: return
-
-        val databaseDriverFactory: DatabaseDriverFactory by inject()
-        val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
 
         val newPercent = if (isChecked) 100L else 0L
         val newStatus = if (isChecked) Status.COMPLETED else Status.NEEDS_ACTION
 
-        database.icalentry_dtoQueries.updateProgress(
-            newPercent = newPercent,
-            newStatus = newStatus.name,
-            lastModified = formatIcsDateTime(IcsDateTime.now())?.first,
-            syncState = SyncState.LOCAL_MODIFIED.name,
-            id = entryId
+        icalEntryRepository.updateProgress(
+            id = entryId,
+            percentComplete = newPercent,
+            status = newStatus,
+            lastModified = IcsDateTime.now(),
+            syncState = SyncState.LOCAL_MODIFIED
         )
 
-        // Trigger a state update to force Glance to re-run provideGlance
+        // Force a UI update by changing a preference.
+        // This ensures Glance recognizes a state change.
+        /*
         updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
             prefs.toMutablePreferences().apply {
                 this[longPreferencesKey("last_widget_update")] = System.currentTimeMillis()
             }
         }
+         */
 
         SpectacledWidget().update(context, glanceId)
     }

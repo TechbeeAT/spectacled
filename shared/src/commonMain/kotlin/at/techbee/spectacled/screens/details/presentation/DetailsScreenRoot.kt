@@ -12,18 +12,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.AddBox
+import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.AddTask
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,7 +36,11 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,10 +48,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
+import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
@@ -50,13 +61,16 @@ import at.techbee.spectacled.screens.details.presentation.components.CategorySel
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DetailsTopBar
+import at.techbee.spectacled.screens.details.presentation.components.EditUrlBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
-import at.techbee.spectacled.theme.getThemeForSeedColor
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_edit_url
+import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.more
@@ -72,10 +86,10 @@ fun DetailsScreenRoot(
     onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit
 ) {
-    val detailsState = detailsViewModel.state
+    val detailsState by detailsViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    MaterialTheme(colorScheme = getThemeForSeedColor(detailsState.icalEntry.color ?: detailsState.calendar?.color)) {
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(detailsState.icalEntry.color ?: detailsState.calendar?.color)) {
 
 
         LaunchedEffect(detailsState.snackbarText) {
@@ -93,8 +107,8 @@ fun DetailsScreenRoot(
         }
 
         LaunchedEffect(detailsState.navigateToIcalEntryId) {
-            if (detailsState.navigateToIcalEntryId != null) {
-                onNavigate(IcalEntryDetails(detailsState.navigateToIcalEntryId))
+            detailsState.navigateToIcalEntryId?.let {
+                onNavigate(IcalEntryDetails(it))
                 detailsViewModel.onAction(DetailsAction.OnNavigateToIcalEntryId(null))
             }
         }
@@ -175,6 +189,28 @@ fun DetailsScreenRoot(
                 onDismiss = {
                     detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(false))
                 }
+            )
+        }
+
+        if (detailsState.showEditUrlBottomSheet) {
+            EditUrlBottomSheet(
+                initialUrl = detailsState.icalEntry.url,
+                onUrlEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateUrl(it)) },
+                onDismiss = {
+                    detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(false))
+                }
+            )
+        }
+
+        if(detailsState.icalEntry.calendarId == 0L) {
+            CalendarSelectorBottomSheet(
+                sheetState = rememberModalBottomSheetState(confirmValueChange = { it != SheetValue.Hidden }),
+                principals = detailsState.allPrincipals,
+                homeCollections = detailsState.allHomeCollections,
+                calendars = detailsState.allCalendars,
+                selectedCalendarId = if(detailsState.icalEntry.calendarId == 0L) null else detailsState.icalEntry.calendarId,
+                onCalendarIdSelected = { detailsViewModel.onAction(DetailsAction.OnNewCalendarIdSelected(it)) },
+                onDismiss = { }
             )
         }
 
@@ -262,15 +298,39 @@ fun DetailsScreenRoot(
                         }
                     }
 
-                    if (detailsState.icalEntry.isTask()) {
+                    var addMoreExpanded by remember { mutableStateOf(false) }
 
-                        TextButton(
-                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
-                            enabled = detailsState.allowEditing() && !detailsState.isLoading
+                    TextButton(
+                        onClick = { addMoreExpanded = true },
+                    ) {
+                        Icon(Icons.Outlined.AddBox, "Add more")
+
+                        DropdownMenu(
+                            expanded = addMoreExpanded,
+                            onDismissRequest = { addMoreExpanded = false }
                         ) {
-                            Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask))
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.add_edit_url)) },
+                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_edit_url)) },
+                                onClick = {
+                                    detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
+                                    addMoreExpanded = false
+                                },
+                            )
+
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.add_subtask)) },
+                                leadingIcon = { Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask)) },
+                                onClick = {
+                                    detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet))
+                                    addMoreExpanded = false
+                                },
+                                enabled = detailsState.allowEditing() && !detailsState.isLoading && detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
+                            )
                         }
                     }
+
+
 
                     Spacer(modifier = Modifier.weight(1f))
 

@@ -16,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -24,12 +25,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
+import at.techbee.spectacled.theme.AppTheme
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -63,105 +67,111 @@ fun DetailsMoreBottomSheet(
         val copiedToClipboardText = stringResource(Res.string.copied_to_clipboard)
         //val copyCreated = stringResource(Res.string.copy_created)
 
-        DropdownMenuItem(
-            leadingIcon = { Icon(Icons.Outlined.Delete, stringResource(Res.string.delete)) },
-            text = { Text(text = stringResource(Res.string.delete)) },
-            onClick = {
-                onAction(DetailsAction.OnShowDeleteDialog(true))
-                onAction(DetailsAction.OnShowMoreBottomSheet(false))
-            },
-            colors = MenuDefaults.itemColors().copy(
-                textColor = MaterialTheme.colorScheme.primary,
-                leadingIconColor = MaterialTheme.colorScheme.primary
-            ),
-            enabled = canWriteContent
-        )
-
-        DropdownMenuItem(
-            leadingIcon = {
-                Icon(
-                    when(getPlatform().platform) {
-                        Platforms.ANDROID -> Icons.Outlined.Share
-                        Platforms.IOS -> Icons.Outlined.IosShare
-                        Platforms.DESKTOP, Platforms.WASM -> Icons.Outlined.Email
-                    },
-                    when(getPlatform().platform) {
-                        Platforms.ANDROID, Platforms.IOS -> stringResource(Res.string.share)
-                        Platforms.DESKTOP, Platforms.WASM -> stringResource(Res.string.send_as_email)
-                    }
-                )
-            },
-            text = {
-                Text(
-                    text = when(getPlatform().platform) {
-                        Platforms.ANDROID, Platforms.IOS -> stringResource(Res.string.share)
-                        Platforms.DESKTOP, Platforms.WASM -> stringResource(Res.string.send_as_email)
-                    }
-                )
-            },
-            onClick = { onAction(DetailsAction.OnShare) },
-            colors = MenuDefaults.itemColors().copy(
-                textColor = MaterialTheme.colorScheme.primary,
-                leadingIconColor = MaterialTheme.colorScheme.primary
-            )
-        )
-
-        DropdownMenuItem(
-            leadingIcon = { Icon(Icons.Outlined.FileCopy, stringResource(Res.string.create_copy)) },
-            text = { Text(text = stringResource(Res.string.create_copy)) },
-            onClick = {
-                onAction(DetailsAction.OnShowMoreBottomSheet(false))
-                onAction(DetailsAction.OnCreateCopy)
-                //TODO: Make sure also new notes can be copied (id should not be 0L!)
-                //TODO: Make sure note is saved before navigating
-                //TODO: Navigate!
-                //onNavigate(Route.AddNote(detailsState.note.calendarId, detailsState.note.id))
-                //noteDetailsViewModel.onAction(NoteDetailsAction.OnUpdateSnackbar(copyCreated))
-            },
-            colors = MenuDefaults.itemColors().copy(
-                textColor = MaterialTheme.colorScheme.primary,
-                leadingIconColor = MaterialTheme.colorScheme.primary
-            ),
-            enabled = canWriteContent
-        )
-
-        DropdownMenuItem(
-            leadingIcon = { Icon(Icons.Outlined.ContentPaste, stringResource(Res.string.copy_to_clipboard)) },
-            text = { Text(text = stringResource(Res.string.copy_to_clipboard)) },
-            onClick = {
-                scope.launch {
+        Column {
+            DropdownMenuItem(
+                leadingIcon = { Icon(Icons.Outlined.Delete, stringResource(Res.string.delete)) },
+                text = { Text(text = stringResource(Res.string.delete)) },
+                onClick = {
+                    onAction(DetailsAction.OnShowDeleteDialog(true))
                     onAction(DetailsAction.OnShowMoreBottomSheet(false))
-                    clipboard.setText(shareText)
-                }
-                onAction(DetailsAction.OnUpdateSnackbar(copiedToClipboardText))
-            },
-            colors = MenuDefaults.itemColors().copy(
-                textColor = MaterialTheme.colorScheme.primary,
-                leadingIconColor = MaterialTheme.colorScheme.primary
+                },
+                colors = MenuDefaults.itemColors().copy(
+                    textColor = MaterialTheme.colorScheme.primary,
+                    leadingIconColor = MaterialTheme.colorScheme.primary
+                ),
+                enabled = canWriteContent
             )
-        )
 
-        Column(
-            horizontalAlignment = Alignment.End,
-            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp, start = 16.dp, end = 16.dp).fillMaxWidth()
-        ) {
-            Text(
-                text = "${stringResource(Res.string.created)}: ${PlatformInstantFormatter(icalEntry.created).formatLocalizedDateTime()}",
-                style = MaterialTheme.typography.labelSmall,
-                color = LocalContentColor.current.copy(alpha = 0.5f)
+            DropdownMenuItem(
+                leadingIcon = {
+                    Icon(
+                        when (getPlatform().platform) {
+                            Platforms.ANDROID -> Icons.Outlined.Share
+                            Platforms.IOS -> Icons.Outlined.IosShare
+                            Platforms.DESKTOP, Platforms.WASM -> Icons.Outlined.Email
+                        },
+                        when (getPlatform().platform) {
+                            Platforms.ANDROID, Platforms.IOS -> stringResource(Res.string.share)
+                            Platforms.DESKTOP, Platforms.WASM -> stringResource(Res.string.send_as_email)
+                        }
+                    )
+                },
+                text = {
+                    Text(
+                        text = when (getPlatform().platform) {
+                            Platforms.ANDROID, Platforms.IOS -> stringResource(Res.string.share)
+                            Platforms.DESKTOP, Platforms.WASM -> stringResource(Res.string.send_as_email)
+                        }
+                    )
+                },
+                onClick = { onAction(DetailsAction.OnShare) },
+                colors = MenuDefaults.itemColors().copy(
+                    textColor = MaterialTheme.colorScheme.primary,
+                    leadingIconColor = MaterialTheme.colorScheme.primary
+                )
             )
-            Text(
-                text = "${stringResource(Res.string.last_modified)}: ${PlatformInstantFormatter(icalEntry.lastModified?:icalEntry.created).formatLocalizedDateTime()}",
-                style = MaterialTheme.typography.labelSmall,
-                color = LocalContentColor.current.copy(alpha = 0.5f)
+
+            DropdownMenuItem(
+                leadingIcon = { Icon(Icons.Outlined.FileCopy, stringResource(Res.string.create_copy)) },
+                text = { Text(text = stringResource(Res.string.create_copy)) },
+                onClick = {
+                    onAction(DetailsAction.OnShowMoreBottomSheet(false))
+                    onAction(DetailsAction.OnCreateCopy)
+                    //TODO: Make sure also new notes can be copied (id should not be 0L!)
+                    //TODO: Make sure note is saved before navigating
+                    //TODO: Navigate!
+                    //onNavigate(Route.AddNote(detailsState.note.calendarId, detailsState.note.id))
+                    //noteDetailsViewModel.onAction(NoteDetailsAction.OnUpdateSnackbar(copyCreated))
+                },
+                colors = MenuDefaults.itemColors().copy(
+                    textColor = MaterialTheme.colorScheme.primary,
+                    leadingIconColor = MaterialTheme.colorScheme.primary
+                ),
+                enabled = canWriteContent
             )
-            /*
+
+            DropdownMenuItem(
+                leadingIcon = { Icon(Icons.Outlined.ContentPaste, stringResource(Res.string.copy_to_clipboard)) },
+                text = { Text(text = stringResource(Res.string.copy_to_clipboard)) },
+                onClick = {
+                    scope.launch {
+                        onAction(DetailsAction.OnShowMoreBottomSheet(false))
+                        clipboard.setText(shareText)
+                    }
+                    onAction(DetailsAction.OnUpdateSnackbar(copiedToClipboardText))
+                },
+                colors = MenuDefaults.itemColors().copy(
+                    textColor = MaterialTheme.colorScheme.primary,
+                    leadingIconColor = MaterialTheme.colorScheme.primary
+                )
+            )
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp, start = 16.dp, end = 16.dp).fillMaxWidth()
+            ) {
+                Text(
+                    text = "${stringResource(Res.string.created)}: ${icalEntry.created.formatLocalized(IcsDateTimeFormat.DATE_TIME)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = LocalContentColor.current.copy(alpha = 0.5f)
+                )
+                Text(
+                    text = "${stringResource(Res.string.last_modified)}: ${
+                        (icalEntry.lastModified ?: icalEntry.created).formatLocalized(
+                            IcsDateTimeFormat.DATE_TIME
+                        )
+                    }",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = LocalContentColor.current.copy(alpha = 0.5f)
+                )
+                /*
             Text(
                 text = "Sync status: ${icalEntry.syncState.name}",
                 style = MaterialTheme.typography.labelSmall,
                 color = LocalContentColor.current.copy(alpha = 0.5f)
             )
              */
+            }
         }
     }
 }
@@ -170,23 +180,27 @@ fun DetailsMoreBottomSheet(
 @Preview
 @Composable
 fun DetailsMoreBottomSheetPreview() {
-    MaterialTheme {
-        DetailsMoreBottomSheet(
-            onAction = {},
-            icalEntry = IcalEntry.getSampleIcalEntry(),
-            canWriteContent = true
-        )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            DetailsMoreBottomSheet(
+                onAction = {},
+                icalEntry = IcalEntry.getSampleIcalEntry(),
+                canWriteContent = true
+            )
+        }
     }
 }
 
 @Preview
 @Composable
 fun DetailsMoreBottomSheet_ReadOnly_Preview() {
-    MaterialTheme {
-        DetailsMoreBottomSheet(
-            onAction = {},
-            icalEntry = IcalEntry.getSampleIcalEntry(),
-            canWriteContent = false
-        )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            DetailsMoreBottomSheet(
+                onAction = {},
+                icalEntry = IcalEntry.getSampleIcalEntry(),
+                canWriteContent = false
+            )
+        }
     }
 }

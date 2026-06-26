@@ -2,9 +2,11 @@ package at.techbee.spectacled.screens.core.data
 
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 const val APP_PREFERENCES_FILE_NAME = "app_preferences"
@@ -21,6 +23,7 @@ const val THEME_OPTION = "theme_option"
 const val THEME_DYNAMIC_COLORS_ENABLED = "theme_dynamic_colors_enabled"
 const val THEME_PALETTE_STYLE = "theme_palette_style"
 const val THEME_AMOLED = "theme_amoled"
+const val THEME_FONT = "theme_font"
 
 interface UserAppPreferencesStore {
     fun save(key: String, value: String)
@@ -81,6 +84,22 @@ interface UserAppPreferencesStore {
         get() = this.load(THEME_AMOLED)?.toBooleanStrictOrNull()?: false
         set(value) = this.save(THEME_AMOLED, value.toString())
     fun getThemeAmoledAsFlow(): Flow<Boolean> = this.loadAsFlow(THEME_AMOLED).map { it?.toBooleanStrictOrNull() ?: false }
+
+    var themeFont: ThemeFont
+        get() = this.load(THEME_FONT)?.let { ThemeFont.entries.find { themeFont -> themeFont.name == it } } ?: ThemeFont.ROBOTO
+        set(value) = this.save(THEME_FONT, value.name)
+    fun getThemeFontAsFlow(): Flow<ThemeFont> = this.loadAsFlow(THEME_FONT).map { name ->
+        ThemeFont.entries.find { it.name == name } ?: ThemeFont.ROBOTO
+    }
+
+    companion object {
+        fun getEmptyPreferenceStoreForPreview() = object: UserAppPreferencesStore {
+            override fun save(key: String, value: String) {}
+            override fun load(key: String): String? {return null }
+            override fun loadAsFlow(key: String): Flow<String?> { return flowOf(null) }
+            override fun remove(key: String) {}
+        }
+    }
 }
 
 expect class PlatformUserAppPreferencesStore: UserAppPreferencesStore {

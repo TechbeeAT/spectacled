@@ -44,7 +44,7 @@ enum class ListGrouping(
     ),
     GROUP_7_DAYS(
         (-7).days,
-        -48.hours,
+        (-48).hours,
         Res.string.grouping_last_x_days,
         7
     ),

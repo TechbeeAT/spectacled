@@ -22,8 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import at.techbee.spectacled.screens.core.PlatformInstantFormatter
+import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.formatLocalized
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.collapse
@@ -82,7 +83,7 @@ fun ListGroupHeaderTodayCollapsedPreview() {
 fun ListGroupHeaderTomorrowExpandedPreview() {
     ListGroupHeader(
         appPreferencesTag = "date",
-        headerText = PlatformInstantFormatter(IcsDateTime.now()).formatLocalizedDate() ,
+        headerText = IcsDateTime.now().formatLocalized(IcsDateTimeFormat.DATE),
         isCollapsed = false,
         onToggleListGroupExpanded = {}
     )

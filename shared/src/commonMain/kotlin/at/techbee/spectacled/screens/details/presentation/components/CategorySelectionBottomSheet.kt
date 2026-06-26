@@ -1,10 +1,8 @@
 package at.techbee.spectacled.screens.details.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -15,6 +13,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -33,7 +32,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -48,7 +49,7 @@ fun CategorySelectionBottomSheet(
     onCategoryAdded: (String) -> Unit,
     onCategoryRemoved: (String) -> Unit,
     onDismiss: () -> Unit
-    ) {
+) {
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -59,77 +60,68 @@ fun CategorySelectionBottomSheet(
     }
 
     BottomSheetWithMenu(
-        onDismiss = { onDismiss() }
+        onDismiss = { onDismiss() },
+        headline = stringResource(Res.string.category)
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth().padding(8.dp)
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
         ) {
-
-            Text(
-                text = stringResource(Res.string.category),
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                itemVerticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                allCategories
-                    .sortedBy { it.uppercase() }
-                    .forEach { category ->
-                        FilterChip(
-                            selected = selectedCategories.contains(category),
-                            onClick = {
-                                if (selectedCategories.contains(category))
-                                    onCategoryRemoved(category)
-                                else
-                                    onCategoryAdded(category)
-                            },
-                            label = { Text(category) },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category)) }
-                        )
-                    }
-            }
-
-            TextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text(stringResource(Res.string.search_add_category)) },
-                trailingIcon = {
-                    IconButton(
+            allCategories
+                .sortedBy { it.uppercase() }
+                .forEach { category ->
+                    FilterChip(
+                        selected = selectedCategories.contains(category),
                         onClick = {
-                            if (searchQuery.isNotBlank()) {
-                                onCategoryAdded(searchQuery)
-                                searchQuery = ""
-                            }
-                            keyboardController?.hide()
+                            if (selectedCategories.contains(category))
+                                onCategoryRemoved(category)
+                            else
+                                onCategoryAdded(category)
                         },
-                        enabled = searchQuery.isNotBlank(),
-                        content = { Icon(Icons.Outlined.NewLabel, stringResource(Res.string.create_category)) }
+                        label = { Text(category) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category)) }
                     )
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    autoCorrectEnabled = false,
-                    capitalization = KeyboardCapitalization.Words,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
+                }
+        }
+
+        TextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text(stringResource(Res.string.search_add_category)) },
+            trailingIcon = {
+                IconButton(
+                    onClick = {
                         if (searchQuery.isNotBlank()) {
                             onCategoryAdded(searchQuery)
                             searchQuery = ""
                         }
+                        keyboardController?.hide()
+                    },
+                    enabled = searchQuery.isNotBlank(),
+                    content = { Icon(Icons.Outlined.NewLabel, stringResource(Res.string.create_category)) }
+                )
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                autoCorrectEnabled = false,
+                capitalization = KeyboardCapitalization.Words,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    if (searchQuery.isNotBlank()) {
+                        onCategoryAdded(searchQuery)
+                        searchQuery = ""
                     }
-                ),
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
-            )
-        }
+                }
+            ),
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
+        )
+
     }
 }
 
@@ -138,11 +130,16 @@ fun CategorySelectionBottomSheet(
 @Preview
 @Composable
 private fun CategorySelectionBottomSheet_Preview() {
-    CategorySelectionBottomSheet(
-        allCategories = listOf("Category 5", "Category 1", "Category 2", "Category 3", "Category 4"),
-        selectedCategories = listOf("Category 2"),
-        onCategoryAdded = { },
-        onCategoryRemoved = { },
-        onDismiss = { }
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CategorySelectionBottomSheet(
+                allCategories = listOf("Category 5", "Category 1", "Category 2", "Category 3", "Category 4"),
+                selectedCategories = listOf("Category 2"),
+                onCategoryAdded = { },
+                onCategoryRemoved = { },
+                onDismiss = { }
+            )
+        }
+    }
+
 }

@@ -19,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -52,7 +54,7 @@ fun AccountListScreenRoot(
     onNavigate: (Route) -> Unit
 ) {
 
-    val state = viewModel.state
+    val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val aboutBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val addPrincipalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -289,7 +291,8 @@ fun AccountListScreenRoot(
             BottomSheetWithMenu(
                 sheetState = aboutBottomSheetState,
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
-                menuAction = { }
+                menuAction = { },
+                modifier = Modifier.fillMaxWidth()  // override padding
             ) {
                 AboutScreen(koinInject<AboutViewModel>())
             }
@@ -299,12 +302,11 @@ fun AccountListScreenRoot(
             SettingsBottomSheet(
                 sheetState = settingsBottomSheet,
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
-                onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) },
-                onAction = { }
+                onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) }
             )
         }
 
-        viewModel.state.showAddOrUpdateCalendarBottomSheet?.let {
+        state.showAddOrUpdateCalendarBottomSheet?.let {
             CreateOrUpdateCalendarBottomSheet(
                 sheetState = createCalendarBottomSheetState,
                 principal = it.principal,

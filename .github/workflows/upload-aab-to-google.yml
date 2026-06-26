@@ -11,7 +11,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
       - uses: actions/setup-java@v5
@@ -37,6 +37,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
           ANDROID_KEY_ALIAS_JOURNALS: ${{ secrets.android_key_alias_journals }}
           ANDROID_KEY_PASSWORD_JOURNALS: ${{ secrets.android_key_password_journals }}
+          ANTHROPIC_API_KEY: ${{secrets.anthropic_api_key }}
           #CROWDIN_API_KEY: ${{ secrets.crowdin_api_key }}
           #GOOGLE_GEO_API_KEY: ${{ secrets.google_geo_api_key }}
           #GH_CONTRIBUTORS_API_KEY: ${{ secrets.gh_contributors_api_key }}
@@ -48,6 +49,8 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
           ANDROID_KEY_ALIAS_NOTES: ${{ secrets.android_key_alias_notes }}
           ANDROID_KEY_PASSWORD_NOTES: ${{ secrets.android_key_password_notes }}
+          ANTHROPIC_API_KEY: ${{secrets.anthropic_api_key }}
+
 
       - name: Build spectacled Tasks app bundle release (AAB) for Gplay
         run: ./gradlew androidTasksApp:bundleRelease
@@ -56,6 +59,8 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
           ANDROID_KEY_ALIAS_TASKS: ${{ secrets.android_key_alias_tasks }}
           ANDROID_KEY_PASSWORD_TASKS: ${{ secrets.android_key_password_tasks }}
+          ANTHROPIC_API_KEY: ${{secrets.anthropic_api_key }}
+
 
       - name: Upload spectacled Journals to Google Play
         uses: r0adkll/upload-google-play@v1

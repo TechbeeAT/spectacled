@@ -7,20 +7,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowDropDown
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedAssistChip
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -39,15 +36,14 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
-import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.db.SpectacledDatabase
-import at.techbee.spectacled.screens.core.DatabaseDriverFactory
-import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.HomeCollection
+import at.techbee.spectacled.screens.core.domain.Principal
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.presentation.components.CalendarSelector
 import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.CALENDAR_ID_KEY
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.core.component.KoinComponent
@@ -57,9 +53,8 @@ import spectacled.shared.generated.resources.done
 
 class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
 
-    private val databaseDriverFactory: DatabaseDriverFactory by inject()
+    private val calendarRepository: CalendarRepository by inject()
     private val spectacledVariant: SpectacledVariant by inject()
-    private val userAppPreferencesStore: PlatformUserAppPreferencesStore by inject()
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,133 +72,37 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
             return
         }
 
-
         setContent {
+            val scope = rememberCoroutineScope()
             val context = LocalContext.current
             val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
-            val scope = rememberCoroutineScope()
 
             val prefs by produceState(null as Preferences?) {
                 value = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
             }
 
-            val calendarsForWidgetConfig by produceState(emptyList()) {
-                val database = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
-                database.calendar_dtoQueries.calendarsForWidgetConfig()
-                    .asFlow()
-                    .mapToList(Dispatchers.IO)
-                    .collect { value = it }
+            val calendars by produceState(emptyList()) {
+                calendarRepository.getAllCalendarsFlow().collect { value = it }
+            }
+            val homeCollections by produceState(emptyList()) {
+                calendarRepository.getAllHomeCollectionsFlow().collect { value = it }
+            }
+            val principals by produceState(emptyList()) {
+                calendarRepository.getAllPrincipalsFlow().collect { value = it }
             }
 
-            var selectedCalendarId by remember {
-                mutableStateOf(null as Long?)
-            }
-
-            LaunchedEffect(prefs, calendarsForWidgetConfig) {
-                if (selectedCalendarId == null) {
-                    val savedId = prefs?.get(longPreferencesKey(CALENDAR_ID_KEY))
-                    if (savedId != null) {
-                        selectedCalendarId = savedId
+            WidgetConfigContent(
+                prefs,
+                calendars,
+                homeCollections,
+                principals,
+                spectacledVariant,
+                onConfirm = {
+                    scope.launch {
+                        onCalendarSelected(it, glanceId)
                     }
                 }
-            }
-            var calendarsExpanded by remember { mutableStateOf(false) }
-
-            AppTheme(spectacledVariant = spectacledVariant) {
-                Scaffold (
-                    modifier = Modifier.fillMaxSize()
-                ) { paddingValues ->
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(paddingValues).padding(16.dp)) {
-
-                        Text(
-                            text = "Widget configuration",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-
-                        ElevatedAssistChip(
-                            onClick = { calendarsExpanded = !calendarsExpanded },
-                            label = {
-                                Column(modifier = Modifier.padding(8.dp)) {
-                                    Text(
-                                        text = "Selected calendar",
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                    calendarsForWidgetConfig
-                                        .find { calendar -> calendar.id == selectedCalendarId }?.let {
-                                            Text(it.displayName ?: it.url)
-                                        }
-                                        ?: Text("-")
-                                }
-
-
-                                DropdownMenu(
-                                    expanded = calendarsExpanded,
-                                    onDismissRequest = { calendarsExpanded = false }
-                                ) {
-
-                                    val calendarsGroups = calendarsForWidgetConfig.groupBy { it.principalDisplayName }
-                                    calendarsGroups.keys.forEach { principal ->
-
-                                        Text(
-                                            text = principal?:"No account name",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            modifier = Modifier.padding(horizontal = 8.dp)
-                                        )
-
-                                        calendarsGroups[principal]!!.forEach { calendar ->
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Column {
-                                                        Text(text = calendar.displayName ?: "Unnamed Calendar")
-                                                        calendar.calendarDescription?.let {
-                                                            Text(
-                                                                text = it,
-                                                                style = MaterialTheme.typography.bodySmall,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                            )
-                                                        }
-                                                    }
-                                                },
-                                                onClick = {
-                                                    selectedCalendarId = calendar.id
-                                                    calendarsExpanded = false
-                                                }
-                                            )
-
-                                        }
-
-                                    }
-                                }
-
-                            },
-                            trailingIcon = {
-                                Icon(Icons.Outlined.ArrowDropDown, null)
-                            },
-                            modifier = Modifier.fillMaxWidth().padding (16.dp)
-                        )
-
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        Button(
-                            onClick = {
-                                selectedCalendarId?.let {
-                                    scope.launch {
-                                        onCalendarSelected(it, glanceId)
-                                    }
-                                }
-                            },
-                            enabled = selectedCalendarId != null,
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(stringResource(Res.string.done))
-                        }
-                    }
-                }
-            }
+            )
         }
     }
 
@@ -223,4 +122,96 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
         setResult(RESULT_OK, resultValue)
         finish()
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WidgetConfigContent(
+    prefs: Preferences?,
+    calendars: List<Calendar>,
+    homeCollections: List<HomeCollection>,
+    principals: List<Principal>,
+    spectacledVariant: SpectacledVariant,
+    onConfirm: (Long) -> Unit
+) {
+
+
+    var selectedCalendarId by remember {
+        mutableStateOf(null as Long?)
+    }
+
+    LaunchedEffect(prefs, calendars) {
+        if (selectedCalendarId == null) {
+            val savedId = prefs?.get(longPreferencesKey(CALENDAR_ID_KEY))
+            if (savedId != null) {
+                selectedCalendarId = savedId
+            }
+        }
+    }
+
+    AppTheme(spectacledVariant = spectacledVariant) {
+        Scaffold (
+            topBar = {
+                TopAppBar(
+                    title = { },
+                    actions = {
+                        TextButton(
+                            onClick = {
+                                selectedCalendarId?.let { onConfirm(it) }
+                            },
+                            enabled = selectedCalendarId != null,
+                        ) {
+                            Text(stringResource(Res.string.done))
+                        }
+                    }
+                )
+            },
+            modifier = Modifier.fillMaxSize()
+        ) { paddingValues ->
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(paddingValues).padding(16.dp)) {
+
+                Text(
+                    text = "Widget configuration",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                CalendarSelector(
+                    principals = principals,
+                    homeCollections = homeCollections,
+                    calendars = calendars,
+                    selectedCalendarId = selectedCalendarId,
+                    onCalendarIdSelected = { selectedCalendarId = it },
+                    modifier = Modifier.fillMaxWidth().padding (16.dp)
+                )
+
+/*
+                Spacer(modifier = Modifier.weight(1f))
+
+                Button(
+                    onClick = { selectedCalendarId?.let { onConfirm(it) } },
+                    enabled = selectedCalendarId != null,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(stringResource(Res.string.done))
+                }
+ */
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun WidgetConfigContent_Preview() {
+    WidgetConfigContent(
+        prefs = null,
+        calendars = listOf(Calendar.getCalendarForPreview()),
+        homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+        principals = listOf(Principal.getPrincipalForPreview()),
+        spectacledVariant = SpectacledVariant.JOURNALS,
+        onConfirm = {}
+    )
 }
