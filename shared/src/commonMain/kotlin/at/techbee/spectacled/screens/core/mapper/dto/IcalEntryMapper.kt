@@ -14,7 +14,6 @@ import at.techbee.spectacled.screens.core.mapper.ics.parseIcsDateTime
 import at.techbee.spectacled.sqldelight.IcalEntryDto
 import io.ktor.http.Url
 import kotlinx.serialization.json.Json
-import kotlin.time.Clock.System
 import kotlin.time.ExperimentalTime
 
 const val CATEGORY_SPLIT_DELIMITER = ","
@@ -47,10 +46,10 @@ fun IcalEntryDto.toDomain(): IcalEntry {
         status = this.status?.let { Status.entries.find { vtodoStatus -> vtodoStatus.name == it } },
         priority = this.priority,
         percentComplete = this.percentComplete ?: 0L,
-        dtstamp = parseIcsDateTime(this.dtstamp) ?: IcsDateTime(System.now(), false),
+        dtstamp = parseIcsDateTime(this.dtstamp) ?: IcsDateTime.now(),
         categories = this.categories?.split(CATEGORY_SPLIT_DELIMITER) ?: emptyList(),
-        created = parseIcsDateTime(this.created) ?: IcsDateTime(System.now(), false),
-        lastModified = parseIcsDateTime(this.lastModified) ?: IcsDateTime(System.now(), false),
+        created = parseIcsDateTime(this.created) ?: IcsDateTime.now(),
+        lastModified = parseIcsDateTime(this.lastModified) ?: IcsDateTime.now(),
         extraProperties = extraProps,
         orderNo = this.orderNo,
         syncState = this.syncState?.let { SyncState.entries.find { it.name == this.syncState } } ?: SyncState.LOCAL_MODIFIED,

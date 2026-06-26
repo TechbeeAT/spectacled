@@ -17,7 +17,6 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.no_date
-import kotlin.time.Clock.System
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +66,7 @@ fun DatePickerBottomSheet(
 private fun DatePickerBottomSheet_Preview() {
 
     DatePickerBottomSheet(
-        icsDateTime = IcsDateTime(System.now(), false),
+        icsDateTime = IcsDateTime.now(),
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         allowNoDate = false,
         onDateSelected = {},
@@ -81,7 +80,7 @@ private fun DatePickerBottomSheet_Preview() {
 private fun DatePickerBottomSheet_allow_no_date_Preview() {
 
     DatePickerBottomSheet(
-        icsDateTime = IcsDateTime(System.now(), false),
+        icsDateTime = IcsDateTime.now(),
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         allowNoDate = true,
         onDateSelected = {},
