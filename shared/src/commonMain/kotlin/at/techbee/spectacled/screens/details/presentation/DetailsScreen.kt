@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -167,6 +168,7 @@ fun DetailsScreen(
                 ),
                 enabled = state.allowEditing(),
                 visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
+                cursorBrush = SolidColor(LocalContentColor.current),
                 modifier = Modifier
                     .onFocusChanged { summaryIsFocused = it.isFocused }
                     .weight(1f)
@@ -192,6 +194,7 @@ fun DetailsScreen(
             ),
             enabled = state.allowEditing(),
             visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
+            cursorBrush = SolidColor(LocalContentColor.current),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 100.dp)
