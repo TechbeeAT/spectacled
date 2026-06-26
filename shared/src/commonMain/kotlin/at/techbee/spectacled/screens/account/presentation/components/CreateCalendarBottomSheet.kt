@@ -4,12 +4,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,12 +29,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
+import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.create_folder
@@ -68,6 +70,10 @@ fun CreateOrUpdateCalendarBottomSheet(
     }
 
     BottomSheetWithMenu(
+        headline = if (calendar.id == 0L)
+            stringResource(Res.string.create_folder)
+        else
+            stringResource(Res.string.update_folder),
         onDismiss = { onDismiss() },
         sheetState = sheetState,
         gesturesEnabled = false,
@@ -99,15 +105,8 @@ fun CreateOrUpdateCalendarBottomSheet(
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
-            Text(
-                text = if (calendar.id == 0L)
-                    stringResource(Res.string.create_folder)
-                else
-                    stringResource(Res.string.update_folder),
-                style = MaterialTheme.typography.headlineMedium
-            )
 
             val error = if (processingState is ProcessingState.Error) processingState.message else ""
             AnimatedVisibility(error.isNotEmpty()) {
@@ -189,16 +188,20 @@ fun CreateOrUpdateCalendarBottomSheet(
 @Preview
 @Composable
 private fun CreateOrUpdateCalendarBottomSheet_create_Preview() {
-    CreateOrUpdateCalendarBottomSheet(
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
-        principal = Principal.getPrincipalForPreview(),
-        homeCollection = HomeCollection.getHomeCollectionForPreview(),
-        calendar = Calendar.getCalendarForPreview(),
-        processingState = ProcessingState.Error("This is the error"),
-        recentColors = emptyList(),
-        onCreateOrUpdateCalendar = { _, _, _ -> },
-        onDismiss = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CreateOrUpdateCalendarBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+                principal = Principal.getPrincipalForPreview(),
+                homeCollection = HomeCollection.getHomeCollectionForPreview(),
+                calendar = Calendar.getCalendarForPreview(),
+                processingState = ProcessingState.Error("This is the error"),
+                recentColors = emptyList(),
+                onCreateOrUpdateCalendar = { _, _, _ -> },
+                onDismiss = {}
+            )
+        }
+    }
 }
 
 
@@ -206,14 +209,19 @@ private fun CreateOrUpdateCalendarBottomSheet_create_Preview() {
 @Preview
 @Composable
 private fun CreateOrUpdateCalendarBottomSheet_update_Preview() {
-    CreateOrUpdateCalendarBottomSheet(
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
-        principal = Principal.getPrincipalForPreview(),
-        homeCollection = HomeCollection.getHomeCollectionForPreview(),
-        calendar = Calendar.getCalendarForPreview().copy(id = 1L),
-        processingState = ProcessingState.Processing,
-        recentColors = listOf(Color.Green, Color.Red),
-        onCreateOrUpdateCalendar = { _, _, _ -> },
-        onDismiss = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CreateOrUpdateCalendarBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                principal = Principal.getPrincipalForPreview(),
+                homeCollection = HomeCollection.getHomeCollectionForPreview(),
+                calendar = Calendar.getCalendarForPreview().copy(id = 1L),
+                processingState = ProcessingState.Processing,
+                recentColors = listOf(Color.Green, Color.Red),
+                onCreateOrUpdateCalendar = { _, _, _ -> },
+                onDismiss = {}
+            )
+        }
+    }
+
 }

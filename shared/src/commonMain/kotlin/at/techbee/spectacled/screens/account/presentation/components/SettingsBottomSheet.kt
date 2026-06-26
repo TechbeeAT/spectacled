@@ -20,6 +20,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -34,10 +35,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
@@ -73,6 +76,7 @@ fun SettingsBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
+        headline = "Settings",
         sheetState = sheetState,
         gesturesEnabled = false,
         menuAction = { }
@@ -80,12 +84,8 @@ fun SettingsBottomSheet(
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(8.dp).fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.headlineMedium
-            )
 
             AssistChip(
                 onClick = { themeOptionDropdownExpanded = true },
@@ -239,14 +239,19 @@ fun SettingsBottomSheet(
 @Preview
 @Composable
 private fun SettingsBottomSheet_Preview() {
-    SettingsBottomSheet(
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        userAppPreferencesStore = object: UserAppPreferencesStore {
-            override fun save(key: String, value: String) { }
-            override fun load(key: String): String? { return null }
-            override fun loadAsFlow(key: String): Flow<String?> { return flowOf(null ) }
-            override fun remove(key: String) { }
-        },
-        onDismiss = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            SettingsBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                userAppPreferencesStore = object: UserAppPreferencesStore {
+                    override fun save(key: String, value: String) { }
+                    override fun load(key: String): String? { return null }
+                    override fun loadAsFlow(key: String): Flow<String?> { return flowOf(null ) }
+                    override fun remove(key: String) { }
+                },
+                onDismiss = {}
+            )
+        }
+    }
+
 }

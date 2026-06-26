@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -71,10 +71,10 @@ fun JournalStatusPickerBottomSheet(
 @Composable
 private fun JournalStatusPickerBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
-        Surface {
+        Scaffold {
             JournalStatusPickerBottomSheet(
                 status = Status.FINAL,
-                sheetState = rememberModalBottomSheetState(),
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 onStatusUpdated = {},
                 onDismiss = {}
             )

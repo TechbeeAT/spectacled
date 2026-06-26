@@ -12,6 +12,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -35,6 +36,7 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_task
 import spectacled.shared.generated.resources.summary
 
@@ -55,6 +57,7 @@ fun AddSubtaskBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
+        headline = stringResource(Res.string.add_subtask),
         menuAction = {
             TextButton(
                 onClick = { onSubtaskAdded(subtaskSummary) },
@@ -113,9 +116,11 @@ fun AddSubtaskBottomSheet(
 @Composable
 private fun AddSubtaskBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
-        AddSubtaskBottomSheet(
-            onSubtaskAdded = { },
-            onDismiss = { }
-        )
+        Scaffold {
+            AddSubtaskBottomSheet(
+                onSubtaskAdded = { },
+                onDismiss = { }
+            )
+        }
     }
 }

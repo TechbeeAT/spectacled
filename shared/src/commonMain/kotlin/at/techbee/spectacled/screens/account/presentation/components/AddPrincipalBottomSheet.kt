@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -372,12 +373,14 @@ fun AddPrincipalBottomSheet(
 @Composable
 private fun AddAccountScreen_Preview_Idle() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
-        AddPrincipalBottomSheet(
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            processingState = ProcessingState.Idle,
-            onAction = {},
-            onDismiss = {}
-        )
+        Scaffold {
+            AddPrincipalBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                processingState = ProcessingState.Idle,
+                onAction = {},
+                onDismiss = {}
+            )
+        }
     }
 }
 
@@ -386,12 +389,14 @@ private fun AddAccountScreen_Preview_Idle() {
 @Composable
 private fun AddAccountScreen_Preview_Processing() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
-        AddPrincipalBottomSheet(
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            processingState = ProcessingState.Processing,
-            onAction = {},
-            onDismiss = {}
-        )
+        Scaffold {
+            AddPrincipalBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                processingState = ProcessingState.Processing,
+                onAction = {},
+                onDismiss = {}
+            )
+        }
     }
 }
 
@@ -400,11 +405,14 @@ private fun AddAccountScreen_Preview_Processing() {
 @Composable
 private fun AddAccountScreen_Preview_Error() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
-        AddPrincipalBottomSheet(
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            processingState = ProcessingState.Error("This is an error"),
-            onAction = {},
-            onDismiss = {}
-        )
+        Scaffold {
+            AddPrincipalBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                processingState = ProcessingState.Error("This is an error"),
+                onAction = {},
+                onDismiss = {}
+            )
+        }
+
     }
 }

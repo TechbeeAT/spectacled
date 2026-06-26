@@ -291,7 +291,8 @@ fun AccountListScreenRoot(
             BottomSheetWithMenu(
                 sheetState = aboutBottomSheetState,
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
-                menuAction = { }
+                menuAction = { },
+                modifier = Modifier.fillMaxWidth()  // override padding
             ) {
                 AboutScreen(koinInject<AboutViewModel>())
             }

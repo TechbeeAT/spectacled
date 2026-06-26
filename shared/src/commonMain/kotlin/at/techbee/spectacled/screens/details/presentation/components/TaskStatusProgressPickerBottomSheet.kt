@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -121,11 +122,11 @@ private fun TaskStatusProgressPickerBottomSheet_Preview() {
 @Composable
 private fun TaskStatusProgressPickerBottomSheet_inprocess_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
-        Surface {
+        Scaffold {
             TaskStatusProgressPickerBottomSheet(
                 status = Status.IN_PROCESS,
                 percentComplete = 33,
-                sheetState = rememberModalBottomSheetState(),
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 onStatusUpdated = {},
                 onProgressUpdated = {},
                 onDismiss = {}
