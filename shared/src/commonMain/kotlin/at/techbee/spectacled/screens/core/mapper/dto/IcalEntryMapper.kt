@@ -58,7 +58,8 @@ fun IcalEntryDto.toDomain(): IcalEntry {
         href = this.href?.let { Url(it) },
         calendarComponent = CalendarComponent.entries.find { it.name == this.calendarComponent } ?: CalendarComponent.VJOURNAL,
         parentUid = this.parentUid,
-        relType = this.relType
+        relType = this.relType,
+        url = this.url?.let { Url(it) }
     )
 }
 
@@ -98,6 +99,7 @@ fun IcalEntry.toDto(): IcalEntryDto {
         href = this.href?.toString(),
         calendarComponent = this.calendarComponent.name,
         parentUid = this.parentUid,
-        relType = this.relType
+        relType = this.relType,
+        url = this.url?.toString()
     )
 }

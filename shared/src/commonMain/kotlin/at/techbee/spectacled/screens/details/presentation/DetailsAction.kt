@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import io.ktor.http.Url
 
 sealed interface DetailsAction {
     data class OnUpdateSummary(val summary: String): DetailsAction
@@ -17,6 +18,7 @@ sealed interface DetailsAction {
     data class OnUpdateProgress(val percent: Long): DetailsAction
     data class OnUpdateSubtaskProgress(val percent: Long, val subtaskIcalEntryId: Long): DetailsAction
     data class OnAddSubtask(val summary: String): DetailsAction
+    data class OnUpdateUrl(val url: Url?): DetailsAction
 
     data class OnNewCalendarIdSelected(val calendarId: Long): DetailsAction
 
@@ -29,6 +31,8 @@ sealed interface DetailsAction {
     data class OnShowJournalStatusPickerBottomSheet(val show: Boolean): DetailsAction
     data class OnShowTaskStatusProgressPickerBottomSheet(val show: Boolean): DetailsAction
     data class OnShowAddSubtaskBottomSheet(val show: Boolean): DetailsAction
+    data class OnShowEditUrlBottomSheet(val show: Boolean): DetailsAction
+
     data class OnPersistOrderNo(val list: List<Long>): DetailsAction
 
     data class OnNavigateToIcalEntryId(val id: Long?): DetailsAction

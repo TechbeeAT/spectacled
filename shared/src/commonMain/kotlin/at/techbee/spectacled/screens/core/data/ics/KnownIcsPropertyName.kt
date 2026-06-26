@@ -17,5 +17,6 @@ enum class KnownIcsPropertyName(val propertyName: String) {
     CLASSIFICATION("CLASSIFICATION"),
     PRIORITY("PRIORITY"),
     PERCENT_COMPLETE("PERCENT-COMPLETE"),
-    RELATED_TO("RELATED-TO")
+    RELATED_TO("RELATED-TO"),
+    URL("URL")
 }

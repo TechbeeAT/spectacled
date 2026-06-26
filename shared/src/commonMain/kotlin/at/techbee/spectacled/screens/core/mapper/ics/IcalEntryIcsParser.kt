@@ -11,6 +11,7 @@ import at.techbee.spectacled.screens.core.domain.Classification
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import io.ktor.http.Url
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -186,6 +187,7 @@ fun parseIcalEntryBlock(lines: List<String>, calendarComponent: CalendarComponen
 
     val parentUid = knownProps[KnownIcsPropertyName.RELATED_TO.propertyName]?.value
     val relType = knownProps[KnownIcsPropertyName.RELATED_TO.propertyName]?.params?.get(KnownIcsParamName.RELTYPE.paramName) ?: if(parentUid != null) "PARENT" else null
+    val url = knownProps[KnownIcsPropertyName.URL.propertyName]?.value?.let { Url(it) }
 
     return IcalEntry(
         uid = uid,
@@ -208,7 +210,8 @@ fun parseIcalEntryBlock(lines: List<String>, calendarComponent: CalendarComponen
         syncState = SyncState.SYNCED,
         calendarComponent = calendarComponent,
         parentUid = parentUid,
-        relType = relType
+        relType = relType,
+        url = url
     )
 }
 

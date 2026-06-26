@@ -226,6 +226,7 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateSnackbar -> { _state.update { it.copy(snackbarText = action.message) } }
             is DetailsAction.OnUpdateCategories -> onUpdateCategories(action.addCategory, action.removeCategory)
             is DetailsAction.OnUpdateColor -> onUpdateColor(action.color)
+            is DetailsAction.OnUpdateUrl -> onUpdateUrl(action.url)
             is DetailsAction.OnUpdateDescription -> onUpdateDescription(action.description)
             is DetailsAction.OnUpdateSummary -> onUpdateSummary(action.summary)
             DetailsAction.OnDelete -> saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
@@ -235,6 +236,7 @@ class DetailsViewModel(
             is DetailsAction.OnShowCategorySelectorBottomSheet -> { _state.update { it.copy(showCategorySelectorBottomSheet = action.show) } }
             is DetailsAction.OnShowColorSelectorBottomSheet -> { _state.update { it.copy(showColorSelectorBottomSheet = action.show) } }
             is DetailsAction.OnShowAddSubtaskBottomSheet -> { _state.update { it.copy(showAddSubtaskBottomSheet = action.show) } }
+            is DetailsAction.OnShowEditUrlBottomSheet -> { _state.update { it.copy(showEditUrlBottomSheet = action.show) } }
             DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
@@ -361,12 +363,23 @@ class DetailsViewModel(
     }
 
 
-    @OptIn(ExperimentalTime::class)
     private fun onUpdateColor(newColor: Color?) {
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     color = newColor,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                )
+            )
+        }
+    }
+
+    private fun onUpdateUrl(newUrl: Url?) {
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    url = newUrl,
                     lastModified = IcsDateTime.now(),
                     syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
                 )

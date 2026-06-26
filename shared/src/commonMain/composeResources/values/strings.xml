@@ -116,6 +116,9 @@
     <string name="entry_successfully_saved">Entry successfully saved</string>
     <string name="entry_deleted">Entry deleted</string>
     <string name="subtask">Subtask</string>
+    <string name="add_subtask">Add subtask</string>
+    <string name="url">URL</string>
+    <string name="add_edit_url">Add/edit URL</string>
 
     <string name="sync_conflict_entry_modified_while_server_modified">This entry has been modified locally while it was modified on the server.</string>
     <string name="sync_conflict_entry_deleted_while_server_modified">This entry has been deleted locally while it was modified on the server.</string>

@@ -142,7 +142,8 @@ class IcalEntryRepositoryImpl(
                 href = icalEntryDto.href,
                 calendarComponent = icalEntryDto.calendarComponent,
                 parentUid = icalEntryDto.parentUid,
-                relType = icalEntryDto.relType
+                relType = icalEntryDto.relType,
+                url = icalEntryDto.url
             )
             // insert, but if the UID exists, it will be ignored
             getDatabase().icalentry_dtoQueries.insertIcalEntry(
@@ -172,7 +173,8 @@ class IcalEntryRepositoryImpl(
                 href = icalEntryDto.href,
                 calendarComponent = icalEntryDto.calendarComponent,
                 parentUid = icalEntryDto.parentUid,
-                relType = icalEntryDto.relType
+                relType = icalEntryDto.relType,
+                url = icalEntryDto.url
             )
         }
     }
