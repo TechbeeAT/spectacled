@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -12,16 +13,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.ArrowDropUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -48,7 +52,9 @@ import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.collapse
 import spectacled.shared.generated.resources.eraser
+import spectacled.shared.generated.resources.expand
 import spectacled.shared.generated.resources.ic_canvas_eraser
 import spectacled.shared.generated.resources.ic_canvas_marker
 import spectacled.shared.generated.resources.ic_canvas_pen
@@ -79,8 +85,10 @@ fun DrawingCanvas(
 
     var selectedTool by remember { mutableStateOf(DrawingTool.Pen) }
     var selectedColor by remember { mutableStateOf(Color.Black) }
-    var selectedThickness by remember { mutableStateOf(10f) }
+    var selectedThickness by remember { mutableStateOf(5f) }
     var currentPath: PathData? by remember { mutableStateOf(null) }
+
+    var showColorAndThicknessPicker by remember { mutableStateOf(true) }
 
 
     Column(
@@ -179,18 +187,21 @@ fun DrawingCanvas(
         }
 
         val standardColors = listOf(Color.Black, Color.Red, Color.Green, Color.Blue, Color.Yellow, Color.Cyan, Color.Magenta)
-        val maxThickness = 40
         val markerAlpha = 0.33f
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
 
             IconButton(
                 onClick = {
-                    selectedTool = DrawingTool.Pen
-                    selectedColor = selectedColor.copy(alpha = 1f)
+                    if(selectedTool != DrawingTool.Pen) {
+                        selectedTool = DrawingTool.Pen
+                        selectedColor = Color.Black.copy(alpha = 1f)
+                        selectedThickness = 5f
+                    }
                 },
                 modifier = Modifier.background(
                     if (selectedTool == DrawingTool.Pen) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
@@ -205,8 +216,11 @@ fun DrawingCanvas(
 
             IconButton(
                 onClick = {
-                    selectedTool = DrawingTool.Marker
-                    selectedColor = selectedColor.copy(alpha = markerAlpha)
+                    if(selectedTool != DrawingTool.Marker) {
+                        selectedTool = DrawingTool.Marker
+                        selectedColor = Color.Yellow.copy(alpha = markerAlpha)
+                        selectedThickness = 30f
+                    }
                 },
                 modifier = Modifier.background(
                     if (selectedTool == DrawingTool.Marker) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
@@ -220,7 +234,10 @@ fun DrawingCanvas(
             }
 
             IconButton(
-                onClick = { selectedTool = DrawingTool.Eraser },
+                onClick = {
+                    selectedTool = DrawingTool.Eraser
+                    selectedThickness = 15F
+                          },
                 modifier = Modifier.background(
                     if (selectedTool == DrawingTool.Eraser) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
                     CircleShape
@@ -231,9 +248,34 @@ fun DrawingCanvas(
                     contentDescription = stringResource(Res.string.eraser)
                 )
             }
+
+            VerticalDivider(modifier = Modifier.height(28.dp))
+
+            IconButton(
+                onClick = {
+                    showColorAndThicknessPicker = !showColorAndThicknessPicker
+                },
+                modifier = Modifier.background(
+                    Color.Transparent,
+                    CircleShape
+                )
+            ) {
+                Crossfade(showColorAndThicknessPicker) {
+                    if(it)
+                        Icon(
+                            Icons.Outlined.ArrowDropDown,
+                            contentDescription = stringResource(Res.string.expand)
+                        )
+                    else
+                        Icon(
+                            Icons.Outlined.ArrowDropUp,
+                            contentDescription = stringResource(Res.string.collapse)
+                        )
+                }
+            }
         }
 
-        AnimatedVisibility(selectedTool != DrawingTool.Eraser) {
+        AnimatedVisibility(showColorAndThicknessPicker && selectedTool != DrawingTool.Eraser) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
                 modifier = Modifier.fillMaxWidth().padding(8.dp).horizontalScroll(rememberScrollState()),
@@ -244,36 +286,20 @@ fun DrawingCanvas(
                         ColorSelectionBox(
                             color = color,
                             selected = selectedColor == color,
-                            onColorSelected = { selectedColor = color }
+                            onColorSelected = { selectedColor = color },
+                            circleSize = 32.dp
                         )
                     }
             }
         }
 
-
-        Slider(
-            value = selectedThickness,
-            onValueChange = { selectedThickness = it },
-            valueRange = 1f..maxThickness.toFloat(),
-            thumb = {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.sizeIn(maxThickness.dp).clip(CircleShape),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(selectedThickness.dp)
-                            .clip(CircleShape) // Makes the Box round
-                            .background(
-                                color = selectedColor,
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center // Centers the content (the Icon)
-                    ) { }
-                }
-            },
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
+        AnimatedVisibility(showColorAndThicknessPicker) {
+            ThicknessSelectionRow(
+                selectedThickness = selectedThickness,
+                onThicknessSelected = { selectedThickness = it },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
     }
 }
 
@@ -316,6 +342,54 @@ private fun DrawScope.drawPath(
             join = StrokeJoin.Round
         )
     )
+}
+
+
+@Composable
+fun ThicknessSelectionRow(
+    selectedThickness: Float,
+    onThicknessSelected: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+        modifier = modifier
+    ) {
+        val minCircleSize = 2f
+        val maxCircleSize = 32f
+        val steps = 6
+
+        for(i in 1..steps) {
+            val circleSize = i*((maxCircleSize-minCircleSize)/steps)
+            ColorSelectionBox(
+                color = MaterialTheme.colorScheme.surface,
+                selected = selectedThickness == circleSize,
+                onColorSelected = { onThicknessSelected(circleSize) },
+                circleSize = (maxCircleSize).dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size((circleSize).dp)
+                        .clip(CircleShape)
+                        .background(
+                            color = MaterialTheme.colorScheme.onSurface,
+                            shape = CircleShape
+                        )
+                ) {}
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun ThicknessSelectionRow_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        ThicknessSelectionRow(
+            selectedThickness = 5f,
+            onThicknessSelected = {}
+        )
+    }
 }
 
 

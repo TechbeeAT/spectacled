@@ -1,6 +1,8 @@
 package at.techbee.spectacled.screens.core.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.zt64.compose.pipette.CircularColorPicker
 import dev.zt64.compose.pipette.HsvColor
@@ -194,25 +197,26 @@ fun ColorSelectionBox(
     color: Color,
     selected: Boolean,
     onColorSelected: () -> Unit,
-    content: @Composable () -> Unit = {}
+    circleSize: Dp = 40.dp,
+    content: @Composable () -> Unit = {},
 ) {
+    val borderWidth by animateDpAsState(if (selected) 3.dp else 0.dp)
+    val borderColor by animateColorAsState(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
+
     Box(
         modifier = Modifier
-            .size(48.dp)
-            .clip(CircleShape) // Makes the Box round
-            .background(
-                color = color,
-                shape = CircleShape
-            )
+            .size(circleSize)
             .border(
-                width = if(selected) 4.dp else 1.dp,
-                color = Color.LightGray,
+                width = borderWidth,
+                color = borderColor,
                 shape = CircleShape
             )
+            .clip(CircleShape)
+            .background(color)
             .clickable {
                 onColorSelected()
             },
-        contentAlignment = Alignment.Center // Centers the content (the Icon)
+        contentAlignment = Alignment.Center
     ) {
         content()
     }
