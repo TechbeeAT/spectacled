@@ -4,7 +4,7 @@ import java.awt.Desktop
 import java.net.URI
 import java.net.URLDecoder
 
-fun setupDesktopDeepLinkHandler() {
+fun DeepLinkHandler.setupDesktopHandler() {
     try {
         if (Desktop.isDesktopSupported()) {
             val desktop = Desktop.getDesktop()
@@ -19,7 +19,19 @@ fun setupDesktopDeepLinkHandler() {
     }
 }
 
-fun handleDesktopUri(uri: URI) {
+fun DeepLinkHandler.parseArgs(args: Array<String>) {
+    args.forEach { arg ->
+        if (arg.startsWith("spectacled-")) {
+            try {
+                handleDesktopUri(URI(arg))
+            } catch (e: Exception) {
+                // Ignore invalid URIs
+            }
+        }
+    }
+}
+
+private fun handleDesktopUri(uri: URI) {
     if (uri.host == "add") {
         val query = uri.query ?: ""
         val params = query.split("&")
@@ -32,17 +44,5 @@ fun handleDesktopUri(uri: URI) {
             }
         val description = params["description"]
         DeepLinkHandler.onDeepLinkReceived(null, 0L, description)
-    }
-}
-
-fun parseArgsForDeepLink(args: Array<String>) {
-    args.forEach { arg ->
-        if (arg.startsWith("spectacled-")) {
-            try {
-                handleDesktopUri(URI(arg))
-            } catch (e: Exception) {
-                // Ignore invalid URIs
-            }
-        }
     }
 }
