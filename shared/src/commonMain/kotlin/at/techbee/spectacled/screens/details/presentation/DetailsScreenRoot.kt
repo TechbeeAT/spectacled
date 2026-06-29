@@ -72,8 +72,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_drawing
-import spectacled.shared.generated.resources.add_edit_url
 import spectacled.shared.generated.resources.add_subtask
+import spectacled.shared.generated.resources.add_url
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.more
@@ -313,6 +313,7 @@ fun DetailsScreenRoot(
 
                     TextButton(
                         onClick = { addMoreExpanded = true },
+                        enabled = detailsState.allowEditing() && !detailsState.isLoading
                     ) {
                         Icon(Icons.Outlined.AddBox, "Add more")
 
@@ -321,8 +322,9 @@ fun DetailsScreenRoot(
                             onDismissRequest = { addMoreExpanded = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_edit_url)) },
-                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_edit_url)) },
+                                text = { Text(stringResource(Res.string.add_url)) },
+                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
+                                enabled = detailsState.icalEntry.url == null,
                                 onClick = {
                                     detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
                                     addMoreExpanded = false
@@ -345,7 +347,7 @@ fun DetailsScreenRoot(
                                     detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet))
                                     addMoreExpanded = false
                                 },
-                                enabled = detailsState.allowEditing() && !detailsState.isLoading && detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
+                                enabled = detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
                             )
                         }
                     }

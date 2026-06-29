@@ -211,7 +211,7 @@ fun DetailsScreen(
 
                 UrlCard(
                     url = state.icalEntry.url ?: Url(""),
-                    //onUrlChanged = { onAction(DetailsAction.OnUpdateUrl(it)) },
+                    onClick = onAction,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }

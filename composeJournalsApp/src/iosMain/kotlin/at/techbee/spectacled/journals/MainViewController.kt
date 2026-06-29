@@ -2,4 +2,14 @@
 
 import androidx.compose.ui.window.ComposeUIViewController
 
-fun MainViewController() = ComposeUIViewController { JournalsApp() }
+fun MainViewController(
+    initialCalendarId: Long? = null,
+    initialIcalEntryId: Long? = null,
+    initialIcalEntryDescription: String? = null
+) = ComposeUIViewController { 
+    JournalsApp(
+        initialCalendarId = initialCalendarId,
+        initialIcalEntryId = initialIcalEntryId,
+        initialIcalEntryDescription = initialIcalEntryDescription
+    ) 
+}

@@ -43,6 +43,7 @@ import spectacled.shared.generated.resources.entry_restored
 import spectacled.shared.generated.resources.entry_successfully_saved
 import spectacled.shared.generated.resources.sync_conflict_detected
 import spectacled.shared.generated.resources.unexpected_error_occurred
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -63,7 +64,7 @@ class DetailsViewModel(
     init {
         viewModelScope.launch {
             _state.map { it.icalEntry }
-                .debounce(500L) // Wait for 500ms pause in typing
+                .debounce(500L.milliseconds) // Wait for 500ms pause in typing
                 .distinctUntilChanged { old, new -> old.lastModified == new.lastModified } // Only save if last modified changed
                 .collect { entry ->
                     if(!_state.value.isLoading && entry.calendarId != 0L && entry.syncState != SyncState.SYNCED)
@@ -106,11 +107,12 @@ class DetailsViewModel(
         }
     }
 
-    fun loadNew(calendarId: Long) {
+    fun loadNew(calendarId: Long, initialDescription: String? = null) {
 
         viewModelScope.launch {
             val newIcalEntry = IcalEntry(
                 calendarId = calendarId,
+                description = initialDescription,
                 dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
                 calendarComponent = spectacledVariant.syncCalendarComponent
             )
@@ -127,11 +129,12 @@ class DetailsViewModel(
         }
     }
 
-    fun prepareNew() {
+    fun prepareNew(initialDescription: String? = null) {
 
         viewModelScope.launch {
             val newIcalEntry = IcalEntry(
                 calendarId = 0L,
+                description = initialDescription,
                 dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
                 calendarComponent = spectacledVariant.syncCalendarComponent
             )
@@ -639,6 +642,6 @@ class DetailsViewModel(
     }
 
     private fun onNewCalendarIdSelected(calendarId: Long) {
-        loadNew(calendarId)
+        loadNew(calendarId, state.value.icalEntry.description)
     }
 }

@@ -22,5 +22,16 @@
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>spectacled-notes</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>at.techbee.spectacled.notes</string>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
@@ -30,19 +31,14 @@ import spectacled.shared.generated.resources.edit
 @Composable
 fun UrlCard(
     url: Url,
+    onClick: (DetailsAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
 
     val uriHandler = LocalUriHandler.current
 
     Card(
-        onClick = {
-            try {
-                uriHandler.openUri(url.toString())
-            } catch (e: Exception) {
-                println(e.stackTraceToString())
-            }
-        },
+        onClick = { onClick(DetailsAction.OnShowEditUrlBottomSheet(true)) },
         elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent),
         modifier = modifier
@@ -86,6 +82,7 @@ private fun UrlCard_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         UrlCard(
             url = Url("https://spectacled.techbee.at/folder"),
+            onClick = {},
             modifier = Modifier.padding(8.dp)
         )
     }

@@ -38,7 +38,6 @@ import io.ktor.http.Url
 import io.ktor.http.parseUrl
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_edit_url
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.url
 
@@ -69,7 +68,7 @@ fun EditUrlBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
-        headline = stringResource(Res.string.add_edit_url),
+        headline = stringResource(Res.string.url),
         menuAction = {
             TextButton(
                 onClick = {

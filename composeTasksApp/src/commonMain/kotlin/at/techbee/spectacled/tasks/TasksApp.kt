@@ -14,10 +14,12 @@ import kotlin.time.ExperimentalTime
 fun TasksApp(
     initialCalendarId: Long? = null,
     initialIcalEntryId: Long? = null,
+    initialIcalEntryDescription: String? = null,
     onCloseApp: () -> Unit = {}
 ) = SpectacledApp(
     spectacledVariant = SpectacledVariant.TASKS,
     initialCalendarId = initialCalendarId,
     initialIcalEntryId = initialIcalEntryId,
+    initialIcalEntryDescription = initialIcalEntryDescription,
     onCloseApp = onCloseApp
 )
