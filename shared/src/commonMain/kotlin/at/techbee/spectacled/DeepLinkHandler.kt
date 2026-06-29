@@ -5,13 +5,28 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 object DeepLinkHandler {
-    var initialCalendarId by mutableStateOf<Long?>(null)
-    var initialIcalEntryId by mutableStateOf<Long?>(null)
-    var initialIcalEntryDescription by mutableStateOf<String?>(null)
+    var deepLinkData by mutableStateOf(DeepLinkData())
 
     fun onDeepLinkReceived(calendarId: Long?, entryId: Long?, description: String?) {
-        initialCalendarId = calendarId
-        initialIcalEntryId = entryId
-        initialIcalEntryDescription = description
+        //println("DeepLinkHandler: Received link calendarId=$calendarId, entryId=$entryId, desc=$description")
+        deepLinkData = DeepLinkData(
+            initialCalendarId = calendarId,
+            initialIcalEntryId = entryId,
+            initialIcalEntryDescription = description,
+            consumed = false
+        )
     }
+
+    fun consume() {
+        deepLinkData = deepLinkData.copy(consumed = true)
+    }
+}
+
+data class DeepLinkData(
+    val initialCalendarId: Long? = null,
+    val initialIcalEntryId: Long? = null,
+    val initialIcalEntryDescription: String? = null,
+    val consumed: Boolean = true
+) {
+    fun isEmpty() = initialCalendarId == null && initialIcalEntryId == null && initialIcalEntryDescription == null
 }

@@ -27,10 +27,12 @@ struct iOSNotesApp: App {
         guard url.host == "add" else { return }
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
 
-        if let desc = components.queryItems?.first(where: { $0.name == "description" })?.value {
+        let description = components.queryItems?.first(where: { $0.name == "description" })?.value
+        
+        if let desc = description {
             DeepLinkHandler.shared.onDeepLinkReceived(
                 calendarId: nil,
-                entryId: 0,
+                entryId: KotlinLong(value: 0),
                 description: desc
             )
         }

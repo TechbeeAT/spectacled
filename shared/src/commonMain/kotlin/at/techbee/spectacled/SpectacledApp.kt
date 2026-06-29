@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,10 +22,8 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.account.presentation.AccountListScreenRoot
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
-import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
-import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.koin.sharedModule
 import at.techbee.spectacled.screens.details.presentation.DetailsScreenRoot
 import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
@@ -108,52 +107,32 @@ fun SpectacledApp(
         spectacledVariant = spectacledVariant
     ) {
 
-        val navController = rememberNavController()
         //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
+        val navController = rememberNavController()
 
-        if(getPlatform().platform == Platforms.IOS || getPlatform().platform == Platforms.DESKTOP) {
-
-            // make sure deeplinks are also handled when they arrive after the app was started
-            LaunchedEffect(
-                DeepLinkHandler.initialIcalEntryId,
-                DeepLinkHandler.initialCalendarId,
-                DeepLinkHandler.initialIcalEntryDescription
-            ) {
-                val pushedIcalEntryId = DeepLinkHandler.initialIcalEntryId
-                val pushedCalendarId = DeepLinkHandler.initialCalendarId
-                val pushedDescription = DeepLinkHandler.initialIcalEntryDescription
-
-                if (pushedIcalEntryId != null) {
-                    if (pushedIcalEntryId == 0L) {
-                        navController.navigate(
-                            Route.AddICalEntry(
-                                calendarId = pushedCalendarId ?: 0L,
-                                initialDescription = pushedDescription
-                            )
-                        )
-                    } else {
-                        navController.navigate(Route.IcalEntryDetails(pushedIcalEntryId))
-                    }
-                    DeepLinkHandler.onDeepLinkReceived(null, null, null)
-                } else if (pushedCalendarId != null) {
-                    navController.navigate(Route.IcalEntryList(pushedCalendarId))
-                    DeepLinkHandler.onDeepLinkReceived(null, null, null)
-                }
-            }
-        }
-
-
-        val startDestination =
-            if (DeepLinkHandler.initialIcalEntryId != null) {
-                if (DeepLinkHandler.initialIcalEntryId == 0L)
-                    Route.AddICalEntry(calendarId = DeepLinkHandler.initialCalendarId ?: 0L, initialDescription = DeepLinkHandler.initialIcalEntryDescription)
+        // 1. Stable start destination for the graph life-cycle
+        val initialData = remember { DeepLinkHandler.deepLinkData }
+        val startDestination = remember(initialData) {
+            if (initialData.consumed) {
+                Route.AccountsList
+            } else if (initialData.initialIcalEntryId != null) {
+                if (initialData.initialIcalEntryId == 0L)
+                    Route.AddICalEntry(calendarId = initialData.initialCalendarId ?: 0L, initialDescription = initialData.initialIcalEntryDescription)
                 else
-                    Route.IcalEntryDetails(DeepLinkHandler.initialIcalEntryId!!)
-            } else if (DeepLinkHandler.initialCalendarId != null) {
-                Route.IcalEntryList(DeepLinkHandler.initialCalendarId!!)
+                    Route.IcalEntryDetails(initialData.initialIcalEntryId)
+            } else if (initialData.initialCalendarId != null) {
+                Route.IcalEntryList(initialData.initialCalendarId)
             } else {
                 Route.AccountsList
             }
+        }
+        
+        // 2. Mark initial deep link as consumed once the graph is set up
+        if (startDestination !is Route.AccountsList) {
+            LaunchedEffect(Unit) {
+                DeepLinkHandler.consume()
+            }
+        }
 
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -249,9 +228,35 @@ fun SpectacledApp(
             syncTrigger.schedulePeriodic()
             syncTrigger.requestImmediate()
 
-            if (DeepLinkHandler.initialCalendarId == null && DeepLinkHandler.initialIcalEntryId == null) {
-                userAppPreferencesStore.lastUsedCalendarId?.let {
-                    navController.navigate(Route.IcalEntryList(it))
+            // 3. Robust auto-navigation: Only move to last used calendar if NO deep link was ever seen
+            if (DeepLinkHandler.deepLinkData.isEmpty()) {
+                val lastUsedId = userAppPreferencesStore.lastUsedCalendarId
+                // Re-check isEmpty() after potential async loading of preferences
+                if (lastUsedId != null && DeepLinkHandler.deepLinkData.isEmpty()) {
+                    navController.navigate(Route.IcalEntryList(lastUsedId))
+                }
+            }
+        }
+
+        // Handle reactive navigation for already open app (or late-arriving deep links on iOS)
+        LaunchedEffect(DeepLinkHandler.deepLinkData) {
+            val deepLinkData = DeepLinkHandler.deepLinkData
+            if (!deepLinkData.consumed) {
+                if (deepLinkData.initialIcalEntryId != null) {
+                    if (deepLinkData.initialIcalEntryId == 0L) {
+                        navController.navigate(
+                            Route.AddICalEntry(
+                                calendarId = deepLinkData.initialCalendarId ?: 0L,
+                                initialDescription = deepLinkData.initialIcalEntryDescription
+                            )
+                        )
+                    } else {
+                        navController.navigate(Route.IcalEntryDetails(deepLinkData.initialIcalEntryId))
+                    }
+                    DeepLinkHandler.consume()
+                } else if (deepLinkData.initialCalendarId != null) {
+                    navController.navigate(Route.IcalEntryList(deepLinkData.initialCalendarId))
+                    DeepLinkHandler.consume()
                 }
             }
         }
