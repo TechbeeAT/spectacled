@@ -114,8 +114,8 @@ fun SpectacledApp(
         val navController = rememberNavController()
         //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
 
-        if(getPlatform().platform == Platforms.IOS) {
-            // make sure deeplinks are also handled when they arrive after the app was started (especially for iOS)
+        if(getPlatform().platform == Platforms.IOS || getPlatform().platform == Platforms.DESKTOP) {
+            // make sure deeplinks are also handled when they arrive after the app was started (especially for iOS and Desktop)
             val deepLinkCalendarId = DeepLinkHandler.initialCalendarId ?: initialCalendarId
             val deepLinkIcalEntryId = DeepLinkHandler.initialIcalEntryId ?: initialIcalEntryId
             val deepLinkDescription = DeepLinkHandler.initialIcalEntryDescription ?: initialIcalEntryDescription
