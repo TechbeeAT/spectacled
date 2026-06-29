@@ -28,5 +28,11 @@ data class DeepLinkData(
     val initialIcalEntryDescription: String? = null,
     val consumed: Boolean = true
 ) {
+    companion object {
+        const val DEEPLINK_ADD_HOST = "add"
+        const val DEEPLINK_DESCRIPTION_PARAM = "description"
+
+    }
+
     fun isEmpty() = initialCalendarId == null && initialIcalEntryId == null && initialIcalEntryDescription == null
 }

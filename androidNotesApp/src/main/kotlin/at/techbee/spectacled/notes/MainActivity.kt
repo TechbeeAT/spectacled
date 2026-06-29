@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import at.techbee.spectacled.DeepLinkData
 import at.techbee.spectacled.DeepLinkHandler
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.setupShortcuts
@@ -37,8 +38,8 @@ class MainActivity : ComponentActivity() {
 
         val description = if (intent.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             intent.getStringExtra(Intent.EXTRA_TEXT)
-        } else if (intent.action == Intent.ACTION_VIEW && intent.data?.host == "add") {
-            intent.data?.getQueryParameter("description")
+        } else if (intent.action == Intent.ACTION_VIEW && intent.data?.host == DeepLinkData.DEEPLINK_ADD_HOST) {
+            intent.data?.getQueryParameter(DeepLinkData.DEEPLINK_DESCRIPTION_PARAM)
         } else null
 
         if (description != null && icalEntryId == null) {

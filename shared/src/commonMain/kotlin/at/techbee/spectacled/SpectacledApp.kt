@@ -55,6 +55,7 @@ enum class SpectacledVariant(
     val logoDrawableResource: DrawableResource,
     val syncCalendarComponent: CalendarComponent,
     val themeSeedColor: Color,
+    val uriScheme: String
 ) {
 
     JOURNALS(
@@ -62,21 +63,24 @@ enum class SpectacledVariant(
         Res.string.app_name_spectacled_journals,
         Res.drawable.logo_spectacled_journals,
         CalendarComponent.VJOURNAL,
-        Color(0, 104, 150)
+        Color(0, 104, 150),
+        "spectacled-journals"
     ),
     NOTES(
         "spectacled_notes.db",
         Res.string.app_name_spectacled_notes,
         Res.drawable.logo_spectacled_notes,
         CalendarComponent.VJOURNAL,
-        Color(153, 76, 44)
+        Color(153, 76, 44),
+        "spectacled-notes"
     ),
     TASKS(
         "spectacled_tasks.db",
         Res.string.app_name_spectacled_tasks,
         Res.drawable.logo_spectacled_tasks,
         CalendarComponent.VTODO,
-        Color(41, 111, 35)
+        Color(41, 111, 35),
+        "spectacled-tasks"
     );
 }
 

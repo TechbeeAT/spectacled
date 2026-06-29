@@ -24,10 +24,10 @@ struct iOSNotesApp: App {
     }
 
     private func handleURL(_ url: URL) {
-        guard url.host == "add" else { return }
+        guard url.host == DeepLinkData.companion.DEEPLINK_ADD_HOST else { return }
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
 
-        let description = components.queryItems?.first(where: { $0.name == "description" })?.value
+        let description = components.queryItems?.first(where: { $0.name == DeepLinkData.companion.DEEPLINK_PARAM_DESCRIPTION })?.value
         
         if let desc = description {
             DeepLinkHandler.shared.onDeepLinkReceived(
