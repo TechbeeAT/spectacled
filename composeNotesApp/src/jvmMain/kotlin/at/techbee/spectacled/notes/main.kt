@@ -2,12 +2,11 @@
 
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import at.techbee.spectacled.parseArgsForDeepLink
-import at.techbee.spectacled.setupDesktopDeepLinkHandler
+import at.techbee.spectacled.DeepLinkHandler
 
 fun main(args: Array<String>) {
-    setupDesktopDeepLinkHandler()
-    parseArgsForDeepLink(args)
+    DeepLinkHandler.setupDesktopHandler()
+    DeepLinkHandler.parseArgs(args)
 
     application {
         Window(

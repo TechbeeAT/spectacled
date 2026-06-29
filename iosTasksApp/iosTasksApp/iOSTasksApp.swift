@@ -9,17 +9,9 @@ struct iOSTasksApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var initialCalendarId: Int64? = nil
-    @State private var initialIcalEntryId: Int64? = nil
-    @State private var initialIcalEntryDescription: String? = nil
-
     var body: some Scene {
         WindowGroup {
-            ContentView(
-                initialCalendarId: initialCalendarId,
-                initialIcalEntryId: initialIcalEntryId,
-                initialIcalEntryDescription: initialIcalEntryDescription
-            )
+            ContentView()
             .onOpenURL { url in
                 handleURL(url)
             }
@@ -36,9 +28,6 @@ struct iOSTasksApp: App {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
 
         if let desc = components.queryItems?.first(where: { $0.name == "description" })?.value {
-            self.initialIcalEntryDescription = desc
-            self.initialIcalEntryId = 0
-            
             DeepLinkHandler.shared.onDeepLinkReceived(
                 calendarId: nil,
                 entryId: 0,

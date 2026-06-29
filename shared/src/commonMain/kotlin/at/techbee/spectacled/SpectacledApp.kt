@@ -97,9 +97,6 @@ fun doInitKoin(spectacledVariant: SpectacledVariant) {
 @Composable
 fun SpectacledApp(
     spectacledVariant: SpectacledVariant,
-    initialCalendarId: Long? = null,
-    initialIcalEntryId: Long? = null,
-    initialIcalEntryDescription: String? = null,
     onCloseApp: () -> Unit = {}
 ) {
     doInitKoin(spectacledVariant)
@@ -115,26 +112,31 @@ fun SpectacledApp(
         //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
 
         if(getPlatform().platform == Platforms.IOS || getPlatform().platform == Platforms.DESKTOP) {
-            // make sure deeplinks are also handled when they arrive after the app was started (especially for iOS and Desktop)
-            val deepLinkCalendarId = DeepLinkHandler.initialCalendarId ?: initialCalendarId
-            val deepLinkIcalEntryId = DeepLinkHandler.initialIcalEntryId ?: initialIcalEntryId
-            val deepLinkDescription = DeepLinkHandler.initialIcalEntryDescription ?: initialIcalEntryDescription
 
-            LaunchedEffect(deepLinkIcalEntryId, deepLinkCalendarId, deepLinkDescription) {
-                if (deepLinkIcalEntryId != null) {
-                    if (deepLinkIcalEntryId == 0L) {
+            // make sure deeplinks are also handled when they arrive after the app was started
+            LaunchedEffect(
+                DeepLinkHandler.initialIcalEntryId,
+                DeepLinkHandler.initialCalendarId,
+                DeepLinkHandler.initialIcalEntryDescription
+            ) {
+                val pushedIcalEntryId = DeepLinkHandler.initialIcalEntryId
+                val pushedCalendarId = DeepLinkHandler.initialCalendarId
+                val pushedDescription = DeepLinkHandler.initialIcalEntryDescription
+
+                if (pushedIcalEntryId != null) {
+                    if (pushedIcalEntryId == 0L) {
                         navController.navigate(
                             Route.AddICalEntry(
-                                calendarId = deepLinkCalendarId ?: 0L,
-                                initialDescription = deepLinkDescription
+                                calendarId = pushedCalendarId ?: 0L,
+                                initialDescription = pushedDescription
                             )
                         )
                     } else {
-                        navController.navigate(Route.IcalEntryDetails(deepLinkIcalEntryId))
+                        navController.navigate(Route.IcalEntryDetails(pushedIcalEntryId))
                     }
                     DeepLinkHandler.onDeepLinkReceived(null, null, null)
-                } else if (deepLinkCalendarId != null) {
-                    navController.navigate(Route.IcalEntryList(deepLinkCalendarId))
+                } else if (pushedCalendarId != null) {
+                    navController.navigate(Route.IcalEntryList(pushedCalendarId))
                     DeepLinkHandler.onDeepLinkReceived(null, null, null)
                 }
             }
@@ -142,13 +144,13 @@ fun SpectacledApp(
 
 
         val startDestination =
-            if (initialIcalEntryId != null) {
-                if (initialIcalEntryId == 0L)
-                    Route.AddICalEntry(calendarId = initialCalendarId ?: 0L, initialDescription = initialIcalEntryDescription)
+            if (DeepLinkHandler.initialIcalEntryId != null) {
+                if (DeepLinkHandler.initialIcalEntryId == 0L)
+                    Route.AddICalEntry(calendarId = DeepLinkHandler.initialCalendarId ?: 0L, initialDescription = DeepLinkHandler.initialIcalEntryDescription)
                 else
-                    Route.IcalEntryDetails(initialIcalEntryId)
-            } else if (initialCalendarId != null) {
-                Route.IcalEntryList(initialCalendarId)
+                    Route.IcalEntryDetails(DeepLinkHandler.initialIcalEntryId!!)
+            } else if (DeepLinkHandler.initialCalendarId != null) {
+                Route.IcalEntryList(DeepLinkHandler.initialCalendarId!!)
             } else {
                 Route.AccountsList
             }
@@ -247,7 +249,7 @@ fun SpectacledApp(
             syncTrigger.schedulePeriodic()
             syncTrigger.requestImmediate()
 
-            if (initialCalendarId == null && initialIcalEntryId == null && DeepLinkHandler.initialIcalEntryId == null) {
+            if (DeepLinkHandler.initialCalendarId == null && DeepLinkHandler.initialIcalEntryId == null) {
                 userAppPreferencesStore.lastUsedCalendarId?.let {
                     navController.navigate(Route.IcalEntryList(it))
                 }

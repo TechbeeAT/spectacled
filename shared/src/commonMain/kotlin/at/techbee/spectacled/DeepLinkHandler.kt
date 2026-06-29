@@ -1,17 +1,12 @@
 package at.techbee.spectacled
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+expect object DeepLinkHandler {
+    var initialCalendarId: Long?
+    var initialIcalEntryId: Long?
+    var initialIcalEntryDescription: String?
 
-object DeepLinkHandler {
-    var initialCalendarId by mutableStateOf<Long?>(null)
-    var initialIcalEntryId by mutableStateOf<Long?>(null)
-    var initialIcalEntryDescription by mutableStateOf<String?>(null)
-
-    fun onDeepLinkReceived(calendarId: Long?, entryId: Long?, description: String?) {
-        initialCalendarId = calendarId
-        initialIcalEntryId = entryId
-        initialIcalEntryDescription = description
-    }
+    fun onDeepLinkReceived(calendarId: Long?, entryId: Long?, description: String?)
+    
+    fun setupDesktopHandler()
+    fun parseArgs(args: Array<String>)
 }
