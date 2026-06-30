@@ -32,6 +32,7 @@ import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import io.ktor.http.Url
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.koinInject
@@ -55,7 +56,8 @@ enum class SpectacledVariant(
     val logoDrawableResource: DrawableResource,
     val syncCalendarComponent: CalendarComponent,
     val themeSeedColor: Color,
-    val uriScheme: String
+    val deeplinkUriScheme: String,
+    val deeplinkWebUri: String
 ) {
 
     JOURNALS(
@@ -64,7 +66,8 @@ enum class SpectacledVariant(
         Res.drawable.logo_spectacled_journals,
         CalendarComponent.VJOURNAL,
         Color(0, 104, 150),
-        "spectacled-journals"
+        "spectacled-journals",
+        "https://spectacled.techbee.at/journals"
     ),
     NOTES(
         "spectacled_notes.db",
@@ -72,7 +75,9 @@ enum class SpectacledVariant(
         Res.drawable.logo_spectacled_notes,
         CalendarComponent.VJOURNAL,
         Color(153, 76, 44),
-        "spectacled-notes"
+        "spectacled-notes",
+        "https://spectacled.techbee.at/notes"
+
     ),
     TASKS(
         "spectacled_tasks.db",
@@ -80,7 +85,8 @@ enum class SpectacledVariant(
         Res.drawable.logo_spectacled_tasks,
         CalendarComponent.VTODO,
         Color(41, 111, 35),
-        "spectacled-tasks"
+        "spectacled-tasks",
+        "https://spectacled.techbee.at/tasks"
     );
 }
 

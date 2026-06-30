@@ -21,7 +21,10 @@ fun DeepLinkHandler.setupDesktopHandler(variant: SpectacledVariant) {
 
 fun DeepLinkHandler.parseArgs(args: Array<String>, variant: SpectacledVariant) {
     args.forEach { arg ->
-        if (arg.startsWith("${variant.uriScheme}://")) {
+        val uriSchemePrefix = "${variant.deeplinkUriScheme}://"
+        val webUrlPrefix = "${variant.deeplinkWebUri.lowercase()}/add"
+        
+        if (arg.startsWith(uriSchemePrefix) || arg.startsWith(webUrlPrefix)) {
             try {
                 handleDesktopUri(URI(arg), variant)
             } catch (e: Exception) {
@@ -32,7 +35,12 @@ fun DeepLinkHandler.parseArgs(args: Array<String>, variant: SpectacledVariant) {
 }
 
 private fun handleDesktopUri(uri: URI, variant: SpectacledVariant) {
-    if (uri.scheme == variant.uriScheme && uri.host == DeepLinkData.DEEPLINK_ADD_HOST) {
+    val isSchemeMatch = uri.scheme == variant.deeplinkUriScheme && uri.host == DeepLinkData.DEEPLINK_ADD_HOST
+    val isWebUrlMatch = uri.scheme == "https" && 
+                       uri.host == "spectacled.techbee.at" && 
+                       uri.path == "/${variant.name.lowercase()}/add"
+
+    if (isSchemeMatch || isWebUrlMatch) {
         val query = uri.query ?: ""
         val params = query.split("&")
             .filter { it.contains("=") }

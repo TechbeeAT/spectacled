@@ -24,17 +24,19 @@ struct iOSNotesApp: App {
     }
 
     private func handleURL(_ url: URL) {
-        guard url.host == DeepLinkData.companion.DEEPLINK_ADD_HOST else { return }
+        let isAddPath = url.path.hasSuffix("/add")
+        let isAddHost = url.host == DeepLinkData.companion.DEEPLINK_ADD_HOST
+        
+        guard isAddHost || isAddPath else { return }
+        
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
 
-        let description = components.queryItems?.first(where: { $0.name == DeepLinkData.companion.DEEPLINK_PARAM_DESCRIPTION })?.value
+        let description = components.queryItems?.first(where: { $0.name == DeepLinkData.companion.DEEPLINK_DESCRIPTION_PARAM })?.value
         
-        if let desc = description {
-            DeepLinkHandler.shared.onDeepLinkReceived(
-                calendarId: nil,
-                entryId: KotlinLong(value: 0),
-                description: desc
-            )
-        }
+        DeepLinkHandler.shared.onDeepLinkReceived(
+            calendarId: nil,
+            entryId: KotlinLong(value: 0),
+            description: description
+        )
     }
 }

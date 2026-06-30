@@ -36,11 +36,19 @@ class MainActivity : ComponentActivity() {
         val calendarId = intent.getLongExtra(SpectacledWidget.CALENDAR_ID_KEY, -1L).takeIf { it != -1L }
         var icalEntryId = intent.getLongExtra(SpectacledWidget.ICAL_ENTRY_ID_KEY, -1L).takeIf { it != -1L }
 
-        val description = if (intent.action == Intent.ACTION_SEND && intent.type == "text/plain") {
-            intent.getStringExtra(Intent.EXTRA_TEXT)
-        } else if (intent.action == Intent.ACTION_VIEW && intent.data?.host == DeepLinkData.DEEPLINK_ADD_HOST) {
-            intent.data?.getQueryParameter(DeepLinkData.DEEPLINK_DESCRIPTION_PARAM)
-        } else null
+        var description: String? = null
+        if (intent.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+            description = intent.getStringExtra(Intent.EXTRA_TEXT)
+        } else if (intent.action == Intent.ACTION_VIEW) {
+            val data = intent.data
+            val isAddDeepLink = data?.host == DeepLinkData.DEEPLINK_ADD_HOST || data?.path?.endsWith("/add") == true
+            if (isAddDeepLink) {
+                description = data?.getQueryParameter(DeepLinkData.DEEPLINK_DESCRIPTION_PARAM)
+                if (icalEntryId == null) {
+                    icalEntryId = 0L
+                }
+            }
+        }
 
         if (description != null && icalEntryId == null) {
             icalEntryId = 0L
