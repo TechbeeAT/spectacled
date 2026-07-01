@@ -90,9 +90,15 @@ enum class SpectacledVariant(
     );
 }
 
+var isNapierInitialized = false
+
 fun doInitKoin(spectacledVariant: SpectacledVariant) {
-    if (KoinPlatform.getKoinOrNull() == null) {
+    if (!isNapierInitialized) {
         Napier.base(DebugAntilog())
+        isNapierInitialized = true
+    }
+
+    if (KoinPlatform.getKoinOrNull() == null) {
         startKoin {
             modules(
                 module { single { spectacledVariant } },

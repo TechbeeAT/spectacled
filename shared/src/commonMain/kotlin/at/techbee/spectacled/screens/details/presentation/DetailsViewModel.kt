@@ -4,7 +4,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.FileManager
+import at.techbee.spectacled.screens.core.PlatformFileLauncher
+import at.techbee.spectacled.screens.core.PlatformFileManager
 import at.techbee.spectacled.screens.core.PlatformShareManager
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
@@ -14,6 +15,9 @@ import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
 import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.data.webdav.downloadFileMultiplatform
+import at.techbee.spectacled.screens.core.domain.Attachment
+import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -53,7 +57,8 @@ class DetailsViewModel(
     private val calendarRepository: CalendarRepository,
     private val icalEntryRepository: IcalEntryRepository,
     private val credentialStore: PlatformCredentialStore,
-    private val fileManager: FileManager,
+    private val fileManager: PlatformFileManager,
+    private val fileLauncher: PlatformFileLauncher,
     private val client: HttpClient,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
@@ -274,6 +279,9 @@ class DetailsViewModel(
             is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
             DetailsAction.OnProcessWithAI -> { onProcessWithAI() }
             is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
+            is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
+            is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentId) }
+            is DetailsAction.OnDeleteAttachment -> { onDeleteAttachment(action.attachmentId) }
         }
     }
 
@@ -645,5 +653,94 @@ class DetailsViewModel(
 
     private fun onNewCalendarIdSelected(calendarId: Long) {
         loadNew(calendarId, state.value.icalEntry.description)
+    }
+
+    @OptIn(ExperimentalTime::class)
+    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?) {
+        viewModelScope.launch {
+            val localPath = fileManager.saveAttachment(fileName, bytes)
+            val newAttachment = Attachment(
+                icalEntryId = _state.value.icalEntry.id,
+                fileName = fileName,
+                localPath = localPath,
+                mimeType = mimeType,
+                size = bytes.size.toLong(),
+                syncState = AttachmentSyncState.LOCAL_MODIFIED
+            )
+
+            _state.update {
+                it.copy(
+                    icalEntry = it.icalEntry.copy(
+                        attachments = it.icalEntry.attachments + newAttachment,
+                        lastModified = IcsDateTime.now(),
+                        syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    )
+                )
+            }
+        }
+    }
+
+    private fun onOpenAttachment(attachmentId: Long) {
+        val attachment = _state.value.icalEntry.attachments.find { it.id == attachmentId } ?: return
+        
+        if (attachment.localPath != null && fileManager.exists(attachment.localPath)) {
+            fileLauncher.openFile(attachment.localPath, attachment.mimeType)
+        } else if (attachment.remoteUrl != null) {
+            viewModelScope.launch {
+                try {
+                    _state.update { it.copy(isLoading = true) }
+                    
+                    val principalUrl = calendarRepository.getPrincipalUrlForCalendarId(_state.value.icalEntry.calendarId)
+                        ?.let { Url(it) } ?: throw Exception("Principal not found")
+                    val credentials = credentialStore.load(principalUrl) ?: throw Exception("Credentials not found")
+                    
+                    val bytes = downloadFileMultiplatform(client, Url(attachment.remoteUrl), credentials)
+                    if (bytes != null) {
+                        // On Web, we open directly from bytes. On Native, we save then open.
+                        if (getPlatform().platform == Platforms.WASM) {
+                            fileLauncher.openFile(bytes, attachment.fileName ?: "file", attachment.mimeType)
+                        } else {
+                            val localPath = fileManager.saveAttachment(attachment.fileName ?: "file", bytes)
+                            val updatedAttachment = attachment.copy(localPath = localPath, syncState = AttachmentSyncState.SYNCED)
+                            icalEntryRepository.insertOrUpdateAttachment(updatedAttachment)
+                            
+                            _state.update { state ->
+                                state.copy(
+                                    icalEntry = state.icalEntry.copy(
+                                        attachments = state.icalEntry.attachments.map { if (it.id == attachmentId) updatedAttachment else it }
+                                    )
+                                )
+                            }
+                            fileLauncher.openFile(localPath, attachment.mimeType)
+                        }
+                    } else {
+                        throw Exception("Download failed")
+                    }
+                } catch (e: Exception) {
+                    _state.update { it.copy(snackbarText = "Error: ${e.message}") }
+                } finally {
+                    _state.update { it.copy(isLoading = false) }
+                }
+            }
+        }
+    }
+
+    private fun onDeleteAttachment(attachmentId: Long) {
+        viewModelScope.launch {
+            val attachment = _state.value.icalEntry.attachments.find { it.id == attachmentId }
+            if (attachment != null) {
+                attachment.localPath?.let { fileManager.deleteAttachment(it) }
+                icalEntryRepository.deleteAttachment(attachmentId)
+                _state.update {
+                    it.copy(
+                        icalEntry = it.icalEntry.copy(
+                            attachments = it.icalEntry.attachments.filter { a -> a.id != attachmentId },
+                            lastModified = IcsDateTime.now(),
+                            syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                        )
+                    )
+                }
+            }
+        }
     }
 }

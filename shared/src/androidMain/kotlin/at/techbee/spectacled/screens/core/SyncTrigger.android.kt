@@ -73,7 +73,7 @@ class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineW
     private val client: HttpClient by inject()
     private val calendarRepository: CalendarRepository by inject()
     private val icalEntryRepository: IcalEntryRepository by inject()
-    private val fileManager: FileManager by inject()
+    private val fileManager: PlatformFileManager by inject()
 
     override suspend fun doWork(): Result {
 

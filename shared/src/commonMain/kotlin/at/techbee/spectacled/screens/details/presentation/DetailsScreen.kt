@@ -36,11 +36,13 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
+import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.details.presentation.components.UrlCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
@@ -217,6 +219,19 @@ fun DetailsScreen(
             }
         }
 
+        AnimatedVisibility(state.icalEntry.attachments.isNotEmpty()) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                state.icalEntry.attachments.forEach { attachment ->
+                    AttachmentCard(
+                        attachment = attachment,
+                        onAction = onAction
+                    )
+                }
+            }
+        }
+
         //HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp))
         WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
 
@@ -286,7 +301,11 @@ private fun ListScreen_Preview() {
 private fun ListScreen_with_dtstart_Preview() {
     DetailsScreen(
         state = DetailsState(
-            icalEntry = IcalEntry.getSampleIcalEntry().copy(dtStart = IcsDateTime.now(), url = Url("https://spectacled.techbee.at")),
+            icalEntry = IcalEntry.getSampleIcalEntry().copy(
+                dtStart = IcsDateTime.now(),
+                url = Url("https://spectacled.techbee.at"),
+                attachments = listOf(Attachment(fileName = "test.pdf", size = 128000))
+            ),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
         ),
         onAction = {}

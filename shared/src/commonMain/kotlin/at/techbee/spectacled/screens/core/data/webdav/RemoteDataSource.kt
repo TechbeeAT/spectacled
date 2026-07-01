@@ -13,6 +13,7 @@ import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcalEntries
 import at.techbee.spectacled.screens.core.mapper.ics.serializeVCalendar
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
 import io.ktor.client.request.delete
@@ -857,4 +858,15 @@ suspend fun uploadFileMultiplatform(
         setBody(bytes)
     }
     return response.status
+}
+
+suspend fun downloadFileMultiplatform(
+    client: HttpClient,
+    sourceUrl: Url,
+    credentials: Credentials?
+): ByteArray? {
+    val response = client.get(sourceUrl) {
+        credentials?.let { basicAuth(it.username, it.password) }
+    }
+    return if (response.status.isSuccess()) response.body<ByteArray>() else null    // TODO: respond with an actual HttpStatusCode
 }

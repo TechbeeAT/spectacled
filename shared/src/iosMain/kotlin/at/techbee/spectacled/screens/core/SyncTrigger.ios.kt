@@ -47,7 +47,7 @@ object IOSSyncEntryPoint : KoinComponent {
     private val client: HttpClient by inject()
     private val calendarRepository: CalendarRepository by inject()
     private val icalEntryRepository: IcalEntryRepository by inject()
-    private val fileManager: FileManager by inject()
+    private val fileManager: PlatformFileManager by inject()
     private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun runBackgroundSync(onFinished: () -> Unit) {

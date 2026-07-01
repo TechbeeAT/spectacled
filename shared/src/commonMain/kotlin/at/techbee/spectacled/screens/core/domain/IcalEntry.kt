@@ -77,7 +77,7 @@ data class IcalEntry(
     val href: Url? = null,
     val calendarComponent: CalendarComponent,
     val parentUid: String? = null,
-    val relType: String? = "PARENT",
+    val relType: String? = null,
     val url: Url? = null
     ) {
 
