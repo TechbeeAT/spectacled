@@ -211,6 +211,7 @@ suspend fun discoverCalendars(
             calendarDescription = "",
             getCTag = "",
             calendarColor = Color.Unspecified,
+            attachmentCollection = AttachmentCollection(),
             supportedCalendarComponentSet = SupportedCalendarComponentSet(),
             resourceType = ResourceType(),
             currentUserPrivilegeSet = CurrentUserPrivilegeSet()
@@ -285,7 +286,8 @@ suspend fun discoverCalendars(
                             calDavPrivileges = propStat.prop.currentUserPrivilegeSet?.privileges?.mapNotNull { CalDavPrivilege.fromTag(it.name) }?: emptyList(),
                             calendarSyncStatus = null,
                             syncToken = null,
-                            syncComponent = supportedCalendarComponent
+                            syncComponent = supportedCalendarComponent,
+                            attachmentCollectionUrl = propStat.prop.attachmentCollection?.href?.let { URLBuilder(homeCollection.url).takeFrom(it).build() }
                         )
                     )
                 }
@@ -534,6 +536,7 @@ suspend fun createCalendarMultiplatform(
             calendarDescription = "",
             getCTag = "",
             calendarColor = Color.Unspecified,
+            attachmentCollection = AttachmentCollection(),
             supportedCalendarComponentSet = SupportedCalendarComponentSet(),
             resourceType = ResourceType(),
             currentUserPrivilegeSet = CurrentUserPrivilegeSet()

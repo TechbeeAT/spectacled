@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.PlatformShareManager
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
@@ -52,6 +53,7 @@ class DetailsViewModel(
     private val calendarRepository: CalendarRepository,
     private val icalEntryRepository: IcalEntryRepository,
     private val credentialStore: PlatformCredentialStore,
+    private val fileManager: FileManager,
     private val client: HttpClient,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
@@ -508,7 +510,7 @@ class DetailsViewModel(
 
                 val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
-                SyncCoordinator(calendarRepository, icalEntryRepository, client, credentials).pushDirtyIcalEntry(icalEntry, calendar)
+                SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).pushDirtyIcalEntry(icalEntry, calendar)
                 val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.uid) ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )

@@ -594,7 +594,8 @@ class SyncCoordinator(
         val updatedAttachments = icalEntry.attachments.map { attachment ->
             if (attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED && attachment.localPath != null) {
                 val fileName = "${attachment.uid}_${attachment.fileName ?: "file"}"
-                val safeTargetUrl = Url(calendar.url.toString().trimEnd('/') + "/" + fileName)
+                val uploadBaseUrl = calendar.attachmentCollectionUrl ?: calendar.url
+                val safeTargetUrl = Url(uploadBaseUrl.toString().trimEnd('/') + "/" + fileName)
 
                 val bytes = fileManager.readAttachment(attachment.localPath)
                 if (uploadFileMultiplatform(client, safeTargetUrl, bytes, attachment.mimeType, credentials).isSuccess()) {        // TODO: Instead of handling only success here, inform user in case of a problem
