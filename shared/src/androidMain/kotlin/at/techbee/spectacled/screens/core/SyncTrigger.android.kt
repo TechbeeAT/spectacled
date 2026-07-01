@@ -73,6 +73,7 @@ class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineW
     private val client: HttpClient by inject()
     private val calendarRepository: CalendarRepository by inject()
     private val icalEntryRepository: IcalEntryRepository by inject()
+    private val fileManager: FileManager by inject()
 
     override suspend fun doWork(): Result {
 
@@ -81,14 +82,15 @@ class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineW
 
         if (targetCalendarIds.isNullOrEmpty()) {
             // Default behavior: Sync everything
-            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, credentialStore, client)
+            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
         } else if(pushOnly && targetCalendarIds.size == 1) {
-            SyncCoordinator.pushLocalChanges(targetCalendarIds.first(), calendarRepository, icalEntryRepository, credentialStore, client)
+            SyncCoordinator.pushLocalChanges(targetCalendarIds.first(), calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
         } else {
             SyncCoordinator.syncSpecificCalendars(
                 targetCalendarIds,
                 calendarRepository,
                 icalEntryRepository,
+                fileManager,
                 credentialStore,
                 client
             )

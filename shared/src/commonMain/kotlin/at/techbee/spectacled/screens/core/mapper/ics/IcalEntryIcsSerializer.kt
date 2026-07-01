@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.mapper.ics
 
 import androidx.compose.ui.graphics.toArgb
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.data.ics.KnownIcsParamName
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsPropertyName
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import kotlinx.datetime.LocalDate
@@ -173,6 +174,17 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
 
     icalEntry.url?.let {
         lines += "${KnownIcsPropertyName.URL.propertyName}:${it}"
+    }
+
+    icalEntry.attachments.forEach { attachment ->
+        attachment.remoteUrl?.let { remoteUrl ->
+            val params = mutableListOf<String>()
+            attachment.mimeType?.let { params += "${KnownIcsParamName.FMTTYPE.paramName}=$it" }
+            attachment.fileName?.let { params += "${KnownIcsParamName.FILENAME.paramName}=${escapeIcsValue(it)}" }
+
+            val paramPart = if (params.isNotEmpty()) params.joinToString(";", prefix = ";") else ""
+            lines += "${KnownIcsPropertyName.ATTACH.propertyName}$paramPart:$remoteUrl"
+        }
     }
 
     icalEntry.extraProperties.forEach {

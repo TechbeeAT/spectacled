@@ -5,6 +5,8 @@ actual class PlatformFileManager : FileManager {
 
     actual override fun saveAttachment(fileName: String, bytes: ByteArray): String = ""
 
+    actual override fun readAttachment(path: String): ByteArray = byteArrayOf()
+
     actual override fun deleteAttachment(path: String): Boolean = false
 
     actual override fun exists(path: String): Boolean = false

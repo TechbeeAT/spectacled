@@ -15,6 +15,10 @@ actual class PlatformFileManager : FileManager {
         return file.absolutePath
     }
 
+    actual override fun readAttachment(path: String): ByteArray {
+        return File(path).readBytes()
+    }
+
     actual override fun deleteAttachment(path: String): Boolean {
         return File(path).delete()
     }

@@ -4,6 +4,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
 import platform.Foundation.*
+import platform.posix.memcpy
 
 @OptIn(ExperimentalForeignApi::class)
 actual class PlatformFileManager : FileManager {
@@ -26,6 +27,15 @@ actual class PlatformFileManager : FileManager {
         }
         data.writeToFile(path, true)
         return path
+    }
+
+    actual override fun readAttachment(path: String): ByteArray {
+        val data = NSData.dataWithContentsOfFile(path) ?: return byteArrayOf()
+        val bytes = ByteArray(data.length.toInt())
+        bytes.usePinned { pinned ->
+            memcpy(pinned.addressOf(0), data.bytes, data.length)
+        }
+        return bytes
     }
 
     actual override fun deleteAttachment(path: String): Boolean {
