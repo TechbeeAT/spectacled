@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.koin
 
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
+import at.techbee.spectacled.screens.core.PlatformFileManager
 import at.techbee.spectacled.screens.core.PlatformShareManager
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
@@ -14,4 +15,5 @@ actual val platformModule = module {
     single { PlatformUserAppPreferencesStore(androidContext()) }
     single { PlatformSyncTrigger(androidContext()) }
     single { PlatformShareManager(androidContext()) }
+    single { PlatformFileManager(androidContext()) }
 }
