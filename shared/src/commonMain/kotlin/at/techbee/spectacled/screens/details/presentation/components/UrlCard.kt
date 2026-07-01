@@ -3,7 +3,7 @@ package at.techbee.spectacled.screens.details.presentation.components
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,7 +38,13 @@ fun UrlCard(
     val uriHandler = LocalUriHandler.current
 
     Card(
-        onClick = { onClick(DetailsAction.OnShowEditUrlBottomSheet(true)) },
+        onClick = {
+            try {
+                uriHandler.openUri(url.toString())
+            } catch (e: Exception) {
+                println(e.stackTraceToString())
+            }
+                  },
         elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent),
         modifier = modifier
@@ -62,14 +68,10 @@ fun UrlCard(
 
             IconButton(
                 onClick = {
-                    try {
-                        uriHandler.openUri(url.toString())
-                    } catch (e: Exception) {
-                        println(e.stackTraceToString())
-                    }
+                    onClick(DetailsAction.OnShowEditUrlBottomSheet(true))
                 }
             ) {
-                Icon(Icons.AutoMirrored.Outlined.OpenInNew, null)
+                Icon(Icons.Outlined.Edit, stringResource(Res.string.edit))
             }
         }
     }

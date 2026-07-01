@@ -3,18 +3,22 @@ package at.techbee.spectacled.screens.core.data.repository
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import app.cash.sqldelight.async.coroutines.awaitAsList
+import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.Attachment
+import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
+import at.techbee.spectacled.screens.core.mapper.dto.*
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import io.ktor.http.Url
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,27 +46,45 @@ class IcalEntryRepositoryImpl(
     }
 
     override suspend fun getIcalEntryById(id: Long): IcalEntry? {
-        return getDatabase().icalentry_dtoQueries.getIcalEntryById(id).awaitAsOneOrNull()?.toDomain()
+        val db = getDatabase()
+        val dto = db.icalentry_dtoQueries.getIcalEntryById(id).awaitAsOneOrNull() ?: return null
+        val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
+        return dto.toDomain(attachments)
     }
 
     override suspend fun getIcalEntryByUid(uid: String): IcalEntry? {
-        return getDatabase().icalentry_dtoQueries.getIcalEntryByUid(uid).awaitAsOneOrNull()?.toDomain()
+        val db = getDatabase()
+        val dto = db.icalentry_dtoQueries.getIcalEntryByUid(uid).awaitAsOneOrNull() ?: return null
+        val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
+        return dto.toDomain(attachments)
     }
 
     override suspend fun getIcalEntryByHref(href: Url): IcalEntry? {
-        return getDatabase().icalentry_dtoQueries.getIcalEntryByHref(href.toString()).awaitAsOneOrNull()?.toDomain()
+        val db = getDatabase()
+        val dto = db.icalentry_dtoQueries.getIcalEntryByHref(href.toString()).awaitAsOneOrNull() ?: return null
+        val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
+        return dto.toDomain(attachments)
     }
 
     override suspend fun getDirtyIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> {
-        return getDatabase().icalentry_dtoQueries.getDirtyIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
+        val db = getDatabase()
+        return db.icalentry_dtoQueries.getDirtyIcalEntriesByCalendar(calendarId).awaitAsList().map { dto ->
+            val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
+            dto.toDomain(attachments)
+        }
     }
 
     override suspend fun getIcalEntriesByHrefs(hrefs: List<Url>): List<IcalEntry> {
-        return getDatabase().icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs.map { it.toString() }).awaitAsList().map { it.toDomain() }
+        val db = getDatabase()
+        return db.icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs.map { it.toString() }).awaitAsList().map { dto ->
+            val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
+            dto.toDomain(attachments)
+        }
     }
 
     override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> {
-        return getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
+        val db = getDatabase()
+        return db.icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
     }
 
     override suspend fun getDeletedDeltaHrefs(
@@ -112,10 +134,11 @@ class IcalEntryRepositoryImpl(
     override suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry) {
 
         val icalEntryDto = icalEntry.toDto()
+        val db = getDatabase()
 
-        getDatabase().icalentry_dtoQueries.transaction {
+        db.transaction {
             // first update, if the UID doesn't exist, this is ignored
-            getDatabase().icalentry_dtoQueries.updateIcalEntry(
+            db.icalentry_dtoQueries.updateIcalEntry(
                 calendarId = icalEntryDto.calendarId,
                 uid = icalEntryDto.uid,
                 summary = icalEntryDto.summary,
@@ -146,7 +169,7 @@ class IcalEntryRepositoryImpl(
                 url = icalEntryDto.url
             )
             // insert, but if the UID exists, it will be ignored
-            getDatabase().icalentry_dtoQueries.insertIcalEntry(
+            db.icalentry_dtoQueries.insertIcalEntry(
                 calendarId = icalEntryDto.calendarId,
                 uid = icalEntryDto.uid,
                 summary = icalEntryDto.summary,
@@ -176,6 +199,32 @@ class IcalEntryRepositoryImpl(
                 relType = icalEntryDto.relType,
                 url = icalEntryDto.url
             )
+        }
+
+        // Get the actual ID of the entry if it was 0L (newly inserted)
+        val entryId = if (icalEntry.id == 0L) {
+            db.icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).awaitAsOne().id
+        } else {
+            icalEntry.id
+        }
+
+        // Handle attachments
+        if (icalEntry.attachments.isNotEmpty()) {
+            db.transaction {
+                icalEntry.attachments.forEach { attachment ->
+                    val attachmentDto = attachment.copy(icalEntryId = entryId).toDto()
+                    db.attachment_dtoQueries.insertAttachment(
+                        icalEntryId = attachmentDto.icalEntryId,
+                        uid = attachmentDto.uid,
+                        localPath = attachmentDto.localPath,
+                        remoteUrl = attachmentDto.remoteUrl,
+                        fileName = attachmentDto.fileName,
+                        mimeType = attachmentDto.mimeType,
+                        size = attachmentDto.size,
+                        syncState = attachmentDto.syncState
+                    )
+                }
+            }
         }
     }
 
@@ -230,5 +279,28 @@ class IcalEntryRepositoryImpl(
         id: Long
     ) {
         getDatabase().icalentry_dtoQueries.updateSyncMetadata(etag, href?.toString(), syncState?.name, id)
+    }
+
+    override suspend fun insertOrUpdateAttachment(attachment: Attachment) {
+        val db = getDatabase()
+        val dto = attachment.toDto()
+        db.attachment_dtoQueries.insertAttachment(
+            icalEntryId = dto.icalEntryId,
+            uid = dto.uid,
+            localPath = dto.localPath,
+            remoteUrl = dto.remoteUrl,
+            fileName = dto.fileName,
+            mimeType = dto.mimeType,
+            size = dto.size,
+            syncState = dto.syncState
+        )
+    }
+
+    override suspend fun deleteAttachment(id: Long) {
+        getDatabase().attachment_dtoQueries.deleteAttachment(id)
+    }
+
+    override suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment> {
+        return getDatabase().attachment_dtoQueries.getAttachmentsForEntry(entryId).awaitAsList().map { it.toDomain() }
     }
 }

@@ -9,9 +9,11 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcalEntries
 import at.techbee.spectacled.screens.core.mapper.ics.serializeVCalendar
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
 import io.ktor.client.request.delete
@@ -61,10 +63,8 @@ suspend fun discoverPrincipalsMultiplatform(
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
-        //setBody("<?xml version='1.0' encoding='UTF-8' ?><propfind xmlns=\"DAV:\" xmlns:CAL=\"urn:ietf:params:xml:ns:caldav\" xmlns:CARD=\"urn:ietf:params:xml:ns:carddav\"><prop><current-user-principal /><displayname /></prop></propfind>")
         setBody(xmlString)
     }.let { response ->
-        //response = "Response: $httpResponse"
 
         if(!response.status.isSuccess()) {
             return when(response.status) {
@@ -75,13 +75,9 @@ suspend fun discoverPrincipalsMultiplatform(
         }
 
         try {
-            //val responseBody = response.bodyAsText()
-            //print("responseBody: $responseBody")
-            //val p = xml.decodeFromString<WebDavMultiStatus>(httpResponse.bodyAsText())
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
-            //print("Parsed response: $multistatusResponse")
 
             val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
             when {
@@ -97,7 +93,6 @@ suspend fun discoverPrincipalsMultiplatform(
                         return@forEach
 
                     val href = propStat.prop.currentUserPrincipal?.href ?: return@forEach
-                    //val displayName = propStat.prop.displayName
 
                     val currentPrincipal = Principal(
                         id = 0L,
@@ -117,8 +112,6 @@ suspend fun discoverPrincipalsMultiplatform(
         }
     }
 }
-
-
 
 suspend fun discoverHomeCollections(
     client: HttpClient,
@@ -146,10 +139,8 @@ suspend fun discoverHomeCollections(
         headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
-        //setBody("<?xml version='1.0' encoding='UTF-8' ?><propfind xmlns=\"DAV:\" xmlns:CAL=\"urn:ietf:params:xml:ns:caldav\" xmlns:CARD=\"urn:ietf:params:xml:ns:carddav\"><prop><CAL:calendar-home-set /><displayname /></prop></propfind>")
         setBody(xmlString)
     }.let { response ->
-        //response = "Response: $httpResponse"
 
         if(!response.status.isSuccess()) {
             return when(response.status) {
@@ -161,13 +152,9 @@ suspend fun discoverHomeCollections(
 
         try {
             val responseBody = response.bodyAsText()
-            print("responseBody: $responseBody")
-
-            //val p = xml.decodeFromString<WebDavMultiStatus>(httpResponse.bodyAsText())
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(responseBody)
             )
-            //print("Parsed response: $multistatusResponse")
 
             val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
             when {
@@ -185,8 +172,6 @@ suspend fun discoverHomeCollections(
                     propStat.prop.calendarUserAddressSet?.hrefs?.let { principalCalendarUserAddressSet.addAll(it) }
 
                     val calendarHomeSets = propStat.prop.calendarHomeSet?.hrefs ?: return@forEach
-                    //println("Response $response")
-                    //println("CalendarHomeSets " + calendarHomeSets.joinToString(separator = ", "))
 
                     calendarHomeSets.forEach { calendarHomeSet ->
                         homeCollections.add(
@@ -211,8 +196,6 @@ suspend fun discoverHomeCollections(
     }
 }
 
-
-
 suspend fun discoverCalendars(
     client: HttpClient,
     homeCollection: HomeCollection,
@@ -223,14 +206,13 @@ suspend fun discoverCalendars(
     val calendars = mutableListOf<Calendar>()
     val calDavPrivileges = mutableListOf<CalDavPrivilege>()
 
-    //println("CalendarHomeSet from Set: $homeCollectionUrl")
-
     val propfindRequest = Propfind(
         prop = WebDavProp(
             displayName = "", // An empty string will serialize to <D:displayname/>
             calendarDescription = "",
             getCTag = "",
             calendarColor = Color.Unspecified,
+            attachmentCollection = AttachmentCollection(),
             supportedCalendarComponentSet = SupportedCalendarComponentSet(),
             resourceType = ResourceType(),
             currentUserPrivilegeSet = CurrentUserPrivilegeSet()
@@ -245,13 +227,8 @@ suspend fun discoverCalendars(
         headers.append(HttpHeaders.Depth, "1")
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
-        //setBody("<?xml version='1.0' encoding='UTF-8' ?><propfind xmlns=\"DAV:\" xmlns:CAL=\"urn:ietf:params:xml:ns:caldav\" xmlns:CARD=\"urn:ietf:params:xml:ns:carddav\"><prop><displayname /><resourcetype /><n0:calendar-color xmlns:n0=\"http://apple.com/ns/ical/\" /><CAL:calendar-description /><current-user-privilege-set /><CAL:supported-calendar-component-set /><n1:getctag xmlns:n1=\"http://calendarserver.org/ns/\" /></prop></propfind>\n")
-        //TODO: Add properties again!
-        //setBody("<?xml version='1.0' encoding='UTF-8' ?><propfind xmlns=\"DAV:\" xmlns:CAL=\"urn:ietf:params:xml:ns:caldav\" xmlns:CARD=\"urn:ietf:params:xml:ns:carddav\"><prop><displayname /><CAL:calendar-description /><n1:getctag xmlns:n1=\"http://calendarserver.org/ns/\" /></prop></propfind>\n")
         setBody(xmlString)
     }.let { response ->
-        //response = "Response: $httpResponse"
-        //val xml = XML { recommended() }
 
         if(!response.status.isSuccess()) {
             return when(response.status) {
@@ -262,10 +239,6 @@ suspend fun discoverCalendars(
         }
 
         try {
-            //val responseBody = response.bodyAsText()
-            //print("responseBody: $responseBody")
-
-            //val p = xml.decodeFromString<WebDavMultiStatus>(httpResponse.bodyAsText())
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
@@ -301,18 +274,11 @@ suspend fun discoverCalendars(
                     if(propStat.prop.resourceType?.calendar == null || supportedCalendarComponentSet.none { component -> component == supportedCalendarComponent })
                         return@forEach
 
-                    /*
-                    //val calendarTimezone = response[CalendarTimezone::class.java]
-                    println("============================")
-                    println("Response $response")
-                    println("ResourceType " + calendarResourceType?.types?.joinToString(transform = { "CalendarResourceType: Name: ${it.name}, Namespace: ${it.namespace}; " }))
-                    */
-
                     calendars.add(
                         Calendar(
                             id = 0L,
                             homeCollectionId = 0L,
-                            url = URLBuilder(homeCollection.url).takeFrom(response.href).build(),    // TODO: Check if correct!
+                            url = URLBuilder(homeCollection.url).takeFrom(response.href).build(),
                             displayName = propStat.prop.displayName,
                             calendarDescription = propStat.prop.calendarDescription,
                             color = propStat.prop.calendarColor,
@@ -321,7 +287,8 @@ suspend fun discoverCalendars(
                             calDavPrivileges = propStat.prop.currentUserPrivilegeSet?.privileges?.mapNotNull { CalDavPrivilege.fromTag(it.name) }?: emptyList(),
                             calendarSyncStatus = null,
                             syncToken = null,
-                            syncComponent = supportedCalendarComponent
+                            syncComponent = supportedCalendarComponent,
+                            attachmentCollectionUrl = propStat.prop.attachmentCollection?.href?.let { URLBuilder(homeCollection.url).takeFrom(it).build() }
                         )
                     )
                 }
@@ -336,7 +303,6 @@ suspend fun discoverCalendars(
         }
     }
 }
-
 
 suspend fun multigetResourceHrefsMultiplatform(
     client: HttpClient,
@@ -376,11 +342,9 @@ suspend fun multigetResourceHrefsMultiplatform(
         }
 
         try {
-            //val p = xml.decodeFromString<WebDavMultiStatus>(httpResponse.bodyAsText())
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
-            //print("Parsed response: $multistatusResponse")
 
             val hrefMap = mutableMapOf<Url, String?>()
             multistatusResponse.responses.forEach { response ->
@@ -393,7 +357,6 @@ suspend fun multigetResourceHrefsMultiplatform(
                 }
             }
             return MultigetResourceHrefETagResult.Success(hrefMap, multistatusResponse.syncToken)
-            //print("CalendarHrefs: $calendarHrefs")
         } catch (e: XmlParsingException) {
             println("Parsing failed: ${e.message}")
             println(e.stackTraceToString())
@@ -401,7 +364,6 @@ suspend fun multigetResourceHrefsMultiplatform(
         }
     }
 }
-
 
 suspend fun syncCollectionMultiplatform(
     client: HttpClient,
@@ -431,7 +393,6 @@ suspend fun syncCollectionMultiplatform(
         }
 
         try {
-            //val p = xml.decodeFromString<WebDavMultiStatus>(httpResponse.bodyAsText())
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
@@ -452,15 +413,14 @@ suspend fun syncCollectionMultiplatform(
     }
 }
 
-
 suspend fun fetchSingleEntryMultiplatform(
     client: HttpClient,
     calendar: Calendar,
     href: Url,
-    credentials: Credentials?
+    credentials: Credentials?,
+    fileManager: FileManager?
 ): MultigetResourceResult {
 
-    // 1. Define the properties to fetch for the multiget request.
     val multigetProp = WebDavProp(
         contentType = "",
         getETag = "",
@@ -468,7 +428,6 @@ suspend fun fetchSingleEntryMultiplatform(
         calendarData = ""
     )
 
-    // 2. Create the main CalendarMultiGet request object.
     val calendarMultigetRequest = CalendarMultiget(
         prop = multigetProp,
         hrefs = listOf(href.fullPath)
@@ -484,8 +443,6 @@ suspend fun fetchSingleEntryMultiplatform(
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
         setBody(xmlBody)
     }.let { response ->
-        //response = "Response: $httpResponse"
-        //val xml = XML { recommended() }
 
         if (!response.status.isSuccess()) {
             return when(response.status) {
@@ -499,17 +456,15 @@ suspend fun fetchSingleEntryMultiplatform(
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
-            //print("Parsed response: $multistatusResponse")
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
                     if(propStat.status == "HTTP/1.1 200 OK") {
-                        val parsedIcalEntries = propStat.prop.calendarData?.let { parseIcalEntries(it, calendar.syncComponent) } ?: return@forEach
-                        val href = URLBuilder(calendar.url).takeFrom(response.href).build()
-                        parsedIcalEntries.forEach { icalEntries.add(it.copy(etag = propStat.prop.getETag, href = href)) }
+                        val parsedIcalEntries = propStat.prop.calendarData?.let { parseIcalEntries(it, calendar.syncComponent, fileManager) } ?: return@forEach
+                        val hrefResult = URLBuilder(calendar.url).takeFrom(response.href).build()
+                        parsedIcalEntries.forEach { icalEntries.add(it.copy(etag = propStat.prop.getETag, href = hrefResult)) }
                     }
                 }
             }
-            println("--- End of Calendar Data ---")
             return MultigetResourceResult.Success(icalEntries)
 
         } catch (e: XmlParsingException) {
@@ -553,7 +508,6 @@ suspend fun createCalendarMultiplatform(
         if (credentials != null) {
             basicAuth(credentials.username, credentials.password)
         }
-        //headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.parse("MKCOL")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
         accept(ContentType.Application.Xml)
@@ -565,13 +519,10 @@ suspend fun createCalendarMultiplatform(
             return when (response.status) {
                 HttpStatusCode.Forbidden ->    // Missing bind privilege on calendar-home-set
                     UpsertCalendarResult.Failed(response.status, "Calendar couldn't be created due to missing privileges.", "${response.status.description} ${response.status.value}")
-
                 HttpStatusCode.Conflict ->
                     UpsertCalendarResult.Failed(response.status,"Parent does not exist or calendar already exists.", "${response.status.description} ${response.status.value}")
-
-                HttpStatusCode.MethodNotAllowed ->       // Server does not allow MKCOL
+                HttpStatusCode.MethodNotAllowed ->
                     UpsertCalendarResult.Failed(response.status, "Server doesn't support creation of new collections.", "${response.status.description} ${response.status.value}")
-
                 else ->
                     UpsertCalendarResult.Failed(response.status, "Creating collection failed.", "${response.status.description} ${response.status.value}")
             }
@@ -586,6 +537,7 @@ suspend fun createCalendarMultiplatform(
             calendarDescription = "",
             getCTag = "",
             calendarColor = Color.Unspecified,
+            attachmentCollection = AttachmentCollection(),
             supportedCalendarComponentSet = SupportedCalendarComponentSet(),
             resourceType = ResourceType(),
             currentUserPrivilegeSet = CurrentUserPrivilegeSet()
@@ -608,31 +560,21 @@ suspend fun createCalendarMultiplatform(
 
         try {
             val responseBody = response.bodyAsText()
-            print("responseBody: $responseBody")
-
-            //val p = xml.decodeFromString<WebDavMultiStatus>(httpResponse.bodyAsText())
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(responseBody)
             )
-            print("Parsed response: $multistatusResponse")
 
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
 
-                    if (propStat.status != "HTTP/1.1 200 OK")  // ignore missing propstat entries
+                    if (propStat.status != "HTTP/1.1 200 OK")
                         return@forEach
 
                     val supportedCalendarComponentSet = propStat.prop.supportedCalendarComponentSet?.let { componentSet ->
                         val calendarComponents = mutableListOf<CalendarComponent>().apply {
-                            if (componentSet.components.any { component -> component.name == CalendarComponent.VJOURNAL.name }) add(
-                                CalendarComponent.VJOURNAL
-                            )
-                            if (componentSet.components.any { component -> component.name == CalendarComponent.VTODO.name }) add(
-                                CalendarComponent.VTODO
-                            )
-                            if (componentSet.components.any { component -> component.name == CalendarComponent.VEVENT.name }) add(
-                                CalendarComponent.VEVENT
-                            )
+                            if (componentSet.components.any { component -> component.name == CalendarComponent.VJOURNAL.name }) add(CalendarComponent.VJOURNAL)
+                            if (componentSet.components.any { component -> component.name == CalendarComponent.VTODO.name }) add(CalendarComponent.VTODO)
+                            if (componentSet.components.any { component -> component.name == CalendarComponent.VEVENT.name }) add(CalendarComponent.VEVENT)
                         }
                         return@let calendarComponents
                     } ?: emptyList()
@@ -641,7 +583,6 @@ suspend fun createCalendarMultiplatform(
                     // skip calendars that are NOT of resource type calendar and skip if there's no calendar with the requested CalendarComponent supported
                     if (propStat.prop.resourceType?.calendar == null || supportedCalendarComponentSet.none { component -> component == newCalendar.syncComponent })
                         UpsertCalendarResult.Failed(HttpStatusCode.UnprocessableEntity, "Creation of calendar with supported component failed.")
-                    // TODO: Delete calendar in this case?
 
                     return UpsertCalendarResult.Success(newCalendar.copy(
                         url = URLBuilder(newCalendar.url).takeFrom(response.href).build(),
@@ -650,15 +591,13 @@ suspend fun createCalendarMultiplatform(
                         color = propStat.prop.calendarColor,
                         ctag = propStat.prop.getCTag,
                         supportedComponents = supportedCalendarComponentSet,
-                        calDavPrivileges = propStat.prop.currentUserPrivilegeSet?.privileges?.mapNotNull { CalDavPrivilege.fromTag(it.name) }
-                            ?: emptyList()
+                        calDavPrivileges = propStat.prop.currentUserPrivilegeSet?.privileges?.mapNotNull { CalDavPrivilege.fromTag(it.name) } ?: emptyList()
                     ))
                 }
             }
 
         } catch (e: XmlParsingException) {
             println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
             return UpsertCalendarResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -704,7 +643,7 @@ suspend fun updateCalDavCalendarMultiplatform(
 
         if(!response.status.isSuccess()) {
             return when (response.status) {
-                HttpStatusCode.Forbidden ->    // Missing bind privilege on calendar-home-set
+                HttpStatusCode.Forbidden ->
                     UpsertCalendarResult.Failed(response.status, "Calendar couldn't be updated due to missing privileges.", "${response.status.description} ${response.status.value}")
                 HttpStatusCode.Conflict ->
                     UpsertCalendarResult.Failed(response.status, "Calendar couldn't be updated due to conflict.", "${response.status.description} ${response.status.value}")
@@ -742,13 +681,9 @@ suspend fun updateCalDavCalendarMultiplatform(
 
         try {
             val responseBody = response.bodyAsText()
-            print("responseBody: $responseBody")
-
-            //val p = xml.decodeFromString<WebDavMultiStatus>(httpResponse.bodyAsText())
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(responseBody)
             )
-            print("Parsed response: $multistatusResponse")
 
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
@@ -767,7 +702,6 @@ suspend fun updateCalDavCalendarMultiplatform(
             }
         } catch (e: XmlParsingException) {
             println("Parsing failed: ${e.message}")
-            //println(e.stackTraceToString())
             return UpsertCalendarResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -788,7 +722,6 @@ suspend fun deleteCalendarMultiplatform(
         if (credentials != null) {
             basicAuth(credentials.username, credentials.password)
         }
-        //headers.append(HttpHeaders.Depth, "0")
         method = HttpMethod.Delete
         accept(ContentType.Application.Xml)
     }.let { response ->
@@ -849,7 +782,6 @@ suspend fun putResourceMultiplatform(
 }
 
 
-
 @OptIn(ExperimentalUuidApi::class)
 suspend fun deleteResourceMultiplatform(
     client: HttpClient,
@@ -882,7 +814,8 @@ suspend fun getResourceMultiplatform(
     client: HttpClient,
     calendar: Calendar,
     icalEntry: IcalEntry,
-    credentials: Credentials?
+    credentials: Credentials?,
+    fileManager: FileManager?
 ): GetResourceResult {
 
     val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
@@ -895,7 +828,7 @@ suspend fun getResourceMultiplatform(
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
     }.let { response ->
         if(response.status.isSuccess()) {
-            val remoteIcalEntry = parseIcalEntries(response.bodyAsText(), calendar.syncComponent).firstOrNull() ?: return GetResourceResult.Failed(response.status, "An unknown error occurred.", "${response.status.description} ${response.status.value}")
+            val remoteIcalEntry = parseIcalEntries(response.bodyAsText(), calendar.syncComponent, fileManager).firstOrNull() ?: return GetResourceResult.Failed(response.status, "An unknown error occurred.", "${response.status.description} ${response.status.value}")
             val updatedIcalEntry = remoteIcalEntry.copy(
                 id = icalEntry.id,
                 calendarId = icalEntry.calendarId,
@@ -910,4 +843,30 @@ suspend fun getResourceMultiplatform(
             return GetResourceResult.Failed(response.status, "An unknown error occurred.", "${response.status.description} ${response.status.value}")
         }
     }
+}
+
+suspend fun uploadFileMultiplatform(
+    client: HttpClient,
+    targetUrl: Url,
+    bytes: ByteArray,
+    mimeType: String?,
+    credentials: Credentials?
+): HttpStatusCode {
+    val response = client.put(targetUrl) {
+        credentials?.let { basicAuth(it.username, it.password) }
+        contentType(mimeType?.let { ContentType.parse(it) } ?: ContentType.Application.OctetStream)
+        setBody(bytes)
+    }
+    return response.status
+}
+
+suspend fun downloadFileMultiplatform(
+    client: HttpClient,
+    sourceUrl: Url,
+    credentials: Credentials?
+): ByteArray? {
+    val response = client.get(sourceUrl) {
+        credentials?.let { basicAuth(it.username, it.password) }
+    }
+    return if (response.status.isSuccess()) response.body<ByteArray>() else null    // TODO: respond with an actual HttpStatusCode
 }

@@ -15,6 +15,8 @@ import at.techbee.spectacled.screens.core.data.webdav.getResourceMultiplatform
 import at.techbee.spectacled.screens.core.data.webdav.multigetResourceHrefsMultiplatform
 import at.techbee.spectacled.screens.core.data.webdav.putResourceMultiplatform
 import at.techbee.spectacled.screens.core.data.webdav.syncCollectionMultiplatform
+import at.techbee.spectacled.screens.core.data.webdav.uploadFileMultiplatform
+import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
@@ -30,6 +32,7 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.http.Url
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
@@ -40,6 +43,7 @@ import kotlin.time.ExperimentalTime
 class SyncCoordinator(
     val calendarRepository: CalendarRepository,
     val icalEntryRepository: IcalEntryRepository,
+    val fileManager: FileManager,
     val client: HttpClient,
     val credentials: Credentials?
 ) {
@@ -50,6 +54,7 @@ class SyncCoordinator(
         suspend fun syncAllPrincipals(
             calendarRepository: CalendarRepository,
             icalEntryRepository: IcalEntryRepository,
+            fileManager: FileManager,
             credentialStore: CredentialStore,
             client: HttpClient
         ) {
@@ -63,7 +68,15 @@ class SyncCoordinator(
                                 if (calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
                                     return@forEach  // skip disabled calendars
 
-                                launch { SyncCoordinator(calendarRepository, icalEntryRepository, client, credentials).syncCalendar(calendar) }
+                                launch {
+                                    SyncCoordinator(
+                                        calendarRepository,
+                                        icalEntryRepository,
+                                        fileManager,
+                                        client,
+                                        credentials
+                                    ).syncCalendar(calendar)
+                                }
                             }
                         }
                     }
@@ -78,6 +91,7 @@ class SyncCoordinator(
             calendarIds: List<Long>,
             calendarRepository: CalendarRepository,
             icalEntryRepository: IcalEntryRepository,
+            fileManager: FileManager,
             credentialStore: CredentialStore,
             client: HttpClient
         ) {
@@ -86,9 +100,10 @@ class SyncCoordinator(
             coroutineScope {
                 calendars.forEach { calendar ->
                     launch {
-                        val principal = calendarRepository.getPrincipalForCalendar(calendar.id) ?: return@launch  // TODO: Maybe better enter sync-problem in DB
+                        val principal = calendarRepository.getPrincipalForCalendar(calendar.id)
+                            ?: return@launch  // TODO: Maybe better enter sync-problem in DB
                         val credentials = credentialStore.load(principal.principalUrl)
-                        SyncCoordinator(calendarRepository, icalEntryRepository, client, credentials).syncCalendar(calendar)
+                        SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendar(calendar)
                     }
                 }
             }
@@ -98,14 +113,16 @@ class SyncCoordinator(
             calendarId: Long,
             calendarRepository: CalendarRepository,
             icalEntryRepository: IcalEntryRepository,
+            fileManager: FileManager,
             credentialStore: CredentialStore,
             client: HttpClient
         ) {
             val calendar = calendarRepository.getCalendarById(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
-            val principal = calendarRepository.getPrincipalForCalendar(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
+            val principal =
+                calendarRepository.getPrincipalForCalendar(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
             val credentials = credentialStore.load(principal.principalUrl)
 
-            SyncCoordinator(calendarRepository, icalEntryRepository, client, credentials).pushLocalChanges(calendar)
+            SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).pushLocalChanges(calendar)
         }
     }
 
@@ -129,14 +146,6 @@ class SyncCoordinator(
                 calendar.syncToken,
                 calendar.id
             )
-
-            /*
-            if (enforceFullSync) {
-                syncWithoutSyncToken(calendar)
-                return
-            }
-
-             */
 
             val syncCollectionResponse = syncCollectionMultiplatform(client, calendar, credentials)
             println(syncCollectionResponse)
@@ -249,7 +258,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection error. Please check your internet connection and try again.",
+                    "Connection error: ${e.message}",
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -328,7 +337,7 @@ class SyncCoordinator(
         if (localIcalEntry?.href != null && localIcalEntry.etag == eTag)
             return    // no eTag change, we skip
 
-        val serverIcalEntry = when (val fetchSingleResult = fetchSingleEntryMultiplatform(client, calendar, href, credentials)) {
+        val serverIcalEntry = when (val fetchSingleResult = fetchSingleEntryMultiplatform(client, calendar, href, credentials, fileManager)) {
             is MultigetResourceResult.Failed -> return   // skip failed entries
             MultigetResourceResult.NotAuthorized -> return   // skip failed entries
             MultigetResourceResult.NotFound -> return   // skip failed entries
@@ -345,7 +354,13 @@ class SyncCoordinator(
 
             when (localIcalEntry.syncState) {
                 SyncState.SYNCED, SyncState.USER_DECIDED_SERVER_WINS ->
-                    icalEntryRepository.insertOrUpdateIcalEntry(serverIcalEntry.copy(id = localIcalEntry.id, calendarId = calendar.id, syncState = SyncState.SYNCED))
+                    icalEntryRepository.insertOrUpdateIcalEntry(
+                        serverIcalEntry.copy(
+                            id = localIcalEntry.id,
+                            calendarId = calendar.id,
+                            syncState = SyncState.SYNCED
+                        )
+                    )
 
                 SyncState.LOCAL_MODIFIED ->
                     icalEntryRepository.insertOrUpdateIcalEntry(localIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
@@ -371,62 +386,54 @@ class SyncCoordinator(
 
     private suspend fun removeLocalByHrefs(hrefs: List<Url>) {
 
-            val deletedIcalEntry = icalEntryRepository.getIcalEntriesByHrefs(hrefs)
+        val deletedIcalEntry = icalEntryRepository.getIcalEntriesByHrefs(hrefs)
 
-            deletedIcalEntry.forEach { deletedIcalEntry ->
+        deletedIcalEntry.forEach { deletedIcalEntry ->
 
-                when (deletedIcalEntry.syncState) {
-                    SyncState.LOCAL_DELETED, SyncState.SYNCED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN ->
-                        icalEntryRepository.insertOrUpdateIcalEntry(
-                            deletedIcalEntry.copy(
-                                syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
-                                lastModified = IcsDateTime.now()
-                            )
+            when (deletedIcalEntry.syncState) {
+                SyncState.LOCAL_DELETED, SyncState.SYNCED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN ->
+                    icalEntryRepository.insertOrUpdateIcalEntry(
+                        deletedIcalEntry.copy(
+                            syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
+                            lastModified = IcsDateTime.now()
                         )
+                    )
 
-                    SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.USER_DECIDED_SERVER_WINS ->
-                        // conflict1, but now it's also deleted on the server, we can delete it now
-                        // conflict2, user decided to keep remote changes (delete), we can delete it now
-                        icalEntryRepository.insertOrUpdateIcalEntry(
-                            deletedIcalEntry.copy(
-                                syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
-                                lastModified = IcsDateTime.now()
-                            )
+                SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.USER_DECIDED_SERVER_WINS ->
+                    // conflict1, but now it's also deleted on the server, we can delete it now
+                    // conflict2, user decided to keep remote changes (delete), we can delete it now
+                    icalEntryRepository.insertOrUpdateIcalEntry(
+                        deletedIcalEntry.copy(
+                            syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
+                            lastModified = IcsDateTime.now()
                         )
+                    )
 
-                    SyncState.LOCAL_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED ->
-                        icalEntryRepository.insertOrUpdateIcalEntry(
-                            deletedIcalEntry.copy(
-                                syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED,
-                                lastModified = IcsDateTime.now()
-                            )
+                SyncState.LOCAL_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED ->
+                    icalEntryRepository.insertOrUpdateIcalEntry(
+                        deletedIcalEntry.copy(
+                            syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED,
+                            lastModified = IcsDateTime.now()
                         )
+                    )
 
-                    SyncState.USER_DECIDED_CLIENT_WINS ->
-                        icalEntryRepository.insertOrUpdateIcalEntry(
-                            deletedIcalEntry.copy(
-                                syncState = SyncState.LOCAL_MODIFIED,
-                                href = null,
-                                etag = null,
-                                lastModified = IcsDateTime.now()
-                            )
-                        )  // treat like a new entry
-                }
+                SyncState.USER_DECIDED_CLIENT_WINS ->
+                    icalEntryRepository.insertOrUpdateIcalEntry(
+                        deletedIcalEntry.copy(
+                            syncState = SyncState.LOCAL_MODIFIED,
+                            href = null,
+                            etag = null,
+                            lastModified = IcsDateTime.now()
+                        )
+                    )  // treat like a new entry
             }
-    }
-
-
-    private suspend fun pushLocalChanges(
-        calendar: Calendar
-    ) {
-
-        val dirtyIcalEntries = icalEntryRepository.getDirtyIcalEntriesByCalendar(calendar.id)
-
-        dirtyIcalEntries.forEach { dirtyIcalEntry ->
-            pushSingleLocalChange(dirtyIcalEntry, calendar)
         }
     }
 
+    private suspend fun pushLocalChanges(calendar: Calendar) {
+        val dirtyIcalEntries = icalEntryRepository.getDirtyIcalEntriesByCalendar(calendar.id)
+        dirtyIcalEntries.forEach { pushSingleLocalChange(it, calendar) }
+    }
 
     private suspend fun pushSingleLocalChange(dirtyIcalEntry: IcalEntry, calendar: Calendar) {
 
@@ -437,20 +444,21 @@ class SyncCoordinator(
             SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED -> Unit // do nothing, conflicts need to be resolved by user
 
             SyncState.LOCAL_MODIFIED -> {
-                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
+                val entryToPush = pushAttachments(dirtyIcalEntry, calendar)    // TODO: store error?
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials)
                 when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
-                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
+                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, entryToPush, credentials, fileManager)
                         when (conflictingServerIcalEntryResult) {
 
                             is GetResourceResult.Failed -> Unit   // failed will be kept for another retry TODO: Review if this is sufficient in future
 
                             // Resource wasn't found, deleted on server
-                            GetResourceResult.NotFound -> icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
+                            GetResourceResult.NotFound -> icalEntryRepository.insertOrUpdateIcalEntry(entryToPush.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
 
                             // A newer version exists
-                            is GetResourceResult.Success -> icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
+                            is GetResourceResult.Success -> icalEntryRepository.insertOrUpdateIcalEntry(entryToPush.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED))
                         }
                     }
 
@@ -458,7 +466,7 @@ class SyncCoordinator(
                     is PutResourceResult.Failed -> Unit   // leave for retry // TODO: Review in future, maybe store info why it failed
 
                     // The entry was deleted in the meantime, we also delete it locally
-                    PutResourceResult.NotFound -> icalEntryRepository.insertOrUpdateIcalEntry(dirtyIcalEntry.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
+                    PutResourceResult.NotFound -> icalEntryRepository.insertOrUpdateIcalEntry(entryToPush.copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED))
 
                     // The locally modified entry was successfully pushed to the server, we just update the local entry as synced and store the new eTag
                     is PutResourceResult.Success -> icalEntryRepository.updateSyncMetadata(
@@ -470,14 +478,14 @@ class SyncCoordinator(
                 }
             }
 
-
             // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_CLIENT_WINS -> {
-                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
+                val entryToPush = pushAttachments(dirtyIcalEntry, calendar)
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials)
                 when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
-                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
+                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, entryToPush, credentials, fileManager)
                         when (conflictingServerIcalEntryResult) {
 
                             // failed will be kept for another retry TODO: Review if this is sufficient in future
@@ -485,7 +493,7 @@ class SyncCoordinator(
 
                             // Resource wasn't found, deleted on server
                             GetResourceResult.NotFound -> {
-                                val clientIcalEntry = dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
+                                val clientIcalEntry = entryToPush.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
                                 icalEntryRepository.insertOrUpdateIcalEntry(clientIcalEntry)
                                 pushSingleLocalChange(clientIcalEntry, calendar)
                             }
@@ -493,7 +501,10 @@ class SyncCoordinator(
                             // The new entry was fetched, we overwrite the local changes, server wins
                             is GetResourceResult.Success -> {
                                 val clientIcalEntry =
-                                    dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = conflictingServerIcalEntryResult.icalEntry.etag)
+                                    entryToPush.copy(
+                                        syncState = SyncState.LOCAL_MODIFIED,
+                                        etag = conflictingServerIcalEntryResult.icalEntry.etag
+                                    )
                                 icalEntryRepository.insertOrUpdateIcalEntry(clientIcalEntry)
                                 pushSingleLocalChange(clientIcalEntry, calendar)
                             }
@@ -505,7 +516,7 @@ class SyncCoordinator(
 
                     // The entry was deleted in the meantime, recreate it to push it again
                     PutResourceResult.NotFound -> {
-                        val clientIcalEntry = dirtyIcalEntry.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
+                        val clientIcalEntry = entryToPush.copy(syncState = SyncState.LOCAL_MODIFIED, etag = null, href = null)
                         icalEntryRepository.insertOrUpdateIcalEntry(clientIcalEntry)
                         pushSingleLocalChange(clientIcalEntry, calendar)
                     }
@@ -523,7 +534,7 @@ class SyncCoordinator(
 
             // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_SERVER_WINS -> {   //TODO!!
-                val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
+                val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials, fileManager)
                 when (conflictingServerIcalEntryResult) {
 
                     // failed will be kept for another retry TODO: Review if this is sufficient in future
@@ -556,7 +567,7 @@ class SyncCoordinator(
                     // There was a conflict, the resourcew as changed on the server, we discard the local delete and update the entry instead
                     // TODO: Review in future
                     DeleteResourceResult.Conflict -> {
-                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials)
+                        val conflictingServerIcalEntryResult = getResourceMultiplatform(client, calendar, dirtyIcalEntry, credentials, fileManager)
                         when (conflictingServerIcalEntryResult) {
 
                             // failed will be kept for another retry TODO: Review if this is sufficient in future
@@ -578,4 +589,27 @@ class SyncCoordinator(
             }
         }
     }
+
+    private suspend fun pushAttachments(icalEntry: IcalEntry, calendar: Calendar): IcalEntry {
+        val updatedAttachments = icalEntry.attachments.map { attachment ->
+            if (attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED && attachment.localPath != null) {
+                val fileName = "${attachment.uid}_${attachment.fileName ?: "file"}"
+                val uploadBaseUrl = calendar.attachmentCollectionUrl ?: calendar.url
+                val safeTargetUrl = Url(uploadBaseUrl.toString().trimEnd('/') + "/" + fileName)
+
+                val bytes = fileManager.readAttachment(attachment.localPath)
+                if (uploadFileMultiplatform(client, safeTargetUrl, bytes, attachment.mimeType, credentials).isSuccess()) {        // TODO: Instead of handling only success here, inform user in case of a problem
+                    val syncedAttachment = attachment.copy(remoteUrl = safeTargetUrl.toString(), syncState = AttachmentSyncState.SYNCED)
+                    icalEntryRepository.insertOrUpdateAttachment(syncedAttachment)
+                    syncedAttachment
+                } else {
+                    attachment
+                }
+            } else {
+                attachment
+            }
+        }
+        return icalEntry.copy(attachments = updatedAttachments)
+    }
+
 }

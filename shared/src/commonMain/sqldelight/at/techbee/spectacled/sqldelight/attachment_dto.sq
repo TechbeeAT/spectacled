@@ -1,0 +1,50 @@
+CREATE TABLE AttachmentDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    icalEntryId INTEGER NOT NULL REFERENCES IcalEntryDto(id) ON DELETE CASCADE,
+    uid TEXT NOT NULL UNIQUE,
+    localPath TEXT,
+    remoteUrl TEXT,
+    fileName TEXT,
+    mimeType TEXT,
+    size INTEGER,
+    syncState TEXT NOT NULL -- 'LOCAL_MODIFIED', 'SYNCED', 'PENDING_DOWNLOAD'
+);
+
+getAttachmentsForEntry:
+SELECT * FROM AttachmentDto WHERE icalEntryId = ?;
+
+getAttachmentsForEntries:
+SELECT * FROM AttachmentDto WHERE icalEntryId IN ?;
+
+getAttachmentById:
+SELECT * FROM AttachmentDto WHERE id = ?;
+
+getAttachmentByUid:
+SELECT * FROM AttachmentDto WHERE uid = ?;
+
+getAttachmentByRemoteUrl:
+SELECT * FROM AttachmentDto WHERE remoteUrl = ?;
+
+getDirtyAttachmentsByEntry:
+SELECT * FROM AttachmentDto WHERE icalEntryId = ? AND syncState != 'SYNCED';
+
+insertAttachment:
+INSERT OR REPLACE INTO AttachmentDto (
+    icalEntryId,
+    uid,
+    localPath,
+    remoteUrl,
+    fileName,
+    mimeType,
+    size,
+    syncState
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+updateAttachmentSyncState:
+UPDATE AttachmentDto SET syncState = ? WHERE id = ?;
+
+updateAttachmentRemoteUrl:
+UPDATE AttachmentDto SET remoteUrl = ?, syncState = ? WHERE id = ?;
+
+deleteAttachment:
+DELETE FROM AttachmentDto WHERE id = ?;

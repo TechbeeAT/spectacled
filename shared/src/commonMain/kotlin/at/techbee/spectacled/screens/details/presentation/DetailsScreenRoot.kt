@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.AddTask
+import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.Gesture
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
@@ -53,6 +54,7 @@ import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.rememberFilePicker
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
@@ -71,6 +73,7 @@ import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_attachment
 import spectacled.shared.generated.resources.add_drawing
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_url
@@ -91,6 +94,12 @@ fun DetailsScreenRoot(
 ) {
     val detailsState by detailsViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val filePicker = rememberFilePicker { pickedFile ->
+        pickedFile?.let {
+            detailsViewModel.onAction(DetailsAction.OnAddAttachment(it.name, it.bytes, it.mimeType))
+        }
+    }
 
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(detailsState.icalEntry.color ?: detailsState.calendar?.color)) {
 
@@ -327,6 +336,15 @@ fun DetailsScreenRoot(
                                 enabled = detailsState.icalEntry.url == null,
                                 onClick = {
                                     detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
+                                    addMoreExpanded = false
+                                },
+                            )
+
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.add_attachment)) },
+                                leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
+                                onClick = {
+                                    filePicker.pickFile() /* Result handled in rememberFilePicker callback */
                                     addMoreExpanded = false
                                 },
                             )

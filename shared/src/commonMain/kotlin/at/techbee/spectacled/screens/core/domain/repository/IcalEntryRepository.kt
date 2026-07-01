@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.domain.repository
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -32,4 +33,9 @@ interface IcalEntryRepository {
     suspend fun updateCategory(id: Long, categories: List<String>, lastModified: IcsDateTime?, syncState: SyncState)
     suspend fun deleteTrashed(cutoffDateTime: IcsDateTime)
     suspend fun updateSyncMetadata(etag: String?, href: Url?, syncState: SyncState?, id: Long)
+
+    // Attachments
+    suspend fun insertOrUpdateAttachment(attachment: Attachment)
+    suspend fun deleteAttachment(id: Long)
+    suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment>
 }

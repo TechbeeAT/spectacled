@@ -197,6 +197,10 @@ data class WebDavProp(
     @Serializable(ColorSerializer::class)
     val calendarColor: Color? = null,
 
+    @XmlElement
+    @XmlSerialName("attachment-collection", NAMESPACE_CALDAV, PREFIX_CALDAV)
+    val attachmentCollection: AttachmentCollection? = null,
+
     @XmlElement(true)
     @XmlSerialName("supported-calendar-component-set", NAMESPACE_CALDAV, PREFIX_CALDAV)
     val supportedCalendarComponentSet: SupportedCalendarComponentSet? = null,
@@ -382,6 +386,14 @@ class DavPrincipal
 @Serializable
 @XmlSerialName("calendar", NAMESPACE_CALDAV, PREFIX_CALDAV)
 class CaldavCalendar
+
+@Serializable
+@XmlSerialName("attachment-collection", NAMESPACE_CALDAV, PREFIX_CALDAV)
+data class AttachmentCollection(
+    @XmlElement
+    @XmlSerialName("href", NAMESPACE_DAV, PREFIX_WILDCARD)
+    val href: String? = null
+)
 
 @Serializable
 @XmlSerialName("addressbook", NAMESPACE_CARDDAV, PREFIX_CARDDAV)

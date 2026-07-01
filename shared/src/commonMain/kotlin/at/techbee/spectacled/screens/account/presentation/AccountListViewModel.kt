@@ -219,7 +219,8 @@ class AccountListViewModel(
                     calDavPrivileges = listOf(CalDavPrivilege.WRITE),
                     calendarSyncStatus = null,
                     syncToken = null,
-                    syncComponent = spectacledVariant.syncCalendarComponent
+                    syncComponent = spectacledVariant.syncCalendarComponent,
+                    attachmentCollectionUrl = null
                 ),
                 testUrl
             )

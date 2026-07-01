@@ -72,11 +72,12 @@ data class IcalEntry(
     val orderNo: Long? = null,
     val syncState: SyncState = SyncState.LOCAL_MODIFIED,
     val extraProperties: List<RawIcsProperty> = emptyList(),
+    val attachments: List<Attachment> = emptyList(),
     val etag: String? = null,
     val href: Url? = null,
     val calendarComponent: CalendarComponent,
     val parentUid: String? = null,
-    val relType: String? = "PARENT",
+    val relType: String? = null,
     val url: Url? = null
     ) {
 
