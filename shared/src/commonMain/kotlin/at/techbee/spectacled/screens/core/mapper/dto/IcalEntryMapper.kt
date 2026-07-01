@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
+import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.Classification
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -19,7 +20,7 @@ import kotlin.time.ExperimentalTime
 const val CATEGORY_SPLIT_DELIMITER = ","
 
 @OptIn(ExperimentalTime::class)
-fun IcalEntryDto.toDomain(): IcalEntry {
+fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList()): IcalEntry {
 
     val mapperJson = Json {
         ignoreUnknownKeys = true
@@ -51,6 +52,7 @@ fun IcalEntryDto.toDomain(): IcalEntry {
         created = parseIcsDateTime(this.created) ?: IcsDateTime.now(),
         lastModified = parseIcsDateTime(this.lastModified) ?: IcsDateTime.now(),
         extraProperties = extraProps,
+        attachments = attachments,
         orderNo = this.orderNo,
         syncState = this.syncState?.let { SyncState.entries.find { it.name == this.syncState } } ?: SyncState.LOCAL_MODIFIED,
         etag = this.etag,

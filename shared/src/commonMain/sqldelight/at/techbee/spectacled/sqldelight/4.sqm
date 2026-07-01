@@ -1,0 +1,11 @@
+CREATE TABLE AttachmentDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    icalEntryId INTEGER NOT NULL REFERENCES IcalEntryDto(id) ON DELETE CASCADE,
+    uid TEXT NOT NULL UNIQUE,
+    localPath TEXT,
+    remoteUrl TEXT,
+    fileName TEXT,
+    mimeType TEXT,
+    size INTEGER,
+    syncState TEXT NOT NULL
+);
