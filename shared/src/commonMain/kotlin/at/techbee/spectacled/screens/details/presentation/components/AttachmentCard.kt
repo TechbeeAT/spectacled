@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -45,6 +46,7 @@ import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.attachment
 import spectacled.shared.generated.resources.delete
+import spectacled.shared.generated.resources.drawing
 
 @Composable
 fun AttachmentCard(
@@ -76,14 +78,16 @@ fun AttachmentCard(
 
         Column(modifier = Modifier.fillMaxWidth()) {
 
-
             Row(verticalAlignment = Alignment.CenterVertically) {
 
                 IconButton(
                     onClick = {},
                     enabled = false
                 ) {
-                    Icon(Icons.Outlined.Attachment, stringResource(Res.string.attachment))
+                    if(paths?.isNotEmpty() == true)
+                        Icon(Icons.Outlined.Draw, stringResource(Res.string.drawing))
+                    else
+                        Icon(Icons.Outlined.Attachment, stringResource(Res.string.attachment))
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
