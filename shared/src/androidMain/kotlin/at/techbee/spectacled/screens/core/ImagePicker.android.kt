@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import java.io.File
+import kotlin.uuid.Uuid
 
 @Composable
 actual fun rememberImagePicker(onImagePicked: (PickedFile?) -> Unit): ImagePicker {
@@ -47,7 +48,7 @@ actual fun rememberImagePicker(onImagePicked: (PickedFile?) -> Unit): ImagePicke
             }
 
             override fun takePhoto() {
-                val photoFile = File.createTempFile("TEMP_PHOTO_", ".jpg", context.cacheDir)
+                val photoFile = File.createTempFile("image_" + Uuid.random().toString().take(8), ".jpg", context.cacheDir)
                 val uri = FileProvider.getUriForFile(
                     context,
                     "${context.packageName}.fileprovider",

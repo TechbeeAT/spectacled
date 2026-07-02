@@ -5,10 +5,18 @@ import androidx.compose.runtime.remember
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
-import platform.Foundation.*
-import platform.UIKit.*
-import platform.UniformTypeIdentifiers.*
+import platform.UIKit.UIApplication
+import platform.UIKit.UIImage
+import platform.UIKit.UIImageJPEGRepresentation
+import platform.UIKit.UIImagePickerController
+import platform.UIKit.UIImagePickerControllerDelegateProtocol
+import platform.UIKit.UIImagePickerControllerOriginalImage
+import platform.UIKit.UIImagePickerControllerSourceType
+import platform.UIKit.UINavigationControllerDelegateProtocol
+import platform.UIKit.UIViewController
+import platform.UIKit.UIWindow
 import platform.darwin.NSObject
+import kotlin.uuid.Uuid
 
 class IosImagePicker(
     private val onImagePicked: (PickedFile?) -> Unit
@@ -36,7 +44,7 @@ class IosImagePicker(
                 platform.posix.memcpy(pinned.addressOf(0), data.bytes, data.length)
             }
 
-            onImagePicked(PickedFile("photo.jpg", bytes, "image/jpeg"))
+            onImagePicked(PickedFile("image_" + Uuid.random().toString().take(8) + ".jpg", bytes, "image/jpeg"))
             picker.dismissViewControllerAnimated(true, null)
         }
 

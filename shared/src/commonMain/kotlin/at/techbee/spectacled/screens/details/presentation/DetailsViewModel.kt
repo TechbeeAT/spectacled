@@ -706,8 +706,10 @@ class DetailsViewModel(
     @OptIn(ExperimentalTime::class)
     private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?) {
         viewModelScope.launch {
-            val localPath = fileManager.saveAttachment(fileName, bytes)
+            val attachmentUid = Uuid.random().toString()
+            val localPath = fileManager.saveAttachment("$fileName-${attachmentUid.take(8)}", bytes)
             val newAttachment = Attachment(
+                uid = attachmentUid,
                 icalEntryId = _state.value.icalEntry.id,
                 fileName = fileName,
                 localPath = localPath,
@@ -748,7 +750,7 @@ class DetailsViewModel(
                         if (getPlatform().platform == Platforms.WASM) {
                             fileLauncher.openFile(bytes, attachment.fileName ?: "file", attachment.mimeType)
                         } else {
-                            val localPath = fileManager.saveAttachment(attachment.fileName ?: "file", bytes)
+                            val localPath = fileManager.saveAttachment("${attachment.uid}_${attachment.fileName ?: "file"}", bytes)
                             val updatedAttachment = attachment.copy(localPath = localPath, syncState = AttachmentSyncState.SYNCED)
                             icalEntryRepository.insertOrUpdateAttachment(updatedAttachment)
                             fileLauncher.openFile(localPath, attachment.mimeType)

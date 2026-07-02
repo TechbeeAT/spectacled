@@ -17,6 +17,8 @@ import at.techbee.spectacled.screens.core.FileManager
 import io.ktor.http.Url
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -211,12 +213,14 @@ fun parseIcalEntryBlock(
                 try {
                     @OptIn(ExperimentalEncodingApi::class)
                     val bytes = Base64.decode(prop.value.replace("\r\n", "").replace("\n", "").trim())
-                    val actualFileName = fileName ?: "attachment_${uid.take(8)}_${attachments.size}"
-                    val localPath = fm.saveAttachment(actualFileName, bytes)
+                    val attachmentUid = Uuid.random().toString()
+                    val displayFileName = fileName ?: "attachment_${uid.take(8)}_${attachments.size}"
+                    val localPath = fm.saveAttachment("${attachmentUid}_$displayFileName", bytes)
                     attachments.add(
                         Attachment(
+                            uid = attachmentUid,
                             localPath = localPath,
-                            fileName = actualFileName,
+                            fileName = displayFileName,
                             mimeType = mimeType,
                             size = bytes.size.toLong(),
                             syncState = AttachmentSyncState.LOCAL_MODIFIED // It's new locally from an inline block
