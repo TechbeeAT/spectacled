@@ -99,7 +99,6 @@ fun AddPrincipalBottomSheet(
             }
         },
         menuActionRight = {
-            /*
             TextButton(
                 onClick = {
                     onAction(AccountListAction.OnAddPrincipal(Credentials(server, username, passwordState.text.toString())))
@@ -108,7 +107,6 @@ fun AddPrincipalBottomSheet(
             ) {
                 Text(stringResource(Res.string.add_account))
             }
-             */
         }
     ) {
         Column(
