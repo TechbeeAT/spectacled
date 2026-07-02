@@ -15,6 +15,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +40,7 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.create_category
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.search_add_category
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,7 +63,14 @@ fun CategorySelectionBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
-        headline = stringResource(Res.string.category)
+        headline = stringResource(Res.string.category),
+        menuActionRight = {
+            TextButton(
+                onClick = { onDismiss() },
+            ) {
+                Text(stringResource(Res.string.done))
+            }
+        },
     ) {
 
         FlowRow(

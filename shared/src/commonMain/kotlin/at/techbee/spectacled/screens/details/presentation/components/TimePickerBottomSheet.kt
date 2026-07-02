@@ -38,6 +38,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toInstant
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.no_time
 import spectacled.shared.generated.resources.no_timezone
 import spectacled.shared.generated.resources.timezone
@@ -75,7 +76,14 @@ fun TimePickerBottomSheet(
     BottomSheetWithMenu(
         sheetState = sheetState,
         onDismiss = { onDismiss() },
-        menuAction = { TextButton(onClick = {
+        menuActionRight = {
+            TextButton(
+                onClick = { onDismiss() }
+            ) {
+                Text(stringResource(Res.string.done))
+            }
+        },
+        menuActionLeft = { TextButton(onClick = {
             val newInstant = localDateTime.date.atStartOfDayIn(TimeZone.UTC)
 
             onTimeUpdated(

@@ -77,8 +77,10 @@ import spectacled.shared.generated.resources.add_attachment
 import spectacled.shared.generated.resources.add_drawing
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_url
+import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.restore
 import spectacled.shared.generated.resources.subtask
@@ -144,6 +146,13 @@ fun DetailsScreenRoot(
         if (detailsState.showColorSelectorBottomSheet) {
             BottomSheetWithMenu(
                 onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(false)) },
+                menuActionRight = {
+                    TextButton(
+                        onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(false)) },
+                    ) {
+                        Text(stringResource(Res.string.done))
+                    }
+                },
             ) {
                 ColorSelectorElement(
                     recentColors = detailsState.allColors,
@@ -214,10 +223,15 @@ fun DetailsScreenRoot(
             )
         }
 
-        if (detailsState.showDrawingCanvasBottomSheet) {
+        if (detailsState.showDrawingCanvasBottomSheet.show) {
             DrawingCanvasBottomSheet(
+                replaceAttachmentUid = detailsState.showDrawingCanvasBottomSheet.replaceAttachmentUid,
+                initialPathData = detailsState.showDrawingCanvasBottomSheet.initialPaths,
+                onDrawingUpdated = { attachmentUid, paths ->
+                    detailsViewModel.onAction(DetailsAction.OnUpdateDrawing(attachmentUid, paths))
+                },
                 onDismiss = {
-                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(false))
+                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null))
                 }
             )
         }
@@ -353,7 +367,7 @@ fun DetailsScreenRoot(
                                 text = { Text(stringResource(Res.string.add_drawing)) },
                                 leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
                                 onClick = {
-                                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(!detailsState.showDrawingCanvasBottomSheet))
+                                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
                                     addMoreExpanded = false
                                 },
                             )

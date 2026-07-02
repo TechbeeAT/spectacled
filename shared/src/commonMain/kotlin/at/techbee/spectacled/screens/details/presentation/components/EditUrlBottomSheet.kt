@@ -39,6 +39,7 @@ import io.ktor.http.parseUrl
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.delete
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.url
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,11 +70,22 @@ fun EditUrlBottomSheet(
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
         headline = stringResource(Res.string.url),
-        menuAction = {
+        menuActionRight = {
+            TextButton(
+                onClick = {
+                    onDismiss()
+                },
+                enabled = url != null
+            ) {
+                Text(stringResource(Res.string.done))
+            }
+        },
+        menuActionLeft = {
             TextButton(
                 onClick = {
                     textFieldValue = TextFieldValue("")
                     onUrlEdited(null)
+                    onDismiss()
                 }
             ) {
                 Text(stringResource(Res.string.delete))

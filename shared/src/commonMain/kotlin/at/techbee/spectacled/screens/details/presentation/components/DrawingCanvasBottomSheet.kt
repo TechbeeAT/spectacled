@@ -20,36 +20,51 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.screens.core.presentation.components.DrawingCanvas
 import at.techbee.spectacled.screens.core.presentation.components.PathData
 import at.techbee.spectacled.theme.AppTheme
+import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.discard
+import spectacled.shared.generated.resources.done
+import spectacled.shared.generated.resources.drawing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DrawingCanvasBottomSheet(
-    //initialUrl: Url?,
-    //onUrlEdited: (Url?) -> Unit,
+    initialPathData: List<PathData>?,
+    replaceAttachmentUid: String?,
+    onDrawingUpdated: (String?, List<PathData>) -> Unit,
     onDismiss: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
 
+    val pathData = remember { mutableStateListOf<PathData>().apply { initialPathData?.let { addAll(it) } } }
+
     BottomSheetWithMenu(
         sheetState = sheetState,
         onDismiss = { onDismiss() },
-        headline = "Add/edit drawing\n(work in progress)",// stringResource(Res.string.add_edit_url),
-        menuAction = {
+        headline = stringResource(Res.string.drawing),
+        menuActionRight = {
             TextButton(
                 onClick = {
+                    onDrawingUpdated(replaceAttachmentUid, pathData)
+                    onDismiss()
                 }
             ) {
-                //Text(stringResource(Res.string.delete))
-                Text("TODO")
+                Text(stringResource(Res.string.done))
             }
-        }
-    ) {
+        },
+        menuActionLeft = {
+            TextButton(
+                onClick = { onDismiss() },
+            ) {
+                Text(stringResource(Res.string.discard))
+            }
+        },
 
-        val pathData = remember { mutableStateListOf<PathData>() }
+    ) {
 
         DrawingCanvas(
             paths = pathData,
-            onAddPath = { pathData.add(it) },  // TODO
+            onAddPath = { pathData.add(it) },
             onRemovePaths = { pathData.removeAll(it) },   // TODO
             modifier = Modifier
                 .fillMaxWidth()
@@ -67,6 +82,9 @@ private fun DrawingCanvasBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             DrawingCanvasBottomSheet(
+                initialPathData = null,
+                replaceAttachmentUid = null,
+                onDrawingUpdated = { _, _ -> },
                 onDismiss = { }
             )
         }

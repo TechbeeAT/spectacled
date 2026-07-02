@@ -19,14 +19,18 @@ import at.techbee.spectacled.screens.core.data.webdav.downloadFileMultiplatform
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.presentation.components.PathData
+import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +55,7 @@ import spectacled.shared.generated.resources.unexpected_error_occurred
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class DetailsViewModel(
@@ -67,6 +72,8 @@ class DetailsViewModel(
 
     private val _state = MutableStateFlow(DetailsState())
     val state = _state.asStateFlow()
+
+    private var entryObservationJob: kotlinx.coroutines.Job? = null
 
     init {
         viewModelScope.launch {
@@ -111,6 +118,8 @@ class DetailsViewModel(
                 isLoading = false,
                 navigateUp = false
             ) }
+
+            observeIcalEntry(icalEntry.uid)
         }
     }
 
@@ -133,6 +142,8 @@ class DetailsViewModel(
                 showDeleteDialog = false,
                 navigateUp = false
             ) }
+
+            observeIcalEntry(newIcalEntry.uid)
         }
     }
 
@@ -153,6 +164,8 @@ class DetailsViewModel(
                 showDeleteDialog = false,
                 navigateUp = false
             ) }
+
+            observeIcalEntry(newIcalEntry.uid)
         }
     }
 
@@ -189,6 +202,8 @@ class DetailsViewModel(
                 isLoading = false,
                 navigateUp = false
             ) }
+
+            observeIcalEntry(copiedIcalEntry.uid)
         }
     }
 
@@ -230,6 +245,37 @@ class DetailsViewModel(
             }
     }
 
+    private fun observeIcalEntry(uid: String) {
+        entryObservationJob?.cancel()
+        entryObservationJob = viewModelScope.launch {
+            icalEntryRepository.getIcalEntryByUidFlow(uid)
+                .collect { dbEntry ->
+                    if (dbEntry == null) return@collect
+                    _state.update { currentState ->
+                        if (currentState.icalEntry.uid == uid) {
+                            currentState.copy(
+                                icalEntry = currentState.icalEntry.copy(
+                                    id = dbEntry.id,
+                                    syncState = dbEntry.syncState,
+                                    etag = dbEntry.etag,
+                                    href = dbEntry.href,
+                                    attachments = currentState.icalEntry.attachments.map { currentAtt ->
+                                        dbEntry.attachments.find { it.uid == currentAtt.uid }?.let { dbAtt ->
+                                            currentAtt.copy(
+                                                id = dbAtt.id,
+                                                syncState = dbAtt.syncState,
+                                                remoteUrl = dbAtt.remoteUrl
+                                            )
+                                        } ?: currentAtt
+                                    }
+                                )
+                            )
+                        } else currentState
+                    }
+                }
+        }
+    }
+
 
     fun onAction(action: DetailsAction) {
         when(action) {
@@ -247,7 +293,7 @@ class DetailsViewModel(
             is DetailsAction.OnShowColorSelectorBottomSheet -> { _state.update { it.copy(showColorSelectorBottomSheet = action.show) } }
             is DetailsAction.OnShowAddSubtaskBottomSheet -> { _state.update { it.copy(showAddSubtaskBottomSheet = action.show) } }
             is DetailsAction.OnShowEditUrlBottomSheet -> { _state.update { it.copy(showEditUrlBottomSheet = action.show) } }
-            is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action.show) } }
+            is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
             DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
@@ -280,8 +326,9 @@ class DetailsViewModel(
             DetailsAction.OnProcessWithAI -> { onProcessWithAI() }
             is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
-            is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentId) }
-            is DetailsAction.OnDeleteAttachment -> { onDeleteAttachment(action.attachmentId) }
+            is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentUid) }
+            is DetailsAction.OnDeleteAttachment -> { onDeleteAttachment(action.attachmentUid) }
+            is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths) }
         }
     }
 
@@ -477,17 +524,18 @@ class DetailsViewModel(
     }
 
     private fun saveIcalEntry(syncState: SyncState, navigateUp: Boolean = false) {
+        val entryToSave = _state.value.icalEntry.copy(syncState = syncState)
 
         _state.update {
             it.copy(
-                icalEntry = it.icalEntry.copy(syncState = syncState),
+                icalEntry = entryToSave,
                 showDeleteDialog = false,
                 navigateUp = navigateUp
             )
         }
 
         viewModelScope.launch { 
-            icalEntryRepository.insertOrUpdateIcalEntry(_state.value.icalEntry)
+            icalEntryRepository.insertOrUpdateIcalEntry(entryToSave)
             platformSyncTrigger.triggerWidgetUpdate()
         }
         Napier.d("Entry saved")
@@ -576,9 +624,9 @@ class DetailsViewModel(
             calendarId = _state.value.icalEntry.calendarId)
 
         viewModelScope.launch {
-            icalEntryRepository.insertOrUpdateIcalEntry(subtask)
+            val savedSubtask = icalEntryRepository.insertOrUpdateIcalEntry(subtask)
             if(getPlatform().platform == Platforms.WASM)
-                syncAndAwaitResult(subtask)
+                syncAndAwaitResult(savedSubtask)
             platformSyncTrigger.triggerWidgetUpdate()
         }
         Napier.d("Entry saved")
@@ -680,8 +728,8 @@ class DetailsViewModel(
         }
     }
 
-    private fun onOpenAttachment(attachmentId: Long) {
-        val attachment = _state.value.icalEntry.attachments.find { it.id == attachmentId } ?: return
+    private fun onOpenAttachment(attachmentUid: String) {
+        val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid } ?: return
         
         if (attachment.localPath != null && fileManager.exists(attachment.localPath)) {
             fileLauncher.openFile(attachment.localPath, attachment.mimeType)
@@ -703,14 +751,6 @@ class DetailsViewModel(
                             val localPath = fileManager.saveAttachment(attachment.fileName ?: "file", bytes)
                             val updatedAttachment = attachment.copy(localPath = localPath, syncState = AttachmentSyncState.SYNCED)
                             icalEntryRepository.insertOrUpdateAttachment(updatedAttachment)
-                            
-                            _state.update { state ->
-                                state.copy(
-                                    icalEntry = state.icalEntry.copy(
-                                        attachments = state.icalEntry.attachments.map { if (it.id == attachmentId) updatedAttachment else it }
-                                    )
-                                )
-                            }
                             fileLauncher.openFile(localPath, attachment.mimeType)
                         }
                     } else {
@@ -725,16 +765,16 @@ class DetailsViewModel(
         }
     }
 
-    private fun onDeleteAttachment(attachmentId: Long) {
+    private fun onDeleteAttachment(attachmentUid: String) {
         viewModelScope.launch {
-            val attachment = _state.value.icalEntry.attachments.find { it.id == attachmentId }
+            val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid }
             if (attachment != null) {
                 attachment.localPath?.let { fileManager.deleteAttachment(it) }
-                icalEntryRepository.deleteAttachment(attachmentId)
+                
                 _state.update {
                     it.copy(
                         icalEntry = it.icalEntry.copy(
-                            attachments = it.icalEntry.attachments.filter { a -> a.id != attachmentId },
+                            attachments = it.icalEntry.attachments.filter { a -> a.uid != attachmentUid },
                             lastModified = IcsDateTime.now(),
                             syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
                         )
@@ -742,5 +782,16 @@ class DetailsViewModel(
                 }
             }
         }
+    }
+
+    private fun onUpdateDrawing(replaceAttachmentUid: String?, paths: List<PathData>) {
+        val svg = PathDataSvgConverter.toSvg(paths)
+        onAddAttachment(
+            fileName = "drawing_" + Uuid.random().toString().take(8) + ".svg",
+            bytes = svg.toByteArray(),
+            mimeType = MIMETYPE_SVG
+        )
+
+        replaceAttachmentUid?.let { onDeleteAttachment(it) }
     }
 }

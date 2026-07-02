@@ -3,22 +3,19 @@ package at.techbee.spectacled.screens.core.data.repository
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import app.cash.sqldelight.async.coroutines.awaitAsList
-import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
-import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Attachment
-import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
+import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
-import at.techbee.spectacled.screens.core.mapper.dto.*
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import io.ktor.http.Url
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,6 +39,17 @@ class IcalEntryRepositoryImpl(
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).asFlow()
                 .map { query -> query.awaitAsList().map { it.toDomain() } }
+        }
+    }
+
+    override fun getIcalEntryByUidFlow(uid: String): Flow<IcalEntry?> {
+        return dbFlow.flatMapLatest { db ->
+            db.icalentry_dtoQueries.getIcalEntryByUid(uid).asFlow()
+                .map { query ->
+                    val dto = query.awaitAsOneOrNull() ?: return@map null
+                    val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
+                    dto.toDomain(attachments)
+                }
         }
     }
 
@@ -131,7 +139,7 @@ class IcalEntryRepositoryImpl(
         }
     }
 
-    override suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry) {
+    override suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry): IcalEntry {
 
         val icalEntryDto = icalEntry.toDto()
         val db = getDatabase()
@@ -199,33 +207,36 @@ class IcalEntryRepositoryImpl(
                 relType = icalEntryDto.relType,
                 url = icalEntryDto.url
             )
-        }
 
-        // Get the actual ID of the entry if it was 0L (newly inserted)
-        val entryId = if (icalEntry.id == 0L) {
-            db.icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).awaitAsOne().id
-        } else {
-            icalEntry.id
-        }
+            // Get the actual ID of the entry (it's either the existing one or the one just inserted)
+            val entryId = db.icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).executeAsOne().id
 
-        // Handle attachments
-        if (icalEntry.attachments.isNotEmpty()) {
-            db.transaction {
-                icalEntry.attachments.forEach { attachment ->
-                    val attachmentDto = attachment.copy(icalEntryId = entryId).toDto()
-                    db.attachment_dtoQueries.insertAttachment(
-                        icalEntryId = attachmentDto.icalEntryId,
-                        uid = attachmentDto.uid,
-                        localPath = attachmentDto.localPath,
-                        remoteUrl = attachmentDto.remoteUrl,
-                        fileName = attachmentDto.fileName,
-                        mimeType = attachmentDto.mimeType,
-                        size = attachmentDto.size,
-                        syncState = attachmentDto.syncState
-                    )
+            // Handle attachments within the same transaction
+            val existingAttachments = db.attachment_dtoQueries.getAttachmentsForEntry(entryId).executeAsList()
+            val currentAttachmentUids = icalEntry.attachments.map { it.uid }.toSet()
+
+            existingAttachments.forEach { existing ->
+                if (existing.uid !in currentAttachmentUids) {
+                    db.attachment_dtoQueries.deleteAttachment(existing.id)
                 }
             }
+
+            icalEntry.attachments.forEach { attachment ->
+                val attachmentDto = attachment.copy(icalEntryId = entryId).toDto()
+                db.attachment_dtoQueries.insertAttachment(
+                    icalEntryId = attachmentDto.icalEntryId,
+                    uid = attachmentDto.uid,
+                    localPath = attachmentDto.localPath,
+                    remoteUrl = attachmentDto.remoteUrl,
+                    fileName = attachmentDto.fileName,
+                    mimeType = attachmentDto.mimeType,
+                    size = attachmentDto.size,
+                    syncState = attachmentDto.syncState
+                )
+            }
         }
+        
+        return getIcalEntryByUid(icalEntry.uid)!!
     }
 
     override suspend fun markAsDeleted(ids: List<Long>) {

@@ -303,7 +303,7 @@ fun DrawingCanvas(
     }
 }
 
-private fun DrawScope.drawPath(
+fun DrawScope.drawPath(
     path: List<Offset>,
     color: Color,
     thickness: Float = 10f,

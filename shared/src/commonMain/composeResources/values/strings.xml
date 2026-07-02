@@ -22,6 +22,7 @@
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
     <string name="restore">Restore</string>
+    <string name="discard">Discard</string>
 
     <string name="menu">Menu</string>
     <string name="accounts">Accounts</string>
@@ -122,6 +123,7 @@
     <string name="add_attachment">Add attachment</string>
     <string name="attachment">Attachment</string>
     <string name="add_drawing">Add drawing</string>
+    <string name="drawing">Drawing</string>
     <string name="pen">Pen</string>
     <string name="marker">Marker</string>
     <string name="eraser">Eraser</string>

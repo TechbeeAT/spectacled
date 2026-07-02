@@ -41,6 +41,7 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.show_error_details
 import spectacled.shared.generated.resources.show_hide_password
@@ -67,7 +68,14 @@ fun UpdatePrincipalPasswordBottomSheet(
         sheetState = sheetState,
         gesturesEnabled = false,
         showLoadingIndicator = processingState is ProcessingState.Processing,
-        menuAction = {
+        menuActionLeft = {
+            TextButton(
+                onClick = { onDismiss() },
+            ) {
+                Text(stringResource(Res.string.cancel))
+            }
+        },
+        menuActionRight = {
             TextButton(
                 onClick = {
                     onAction(AccountListAction.OnUpdatePrincipalPassword(principal, password))

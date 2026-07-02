@@ -23,6 +23,7 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.status_no_status
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +38,14 @@ fun JournalStatusPickerBottomSheet(
     BottomSheetWithMenu(
         sheetState = sheetState,
         onDismiss = { onDismiss() },
-        menuAction = { TextButton(onClick = {
+        menuActionRight = {
+            TextButton(
+                onClick = { onDismiss() }
+            ) {
+                Text(stringResource(Res.string.done))
+            }
+        },
+        menuActionLeft = { TextButton(onClick = {
             onStatusUpdated(null)
             onDismiss()
         }) { Text(stringResource(Res.string.status_no_status)) } }

@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -42,6 +43,7 @@ import spectacled.shared.generated.resources.copy_to_clipboard
 import spectacled.shared.generated.resources.create_copy
 import spectacled.shared.generated.resources.created
 import spectacled.shared.generated.resources.delete
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.last_modified
 import spectacled.shared.generated.resources.send_as_email
 import spectacled.shared.generated.resources.share
@@ -62,6 +64,13 @@ fun DetailsMoreBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onAction(DetailsAction.OnShowMoreBottomSheet(false)) },
+        menuActionRight = {
+            TextButton(
+                onClick = { onAction(DetailsAction.OnShowMoreBottomSheet(false)) },
+            ) {
+                Text(stringResource(Res.string.done))
+            }
+        },
     ) {
 
         val copiedToClipboardText = stringResource(Res.string.copied_to_clipboard)

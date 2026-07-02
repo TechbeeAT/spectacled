@@ -20,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -56,6 +57,7 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_journal
 import spectacled.shared.generated.resources.add_note
 import spectacled.shared.generated.resources.add_task
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.ic_add_journal
 import spectacled.shared.generated.resources.ic_add_note
 import spectacled.shared.generated.resources.ic_add_task
@@ -132,6 +134,13 @@ fun ListScreenRoot(
         if (state.showUpdateColorOfSelectedBottomSheet) {
             BottomSheetWithMenu(
                 onDismiss = { listViewModel.onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(false)) },
+                menuActionRight = {
+                    TextButton(
+                        onClick = { listViewModel.onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(false)) }
+                    ) {
+                        Text(stringResource(Res.string.done))
+                    }
+                },
             ) {
                 ColorSelectorElement(
                     recentColors = state.icalEntries

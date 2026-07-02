@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 interface IcalEntryRepository {
 
     fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>>
+    fun getIcalEntryByUidFlow(uid: String): Flow<IcalEntry?>
     fun getAllColors(): Flow<List<Color>>
     fun getAllCategories(): Flow<List<String>>
     fun getLastUsedTimezones(): Flow<List<String>>
@@ -25,7 +26,7 @@ interface IcalEntryRepository {
     suspend fun getDeletedDeltaHrefs(calendarId: Long, allServerHrefs: List<Url>): List<Url>
     suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry>
     
-    suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry)
+    suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry): IcalEntry
     suspend fun markAsDeleted(ids: List<Long>)
     suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState)
     suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>)

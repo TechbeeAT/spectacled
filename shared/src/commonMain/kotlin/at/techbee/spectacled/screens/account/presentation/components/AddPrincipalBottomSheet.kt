@@ -61,6 +61,7 @@ import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
+import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.username
@@ -90,7 +91,14 @@ fun AddPrincipalBottomSheet(
         sheetState = sheetState,
         showLoadingIndicator = processingState is ProcessingState.Processing,
         gesturesEnabled = false,
-        menuAction = {
+        menuActionLeft = {
+            TextButton(
+                onClick = { onDismiss() },
+            ) {
+                Text(stringResource(Res.string.cancel))
+            }
+        },
+        menuActionRight = {
             /*
             TextButton(
                 onClick = {

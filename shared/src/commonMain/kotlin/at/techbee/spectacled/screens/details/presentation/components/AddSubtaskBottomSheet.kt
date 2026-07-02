@@ -38,6 +38,7 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_task
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.summary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,14 +59,13 @@ fun AddSubtaskBottomSheet(
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
         headline = stringResource(Res.string.add_subtask),
-        menuAction = {
+        menuActionRight = {
             TextButton(
-                onClick = { onSubtaskAdded(subtaskSummary) },
-                enabled = subtaskSummary.isNotBlank()
+                onClick = { onDismiss() },
             ) {
-                Text("Add")
+                Text(stringResource(Res.string.done))
             }
-        }
+        },
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),

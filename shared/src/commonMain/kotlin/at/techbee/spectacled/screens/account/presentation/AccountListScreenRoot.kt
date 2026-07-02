@@ -16,6 +16,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +46,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
+import spectacled.shared.generated.resources.close
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -291,7 +293,13 @@ fun AccountListScreenRoot(
             BottomSheetWithMenu(
                 sheetState = aboutBottomSheetState,
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
-                menuAction = { },
+                menuActionRight = {
+                    TextButton(
+                        onClick = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
+                    ) {
+                        Text(stringResource(Res.string.close))
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()  // override padding
             ) {
                 AboutScreen(koinInject<AboutViewModel>())

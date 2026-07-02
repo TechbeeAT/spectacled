@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.presentation.components.PathData
 import io.ktor.http.Url
 
 sealed interface DetailsAction {
@@ -20,8 +21,9 @@ sealed interface DetailsAction {
     data class OnAddSubtask(val summary: String): DetailsAction
     data class OnUpdateUrl(val url: Url?): DetailsAction
     data class OnAddAttachment(val fileName: String, val bytes: ByteArray, val mimeType: String?): DetailsAction
-    data class OnOpenAttachment(val attachmentId: Long): DetailsAction
-    data class OnDeleteAttachment(val attachmentId: Long): DetailsAction
+    data class OnOpenAttachment(val attachmentUid: String): DetailsAction
+    data class OnDeleteAttachment(val attachmentUid: String): DetailsAction
+    data class OnUpdateDrawing(val replaceAttachmentUid: String?, val paths: List<PathData>): DetailsAction
 
     data class OnNewCalendarIdSelected(val calendarId: Long): DetailsAction
 
@@ -35,7 +37,7 @@ sealed interface DetailsAction {
     data class OnShowTaskStatusProgressPickerBottomSheet(val show: Boolean): DetailsAction
     data class OnShowAddSubtaskBottomSheet(val show: Boolean): DetailsAction
     data class OnShowEditUrlBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowDrawingCanvasBottomSheet(val show: Boolean): DetailsAction
+    data class OnShowDrawingCanvasBottomSheet(val show: Boolean, val replaceAttachmentUid: String?, val initialPaths: List<PathData>?): DetailsAction
 
     data class OnPersistOrderNo(val list: List<Long>): DetailsAction
 

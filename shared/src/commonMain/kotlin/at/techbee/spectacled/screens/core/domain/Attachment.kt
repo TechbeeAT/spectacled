@@ -9,6 +9,8 @@ enum class AttachmentSyncState {
     PENDING_DOWNLOAD
 }
 
+const val MIMETYPE_SVG = "image/svg+xml"
+
 @OptIn(ExperimentalUuidApi::class)
 data class Attachment(
     val id: Long = 0L,
@@ -20,4 +22,6 @@ data class Attachment(
     val mimeType: String? = null,
     val size: Long? = null,
     val syncState: AttachmentSyncState = AttachmentSyncState.LOCAL_MODIFIED
-)
+) {
+    fun isSVG() = mimeType == MIMETYPE_SVG
+}

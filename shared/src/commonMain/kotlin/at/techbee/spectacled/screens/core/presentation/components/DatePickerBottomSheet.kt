@@ -16,6 +16,8 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.no_date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,7 +47,14 @@ fun DatePickerBottomSheet(
     BottomSheetWithMenu(
         sheetState = sheetState,
         onDismiss = { onDismiss() },
-        menuAction = {
+        menuActionRight = {
+            TextButton(
+                onClick = { onDismiss() },
+            ) {
+                Text(stringResource(Res.string.done))
+            }
+        },
+        menuActionLeft = {
             if(allowNoDate) {
                 TextButton(
                     onClick = { onDateSelected(null) }
