@@ -33,5 +33,9 @@
 			<string>at.techbee.spectacled.notes</string>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to the camera to take photos and attach them to entries.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to attach photos to entries.</string>
 </dict>
 </plist>

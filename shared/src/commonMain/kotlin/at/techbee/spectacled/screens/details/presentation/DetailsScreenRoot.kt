@@ -17,8 +17,10 @@ import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.AddTask
 import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.Gesture
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,15 +52,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
+import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
-import at.techbee.spectacled.screens.core.rememberFilePicker
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.core.rememberFilePicker
+import at.techbee.spectacled.screens.core.rememberImagePicker
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
@@ -75,9 +80,10 @@ import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_attachment
 import spectacled.shared.generated.resources.add_drawing
+import spectacled.shared.generated.resources.add_from_gallery
+import spectacled.shared.generated.resources.add_photo
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_url
-import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.done
@@ -98,6 +104,12 @@ fun DetailsScreenRoot(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val filePicker = rememberFilePicker { pickedFile ->
+        pickedFile?.let {
+            detailsViewModel.onAction(DetailsAction.OnAddAttachment(it.name, it.bytes, it.mimeType))
+        }
+    }
+
+    val imagePicker = rememberImagePicker { pickedFile ->
         pickedFile?.let {
             detailsViewModel.onAction(DetailsAction.OnAddAttachment(it.name, it.bytes, it.mimeType))
         }
@@ -344,21 +356,43 @@ fun DetailsScreenRoot(
                             expanded = addMoreExpanded,
                             onDismissRequest = { addMoreExpanded = false }
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_url)) },
-                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
-                                enabled = detailsState.icalEntry.url == null,
-                                onClick = {
-                                    detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
-                                    addMoreExpanded = false
-                                },
-                            )
+
 
                             DropdownMenuItem(
                                 text = { Text(stringResource(Res.string.add_attachment)) },
                                 leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
                                 onClick = {
                                     filePicker.pickFile() /* Result handled in rememberFilePicker callback */
+                                    addMoreExpanded = false
+                                },
+                            )
+
+                            if(getPlatform().platform == Platforms.IOS || getPlatform().platform == Platforms.ANDROID) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(Res.string.add_photo)) },
+                                    leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
+                                    onClick = {
+                                        imagePicker.takePhoto()
+                                        addMoreExpanded = false
+                                    },
+                                )
+                            }
+
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.add_from_gallery)) },
+                                leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
+                                onClick = {
+                                    imagePicker.pickImage()
+                                    addMoreExpanded = false
+                                },
+                            )
+
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.add_url)) },
+                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
+                                enabled = detailsState.icalEntry.url == null,
+                                onClick = {
+                                    detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
                                     addMoreExpanded = false
                                 },
                             )

@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.Delete
@@ -26,8 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,6 +44,7 @@ import at.techbee.spectacled.screens.core.presentation.components.PathData
 import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter
 import at.techbee.spectacled.screens.core.presentation.components.drawPath
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
+import coil3.compose.AsyncImage
 import io.ktor.utils.io.core.toByteArray
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -56,19 +61,24 @@ fun AttachmentCard(
     modifier: Modifier = Modifier
 ) {
 
-    var paths by remember { mutableStateOf<List<PathData>?>(null) }
+    var drawingPaths by remember { mutableStateOf<List<PathData>?>(null) }
+    var imagePreview by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(attachment) {
         if (attachment.isSVG() && attachment.localPath != null && fileManager.exists(attachment.localPath)) {
             val fileContent = fileManager.readAttachment(attachment.localPath).decodeToString()
-            PathDataSvgConverter.fromSvg(fileContent)?.let { paths = it }
+            PathDataSvgConverter.fromSvg(fileContent)?.let { drawingPaths = it }
+        } else if(attachment.isImage()) {
+            if (attachment.localPath != null && fileManager.exists(attachment.localPath)) {
+                imagePreview = attachment.localPath
+            }
         }
     }
 
     Card(
         onClick = {
-            if(paths?.isNotEmpty() == true)
-                paths?.let { onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, attachment.uid, it)) }
+            if(drawingPaths?.isNotEmpty() == true)
+                drawingPaths?.let { onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, attachment.uid, it)) }
             else
                 onAction(DetailsAction.OnOpenAttachment(attachment.uid)) },
         elevation = CardDefaults.cardElevation(0.dp),
@@ -84,7 +94,7 @@ fun AttachmentCard(
                     onClick = {},
                     enabled = false
                 ) {
-                    if(paths?.isNotEmpty() == true)
+                    if(drawingPaths?.isNotEmpty() == true)
                         Icon(Icons.Outlined.Draw, stringResource(Res.string.drawing))
                     else
                         Icon(Icons.Outlined.Attachment, stringResource(Res.string.attachment))
@@ -115,7 +125,7 @@ fun AttachmentCard(
                 }
             }
 
-            AnimatedVisibility(paths?.isNotEmpty() == true) {
+            AnimatedVisibility(drawingPaths?.isNotEmpty() == true) {
                 Canvas(
                     modifier = Modifier
                         .clipToBounds()
@@ -124,7 +134,7 @@ fun AttachmentCard(
                         //.weight(1f)
                         .background(Color.White)
                 ) {
-                    paths?.fastForEach { pathData ->
+                    drawingPaths?.fastForEach { pathData ->
                         drawPath(
                             path = pathData.paths,
                             color = pathData.color,
@@ -133,6 +143,19 @@ fun AttachmentCard(
                         )
                     }
                 }
+            }
+
+            AnimatedVisibility(imagePreview != null) {
+                AsyncImage(
+                    model = imagePreview,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Fit
+                )
             }
         }
     }
@@ -234,5 +257,3 @@ private fun AttachmentCard_Drawing_Preview() {
         modifier = Modifier.padding(8.dp)
     )
 }
-
-

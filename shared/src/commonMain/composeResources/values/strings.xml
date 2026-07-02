@@ -122,6 +122,8 @@
     <string name="add_url">Add URL</string>
     <string name="add_attachment">Add attachment</string>
     <string name="attachment">Attachment</string>
+    <string name="add_photo">Add photo</string>
+    <string name="add_from_gallery">Add from gallery</string>
     <string name="add_drawing">Add drawing</string>
     <string name="drawing">Drawing</string>
     <string name="pen">Pen</string>

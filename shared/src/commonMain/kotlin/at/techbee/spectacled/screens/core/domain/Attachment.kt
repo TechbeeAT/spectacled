@@ -24,4 +24,6 @@ data class Attachment(
     val syncState: AttachmentSyncState = AttachmentSyncState.LOCAL_MODIFIED
 ) {
     fun isSVG() = mimeType == MIMETYPE_SVG
+
+    fun isImage() = mimeType?.startsWith("image/") == true
 }
