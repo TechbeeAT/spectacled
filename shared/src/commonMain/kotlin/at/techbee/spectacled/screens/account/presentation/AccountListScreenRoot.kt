@@ -4,8 +4,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.GroupAdd
@@ -238,8 +240,10 @@ fun AccountListScreenRoot(
 
         Box(
             modifier = Modifier
-                .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
                 .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+                .imePadding()
+                .padding(top = 8.dp, start = 8.dp, end = 8.dp)
                 .fillMaxSize(),
             contentAlignment = Alignment.BottomCenter
         ) {
