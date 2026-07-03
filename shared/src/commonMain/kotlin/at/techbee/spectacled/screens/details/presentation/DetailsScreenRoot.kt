@@ -389,20 +389,20 @@ fun DetailsScreenRoot(
                             )
 
                             DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_url)) },
-                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
-                                enabled = detailsState.icalEntry.url == null,
+                                text = { Text(stringResource(Res.string.add_drawing)) },
+                                leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
                                 onClick = {
-                                    detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
+                                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
                                     addMoreExpanded = false
                                 },
                             )
 
                             DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_drawing)) },
-                                leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
+                                text = { Text(stringResource(Res.string.add_url)) },
+                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
+                                enabled = detailsState.icalEntry.url == null,
                                 onClick = {
-                                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
+                                    detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
                                     addMoreExpanded = false
                                 },
                             )
