@@ -113,7 +113,7 @@ fun DetailsTopBar(
 
                     SpectacledVariant.TASKS -> {}
                 }
-
+/*
                 var dropdownExpanded by remember { mutableStateOf(false) }
 
                 TextButton(onClick = { dropdownExpanded = true }) {
@@ -133,6 +133,8 @@ fun DetailsTopBar(
                         )
                     }
                 }
+
+ */
             }
         },
         modifier = modifier,
