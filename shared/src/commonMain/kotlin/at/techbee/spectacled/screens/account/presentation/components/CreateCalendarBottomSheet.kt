@@ -37,6 +37,7 @@ import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.theme.AppTheme
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
@@ -45,6 +46,7 @@ import spectacled.shared.generated.resources.create_folder
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.folder
 import spectacled.shared.generated.resources.update_folder
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
@@ -68,6 +70,7 @@ fun CreateOrUpdateCalendarBottomSheet(
 
 
     LaunchedEffect(Unit) {
+        delay(300.milliseconds)
         focusRequester.requestFocus()
     }
 

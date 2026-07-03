@@ -52,6 +52,7 @@ import at.techbee.spectacled.screens.list.presentation.components.DeleteSelected
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
+import kotlinx.coroutines.delay
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -64,6 +65,7 @@ import spectacled.shared.generated.resources.ic_add_journal
 import spectacled.shared.generated.resources.ic_add_note
 import spectacled.shared.generated.resources.ic_add_task
 import spectacled.shared.generated.resources.read_only
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,10 +119,10 @@ fun ListScreenRoot(
 
         LaunchedEffect(state.isSearchBarExpanded) {
             if (state.isSearchBarExpanded) {
+                delay(300.milliseconds)
                 searchBarFocusRequester.requestFocus()
                 keyboardController?.show()
             } else {
-                searchBarFocusRequester.freeFocus()
                 keyboardController?.hide()
             }
         }
@@ -351,7 +353,8 @@ fun ListScreenRoot(
                             listFilterCriteria = state.listFilterCriteria,
                             allCategories = state.icalEntries.flatMap { it.categories }.distinct(),
                             calendarComponent = state.spectacledVariant.syncCalendarComponent,
-                            onAction = { listViewModel.onAction(it) }
+                            onAction = { listViewModel.onAction(it) },
+                            searchBarFocusRequester = searchBarFocusRequester
                         )
                     }
 

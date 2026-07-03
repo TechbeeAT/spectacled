@@ -36,11 +36,13 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 import io.ktor.http.parseUrl
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.url
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +66,7 @@ fun EditUrlBottomSheet(
     val url by derivedStateOf { parseUrl(textFieldValue.text) }
 
     LaunchedEffect(Unit) {
+        delay(300.milliseconds)
         focusRequester.requestFocus()
     }
 
