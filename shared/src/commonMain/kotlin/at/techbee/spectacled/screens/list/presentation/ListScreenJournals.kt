@@ -81,7 +81,7 @@ fun JournalsListJournals(
             modifier = Modifier
                 .widthIn(max = 700.dp)
                 .heightIn(min = 50.dp)
-                .padding(end = 8.dp)
+                .padding(end = 8.dp, start = if(icalEntry.isNote()) 44.dp else 0.dp)
                 .then(modifier)
                 .animateItem()
         )
@@ -132,12 +132,10 @@ fun JournalsListJournals(
                 return@forEach
 
             stickyHeader {
-                groupedByMonth[monthGroup]?.firstOrNull()?.dtStart?.let {
-                    MonthHeader(
-                        icsDateTime = it,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
+                MonthHeader(
+                    icsDateTime = groupedByMonth[monthGroup]?.firstOrNull()?.dtStart,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
             }
 
             if (monthGroup !in state.listCollapsedGroups) {

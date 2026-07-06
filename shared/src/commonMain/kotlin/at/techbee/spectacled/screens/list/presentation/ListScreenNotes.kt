@@ -71,6 +71,7 @@ fun ListScreenNotes(
     ) {
         ListItem(
             icalEntry = icalEntry,
+            showDayBlock = true,
             isFirst = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,
             isLast = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
             isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,

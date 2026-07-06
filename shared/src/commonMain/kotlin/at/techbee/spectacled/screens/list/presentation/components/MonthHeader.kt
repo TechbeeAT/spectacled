@@ -25,21 +25,27 @@ import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.formatLocalized
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.no_date
 import kotlin.time.Clock
 import kotlin.time.Instant
 
 @Composable
 fun MonthHeader(
-    icsDateTime: IcsDateTime,
+    icsDateTime: IcsDateTime?,
     modifier: Modifier = Modifier
 ) {
 
-    val monthName = icsDateTime.formatLocalized(IcsDateTimeFormat.FULL_MONTH_NAME)
+    val monthName = icsDateTime?.formatLocalized(IcsDateTimeFormat.FULL_MONTH_NAME)
 
-    val monthText = if(icsDateTime.toLocalDateTime().year != IcsDateTime.now().toLocalDateTime().year)
-        "$monthName ${icsDateTime.toLocalDateTime().year}"
-    else
-        monthName
+    val monthText =
+        if(monthName == null)
+            stringResource(Res.string.no_date)
+        else if(icsDateTime.toLocalDateTime().year != IcsDateTime.now().toLocalDateTime().year)
+            "$monthName ${icsDateTime.toLocalDateTime().year}"
+        else
+            monthName
 
     ElevatedCard(
         shape = RectangleShape,

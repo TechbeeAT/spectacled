@@ -109,20 +109,15 @@ data class ListState(
     private fun getBaseList(icalEntries: List<IcalEntry>, trashbin: Boolean = false) =
         icalEntries
             .filter { when(spectacledVariant) {
-                SpectacledVariant.JOURNALS -> it.syncState.isDeletedState() == trashbin && it.dtStart != null
-                SpectacledVariant.NOTES -> it.syncState.isDeletedState() == trashbin && it.dtStart == null
-                SpectacledVariant.TASKS -> it.syncState.isDeletedState() == trashbin && it.parentUid == null
+                SpectacledVariant.JOURNALS, SpectacledVariant.NOTES -> (it.isJournal() || it.isNote()) && it.syncState.isDeletedState() == trashbin
+                SpectacledVariant.TASKS -> it.isTask() && it.syncState.isDeletedState() == trashbin && it.parentUid == null
         } }
 
     private fun getSubtasksLogic(icalEntries: List<IcalEntry>) =
-        when(spectacledVariant) {
-                SpectacledVariant.JOURNALS -> emptyMap()  // not foreseen for Journals
-                SpectacledVariant.NOTES -> emptyMap()  // not foreseen for Notes
-                SpectacledVariant.TASKS -> icalEntries
+        icalEntries
                     .filter { !it.syncState.isDeletedState() && it.parentUid != null }
                     .sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
                     .groupBy { it.parentUid!! }
-            }
 
     private fun getPinnedFilteredList(icalEntries: List<IcalEntry>, pinned: Boolean = false) =
         icalEntries.filter { it.isPinned() == pinned }
