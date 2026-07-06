@@ -10,7 +10,6 @@ CREATE TABLE CalendarDto (
     calDavPrivileges TEXT,    -- e.g. write, bind, unbind,...
     calendarSyncStatus TEXT,
     syncToken TEXT,
-    syncComponent TEXT,
     attachmentCollectionUrl TEXT
 );
 
@@ -57,7 +56,6 @@ SET
     calDavPrivileges = :calDavPrivileges,
     calendarSyncStatus = :calendarSyncStatus,
     syncToken = :syncToken,
-    syncComponent = :syncComponent,
     attachmentCollectionUrl = :attachmentCollectionUrl
 WHERE
     url = :url
@@ -77,7 +75,6 @@ INSERT OR IGNORE INTO
         calDavPrivileges,
         calendarSyncStatus,
         syncToken,
-        syncComponent,
         attachmentCollectionUrl
     )
 VALUES (
@@ -91,7 +88,6 @@ VALUES (
         :calDavPrivileges,
         :calendarSyncStatus,
         :syncToken,
-        :syncComponent,
         :attachmentCollectionUrl
 );
 

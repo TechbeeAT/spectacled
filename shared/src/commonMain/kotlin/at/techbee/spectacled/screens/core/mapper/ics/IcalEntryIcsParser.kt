@@ -17,7 +17,6 @@ import at.techbee.spectacled.screens.core.FileManager
 import io.ktor.http.Url
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -271,24 +270,23 @@ fun parseIcalEntryBlock(
 }
 
 fun extractComponents(
-    lines: List<String>,
-    calendarComponent: CalendarComponent
-): List<List<String>> {
-    val components = mutableListOf<List<String>>()
+    lines: List<String>
+): List<Pair<CalendarComponent, List<String>>> {
+    val components = mutableListOf<Pair<CalendarComponent, List<String>>>()
     var current: MutableList<String>? = null
+    var currentComponent: CalendarComponent? = null
 
     lines.forEach { line ->
-        when (line) {
-            "BEGIN:${calendarComponent.name}" -> {
-                current = mutableListOf()
-            }
-            "END:${calendarComponent.name}" -> {
-                current?.let { components += it }
-                current = null
-            }
-            else -> {
-                current?.add(line)
-            }
+        val beginComponent = CalendarComponent.entries.find { line == "BEGIN:${it.name}" }
+        if (beginComponent != null) {
+            current = mutableListOf()
+            currentComponent = beginComponent
+        } else if (currentComponent != null && line == "END:${currentComponent.name}") {
+            current?.let { components.add(currentComponent!! to it) }
+            current = null
+            currentComponent = null
+        } else {
+            current?.add(line)
         }
     }
     return components
@@ -296,15 +294,16 @@ fun extractComponents(
 
 fun parseIcalEntries(
     ics: String,
-    calendarComponent: CalendarComponent?,
     fileManager: FileManager? = null
 ): List<IcalEntry> {
-    if(calendarComponent == null)
-        return emptyList()
 
     val lines = unfoldLines(ics)
 
-    val calendarComponentBlocks = extractComponents(lines, calendarComponent)
+    val calendarComponentBlocks = extractComponents(lines)
 
-    return calendarComponentBlocks.mapNotNull { parseIcalEntryBlock(it, calendarComponent, fileManager) }
+    return calendarComponentBlocks
+        .filter { it.first == CalendarComponent.VJOURNAL || it.first == CalendarComponent.VTODO }
+        .mapNotNull { (component, block) ->
+            parseIcalEntryBlock(block, component, fileManager)
+        }
 }

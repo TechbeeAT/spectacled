@@ -38,6 +38,7 @@ import io.ktor.utils.io.charsets.Charsets
 import kotlinx.serialization.encodeToString
 import nl.adaptivity.xmlutil.serialization.XmlParsingException
 import nl.adaptivity.xmlutil.xmlStreaming
+import kotlin.collections.none
 import kotlin.uuid.ExperimentalUuidApi
 
 
@@ -199,7 +200,7 @@ suspend fun discoverHomeCollections(
 suspend fun discoverCalendars(
     client: HttpClient,
     homeCollection: HomeCollection,
-    supportedCalendarComponent: CalendarComponent,
+    //supportedCalendarComponent: CalendarComponent,
     credentials: Credentials?
 ): DiscoverCalendarsResult {
 
@@ -271,7 +272,7 @@ suspend fun discoverCalendars(
 
 
                     // skip calendars that are NOT of resource type calendar and skip if there's no calendar with the requested supportedCalendarComponent supported
-                    if(propStat.prop.resourceType?.calendar == null || supportedCalendarComponentSet.none { component -> component == supportedCalendarComponent })
+                    if(propStat.prop.resourceType?.calendar == null || supportedCalendarComponentSet.none { it == CalendarComponent.VJOURNAL || it == CalendarComponent.VTODO })
                         return@forEach
 
                     calendars.add(
@@ -287,7 +288,6 @@ suspend fun discoverCalendars(
                             calDavPrivileges = propStat.prop.currentUserPrivilegeSet?.privileges?.mapNotNull { CalDavPrivilege.fromTag(it.name) }?: emptyList(),
                             calendarSyncStatus = null,
                             syncToken = null,
-                            syncComponent = supportedCalendarComponent,
                             attachmentCollectionUrl = propStat.prop.attachmentCollection?.href?.let { URLBuilder(homeCollection.url).takeFrom(it).build() }
                         )
                     )
@@ -309,12 +309,9 @@ suspend fun multigetResourceHrefsMultiplatform(
     calendar: Calendar,
     credentials: Credentials?
 ): MultigetResourceHrefETagResult {
+    val componentFilter = calendar.supportedComponents.map { CompFilter(name = it.name) }
 
-    if(calendar.syncComponent?.name == null)
-        return MultigetResourceHrefETagResult.Failed(HttpStatusCode.Forbidden, "sync component not found")
-
-    val componentFilter = CompFilter(name = calendar.syncComponent.name)
-    val calendarFilter = CompFilter(name = "VCALENDAR", compFilter = componentFilter)
+    val calendarFilter = CompFilter(name = "VCALENDAR", compFilters = componentFilter)
     val mainFilter = CalFilter(compFilter = calendarFilter)
 
     val calendarQuery = CalendarQuery(
@@ -459,7 +456,7 @@ suspend fun fetchSingleEntryMultiplatform(
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
                     if(propStat.status == "HTTP/1.1 200 OK") {
-                        val parsedIcalEntries = propStat.prop.calendarData?.let { parseIcalEntries(it, calendar.syncComponent, fileManager) } ?: return@forEach
+                        val parsedIcalEntries = propStat.prop.calendarData?.let { parseIcalEntries(it, fileManager) } ?: return@forEach
                         val hrefResult = URLBuilder(calendar.url).takeFrom(response.href).build()
                         parsedIcalEntries.forEach { icalEntries.add(it.copy(etag = propStat.prop.getETag, href = hrefResult)) }
                     }
@@ -482,8 +479,8 @@ suspend fun createCalendarMultiplatform(
     newCalendar: Calendar,
     credentials: Credentials?
 ): UpsertCalendarResult {
-    if(newCalendar.syncComponent == null)
-        return UpsertCalendarResult.Failed(HttpStatusCode.Forbidden, "syncComponent not provided")
+    if(newCalendar.supportedComponents.none { it == CalendarComponent.VJOURNAL || it == CalendarComponent.VTODO })
+        return UpsertCalendarResult.Failed(HttpStatusCode.Forbidden, "supportedComponents not provided")
 
     val mkColRequest = CalendarMkcol(
         set = WebDavSet(
@@ -496,7 +493,9 @@ suspend fun createCalendarMultiplatform(
                 calendarDescription = newCalendar.calendarDescription,
                 calendarColor = newCalendar.color,
                 supportedCalendarComponentSet = SupportedCalendarComponentSet(
-                    components = listOf(CalendarComp(name = newCalendar.syncComponent.name))
+                    components = newCalendar.supportedComponents
+                        .map { CalendarComp(name = it.name) }
+                        .ifEmpty { listOf(CalendarComp(CalendarComponent.VJOURNAL.name), CalendarComp(CalendarComponent.VTODO.name)) }
                 ),
                 currentUserPrincipal = CurrentUserPrincipal()
             )
@@ -581,7 +580,7 @@ suspend fun createCalendarMultiplatform(
 
 
                     // skip calendars that are NOT of resource type calendar and skip if there's no calendar with the requested CalendarComponent supported
-                    if (propStat.prop.resourceType?.calendar == null || supportedCalendarComponentSet.none { component -> component == newCalendar.syncComponent })
+                    if (propStat.prop.resourceType?.calendar == null || supportedCalendarComponentSet.none { component -> component == CalendarComponent.VJOURNAL || component == CalendarComponent.VTODO })
                         UpsertCalendarResult.Failed(HttpStatusCode.UnprocessableEntity, "Creation of calendar with supported component failed.")
 
                     return UpsertCalendarResult.Success(newCalendar.copy(
@@ -828,7 +827,7 @@ suspend fun getResourceMultiplatform(
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
     }.let { response ->
         if(response.status.isSuccess()) {
-            val remoteIcalEntry = parseIcalEntries(response.bodyAsText(), calendar.syncComponent, fileManager).firstOrNull() ?: return GetResourceResult.Failed(response.status, "An unknown error occurred.", "${response.status.description} ${response.status.value}")
+            val remoteIcalEntry = parseIcalEntries(response.bodyAsText(), fileManager).firstOrNull() ?: return GetResourceResult.Failed(response.status, "An unknown error occurred.", "${response.status.description} ${response.status.value}")
             val updatedIcalEntry = remoteIcalEntry.copy(
                 id = icalEntry.id,
                 calendarId = icalEntry.calendarId,

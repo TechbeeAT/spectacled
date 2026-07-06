@@ -623,10 +623,10 @@ data class CompFilter(
     @XmlSerialName("name")
     val name: String,
 
-    // A comp-filter can contain another (nested) comp-filter.
+    // A comp-filter can contain multiple (nested) comp-filters.
     @XmlElement
     @XmlSerialName("comp-filter", NAMESPACE_CALDAV, PREFIX_CALDAV)
-    val compFilter: CompFilter? = null
+    val compFilters: List<CompFilter> = emptyList()
 )
 
 @Serializable

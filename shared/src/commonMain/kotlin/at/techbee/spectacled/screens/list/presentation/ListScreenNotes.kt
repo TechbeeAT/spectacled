@@ -3,10 +3,12 @@ package at.techbee.spectacled.screens.list.presentation
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
@@ -32,6 +34,7 @@ import at.techbee.spectacled.screens.list.presentation.components.EmptyListScree
 import at.techbee.spectacled.screens.list.presentation.components.ListDragHandle
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
+import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
@@ -60,8 +63,9 @@ fun ListScreenNotes(
     }
 
     @Composable
-    fun LazyStaggeredGridItemScope.getListItem(
+    fun LazyStaggeredGridItemScope.getNoteListItem(
         icalEntry: IcalEntry,
+        subtasks: List<IcalEntry> = emptyList(),
         index: Int,
         lastIndex: Int,
         isDragging: Boolean = false,
@@ -69,28 +73,53 @@ fun ListScreenNotes(
         interactionSource: MutableInteractionSource? = null,
         modifier: Modifier = Modifier
     ) {
-        ListItem(
-            icalEntry = icalEntry,
-            showDayBlock = true,
-            isFirst = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,
-            isLast = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
-            isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
-            interactionSource = interactionSource,
-            onClick = {
-                if (state.multiselectItems == null)
-                    onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
-                else
-                    onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-            },
-            onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-            dragHandle = dragHandle,
-            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-            modifier = Modifier
-                .widthIn(max = 700.dp)
-                .heightIn(min = 50.dp)
-                .then(modifier)
-                .animateItem()
-        )
+
+        val isFirst = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID
+        val isLast = subtasks.isEmpty() || state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID
+
+
+        Column {
+            ListItem(
+                icalEntry = icalEntry,
+                showDayBlock = true,
+                isFirst = isFirst,
+                isLast = isLast,
+                isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
+                interactionSource = interactionSource,
+                onClick = {
+                    if (state.multiselectItems == null)
+                        onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
+                    else
+                        onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
+                },
+                onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
+                dragHandle = dragHandle,
+                onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+                modifier = Modifier
+                    .widthIn(max = 700.dp)
+                    .heightIn(min = 50.dp)
+                    .then(modifier)
+                    .animateItem()
+            )
+
+            subtasks.forEach { subtask ->
+
+                TaskListItem(
+                    icalEntry = subtask,
+                    onClick = {
+                        if (state.multiselectItems == null)
+                            onAction(ListAction.OnIcalEntryClicked(subtask.id))
+                        else
+                            onAction(ListAction.OnToggleMultiselectItem(subtask.id))
+                    },
+                    isSelected = state.multiselectItems?.contains(subtask.id) == true || isDragging,
+                    onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
+                    onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
+                    onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+                    modifier = Modifier.padding(start = 48.dp)
+                )
+            }
+        }
     }
 
 
@@ -125,8 +154,9 @@ fun ListScreenNotes(
                         onAction(ListAction.OnDraggingIcalEntry(null))
                     }
 
-                    getListItem(
+                    getNoteListItem(
                         icalEntry = icalEntry,
+                        subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
                         index = index,
                         lastIndex = dragAndDropList.lastIndex,
                         isDragging = isDragging,
@@ -155,7 +185,7 @@ fun ListScreenNotes(
                         items = state.pinned,
                         key = { _, icalEntry -> icalEntry.uid }
                     ) { index, icalEntry ->
-                        getListItem(icalEntry = icalEntry, index = index, lastIndex = state.pinned.lastIndex)
+                        getNoteListItem(icalEntry = icalEntry, index = index, lastIndex = state.pinned.lastIndex)
                     }
                 }
             }
@@ -182,7 +212,12 @@ fun ListScreenNotes(
                             items = groupedByDay[dayGroup]!!,
                             key = { _, icalEntry -> icalEntry.uid }
                         ) { index, icalEntry ->
-                            getListItem(icalEntry = icalEntry, index = index, lastIndex = groupedByDay[dayGroup]!!.lastIndex)
+                            getNoteListItem(
+                                icalEntry = icalEntry,
+                                subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
+                                index = index,
+                                lastIndex = groupedByDay[dayGroup]!!.lastIndex
+                            )
                         }
                     }
                 }
@@ -211,7 +246,12 @@ fun ListScreenNotes(
 
                         if (grouping.name !in state.listCollapsedGroups) {
                             itemsIndexed(state.displayMap[grouping]!!, key = { _, icalEntry -> icalEntry.uid }) { index, icalEntry ->
-                                getListItem(icalEntry = icalEntry, index = index, lastIndex = state.displayMap[grouping]!!.lastIndex)
+                                getNoteListItem(
+                                    icalEntry = icalEntry,
+                                    subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
+                                    index = index,
+                                    lastIndex = state.displayMap[grouping]!!.lastIndex
+                                )
                             }
                         }
                     }
@@ -240,8 +280,9 @@ fun ListScreenNotes(
                 ) }
             else
                 itemsIndexed(state.trashbin, key = { _, note -> note.uid }) { index, note ->
-                    getListItem(
+                    getNoteListItem(
                         icalEntry = note,
+                        subtasks = state.subtasks[note.uid] ?: emptyList(),
                         index = index,
                         lastIndex = state.trashbin.lastIndex,
                         modifier = Modifier.alpha(0.33f)

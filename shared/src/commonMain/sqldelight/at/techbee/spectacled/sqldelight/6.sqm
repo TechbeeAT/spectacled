@@ -1,0 +1,46 @@
+-- Backup data for CalendarDto and its children to prevent data loss during table recreation
+CREATE TABLE CalendarDto_Backup AS SELECT * FROM CalendarDto;
+CREATE TABLE IcalEntryDto_Backup AS SELECT * FROM IcalEntryDto;
+CREATE TABLE AttachmentDto_Backup AS SELECT * FROM AttachmentDto;
+
+-- Empty child tables to avoid cascading deletes when the parent table is dropped
+DELETE FROM AttachmentDto;
+DELETE FROM IcalEntryDto;
+
+-- Recreate CalendarDto with the new schema (removing syncComponent)
+DROP TABLE CalendarDto;
+
+CREATE TABLE CalendarDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    homeCollectionId INTEGER NOT NULL REFERENCES HomeCollectionDto(id) ON DELETE CASCADE,
+    url TEXT NOT NULL UNIQUE ,
+    displayName TEXT,
+    calendarDescription TEXT,
+    color INTEGER,
+    ctag TEXT,
+    supportedComponents TEXT,
+    calDavPrivileges TEXT,
+    calendarSyncStatus TEXT,
+    syncToken TEXT,
+    attachmentCollectionUrl TEXT
+);
+
+-- Restore Calendar data (selecting only the required columns)
+INSERT INTO CalendarDto (id, homeCollectionId, url, displayName, calendarDescription, color, ctag, supportedComponents, calDavPrivileges, calendarSyncStatus, syncToken, attachmentCollectionUrl)
+SELECT id, homeCollectionId, url, displayName, calendarDescription, color, ctag, supportedComponents, calDavPrivileges, calendarSyncStatus, syncToken, attachmentCollectionUrl
+FROM CalendarDto_Backup;
+
+-- Restore IcalEntry data
+INSERT INTO IcalEntryDto (id, calendarId, uid, summary, description, dtstart, dtStartTimeZone, due, dueTimeZone, completed, completedTimeZone, status, percentComplete, priority, classification, dtstamp, color, sequence, categories, created, lastModified, extraProperties, orderNo, syncState, etag, href, calendarComponent, parentUid, relType, url)
+SELECT id, calendarId, uid, summary, description, dtstart, dtStartTimeZone, due, dueTimeZone, completed, completedTimeZone, status, percentComplete, priority, classification, dtstamp, color, sequence, categories, created, lastModified, extraProperties, orderNo, syncState, etag, href, calendarComponent, parentUid, relType, url
+FROM IcalEntryDto_Backup;
+
+-- Restore Attachment data
+INSERT INTO AttachmentDto (id, icalEntryId, uid, localPath, remoteUrl, fileName, mimeType, size, syncState)
+SELECT id, icalEntryId, uid, localPath, remoteUrl, fileName, mimeType, size, syncState
+FROM AttachmentDto_Backup;
+
+-- Cleanup backups
+DROP TABLE CalendarDto_Backup;
+DROP TABLE IcalEntryDto_Backup;
+DROP TABLE AttachmentDto_Backup;

@@ -29,8 +29,7 @@ data class ListState(
         supportedComponents = emptyList(),
         calDavPrivileges = emptyList(),
         calendarSyncStatus = null,
-        syncToken = null,
-        syncComponent = null
+        syncToken = null
     ),
     val principal: Principal = Principal(
         id = 0L,
