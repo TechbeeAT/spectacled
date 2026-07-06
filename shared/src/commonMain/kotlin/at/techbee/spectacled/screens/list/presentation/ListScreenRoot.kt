@@ -352,7 +352,7 @@ fun ListScreenRoot(
                         ListFilterRow(
                             listFilterCriteria = state.listFilterCriteria,
                             allCategories = state.icalEntries.flatMap { it.categories }.distinct(),
-                            calendarComponent = state.spectacledVariant.syncCalendarComponent,
+                            calendarComponent = state.spectacledVariant.mainCalendarComponent,
                             onAction = { listViewModel.onAction(it) },
                             searchBarFocusRequester = searchBarFocusRequester
                         )

@@ -32,7 +32,6 @@ import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
-import io.ktor.http.Url
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.koinInject
@@ -54,7 +53,7 @@ enum class SpectacledVariant(
     val dbName: String,
     val appNameStringRes: StringResource,
     val logoDrawableResource: DrawableResource,
-    val syncCalendarComponent: CalendarComponent,
+    val mainCalendarComponent: CalendarComponent,
     val themeSeedColor: Color,
     val deeplinkUriScheme: String,
     val deeplinkWebUri: String

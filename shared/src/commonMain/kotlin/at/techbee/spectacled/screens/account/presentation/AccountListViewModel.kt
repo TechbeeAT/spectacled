@@ -345,6 +345,9 @@ class AccountListViewModel(
 
                                 discoverCalendarsResult.calendars.forEach { calendar ->
 
+                                    if(calendar.supportedComponents.none { it == spectacledVariant.mainCalendarComponent })
+                                        return@forEach     // skip calendars that don't support the mainCalendarComponent of the app
+
                                     calendarRepository.upsertCalendar(
                                         calendar =
                                             if(calendar.url in disabledCalendarUrls)    // remember disabled state

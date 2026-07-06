@@ -130,7 +130,7 @@ class DetailsViewModel(
                 calendarId = calendarId,
                 description = initialDescription,
                 dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
-                calendarComponent = spectacledVariant.syncCalendarComponent
+                calendarComponent = spectacledVariant.mainCalendarComponent
             )
             val calendar = calendarRepository.getCalendarById(calendarId) ?: return@launch
 
@@ -154,7 +154,7 @@ class DetailsViewModel(
                 calendarId = 0L,
                 description = initialDescription,
                 dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
-                calendarComponent = spectacledVariant.syncCalendarComponent
+                calendarComponent = spectacledVariant.mainCalendarComponent
             )
 
             _state.update { it.copy(
