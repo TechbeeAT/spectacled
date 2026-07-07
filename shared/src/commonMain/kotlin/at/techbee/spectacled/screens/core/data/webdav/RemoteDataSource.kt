@@ -47,6 +47,54 @@ suspend fun discoverPrincipalsMultiplatform(
     location: Url,
     credentials: Credentials?
 ): DiscoverPrincipalsResult {
+    val initialResult = discoverPrincipalsInternal(client, location, credentials)
+
+    if (initialResult is DiscoverPrincipalsResult.Success && initialResult.principals.isNotEmpty()) {
+        return initialResult
+    }
+
+    // If first attempt failed or found no principals, try .well-known/caldav redirect
+    if (initialResult is DiscoverPrincipalsResult.NotFound ||
+        (initialResult is DiscoverPrincipalsResult.Success && initialResult.principals.isEmpty()) ||
+        (initialResult is DiscoverPrincipalsResult.Failed && initialResult.status == HttpStatusCode.MethodNotAllowed)
+    ) {
+        val wellKnownUrl = URLBuilder(location).apply {
+            pathSegments = listOf(".well-known", "caldav")
+            parameters.clear()
+        }.build()
+
+        if (wellKnownUrl != location) {
+            // Nextcloud and others often redirect .well-known/caldav to the actual DAV endpoint.
+            // We follow these redirects using a GET request to find the effective discovery URL.
+            val discoveryUrl = try {
+                client.get(wellKnownUrl) {
+                    if (credentials != null) basicAuth(credentials.username, credentials.password)
+                }.call.request.url
+            } catch (_: Exception) {
+                wellKnownUrl
+            }
+
+            val wellKnownResult = discoverPrincipalsInternal(client, discoveryUrl, credentials)
+            if (wellKnownResult is DiscoverPrincipalsResult.Success && wellKnownResult.principals.isNotEmpty()) {
+                return wellKnownResult
+            }
+            // If well-known failed with something other than NotFound, it might be more relevant (e.g., Unauthorized)
+            if (wellKnownResult !is DiscoverPrincipalsResult.NotFound) {
+                return wellKnownResult
+            }
+        }
+    }
+
+    return initialResult
+}
+
+private suspend fun discoverPrincipalsInternal(
+    client: HttpClient,
+    location: Url,
+    credentials: Credentials?,
+    redirectCount: Int = 0
+): DiscoverPrincipalsResult {
+    if (redirectCount > 3) return DiscoverPrincipalsResult.Failed(HttpStatusCode.ServiceUnavailable, "Too many redirects")
 
     val principals = mutableSetOf<Principal>()
 
@@ -65,28 +113,39 @@ suspend fun discoverPrincipalsMultiplatform(
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
         setBody(xmlString)
-    }.let { response ->
+    }.let { httpResponse ->
 
-        if(!response.status.isSuccess()) {
-            return when(response.status) {
+        // Handle manual redirect for PROPFIND (Ktor default redirect plugin usually only handles GET/HEAD)
+        if (httpResponse.status.value in 300..399) {
+            val redirectUrl = httpResponse.headers[HttpHeaders.Location]?.let {
+                URLBuilder(location).takeFrom(it).build()
+            }
+            if (redirectUrl != null && redirectUrl != location) {
+                return discoverPrincipalsInternal(client, redirectUrl, credentials, redirectCount + 1)
+            }
+        }
+
+        if(!httpResponse.status.isSuccess()) {
+            return when(httpResponse.status) {
                 HttpStatusCode.NotFound -> DiscoverPrincipalsResult.NotFound
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> DiscoverPrincipalsResult.NotAuthorized
-                else -> DiscoverPrincipalsResult.Failed(response.status, "Collections couldn't be fetched.", "${response.status.description} ${response.status.value}")
+                else -> DiscoverPrincipalsResult.Failed(httpResponse.status, "Collections couldn't be fetched.", "${httpResponse.status.description} ${httpResponse.status.value}")
             }
         }
 
         try {
             val multistatusResponse = calDavXml.decodeFromReader(
-                WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
+                WebDavMultiStatus.serializer(), xmlStreaming.newReader(httpResponse.bodyAsText())
             )
 
             val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
             when {
                 allResponseCodes.all { responseCode -> responseCode == "HTTP/1.1 403 Forbidden" } -> return DiscoverPrincipalsResult.NotAuthorized
-                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverPrincipalsResult.Failed(response.status, "Principal couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
+                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverPrincipalsResult.Failed(httpResponse.status, "Principal couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
             }
 
 
+            val effectiveLocation = httpResponse.call.request.url
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
 
@@ -97,7 +156,7 @@ suspend fun discoverPrincipalsMultiplatform(
 
                     val currentPrincipal = Principal(
                         id = 0L,
-                        principalUrl = URLBuilder(location).takeFrom(href).build(),
+                        principalUrl = URLBuilder(effectiveLocation).takeFrom(href).build(),
                         displayName = null,
                         calendarUserAddressSet = emptyList()
                     )
@@ -109,7 +168,7 @@ suspend fun discoverPrincipalsMultiplatform(
         } catch (e: XmlParsingException) {
             println("Parsing failed: ${e.message}")
             println(e.stackTraceToString())
-            return DiscoverPrincipalsResult.Failed(response.status, "Collections couldn't be parsed.", e.stackTraceToString())
+            return DiscoverPrincipalsResult.Failed(httpResponse.status, "Collections couldn't be parsed.", e.stackTraceToString())
         }
     }
 }
@@ -163,6 +222,7 @@ suspend fun discoverHomeCollections(
                 allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverHomeCollectionsResult.Failed(response.status, "Home Collection couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
             }
 
+            val effectiveLocation = response.call.request.url
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
 
@@ -179,7 +239,7 @@ suspend fun discoverHomeCollections(
                             HomeCollection(
                                 id = 0L,
                                 principalId = 0L,
-                                url = URLBuilder(principal.principalUrl).takeFrom(calendarHomeSet).build(),
+                                url = URLBuilder(effectiveLocation).takeFrom(calendarHomeSet).build(),
                                 calDavPrivileges = emptyList(),  // populated later
                             )
                         )
