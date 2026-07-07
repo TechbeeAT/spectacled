@@ -86,23 +86,24 @@ class CalendarRepositoryImpl(
     override suspend fun upsertPrincipal(principal: Principal): Long {
 
         val principalDto = principal.toDto()
+        val db = getDatabase()
 
-        getDatabase().principal_dtoQueries.transaction {
+        db.principal_dtoQueries.transaction {
             // first update, if the entry doesn't exist, this is ignored
-            getDatabase().principal_dtoQueries.updatePrincipal(
+            db.principal_dtoQueries.updatePrincipal(
                 principalUrl = principalDto.principalUrl,
                 displayName = principalDto.displayName,
                 calendarUserAddressSet = principalDto.calendarUserAddressSet
             )
             // insert, but if the entry exists, it will be ignored
-            getDatabase().principal_dtoQueries.insertPrincipal(
+            db.principal_dtoQueries.insertPrincipal(
                 principalUrl = principalDto.principalUrl,
                 displayName = principalDto.displayName,
                 calendarUserAddressSet = principalDto.calendarUserAddressSet
             )
         }
 
-        return getDatabase().principal_dtoQueries.getPrincipalByUrl(principalDto.principalUrl).awaitAsOne().id
+        return db.principal_dtoQueries.getPrincipalByUrl(principalDto.principalUrl).awaitAsOne().id
     }
 
     override suspend fun upsertHomeCollection(homeCollection: HomeCollection, principalUrl: Url): Long {
