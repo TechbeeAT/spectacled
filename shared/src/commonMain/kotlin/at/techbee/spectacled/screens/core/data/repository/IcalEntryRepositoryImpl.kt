@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.core.data.repository
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import app.cash.sqldelight.async.coroutines.awaitAsList
+import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
 import at.techbee.spectacled.db.SpectacledDatabase
@@ -211,10 +212,10 @@ class IcalEntryRepositoryImpl(
         }
 
         // Get the actual ID of the entry (it's either the existing one or the one just inserted)
-        val entryId = db.icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).executeAsOne().id
+        val entryId = db.icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).awaitAsOne().id
 
         // Handle attachments within the same transaction
-        val existingAttachments = db.attachment_dtoQueries.getAttachmentsForEntry(entryId).executeAsList()
+        val existingAttachments = db.attachment_dtoQueries.getAttachmentsForEntry(entryId).awaitAsList()
         val currentAttachmentUids = icalEntry.attachments.map { it.uid }.toSet()
 
         db.transaction {
