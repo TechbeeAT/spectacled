@@ -92,8 +92,7 @@ class IcalEntryRepositoryImpl(
     }
 
     override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> {
-        val db = getDatabase()
-        return db.icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
+        return getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
     }
 
     override suspend fun getDeletedDeltaHrefs(
@@ -259,9 +258,10 @@ class IcalEntryRepositoryImpl(
     }
 
     override suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>) {
-        getDatabase().icalentry_dtoQueries.transaction {
+        val db = getDatabase()
+        db.icalentry_dtoQueries.transaction {
             sortedIcalEntryIds.forEachIndexed { index, icalEntryId ->
-                getDatabase().icalentry_dtoQueries.updateOrderNo(orderNo = index.toLong(), id = icalEntryId)
+                db.icalentry_dtoQueries.updateOrderNo(orderNo = index.toLong(), id = icalEntryId)
             }
         }
     }
