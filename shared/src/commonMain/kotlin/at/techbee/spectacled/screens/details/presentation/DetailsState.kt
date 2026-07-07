@@ -43,4 +43,6 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     fun allowEditing() = calendar?.canWriteContent() == true && !icalEntry.syncState.isDeletedState()
 
     fun allowRestore() = calendar?.canWriteContent() == true && icalEntry.syncState.isDeletedState()
+
+    fun isAttachmentSupportEnabled() = calendar?.isAttachmentSyncSupported() == true
 }

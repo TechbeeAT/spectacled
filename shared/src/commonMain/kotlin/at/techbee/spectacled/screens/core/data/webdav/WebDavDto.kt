@@ -199,7 +199,15 @@ data class WebDavProp(
 
     @XmlElement
     @XmlSerialName("attachment-collection", NAMESPACE_CALDAV, PREFIX_CALDAV)
-    val attachmentCollection: AttachmentCollection? = null,
+    val attachmentCollection: HrefProperty? = null,
+
+    @XmlElement
+    @XmlSerialName("calendar-dropbox", NAMESPACE_APPLE_ICAL, PREFIX_APPLE_ICAL)
+    val calendarDropbox: HrefProperty? = null,
+
+    @XmlElement
+    @XmlSerialName("dropbox-home-set", NAMESPACE_CALDAV, PREFIX_CALDAV)
+    val dropboxHomeSet: HrefProperty? = null,
 
     @XmlElement(true)
     @XmlSerialName("supported-calendar-component-set", NAMESPACE_CALDAV, PREFIX_CALDAV)
@@ -387,9 +395,9 @@ class DavPrincipal
 @XmlSerialName("calendar", NAMESPACE_CALDAV, PREFIX_CALDAV)
 class CaldavCalendar
 
+
 @Serializable
-@XmlSerialName("attachment-collection", NAMESPACE_CALDAV, PREFIX_CALDAV)
-data class AttachmentCollection(
+data class HrefProperty(
     @XmlElement
     @XmlSerialName("href", NAMESPACE_DAV, PREFIX_WILDCARD)
     val href: String? = null

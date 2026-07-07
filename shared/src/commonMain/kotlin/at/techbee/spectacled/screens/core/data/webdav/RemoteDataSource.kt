@@ -187,7 +187,9 @@ suspend fun discoverHomeCollections(
         prop = WebDavProp(
             displayName = "", // An empty string will serialize to <D:displayname/>
             calendarUserAddressSet = CalendarUserAddressSet(),
-            calendarHomeSet = CalendarHomeSet()
+            calendarHomeSet = CalendarHomeSet(),
+            attachmentCollection = HrefProperty(),
+            dropboxHomeSet = HrefProperty()
         )
     )
     val xmlString = calDavXml.encodeToString(propfindRequest)
@@ -233,6 +235,10 @@ suspend fun discoverHomeCollections(
                     propStat.prop.calendarUserAddressSet?.hrefs?.let { principalCalendarUserAddressSet.addAll(it) }
 
                     val calendarHomeSets = propStat.prop.calendarHomeSet?.hrefs ?: return@forEach
+                    
+                    val sharedAttachmentUrl = (propStat.prop.attachmentCollection?.href ?: propStat.prop.dropboxHomeSet?.href)?.let { 
+                        URLBuilder(effectiveLocation).takeFrom(it).build() 
+                    }
 
                     calendarHomeSets.forEach { calendarHomeSet ->
                         homeCollections.add(
@@ -246,7 +252,9 @@ suspend fun discoverHomeCollections(
                     }
                 }
             }
-
+            
+            // Note: Since HomeCollection doesn't store attachmentUrl yet, we could consider adding it or 
+            // relying on the Calendar-level discovery which we'll also improve.
             return DiscoverHomeCollectionsResult.Success(principalDisplayName, principalCalendarUserAddressSet, homeCollections.toList())
 
         } catch (e: XmlParsingException) {
@@ -273,7 +281,8 @@ suspend fun discoverCalendars(
             calendarDescription = "",
             getCTag = "",
             calendarColor = Color.Unspecified,
-            attachmentCollection = AttachmentCollection(),
+            attachmentCollection = HrefProperty(),
+            calendarDropbox = HrefProperty(),
             supportedCalendarComponentSet = SupportedCalendarComponentSet(),
             resourceType = ResourceType(),
             currentUserPrivilegeSet = CurrentUserPrivilegeSet()
@@ -335,6 +344,10 @@ suspend fun discoverCalendars(
                     if(propStat.prop.resourceType?.calendar == null || supportedCalendarComponentSet.none { it == CalendarComponent.VJOURNAL || it == CalendarComponent.VTODO })
                         return@forEach
 
+                    val attachmentUrl = (propStat.prop.attachmentCollection?.href ?: propStat.prop.calendarDropbox?.href)?.let { 
+                        URLBuilder(homeCollection.url).takeFrom(it).build() 
+                    }
+
                     calendars.add(
                         Calendar(
                             id = 0L,
@@ -348,7 +361,7 @@ suspend fun discoverCalendars(
                             calDavPrivileges = propStat.prop.currentUserPrivilegeSet?.privileges?.mapNotNull { CalDavPrivilege.fromTag(it.name) }?: emptyList(),
                             calendarSyncStatus = null,
                             syncToken = null,
-                            attachmentCollectionUrl = propStat.prop.attachmentCollection?.href?.let { URLBuilder(homeCollection.url).takeFrom(it).build() }
+                            attachmentCollectionUrl = attachmentUrl
                         )
                     )
                 }
@@ -596,7 +609,8 @@ suspend fun createCalendarMultiplatform(
             calendarDescription = "",
             getCTag = "",
             calendarColor = Color.Unspecified,
-            attachmentCollection = AttachmentCollection(),
+            attachmentCollection = HrefProperty(),
+            calendarDropbox = HrefProperty(),
             supportedCalendarComponentSet = SupportedCalendarComponentSet(),
             resourceType = ResourceType(),
             currentUserPrivilegeSet = CurrentUserPrivilegeSet()

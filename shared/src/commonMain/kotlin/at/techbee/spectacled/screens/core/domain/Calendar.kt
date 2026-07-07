@@ -21,6 +21,7 @@ data class Calendar(
     val syncToken: String?,
     val attachmentCollectionUrl: Url? = null
 ) {
+    fun isAttachmentSyncSupported(): Boolean = attachmentCollectionUrl != null
 
     companion object {
         fun getCalendarForPreview(): Calendar = Calendar(

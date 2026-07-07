@@ -362,6 +362,7 @@ fun DetailsScreenRoot(
                             DropdownMenuItem(
                                 text = { Text(stringResource(Res.string.add_attachment)) },
                                 leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
+                                enabled = detailsState.isAttachmentSupportEnabled(),
                                 onClick = {
                                     filePicker.pickFile() /* Result handled in rememberFilePicker callback */
                                     addMoreExpanded = false
@@ -372,6 +373,7 @@ fun DetailsScreenRoot(
                                 DropdownMenuItem(
                                     text = { Text(stringResource(Res.string.add_photo)) },
                                     leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
+                                    enabled = detailsState.isAttachmentSupportEnabled(),
                                     onClick = {
                                         imagePicker.takePhoto()
                                         addMoreExpanded = false
@@ -382,6 +384,7 @@ fun DetailsScreenRoot(
                             DropdownMenuItem(
                                 text = { Text(stringResource(Res.string.add_from_gallery)) },
                                 leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
+                                enabled = detailsState.isAttachmentSupportEnabled(),
                                 onClick = {
                                     imagePicker.pickImage()
                                     addMoreExpanded = false
@@ -391,6 +394,7 @@ fun DetailsScreenRoot(
                             DropdownMenuItem(
                                 text = { Text(stringResource(Res.string.add_drawing)) },
                                 leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
+                                enabled = detailsState.isAttachmentSupportEnabled(),
                                 onClick = {
                                     detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
                                     addMoreExpanded = false
