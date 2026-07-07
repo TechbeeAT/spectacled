@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.details.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,8 +16,12 @@ import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.AddTask
+import androidx.compose.material.icons.outlined.Attachment
+import androidx.compose.material.icons.outlined.Gesture
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,19 +53,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
+import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.core.rememberFilePicker
+import at.techbee.spectacled.screens.core.rememberImagePicker
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DetailsTopBar
+import at.techbee.spectacled.screens.details.presentation.components.DrawingCanvasBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.EditUrlBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
@@ -69,10 +79,15 @@ import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_edit_url
+import spectacled.shared.generated.resources.add_attachment
+import spectacled.shared.generated.resources.add_drawing
+import spectacled.shared.generated.resources.add_from_gallery
+import spectacled.shared.generated.resources.add_photo
 import spectacled.shared.generated.resources.add_subtask
+import spectacled.shared.generated.resources.add_url
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.restore
 import spectacled.shared.generated.resources.subtask
@@ -88,6 +103,18 @@ fun DetailsScreenRoot(
 ) {
     val detailsState by detailsViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val filePicker = rememberFilePicker { pickedFile ->
+        pickedFile?.let {
+            detailsViewModel.onAction(DetailsAction.OnAddAttachment(it.name, it.bytes, it.mimeType))
+        }
+    }
+
+    val imagePicker = rememberImagePicker { pickedFile ->
+        pickedFile?.let {
+            detailsViewModel.onAction(DetailsAction.OnAddAttachment(it.name, it.bytes, it.mimeType))
+        }
+    }
 
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(detailsState.icalEntry.color ?: detailsState.calendar?.color)) {
 
@@ -132,6 +159,13 @@ fun DetailsScreenRoot(
         if (detailsState.showColorSelectorBottomSheet) {
             BottomSheetWithMenu(
                 onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(false)) },
+                menuActionRight = {
+                    TextButton(
+                        onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(false)) },
+                    ) {
+                        Text(stringResource(Res.string.done))
+                    }
+                },
             ) {
                 ColorSelectorElement(
                     recentColors = detailsState.allColors,
@@ -198,6 +232,19 @@ fun DetailsScreenRoot(
                 onUrlEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateUrl(it)) },
                 onDismiss = {
                     detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(false))
+                }
+            )
+        }
+
+        if (detailsState.showDrawingCanvasBottomSheet.show) {
+            DrawingCanvasBottomSheet(
+                replaceAttachmentUid = detailsState.showDrawingCanvasBottomSheet.replaceAttachmentUid,
+                initialPathData = detailsState.showDrawingCanvasBottomSheet.initialPaths,
+                onDrawingUpdated = { attachmentUid, paths ->
+                    detailsViewModel.onAction(DetailsAction.OnUpdateDrawing(attachmentUid, paths))
+                },
+                onDismiss = {
+                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null))
                 }
             )
         }
@@ -302,6 +349,7 @@ fun DetailsScreenRoot(
 
                     TextButton(
                         onClick = { addMoreExpanded = true },
+                        enabled = detailsState.allowEditing() && !detailsState.isLoading
                     ) {
                         Icon(Icons.Outlined.AddBox, "Add more")
 
@@ -309,9 +357,50 @@ fun DetailsScreenRoot(
                             expanded = addMoreExpanded,
                             onDismissRequest = { addMoreExpanded = false }
                         ) {
+
+
                             DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_edit_url)) },
-                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_edit_url)) },
+                                text = { Text(stringResource(Res.string.add_attachment)) },
+                                leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
+                                onClick = {
+                                    filePicker.pickFile() /* Result handled in rememberFilePicker callback */
+                                    addMoreExpanded = false
+                                },
+                            )
+
+                            if(getPlatform().platform == Platforms.IOS || getPlatform().platform == Platforms.ANDROID) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(Res.string.add_photo)) },
+                                    leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
+                                    onClick = {
+                                        imagePicker.takePhoto()
+                                        addMoreExpanded = false
+                                    },
+                                )
+                            }
+
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.add_from_gallery)) },
+                                leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
+                                onClick = {
+                                    imagePicker.pickImage()
+                                    addMoreExpanded = false
+                                },
+                            )
+
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.add_drawing)) },
+                                leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
+                                onClick = {
+                                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
+                                    addMoreExpanded = false
+                                },
+                            )
+
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.add_url)) },
+                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
+                                enabled = detailsState.icalEntry.url == null,
                                 onClick = {
                                     detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
                                     addMoreExpanded = false
@@ -325,7 +414,7 @@ fun DetailsScreenRoot(
                                     detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet))
                                     addMoreExpanded = false
                                 },
-                                enabled = detailsState.allowEditing() && !detailsState.isLoading && detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
+                                enabled = detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
                             )
                         }
                     }
@@ -368,9 +457,10 @@ fun DetailsScreenRoot(
 
             Box(
                 modifier = Modifier
-                    .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
                     .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
                     .imePadding()
+                    .padding(top = 8.dp, start = 8.dp, end = 8.dp)
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter
             ) {

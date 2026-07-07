@@ -34,10 +34,10 @@ import spectacled.shared.generated.resources.close
 fun BottomSheetWithMenu(
     sheetState: SheetState = rememberModalBottomSheetState(),
     headline: String? = null,
-    menuAction: @Composable () -> Unit = { },
+    menuActionLeft: @Composable () -> Unit = { },
+    menuActionRight: @Composable () -> Unit = { },
     showLoadingIndicator: Boolean = false,
     gesturesEnabled: Boolean = true,
-    allowClose: Boolean = true,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth().padding(16.dp),
     content: @Composable () -> Unit,
@@ -54,12 +54,7 @@ fun BottomSheetWithMenu(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                TextButton(
-                    onClick = { onDismiss() },
-                    enabled = allowClose
-                ) {
-                    Text(stringResource(Res.string.close))
-                }
+                menuActionLeft()
             }
 
 
@@ -78,7 +73,7 @@ fun BottomSheetWithMenu(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-                menuAction()
+                menuActionRight()
             }
         }
     }
@@ -119,7 +114,7 @@ private fun BottomSheetWithMenu_Preview() {
             BottomSheetWithMenu(
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 showLoadingIndicator = true,
-                menuAction = {
+                menuActionRight = {
                     TextButton(
                         onClick = { },
                     ) {
@@ -127,6 +122,7 @@ private fun BottomSheetWithMenu_Preview() {
                     }
 
                 },
+
                 onDismiss = {}
             ) {
                 Text("Sample content")
@@ -147,7 +143,7 @@ private fun BottomSheetWithMenu_Headline_Preview() {
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 headline = "Headline",
                 showLoadingIndicator = true,
-                menuAction = {
+                menuActionRight = {
                     TextButton(
                         onClick = { },
                     ) {

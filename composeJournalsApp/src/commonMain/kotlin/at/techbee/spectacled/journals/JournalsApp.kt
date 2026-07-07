@@ -12,12 +12,8 @@ import kotlin.time.ExperimentalTime
 @Composable
 @Preview
 fun JournalsApp(
-    initialCalendarId: Long? = null,
-    initialIcalEntryId: Long? = null,
     onCloseApp: () -> Unit = {}
 ) = SpectacledApp(
     spectacledVariant = SpectacledVariant.JOURNALS,
-    initialCalendarId = initialCalendarId,
-    initialIcalEntryId = initialIcalEntryId,
     onCloseApp = onCloseApp
 )

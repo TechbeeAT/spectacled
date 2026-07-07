@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -13,6 +15,10 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.theme.AppTheme
+import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.done
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,22 +34,16 @@ fun CalendarSelectorBottomSheet(
 
     BottomSheetWithMenu(
         sheetState = sheetState,
-        allowClose = calendars.any { it.id == selectedCalendarId },
         onDismiss = { onDismiss() },
         headline = "Select calendar/folder",
-        menuAction = {
-            /*
-            if(allowNoDate) {
-                TextButton(
-                    onClick = { onDateSelected(null) }
-                ) {
-                    Text(stringResource(Res.string.done))
-                }
+        menuActionRight = {
+            TextButton(
+                onClick = { onDismiss() },
+                enabled = calendars.any { it.id == selectedCalendarId }
+            ) {
+                Text(stringResource(Res.string.done))
             }
-
-             */
-
-        }
+        },
     ) {
 
         CalendarSelector(

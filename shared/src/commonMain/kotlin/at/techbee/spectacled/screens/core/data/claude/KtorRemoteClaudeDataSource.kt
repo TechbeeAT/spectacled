@@ -4,6 +4,7 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.shared.BuildKonfig
+import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.header
@@ -29,7 +30,7 @@ class KtorRemoteClaudeDataSource(
 
     suspend fun applyAiMetadata(icalEntry: IcalEntry): ClaudeRemoteResponseResult {
 
-        val dtStartPromptPart = if(icalEntry.isJournal()) {
+        val dtStartPromptPart = if (icalEntry.isJournal()) {
             """
                 "dtstart": "The date or datetime of the journal entry RFC-5545 compliant if mentioned, otherwise null", 
                 """
@@ -60,7 +61,7 @@ class KtorRemoteClaudeDataSource(
           "categories": ["list", "of", "topic", "tags"]
         }
         
-        Now is ${formatIcsDateTime(IcsDateTime.now())!! .first}
+        Now is ${formatIcsDateTime(IcsDateTime.now())!!.first}
                 
         Raw text:
         ${icalEntry.summary}
@@ -68,32 +69,29 @@ class KtorRemoteClaudeDataSource(
     """.trimIndent()
 
         try {
-            client.use { httpClient ->
-                httpClient.post(ANTHROPIC_BASE_URL) {
-                    contentType(ContentType.Application.Json)
-                    header(
-                        "x-api-key",
-                        BuildKonfig.ANTHROPIC_API_KEY
-                    )
-                    header("anthropic-version", "2023-06-01")
-                    setBody(buildJsonObject {
-                        put("model", "claude-sonnet-4-6")
-                        put("max_tokens", 1000)
-                        putJsonArray("messages") {
-                            addJsonObject {
-                                put("role", "user")
-                                put("content", prompt)
-                            }
+            val response = client.post(ANTHROPIC_BASE_URL) {
+                contentType(ContentType.Application.Json)
+                header(
+                    "x-api-key",
+                    BuildKonfig.ANTHROPIC_API_KEY
+                )
+                header("anthropic-version", "2023-06-01")
+                setBody(buildJsonObject {
+                    put("model", "claude-sonnet-4-6")
+                    put("max_tokens", 1000)
+                    putJsonArray("messages") {
+                        addJsonObject {
+                            put("role", "user")
+                            put("content", prompt)
                         }
-                    })
-                }
-                    .body<ClaudeResponseDto>()
-                    .applyClaudeResponse(icalEntry)
-                    .let { return ClaudeRemoteResponseResult.Success(it) }
+                    }
+                })
+            }.body<ClaudeResponseDto>()
 
-            }
+            return ClaudeRemoteResponseResult.Success(response.applyClaudeResponse(icalEntry))
+
         } catch (e: Exception) {
-            println("Error: ${e.stackTraceToString()}")
+            Napier.e("AI metadata request failed", e)
             return ClaudeRemoteResponseResult.Failed(
                 message = "Fetching AI response failed",
                 details = e.message

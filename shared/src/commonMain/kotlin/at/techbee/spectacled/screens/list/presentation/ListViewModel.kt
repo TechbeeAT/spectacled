@@ -69,14 +69,16 @@ class ListViewModel(
             try {
                 val principal = calendarRepository.getPrincipalForCalendar(calendarId) ?: throw NullPointerException("Principal not found")
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw NullPointerException("Credentials not found")
+                val calendar = calendarRepository.getCalendarById(calendarId) ?: throw NullPointerException("Calendar not found")
 
                 _state.update { it.copy(
                     principal = principal,
-                    credentials = credentials
+                    credentials = credentials,
+                    calendar = calendar
                 ).recompute() }
 
                 launch { observeCalendar(calendarId) }
-                launch { observeIcalentries() }
+                launch { observeIcalentries(calendarId) }
                 launch { observeColors() }
                 launch { observeCategories() }
 
@@ -96,8 +98,8 @@ class ListViewModel(
             }
     }
 
-    private suspend fun observeIcalentries() {
-        icalEntryRepository.getIcalEntriesByCalendarFlow(_state.value.calendar.id)
+    private suspend fun observeIcalentries(calendarId: Long) {
+        icalEntryRepository.getIcalEntriesByCalendarFlow(calendarId)
             .collect { emittedIcalEntries ->
                 _state.update { it.copy(
                     icalEntries = emittedIcalEntries,

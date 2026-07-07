@@ -34,11 +34,14 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_task
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.summary
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,20 +55,20 @@ fun AddSubtaskBottomSheet(
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
+        delay(300.milliseconds)
         focusRequester.requestFocus()
     }
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
         headline = stringResource(Res.string.add_subtask),
-        menuAction = {
+        menuActionRight = {
             TextButton(
-                onClick = { onSubtaskAdded(subtaskSummary) },
-                enabled = subtaskSummary.isNotBlank()
+                onClick = { onDismiss() },
             ) {
-                Text("Add")
+                Text(stringResource(Res.string.done))
             }
-        }
+        },
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),

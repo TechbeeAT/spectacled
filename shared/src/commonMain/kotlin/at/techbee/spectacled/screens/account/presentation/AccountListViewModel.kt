@@ -219,7 +219,7 @@ class AccountListViewModel(
                     calDavPrivileges = listOf(CalDavPrivilege.WRITE),
                     calendarSyncStatus = null,
                     syncToken = null,
-                    syncComponent = spectacledVariant.syncCalendarComponent
+                    attachmentCollectionUrl = null
                 ),
                 testUrl
             )
@@ -321,7 +321,6 @@ class AccountListViewModel(
                         when(val discoverCalendarsResult = discoverCalendars(
                             client = client,
                             homeCollection = homeCollection,
-                            supportedCalendarComponent = spectacledVariant.syncCalendarComponent,
                             credentials = credentials
                         )) {
                             is DiscoverCalendarsResult.Failed -> {
@@ -345,6 +344,9 @@ class AccountListViewModel(
                                 val disabledCalendarUrls = _state.value.calendars.filter { it.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED }.map { it.url }
 
                                 discoverCalendarsResult.calendars.forEach { calendar ->
+
+                                    if(calendar.supportedComponents.none { it == spectacledVariant.mainCalendarComponent })
+                                        return@forEach     // skip calendars that don't support the mainCalendarComponent of the app
 
                                     calendarRepository.upsertCalendar(
                                         calendar =
@@ -396,11 +398,7 @@ class AccountListViewModel(
             try {
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
                 val upsertCalendarResult = if(calendar.id == 0L) {
-                    createCalendarMultiplatform(
-                        client = client,
-                        newCalendar = calendar.copy(syncComponent = spectacledVariant.syncCalendarComponent),
-                        credentials = credentials
-                    )
+                    createCalendarMultiplatform(client,calendar, credentials)
                 } else {
                     updateCalDavCalendarMultiplatform(client, calendar, credentials)
                 }

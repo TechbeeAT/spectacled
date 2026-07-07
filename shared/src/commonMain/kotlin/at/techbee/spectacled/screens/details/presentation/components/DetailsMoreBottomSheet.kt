@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentPaste
+import androidx.compose.material.icons.outlined.ContentPasteGo
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.FileCopy
@@ -18,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -35,6 +37,7 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import at.techbee.spectacled.theme.AppTheme
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.copied_to_clipboard
@@ -42,6 +45,8 @@ import spectacled.shared.generated.resources.copy_to_clipboard
 import spectacled.shared.generated.resources.create_copy
 import spectacled.shared.generated.resources.created
 import spectacled.shared.generated.resources.delete
+import spectacled.shared.generated.resources.done
+import spectacled.shared.generated.resources.ic_cognition
 import spectacled.shared.generated.resources.last_modified
 import spectacled.shared.generated.resources.send_as_email
 import spectacled.shared.generated.resources.share
@@ -62,6 +67,13 @@ fun DetailsMoreBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onAction(DetailsAction.OnShowMoreBottomSheet(false)) },
+        menuActionRight = {
+            TextButton(
+                onClick = { onAction(DetailsAction.OnShowMoreBottomSheet(false)) },
+            ) {
+                Text(stringResource(Res.string.done))
+            }
+        },
     ) {
 
         val copiedToClipboardText = stringResource(Res.string.copied_to_clipboard)
@@ -139,6 +151,23 @@ fun DetailsMoreBottomSheet(
                         clipboard.setText(shareText)
                     }
                     onAction(DetailsAction.OnUpdateSnackbar(copiedToClipboardText))
+                },
+                colors = MenuDefaults.itemColors().copy(
+                    textColor = MaterialTheme.colorScheme.primary,
+                    leadingIconColor = MaterialTheme.colorScheme.primary
+                )
+            )
+
+            DropdownMenuItem(
+                leadingIcon = {
+                    Icon(
+                        painterResource(Res.drawable.ic_cognition),
+                        "AI Extract (Claude; experimental)"
+                    )
+                },
+                text = { Text("AI Extract (Claude; experimental)") },
+                onClick = {
+                    onAction(DetailsAction.OnProcessWithAI)
                 },
                 colors = MenuDefaults.itemColors().copy(
                     textColor = MaterialTheme.colorScheme.primary,

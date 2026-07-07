@@ -36,11 +36,13 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 import io.ktor.http.parseUrl
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_edit_url
 import spectacled.shared.generated.resources.delete
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.url
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,17 +66,29 @@ fun EditUrlBottomSheet(
     val url by derivedStateOf { parseUrl(textFieldValue.text) }
 
     LaunchedEffect(Unit) {
+        delay(300.milliseconds)
         focusRequester.requestFocus()
     }
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
-        headline = stringResource(Res.string.add_edit_url),
-        menuAction = {
+        headline = stringResource(Res.string.url),
+        menuActionRight = {
+            TextButton(
+                onClick = {
+                    onDismiss()
+                },
+                enabled = url != null
+            ) {
+                Text(stringResource(Res.string.done))
+            }
+        },
+        menuActionLeft = {
             TextButton(
                 onClick = {
                     textFieldValue = TextFieldValue("")
                     onUrlEdited(null)
+                    onDismiss()
                 }
             ) {
                 Text(stringResource(Res.string.delete))

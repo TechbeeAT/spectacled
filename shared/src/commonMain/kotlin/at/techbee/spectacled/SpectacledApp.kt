@@ -3,9 +3,14 @@ package at.techbee.spectacled
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
@@ -48,8 +53,10 @@ enum class SpectacledVariant(
     val dbName: String,
     val appNameStringRes: StringResource,
     val logoDrawableResource: DrawableResource,
-    val syncCalendarComponent: CalendarComponent,
+    val mainCalendarComponent: CalendarComponent,
     val themeSeedColor: Color,
+    val deeplinkUriScheme: String,
+    val deeplinkWebUri: String
 ) {
 
     JOURNALS(
@@ -57,27 +64,40 @@ enum class SpectacledVariant(
         Res.string.app_name_spectacled_journals,
         Res.drawable.logo_spectacled_journals,
         CalendarComponent.VJOURNAL,
-        Color(0, 104, 150)
+        Color(0, 104, 150),
+        "spectacled-journals",
+        "https://spectacled.techbee.at/journals"
     ),
     NOTES(
         "spectacled_notes.db",
         Res.string.app_name_spectacled_notes,
         Res.drawable.logo_spectacled_notes,
         CalendarComponent.VJOURNAL,
-        Color(153, 76, 44)
+        Color(153, 76, 44),
+        "spectacled-notes",
+        "https://spectacled.techbee.at/notes"
+
     ),
     TASKS(
         "spectacled_tasks.db",
         Res.string.app_name_spectacled_tasks,
         Res.drawable.logo_spectacled_tasks,
         CalendarComponent.VTODO,
-        Color(41, 111, 35)
+        Color(41, 111, 35),
+        "spectacled-tasks",
+        "https://spectacled.techbee.at/tasks"
     );
 }
 
+var isNapierInitialized = false
+
 fun doInitKoin(spectacledVariant: SpectacledVariant) {
-    if (KoinPlatform.getKoinOrNull() == null) {
+    if (!isNapierInitialized) {
         Napier.base(DebugAntilog())
+        isNapierInitialized = true
+    }
+
+    if (KoinPlatform.getKoinOrNull() == null) {
         startKoin {
             modules(
                 module { single { spectacledVariant } },
@@ -91,8 +111,6 @@ fun doInitKoin(spectacledVariant: SpectacledVariant) {
 @Composable
 fun SpectacledApp(
     spectacledVariant: SpectacledVariant,
-    initialCalendarId: Long? = null,
-    initialIcalEntryId: Long? = null,
     onCloseApp: () -> Unit = {}
 ) {
     doInitKoin(spectacledVariant)
@@ -104,101 +122,119 @@ fun SpectacledApp(
         spectacledVariant = spectacledVariant
     ) {
 
-        val navController = rememberNavController()
         //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
+        val navController = rememberNavController()
 
-        val startDestination =
-            if (initialIcalEntryId != null && initialCalendarId != null) {
-                if (initialIcalEntryId == 0L)
-                    Route.AddICalEntry(initialCalendarId)
+        // 1. Stable start destination for the graph life-cycle
+        val initialData = remember { DeepLinkHandler.deepLinkData }
+        val startDestination = remember(initialData) {
+            if (initialData.consumed) {
+                Route.AccountsList
+            } else if (initialData.initialIcalEntryId != null) {
+                if (initialData.initialIcalEntryId == 0L)
+                    Route.AddICalEntry(calendarId = initialData.initialCalendarId ?: 0L, initialDescription = initialData.initialIcalEntryDescription)
                 else
-                    Route.IcalEntryDetails(initialIcalEntryId)
-            } else if (initialCalendarId != null) {
-                Route.IcalEntryList(initialCalendarId)
+                    Route.IcalEntryDetails(initialData.initialIcalEntryId)
+            } else if (initialData.initialCalendarId != null) {
+                Route.IcalEntryList(initialData.initialCalendarId)
             } else {
                 Route.AccountsList
             }
+        }
+        
+        // 2. Mark initial deep link as consumed once the graph is set up
+        if (startDestination !is Route.AccountsList) {
+            LaunchedEffect(Unit) {
+                DeepLinkHandler.consume()
+            }
+        }
 
-        NavHost(
-            navController = navController,
-            startDestination = Route.HomeGraph
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
         ) {
-            navigation<Route.HomeGraph>(startDestination) {
+            NavHost(
+                navController = navController,
+                startDestination = Route.HomeGraph
+            ) {
+                navigation<Route.HomeGraph>(startDestination) {
 
-                composable<Route.AccountsList> {
-                    AccountListScreenRoot(
-                        viewModel = koinViewModel<AccountListViewModel>(),
-                        onNavigate = { route -> navController.navigate(route) }
-                    )
-                }
-
-                composable<Route.IcalEntryList>(
-                    enterTransition = { slideInHorizontally { fullWidth -> fullWidth } },
-                    exitTransition = { slideOutHorizontally { fullWidth -> -fullWidth } },
-                    popEnterTransition = { slideInHorizontally { fullWidth -> -fullWidth } },
-                    popExitTransition = { slideOutHorizontally { fullWidth -> fullWidth } }
-                ) { args ->
-
-                    val listViewModel = koinViewModel<ListViewModel>()
-                    val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
-
-                    LaunchedEffect(calendarId) {
-                        listViewModel.load(calendarId)
+                    composable<Route.AccountsList> {
+                        AccountListScreenRoot(
+                            viewModel = koinViewModel<AccountListViewModel>(),
+                            onNavigate = { route -> navController.navigate(route) }
+                        )
                     }
 
-                    ListScreenRoot(
-                        listViewModel = listViewModel,
-                        onNavigate = { route -> navController.navigate(route) },
-                        onNavigateUp = {
-                            if (!navController.popBackStack())   // only relevant when opening app from Android widget
-                                onCloseApp()
+                    composable<Route.IcalEntryList>(
+                        enterTransition = { slideInHorizontally { fullWidth -> fullWidth } },
+                        exitTransition = { slideOutHorizontally { fullWidth -> -fullWidth } },
+                        popEnterTransition = { slideInHorizontally { fullWidth -> -fullWidth } },
+                        popExitTransition = { slideOutHorizontally { fullWidth -> fullWidth } }
+                    ) { args ->
+
+                        val listViewModel = koinViewModel<ListViewModel>()
+                        val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
+
+                        LaunchedEffect(calendarId) {
+                            listViewModel.load(calendarId)
                         }
-                    )
-                }
 
-                composable<Route.IcalEntryDetails> { args ->
-                    val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
-                    val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
-
-                    LaunchedEffect(icalEntryId) {
-                        detailsViewModel.load(icalEntryId)
-                    }
-
-                    DetailsScreenRoot(
-                        detailsViewModel = detailsViewModel,
-                        onNavigate = { route -> navController.navigate(route) },
-                        onNavigateUp = {
-                            if (!navController.popBackStack()) {   // only relevant when opening app from Android widget
-                                onCloseApp()
+                        ListScreenRoot(
+                            listViewModel = listViewModel,
+                            onNavigate = { route -> navController.navigate(route) },
+                            onNavigateUp = {
+                                if (!navController.popBackStack())
+                                    onCloseApp()
                             }
-                        }
-                    )
-                }
-
-                composable<Route.AddICalEntry> { args ->
-                    val copyFromId = args.toRoute<Route.AddICalEntry>().copyFromId
-                    val calendarId = args.toRoute<Route.AddICalEntry>().calendarId
-
-                    val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
-
-                    LaunchedEffect(copyFromId, calendarId) {
-                        if (copyFromId != null)
-                            detailsViewModel.loadCopy(copyFromId)
-                        else if(calendarId != 0L)
-                            detailsViewModel.loadNew(calendarId)
-                        else
-                            detailsViewModel.prepareNew()
+                        )
                     }
 
-                    DetailsScreenRoot(
-                        detailsViewModel = detailsViewModel,
-                        onNavigate = { route -> navController.navigate(route) },
-                        onNavigateUp = {
-                            if (!navController.popBackStack()) {  // only relevant when opening app from Android widget or shortcut
-                                onCloseApp()
-                            }
+                    composable<Route.IcalEntryDetails> { args ->
+                        val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
+                        val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
+
+                        LaunchedEffect(icalEntryId) {
+                            detailsViewModel.load(icalEntryId)
                         }
-                    )
+
+                        DetailsScreenRoot(
+                            detailsViewModel = detailsViewModel,
+                            onNavigate = { route -> navController.navigate(route) },
+                            onNavigateUp = {
+                                if (!navController.popBackStack()) {
+                                    onCloseApp()
+                                }
+                            }
+                        )
+                    }
+
+                    composable<Route.AddICalEntry> { args ->
+                        val copyFromId = args.toRoute<Route.AddICalEntry>().copyFromId
+                        val calendarId = args.toRoute<Route.AddICalEntry>().calendarId
+                        val initialDescription = args.toRoute<Route.AddICalEntry>().initialDescription
+
+                        val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
+
+                        LaunchedEffect(copyFromId, calendarId, initialDescription) {
+                            if (copyFromId != null)
+                                detailsViewModel.loadCopy(copyFromId)
+                            else if (calendarId != 0L)
+                                detailsViewModel.loadNew(calendarId, initialDescription)
+                            else
+                                detailsViewModel.prepareNew(initialDescription)
+                        }
+
+                        DetailsScreenRoot(
+                            detailsViewModel = detailsViewModel,
+                            onNavigate = { route -> navController.navigate(route) },
+                            onNavigateUp = {
+                                if (!navController.popBackStack()) {
+                                    onCloseApp()
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -207,9 +243,35 @@ fun SpectacledApp(
             syncTrigger.schedulePeriodic()
             syncTrigger.requestImmediate()
 
-            if (initialCalendarId == null) {
-                userAppPreferencesStore.lastUsedCalendarId?.let {
-                    navController.navigate(Route.IcalEntryList(it))
+            // 3. Robust auto-navigation: Only move to last used calendar if NO deep link was ever seen
+            if (DeepLinkHandler.deepLinkData.isEmpty()) {
+                val lastUsedId = userAppPreferencesStore.lastUsedCalendarId
+                // Re-check isEmpty() after potential async loading of preferences
+                if (lastUsedId != null && DeepLinkHandler.deepLinkData.isEmpty()) {
+                    navController.navigate(Route.IcalEntryList(lastUsedId))
+                }
+            }
+        }
+
+        // Handle reactive navigation for already open app (or late-arriving deep links on iOS)
+        LaunchedEffect(DeepLinkHandler.deepLinkData) {
+            val deepLinkData = DeepLinkHandler.deepLinkData
+            if (!deepLinkData.consumed) {
+                if (deepLinkData.initialIcalEntryId != null) {
+                    if (deepLinkData.initialIcalEntryId == 0L) {
+                        navController.navigate(
+                            Route.AddICalEntry(
+                                calendarId = deepLinkData.initialCalendarId ?: 0L,
+                                initialDescription = deepLinkData.initialIcalEntryDescription
+                            )
+                        )
+                    } else {
+                        navController.navigate(Route.IcalEntryDetails(deepLinkData.initialIcalEntryId))
+                    }
+                    DeepLinkHandler.consume()
+                } else if (deepLinkData.initialCalendarId != null) {
+                    navController.navigate(Route.IcalEntryList(deepLinkData.initialCalendarId))
+                    DeepLinkHandler.consume()
                 }
             }
         }

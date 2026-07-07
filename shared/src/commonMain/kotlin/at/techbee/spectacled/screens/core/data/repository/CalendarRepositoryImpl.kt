@@ -143,7 +143,7 @@ class CalendarRepositoryImpl(
                 calDavPrivileges = calendarDto.calDavPrivileges,
                 calendarSyncStatus = calendarDto.calendarSyncStatus,
                 syncToken = calendarDto.syncToken,
-                syncComponent = calendarDto.syncComponent
+                attachmentCollectionUrl = calendarDto.attachmentCollectionUrl
             )
             // insert, but if the entry exists, it will be ignored
             getDatabase().calendar_dtoQueries.insertCalendar(
@@ -157,7 +157,7 @@ class CalendarRepositoryImpl(
                 calDavPrivileges = calendarDto.calDavPrivileges,
                 calendarSyncStatus = calendarDto.calendarSyncStatus,
                 syncToken = calendarDto.syncToken,
-                syncComponent = calendarDto.syncComponent
+                attachmentCollectionUrl = calendarDto.attachmentCollectionUrl
             )
         }
 

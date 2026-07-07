@@ -47,13 +47,14 @@ object IOSSyncEntryPoint : KoinComponent {
     private val client: HttpClient by inject()
     private val calendarRepository: CalendarRepository by inject()
     private val icalEntryRepository: IcalEntryRepository by inject()
+    private val fileManager: PlatformFileManager by inject()
     private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun runBackgroundSync(onFinished: () -> Unit) {
         bgScope.launch {
             try {
                 Napier.d("BG Sync coroutine started")
-                SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, credentialStore, client)
+                SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
                 Napier.d("BG Sync coroutine finished")
             } finally {
                 onFinished()
@@ -65,7 +66,7 @@ object IOSSyncEntryPoint : KoinComponent {
         bgScope.launch {
             try {
                 Napier.d("BG Sync for specific calendars coroutine started")
-                SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, credentialStore, client)
+                SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
                 Napier.d("BG Sync for specific calendars coroutine finished")
             } finally {
                 onFinished()
@@ -77,7 +78,7 @@ object IOSSyncEntryPoint : KoinComponent {
         bgScope.launch {
             try {
                 Napier.d("BG Push for specific calendar coroutine started")
-                SyncCoordinator.pushLocalChanges(calendarId, calendarRepository, icalEntryRepository, credentialStore, client)
+                SyncCoordinator.pushLocalChanges(calendarId, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
                 Napier.d("BG Push for specific calendar coroutine finished")
             } finally {
                 onFinished()

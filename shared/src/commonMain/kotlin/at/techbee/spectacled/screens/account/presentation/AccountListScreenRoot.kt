@@ -4,8 +4,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.GroupAdd
@@ -16,6 +18,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +48,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
+import spectacled.shared.generated.resources.close
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -236,8 +240,10 @@ fun AccountListScreenRoot(
 
         Box(
             modifier = Modifier
-                .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
                 .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+                .imePadding()
+                .padding(top = 8.dp, start = 8.dp, end = 8.dp)
                 .fillMaxSize(),
             contentAlignment = Alignment.BottomCenter
         ) {
@@ -291,7 +297,13 @@ fun AccountListScreenRoot(
             BottomSheetWithMenu(
                 sheetState = aboutBottomSheetState,
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
-                menuAction = { },
+                menuActionRight = {
+                    TextButton(
+                        onClick = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
+                    ) {
+                        Text(stringResource(Res.string.close))
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()  // override padding
             ) {
                 AboutScreen(koinInject<AboutViewModel>())

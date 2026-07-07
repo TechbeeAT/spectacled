@@ -22,6 +22,7 @@
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
     <string name="restore">Restore</string>
+    <string name="discard">Discard</string>
 
     <string name="menu">Menu</string>
     <string name="accounts">Accounts</string>
@@ -118,7 +119,17 @@
     <string name="subtask">Subtask</string>
     <string name="add_subtask">Add subtask</string>
     <string name="url">URL</string>
-    <string name="add_edit_url">Add/edit URL</string>
+    <string name="add_url">Add URL</string>
+    <string name="add_attachment">Add attachment</string>
+    <string name="attachment">Attachment</string>
+    <string name="add_photo">Add photo</string>
+    <string name="add_from_gallery">Add from gallery</string>
+    <string name="add_drawing">Add drawing</string>
+    <string name="drawing">Drawing</string>
+    <string name="pen">Pen</string>
+    <string name="marker">Marker</string>
+    <string name="eraser">Eraser</string>
+
 
     <string name="sync_conflict_entry_modified_while_server_modified">This entry has been modified locally while it was modified on the server.</string>
     <string name="sync_conflict_entry_deleted_while_server_modified">This entry has been deleted locally while it was modified on the server.</string>

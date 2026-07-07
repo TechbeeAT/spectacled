@@ -26,20 +26,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
+import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.details.presentation.components.UrlCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
@@ -66,9 +76,29 @@ fun DetailsScreen(
     var summaryIsFocused by rememberSaveable { mutableStateOf(false) }
     var descriptionIsFocused by rememberSaveable { mutableStateOf(false) }
 
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val scrollState = rememberScrollState()
+    // removes the keyboard when user scrolls to the top
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // available.y > 0 means pulling DOWN.
+                // If we are at the top (scrollState.value <= 0) and pulling more down
+                if (available.y > 0 && scrollState.value <= 0) {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
 
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState())
+        modifier = modifier
+            .nestedScroll(nestedScrollConnection)
+            .verticalScroll(scrollState)
     ) {
 
         if(state.icalEntry.isTask() || state.icalEntry.isJournal()) {
@@ -167,6 +197,7 @@ fun DetailsScreen(
                 ),
                 enabled = state.allowEditing(),
                 visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
+                cursorBrush = SolidColor(LocalContentColor.current),
                 modifier = Modifier
                     .onFocusChanged { summaryIsFocused = it.isFocused }
                     .weight(1f)
@@ -192,6 +223,7 @@ fun DetailsScreen(
             ),
             enabled = state.allowEditing(),
             visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
+            cursorBrush = SolidColor(LocalContentColor.current),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 100.dp)
@@ -208,9 +240,22 @@ fun DetailsScreen(
 
                 UrlCard(
                     url = state.icalEntry.url ?: Url(""),
-                    //onUrlChanged = { onAction(DetailsAction.OnUpdateUrl(it)) },
+                    onClick = onAction,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
+            }
+        }
+
+        AnimatedVisibility(state.icalEntry.attachments.isNotEmpty()) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                state.icalEntry.attachments.forEach { attachment ->
+                    AttachmentCard(
+                        attachment = attachment,
+                        onAction = onAction
+                    )
+                }
             }
         }
 
@@ -283,7 +328,11 @@ private fun ListScreen_Preview() {
 private fun ListScreen_with_dtstart_Preview() {
     DetailsScreen(
         state = DetailsState(
-            icalEntry = IcalEntry.getSampleIcalEntry().copy(dtStart = IcsDateTime.now(), url = Url("https://spectacled.techbee.at")),
+            icalEntry = IcalEntry.getSampleIcalEntry().copy(
+                dtStart = IcsDateTime.now(),
+                url = Url("https://spectacled.techbee.at"),
+                attachments = listOf(Attachment(fileName = "test.pdf", size = 128000))
+            ),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
         ),
         onAction = {}

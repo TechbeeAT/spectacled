@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditOff
@@ -20,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -49,6 +52,7 @@ import at.techbee.spectacled.screens.list.presentation.components.DeleteSelected
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
+import kotlinx.coroutines.delay
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -56,10 +60,12 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_journal
 import spectacled.shared.generated.resources.add_note
 import spectacled.shared.generated.resources.add_task
+import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.ic_add_journal
 import spectacled.shared.generated.resources.ic_add_note
 import spectacled.shared.generated.resources.ic_add_task
 import spectacled.shared.generated.resources.read_only
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,10 +119,10 @@ fun ListScreenRoot(
 
         LaunchedEffect(state.isSearchBarExpanded) {
             if (state.isSearchBarExpanded) {
+                delay(300.milliseconds)
                 searchBarFocusRequester.requestFocus()
                 keyboardController?.show()
             } else {
-                searchBarFocusRequester.freeFocus()
                 keyboardController?.hide()
             }
         }
@@ -132,6 +138,13 @@ fun ListScreenRoot(
         if (state.showUpdateColorOfSelectedBottomSheet) {
             BottomSheetWithMenu(
                 onDismiss = { listViewModel.onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(false)) },
+                menuActionRight = {
+                    TextButton(
+                        onClick = { listViewModel.onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(false)) }
+                    ) {
+                        Text(stringResource(Res.string.done))
+                    }
+                },
             ) {
                 ColorSelectorElement(
                     recentColors = state.icalEntries
@@ -327,6 +340,8 @@ fun ListScreenRoot(
             Box(
                 modifier = Modifier
                     .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
+                    .imePadding()
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter
             ) {
@@ -337,8 +352,9 @@ fun ListScreenRoot(
                         ListFilterRow(
                             listFilterCriteria = state.listFilterCriteria,
                             allCategories = state.icalEntries.flatMap { it.categories }.distinct(),
-                            calendarComponent = state.spectacledVariant.syncCalendarComponent,
-                            onAction = { listViewModel.onAction(it) }
+                            calendarComponent = state.spectacledVariant.mainCalendarComponent,
+                            onAction = { listViewModel.onAction(it) },
+                            searchBarFocusRequester = searchBarFocusRequester
                         )
                     }
 

@@ -32,6 +32,7 @@ import at.techbee.spectacled.screens.list.presentation.components.EmptyListScree
 import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
 import at.techbee.spectacled.screens.list.presentation.components.MonthHeader
+import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import kotlinx.coroutines.launch
@@ -53,6 +54,7 @@ fun JournalsListJournals(
     @Composable
     fun LazyItemScope.getListItem(
         icalEntry: IcalEntry,
+        subtasks: List<IcalEntry> = emptyList(),
         index: Int,
         lastIndex: Int,
         showDayBlock: Boolean = false,
@@ -81,10 +83,28 @@ fun JournalsListJournals(
             modifier = Modifier
                 .widthIn(max = 700.dp)
                 .heightIn(min = 50.dp)
-                .padding(end = 8.dp)
+                .padding(end = 8.dp, start = if(icalEntry.isNote()) 44.dp else 0.dp)
                 .then(modifier)
                 .animateItem()
         )
+
+        subtasks.forEach { subtask ->
+
+            TaskListItem(
+                icalEntry = subtask,
+                onClick = {
+                    if (state.multiselectItems == null)
+                        onAction(ListAction.OnIcalEntryClicked(subtask.id))
+                    else
+                        onAction(ListAction.OnToggleMultiselectItem(subtask.id))
+                },
+                isSelected = state.multiselectItems?.contains(subtask.id) == true,
+                onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
+                onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
+                onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+                modifier = Modifier.padding(start = 64.dp, end = 16.dp)
+            )
+        }
     }
 
     LaunchedEffect(state.scrollToDate) {
@@ -132,12 +152,10 @@ fun JournalsListJournals(
                 return@forEach
 
             stickyHeader {
-                groupedByMonth[monthGroup]?.firstOrNull()?.dtStart?.let {
-                    MonthHeader(
-                        icsDateTime = it,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
+                MonthHeader(
+                    icsDateTime = groupedByMonth[monthGroup]?.firstOrNull()?.dtStart,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
             }
 
             if (monthGroup !in state.listCollapsedGroups) {
@@ -150,6 +168,7 @@ fun JournalsListJournals(
 
                     getListItem(
                         icalEntry = icalEntry,
+                        subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
                         index = index,
                         lastIndex = groupedByMonth[monthGroup]!!.lastIndex,
                         overrideTopRoundedCornerSize = if (index == 0) 16.dp else 0.dp,
@@ -189,6 +208,7 @@ fun JournalsListJournals(
                 items(state.trashbin, key = { note -> note.uid }) { note ->
                     getListItem(
                         icalEntry = note,
+                        subtasks = state.subtasks[note.uid] ?: emptyList(),
                         index = 0,
                         lastIndex = 0,
                         showDayBlock = true,

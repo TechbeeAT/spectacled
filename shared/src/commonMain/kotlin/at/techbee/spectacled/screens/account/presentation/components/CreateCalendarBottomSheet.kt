@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.account.presentation.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -11,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -32,17 +34,22 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.theme.AppTheme
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.create_folder
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.folder
 import spectacled.shared.generated.resources.update_folder
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
@@ -56,16 +63,28 @@ fun CreateOrUpdateCalendarBottomSheet(
     recentColors: List<Color>,
     onCreateOrUpdateCalendar: (Principal, HomeCollection, Calendar) -> Unit,
     onDismiss: () -> Unit,
+    spectacledVariant: SpectacledVariant = koinInject()
     ) {
 
     var calendarName by rememberSaveable { mutableStateOf(calendar.displayName?:"") }
     var calendarDescription by rememberSaveable { mutableStateOf(calendar.calendarDescription?:"") }
     var color by remember { mutableStateOf(calendar.color) }
+    var supportedCalendarComponents by remember {
+        mutableStateOf(
+            if(calendar.id == 0L && spectacledVariant in listOf(SpectacledVariant.JOURNALS, SpectacledVariant.NOTES))
+                listOf(CalendarComponent.VJOURNAL, CalendarComponent.VTODO)
+            else if(calendar.id == 0L)
+                listOf(CalendarComponent.VTODO)
+            else
+                calendar.supportedComponents
+        )
+    }
 
     val focusRequester = remember { FocusRequester() }
 
 
     LaunchedEffect(Unit) {
+        delay(300.milliseconds)
         focusRequester.requestFocus()
     }
 
@@ -78,7 +97,14 @@ fun CreateOrUpdateCalendarBottomSheet(
         sheetState = sheetState,
         gesturesEnabled = false,
         showLoadingIndicator = processingState is ProcessingState.Processing,
-        menuAction = {
+        menuActionLeft = {
+            TextButton(
+                onClick = { onDismiss() },
+            ) {
+                Text(stringResource(Res.string.cancel))
+            }
+        },
+        menuActionRight = {
 
             TextButton(
                 onClick = {
@@ -89,6 +115,7 @@ fun CreateOrUpdateCalendarBottomSheet(
                             displayName = calendarName,
                             calendarDescription = calendarDescription,
                             color = if (color == Color.Unspecified) null else color,
+                            supportedComponents = if(calendar.id == 0L) supportedCalendarComponents else calendar.supportedComponents
                         )
                     )
                 },
@@ -132,6 +159,28 @@ fun CreateOrUpdateCalendarBottomSheet(
                 label = { Text(stringResource(Res.string.description)) },
                 singleLine = true
             )
+
+            // only visible for new folders
+            if(calendar.id == 0L && spectacledVariant != SpectacledVariant.TASKS) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+
+                    Text("Include support for subtasks")
+
+                    Switch(
+                        checked = supportedCalendarComponents.contains(CalendarComponent.VTODO),
+                        onCheckedChange = {
+                            supportedCalendarComponents = if (supportedCalendarComponents.contains(CalendarComponent.VTODO))
+                                supportedCalendarComponents.minus(CalendarComponent.VTODO)
+                            else
+                                supportedCalendarComponents.plus(CalendarComponent.VTODO)
+                        }
+                    )
+                }
+            }
+
 
 
             ColorSelectorElement(
@@ -198,7 +247,8 @@ private fun CreateOrUpdateCalendarBottomSheet_create_Preview() {
                 processingState = ProcessingState.Error("This is the error"),
                 recentColors = emptyList(),
                 onCreateOrUpdateCalendar = { _, _, _ -> },
-                onDismiss = {}
+                onDismiss = {},
+                spectacledVariant = SpectacledVariant.JOURNALS
             )
         }
     }
@@ -219,7 +269,8 @@ private fun CreateOrUpdateCalendarBottomSheet_update_Preview() {
                 processingState = ProcessingState.Processing,
                 recentColors = listOf(Color.Green, Color.Red),
                 onCreateOrUpdateCalendar = { _, _, _ -> },
-                onDismiss = {}
+                onDismiss = {},
+                spectacledVariant = SpectacledVariant.JOURNALS
             )
         }
     }

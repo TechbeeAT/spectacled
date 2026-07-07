@@ -24,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -48,6 +49,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.close
+import spectacled.shared.generated.resources.settings
 import spectacled.shared.generated.resources.theme
 import spectacled.shared.generated.resources.theme_amoled
 import spectacled.shared.generated.resources.theme_dynamic_colors
@@ -76,10 +80,17 @@ fun SettingsBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
-        headline = "Settings",
+        headline = stringResource(Res.string.settings),
         sheetState = sheetState,
         gesturesEnabled = false,
-        menuAction = { }
+        menuActionLeft = { },
+        menuActionRight = {
+            TextButton(
+                onClick = { onDismiss() },
+            ) {
+                Text(stringResource(Res.string.close))
+            }
+        },
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),

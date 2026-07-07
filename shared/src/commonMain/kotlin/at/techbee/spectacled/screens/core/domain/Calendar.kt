@@ -19,7 +19,7 @@ data class Calendar(
     val calDavPrivileges: List<CalDavPrivilege>, // A type-safe List
     val calendarSyncStatus: CalendarSyncStatus?,
     val syncToken: String?,
-    val syncComponent: CalendarComponent?
+    val attachmentCollectionUrl: Url? = null
 ) {
 
     companion object {
@@ -34,8 +34,7 @@ data class Calendar(
             supportedComponents = emptyList(),
             calDavPrivileges = emptyList(),
             calendarSyncStatus = null,
-            syncToken = null,
-            syncComponent = null
+            syncToken = null
         )
 
         @OptIn(ExperimentalUuidApi::class)
@@ -51,8 +50,7 @@ data class Calendar(
                 supportedComponents = emptyList(),
                 calDavPrivileges = emptyList(),
                 calendarSyncStatus = null,
-                syncToken = null,
-                syncComponent = null
+                syncToken = null
             )
         }
     }

@@ -46,11 +46,9 @@ fun ListFilterRow(
     allCategories: List<String>,
     calendarComponent: CalendarComponent,
     onAction: (ListAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    searchBarFocusRequester: FocusRequester = remember { FocusRequester() }
 ) {
-
-    val searchBarFocusRequester = remember { FocusRequester() }
-    //val keyboardController = LocalSoftwareKeyboardController.current
 
     var categoryDropdownExpanded by remember { mutableStateOf(false) }
     var statusDropdownExpanded by remember { mutableStateOf(false) }
