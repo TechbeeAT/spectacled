@@ -8,6 +8,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
@@ -26,6 +27,10 @@ object HttpClientFactory {
                     }
                 }
                 level = LogLevel.ALL
+                sanitizeHeader { header ->
+                    // sanitizing x-api-key is specifically for Anthropic and might be removed in the future
+                    header == HttpHeaders.Authorization || header.equals("x-api-key", ignoreCase = true)
+                }
             }
 
             install(HttpTimeout) {
