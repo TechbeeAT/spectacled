@@ -11,7 +11,8 @@ fun HomeCollectionDto.toDomain(): HomeCollection {
         id = this.id,
         principalId = this.principalId,
         url = try { Url(this.url) } catch (_: URLParserException) { Url("") },
-        calDavPrivileges = this.calDavPrivileges?.split(',')?.mapNotNull { CalDavPrivilege.fromTag(it) }?: emptyList()
+        calDavPrivileges = this.calDavPrivileges?.split(',')?.mapNotNull { CalDavPrivilege.fromTag(it) }?: emptyList(),
+        attachmentCollectionUrl = this.attachmentCollectionUrl?.let { Url(it) }
     )
 }
 
@@ -20,6 +21,7 @@ fun HomeCollection.toDto(): HomeCollectionDto {
         id = this.id,
         principalId = this.principalId,
         url = this.url.toString(),
-        calDavPrivileges = this.calDavPrivileges.joinToString(",") { it.tag }
+        calDavPrivileges = this.calDavPrivileges.joinToString(",") { it.tag },
+        attachmentCollectionUrl = this.attachmentCollectionUrl?.toString()
     )
 }

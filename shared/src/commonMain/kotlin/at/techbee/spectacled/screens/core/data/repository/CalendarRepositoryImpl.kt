@@ -113,13 +113,15 @@ class CalendarRepositoryImpl(
             getDatabase().home_collection_dtoQueries.updateHomeCollection(
                 principalUrl = principalUrl.toString(),
                 url = homeCollectionDto.url,
-                calDavPrivileges = homeCollectionDto.calDavPrivileges
+                calDavPrivileges = homeCollectionDto.calDavPrivileges,
+                attachmentCollectionUrl = homeCollectionDto.attachmentCollectionUrl
             )
             // insert, but if the entry exists, it will be ignored
             getDatabase().home_collection_dtoQueries.insertHomeCollection(
                 principalUrl = principalUrl.toString(),
                 url = homeCollectionDto.url,
-                calDavPrivileges = homeCollectionDto.calDavPrivileges
+                calDavPrivileges = homeCollectionDto.calDavPrivileges,
+                attachmentCollectionUrl = homeCollectionDto.attachmentCollectionUrl
             )
         }
 

@@ -247,14 +247,13 @@ suspend fun discoverHomeCollections(
                                 principalId = 0L,
                                 url = URLBuilder(effectiveLocation).takeFrom(calendarHomeSet).build(),
                                 calDavPrivileges = emptyList(),  // populated later
+                                attachmentCollectionUrl = sharedAttachmentUrl
                             )
                         )
                     }
                 }
             }
             
-            // Note: Since HomeCollection doesn't store attachmentUrl yet, we could consider adding it or 
-            // relying on the Calendar-level discovery which we'll also improve.
             return DiscoverHomeCollectionsResult.Success(principalDisplayName, principalCalendarUserAddressSet, homeCollections.toList())
 
         } catch (e: XmlParsingException) {
@@ -268,7 +267,6 @@ suspend fun discoverHomeCollections(
 suspend fun discoverCalendars(
     client: HttpClient,
     homeCollection: HomeCollection,
-    //supportedCalendarComponent: CalendarComponent,
     credentials: Credentials?
 ): DiscoverCalendarsResult {
 
@@ -346,7 +344,7 @@ suspend fun discoverCalendars(
 
                     val attachmentUrl = (propStat.prop.attachmentCollection?.href ?: propStat.prop.calendarDropbox?.href)?.let { 
                         URLBuilder(homeCollection.url).takeFrom(it).build() 
-                    }
+                    } ?: homeCollection.attachmentCollectionUrl
 
                     calendars.add(
                         Calendar(
