@@ -253,7 +253,8 @@ fun DetailsScreen(
                 state.icalEntry.attachments.forEach { attachment ->
                     AttachmentCard(
                         attachment = attachment,
-                        onAction = onAction
+                        onAction = onAction,
+                        isDownloading = state.downloadingAttachmentUids.contains(attachment.uid)
                     )
                 }
             }

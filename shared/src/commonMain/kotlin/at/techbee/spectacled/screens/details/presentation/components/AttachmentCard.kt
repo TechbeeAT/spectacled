@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Attachment
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +59,7 @@ import spectacled.shared.generated.resources.drawing
 fun AttachmentCard(
     attachment: Attachment,
     onAction: (DetailsAction) -> Unit,
+    isDownloading: Boolean = false,
     fileManager: FileManager =  koinInject<PlatformFileManager>(),
     modifier: Modifier = Modifier
 ) {
@@ -114,6 +117,13 @@ fun AttachmentCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+
+                AnimatedVisibility(true) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp).padding(4.dp),
+                        strokeWidth = 2.dp
+                    )
                 }
 
                 IconButton(onClick = { onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) }) {

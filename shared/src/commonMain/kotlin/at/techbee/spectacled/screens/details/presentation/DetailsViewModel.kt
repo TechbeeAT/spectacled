@@ -738,7 +738,7 @@ class DetailsViewModel(
         } else if (attachment.remoteUrl != null) {
             viewModelScope.launch {
                 try {
-                    _state.update { it.copy(isLoading = true) }
+                    _state.update { it.copy(downloadingAttachmentUids = it.downloadingAttachmentUids + attachmentUid) }
                     
                     val principalUrl = calendarRepository.getPrincipalUrlForCalendarId(_state.value.icalEntry.calendarId)
                         ?.let { Url(it) } ?: throw Exception("Principal not found")
@@ -761,7 +761,7 @@ class DetailsViewModel(
                 } catch (e: Exception) {
                     _state.update { it.copy(snackbarText = "Error: ${e.message}") }
                 } finally {
-                    _state.update { it.copy(isLoading = false) }
+                    _state.update { it.copy(downloadingAttachmentUids = it.downloadingAttachmentUids - attachmentUid) }
                 }
             }
         }

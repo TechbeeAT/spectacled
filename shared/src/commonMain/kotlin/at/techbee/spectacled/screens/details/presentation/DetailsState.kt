@@ -34,6 +34,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val showDrawingCanvasBottomSheet: DetailsAction.OnShowDrawingCanvasBottomSheet = DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
 
     val isLoading: Boolean = true,
+    val downloadingAttachmentUids: Set<String> = emptySet(),
 
     val snackbarText: String? = null,
     val navigateUp: Boolean = false,
