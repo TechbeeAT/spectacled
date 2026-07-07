@@ -80,7 +80,8 @@ private fun AboutScreen_Preview() {
     AboutScreen(
         AboutViewModel(
             client = HttpClientFactory.create(getPlatformEngine()),
-            spectacledVariant = SpectacledVariant.JOURNALS)
+            spectacledVariant = SpectacledVariant.JOURNALS
+        )
     )
 }
 
