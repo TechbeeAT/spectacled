@@ -145,6 +145,7 @@ class IcalEntryRepositoryImpl(
         val db = getDatabase()
 
         db.transaction {
+
             // first update, if the UID doesn't exist, this is ignored
             db.icalentry_dtoQueries.updateIcalEntry(
                 calendarId = icalEntryDto.calendarId,
@@ -207,13 +208,16 @@ class IcalEntryRepositoryImpl(
                 relType = icalEntryDto.relType,
                 url = icalEntryDto.url
             )
+        }
 
-            // Get the actual ID of the entry (it's either the existing one or the one just inserted)
-            val entryId = db.icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).executeAsOne().id
+        // Get the actual ID of the entry (it's either the existing one or the one just inserted)
+        val entryId = db.icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).executeAsOne().id
 
-            // Handle attachments within the same transaction
-            val existingAttachments = db.attachment_dtoQueries.getAttachmentsForEntry(entryId).executeAsList()
-            val currentAttachmentUids = icalEntry.attachments.map { it.uid }.toSet()
+        // Handle attachments within the same transaction
+        val existingAttachments = db.attachment_dtoQueries.getAttachmentsForEntry(entryId).executeAsList()
+        val currentAttachmentUids = icalEntry.attachments.map { it.uid }.toSet()
+
+        db.transaction {
 
             existingAttachments.forEach { existing ->
                 if (existing.uid !in currentAttachmentUids) {
