@@ -68,84 +68,88 @@ fun parseIcsDateTime(
 
     if (value == null) return null
 
-    return when {
+    // Wrapped in runCatching: a malformed value (wrong length, non-digit chars, etc.) should
+    // degrade to "unparseable" rather than throw and abort parsing of the whole ICS response.
+    return runCatching {
+        when {
 
-        // DATE (YYYYMMDD)
-        value.length == 8 -> {
-            val date = LocalDate.parse(
-                "${value.substring(0,4)}-" +
-                        "${value.substring(4,6)}-" +
-                        value.substring(6,8)
-            )
+            // DATE (YYYYMMDD)
+            value.length == 8 -> {
+                val date = LocalDate.parse(
+                    "${value.substring(0,4)}-" +
+                            "${value.substring(4,6)}-" +
+                            value.substring(6,8)
+                )
 
-            IcsDateTime(
-                instant = date.atStartOfDayIn(TimeZone.UTC),
-                isDateOnly = true,
-                timeZone = null   // DATE values have no TZID semantics
-            )
+                IcsDateTime(
+                    instant = date.atStartOfDayIn(TimeZone.UTC),
+                    isDateOnly = true,
+                    timeZone = null   // DATE values have no TZID semantics
+                )
+            }
+
+            // UTC DATE-TIME (YYYYMMDDTHHMMSSZ)
+            value.length >= 16 && value.endsWith("Z") -> {
+                val instant = Instant.parse(
+                    "${value.substring(0,4)}-" +
+                            "${value.substring(4,6)}-" +
+                            "${value.substring(6,8)}T" +
+                            "${value.substring(9,11)}:" +
+                            "${value.substring(11,13)}:" +
+                            "${value.substring(13,15)}Z"
+                )
+
+                IcsDateTime(
+                    instant = instant,
+                    isDateOnly = false,
+                    timeZone = TimeZone.UTC
+                )
+            }
+
+            // TZID provided (floating local time in specific zone)
+            tzid != null && value.length >= 15 -> {
+                val localDateTime = LocalDateTime.parse(
+                    "${value.substring(0,4)}-" +
+                            "${value.substring(4,6)}-" +
+                            "${value.substring(6,8)}T" +
+                            "${value.substring(9,11)}:" +
+                            "${value.substring(11,13)}:" +
+                            value.substring(13,15)
+                )
+
+                val zone = runCatching {
+                    TimeZone.of(tzid)
+                }.getOrNull() ?: TimeZone.UTC
+
+                IcsDateTime(
+                    instant = localDateTime.toInstant(zone),
+                    isDateOnly = false,
+                    timeZone = zone
+                )
+            }
+
+            // Floating DATE-TIME (no Z, no TZID)
+            value.length == 15 && value[8] == 'T' -> {
+                val localDateTime = LocalDateTime.parse(
+                    "${value.substring(0,4)}-" +
+                            "${value.substring(4,6)}-" +
+                            "${value.substring(6,8)}T" +
+                            "${value.substring(9,11)}:" +
+                            "${value.substring(11,13)}:" +
+                            value.substring(13,15)
+                )
+
+                // Treat floating as UTC (safe default)
+                IcsDateTime(
+                    instant = localDateTime.toInstant(TimeZone.UTC),
+                    isDateOnly = false,
+                    timeZone = null
+                )
+            }
+
+            else -> null
         }
-
-        // UTC DATE-TIME (YYYYMMDDTHHMMSSZ)
-        value.endsWith("Z") -> {
-            val instant = Instant.parse(
-                "${value.substring(0,4)}-" +
-                        "${value.substring(4,6)}-" +
-                        "${value.substring(6,8)}T" +
-                        "${value.substring(9,11)}:" +
-                        "${value.substring(11,13)}:" +
-                        "${value.substring(13,15)}Z"
-            )
-
-            IcsDateTime(
-                instant = instant,
-                isDateOnly = false,
-                timeZone = TimeZone.UTC
-            )
-        }
-
-        // TZID provided (floating local time in specific zone)
-        tzid != null -> {
-            val localDateTime = LocalDateTime.parse(
-                "${value.substring(0,4)}-" +
-                        "${value.substring(4,6)}-" +
-                        "${value.substring(6,8)}T" +
-                        "${value.substring(9,11)}:" +
-                        "${value.substring(11,13)}:" +
-                        value.substring(13,15)
-            )
-
-            val zone = runCatching {
-                TimeZone.of(tzid)
-            }.getOrNull() ?: TimeZone.UTC
-
-            IcsDateTime(
-                instant = localDateTime.toInstant(zone),
-                isDateOnly = false,
-                timeZone = zone
-            )
-        }
-
-        // Floating DATE-TIME (no Z, no TZID)
-        value.length == 15 && value[8] == 'T' -> {
-            val localDateTime = LocalDateTime.parse(
-                "${value.substring(0,4)}-" +
-                        "${value.substring(4,6)}-" +
-                        "${value.substring(6,8)}T" +
-                        "${value.substring(9,11)}:" +
-                        "${value.substring(11,13)}:" +
-                        value.substring(13,15)
-            )
-
-            // Treat floating as UTC (safe default)
-            IcsDateTime(
-                instant = localDateTime.toInstant(TimeZone.UTC),
-                isDateOnly = false,
-                timeZone = null
-            )
-        }
-
-        else -> null
-    }
+    }.getOrNull()
 }
 
 
@@ -305,6 +309,7 @@ fun parseIcalEntries(
     return calendarComponentBlocks
         .filter { it.first == CalendarComponent.VJOURNAL || it.first == CalendarComponent.VTODO }
         .mapNotNull { (component, block) ->
-            parseIcalEntryBlock(block, component, fileManager)
+            // A single malformed block shouldn't abort parsing of the whole response.
+            runCatching { parseIcalEntryBlock(block, component, fileManager) }.getOrNull()
         }
 }
