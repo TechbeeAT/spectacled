@@ -264,7 +264,7 @@ class AccountListViewModel(
             try {
 
                 // STEP 1: Discover principals
-                val discoverPrincipalsResult = discoverPrincipalsMultiplatform(client, Url(credentials.server), credentials)
+                val discoverPrincipalsResult = discoverPrincipalsMultiplatform(client, credentials.server, credentials)
                 when(discoverPrincipalsResult) {
                     is DiscoverPrincipalsResult.Failed -> {
                         _state.update { it.copy(processingState = ProcessingState.Error(message = discoverPrincipalsResult.message, detail = discoverPrincipalsResult.details)) }
@@ -281,7 +281,7 @@ class AccountListViewModel(
                     is DiscoverPrincipalsResult.Success -> {
                         discoverPrincipalsResult.principals.forEach { principal ->
                             //principals are upserted with the discovery of homesets to avoid double db operations
-                            credentialStore.save(Credentials(principal.principalUrl.toString(), credentials.username, credentials.password))
+                            credentialStore.save(Credentials(principal.principalUrl, credentials.username, credentials.password))
                             Napier.d("Principal added")
                         }
                     }

@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,7 @@ import at.techbee.spectacled.screens.account.presentation.components.datastructu
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
+import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
@@ -78,6 +80,7 @@ fun AddPrincipalBottomSheet(
 ) {
 
     var server by rememberSaveable { mutableStateOf("") }
+    val serverUrl by derivedStateOf { Url(server) }
     var username by rememberSaveable { mutableStateOf("") }
     val passwordState = rememberTextFieldState()
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
@@ -101,7 +104,7 @@ fun AddPrincipalBottomSheet(
         menuActionRight = {
             TextButton(
                 onClick = {
-                    onAction(AccountListAction.OnAddPrincipal(Credentials(server, username, passwordState.text.toString())))
+                    onAction(AccountListAction.OnAddPrincipal(Credentials(serverUrl, username, passwordState.text.toString())))
                 },
                 enabled = server.isNotBlank() && username.isNotBlank() && passwordState.text.isNotEmpty() && processingState !is ProcessingState.Processing
             ) {
@@ -249,7 +252,7 @@ fun AddPrincipalBottomSheet(
 
                             TextButton(
                                 onClick = {
-                                    onAction(AccountListAction.OnAddPrincipal(Credentials(server, username, passwordState.text.toString())))
+                                    onAction(AccountListAction.OnAddPrincipal(Credentials(serverUrl, username, passwordState.text.toString())))
                                 },
                                 enabled = server.isNotBlank() && username.isNotBlank() && passwordState.text.isNotEmpty() && processingState !is ProcessingState.Processing
                             ) {
