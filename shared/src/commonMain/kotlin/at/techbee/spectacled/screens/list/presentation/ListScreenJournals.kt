@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,7 +36,6 @@ import at.techbee.spectacled.screens.list.presentation.components.MonthHeader
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
-import at.techbee.spectacled.theme.rememberColorSchemeResolver
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -51,7 +51,6 @@ fun JournalsListJournals(
 
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val colorSchemeFor = rememberColorSchemeResolver()
 
     @Composable
     fun LazyItemScope.getListItem(
@@ -88,7 +87,7 @@ fun JournalsListJournals(
                 .padding(end = 8.dp, start = if(icalEntry.isNote()) 44.dp else 0.dp)
                 .then(modifier)
                 .animateItem(),
-            colorScheme = colorSchemeFor(icalEntry.color)
+            colorScheme = state.colorSchemes[icalEntry.color] ?: MaterialTheme.colorScheme
         )
 
         subtasks.forEach { subtask ->
@@ -106,7 +105,7 @@ fun JournalsListJournals(
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                 onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
                 modifier = Modifier.padding(start = 64.dp, end = 16.dp),
-                colorScheme = colorSchemeFor(subtask.color)
+                colorScheme = state.colorSchemes[subtask.color] ?: MaterialTheme.colorScheme
             )
         }
     }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,7 +34,6 @@ import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeade
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
-import at.techbee.spectacled.theme.rememberColorSchemeResolver
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
@@ -51,7 +51,6 @@ fun ListScreenTasks(
 ) {
 
     val hapticFeedback = LocalHapticFeedback.current
-    val colorSchemeFor = rememberColorSchemeResolver()
 
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
@@ -85,7 +84,7 @@ fun ListScreenTasks(
                 .heightIn(min = 50.dp)
                 .then(modifier)
                 .animateItem(),
-            colorScheme = colorSchemeFor(icalEntry.color)
+            colorScheme = state.colorSchemes[icalEntry.color] ?: MaterialTheme.colorScheme
         )
 
         subtasks.forEach { subtask ->

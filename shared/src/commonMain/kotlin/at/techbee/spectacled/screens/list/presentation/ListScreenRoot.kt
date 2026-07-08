@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -95,6 +96,13 @@ fun ListScreenRoot(
 
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(state.calendar.color)) {
 
+        // isSystemInDarkTheme() is Compose-only, so it's bridged into the ViewModel here -
+        // the one place shared by all three list variants - so ListState.colorSchemes can be
+        // precomputed correctly even when the user's theme setting is "follow system".
+        val systemIsDark = isSystemInDarkTheme()
+        LaunchedEffect(systemIsDark) {
+            listViewModel.onAction(ListAction.OnSystemDarkThemeChanged(systemIsDark))
+        }
 
         LaunchedEffect(state.snackbarText) {
             state.snackbarText?.let { message ->

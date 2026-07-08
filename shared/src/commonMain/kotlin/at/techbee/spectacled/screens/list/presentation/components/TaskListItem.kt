@@ -61,7 +61,7 @@ fun TaskListItem(
     onFilterCategory: (category: String) -> Unit,
     dragHandle: @Composable (() -> Unit) = { },
     modifier: Modifier = Modifier,
-    colorScheme: ColorScheme? = null // pass a resolved scheme (e.g. from rememberColorSchemeResolver) to avoid regenerating it per item in a list
+    colorScheme: ColorScheme? = null // pass a scheme resolved elsewhere (e.g. ListState.colorSchemes) to avoid regenerating it per item in a list
 ) {
 
     val hapticFeedback = LocalHapticFeedback.current
