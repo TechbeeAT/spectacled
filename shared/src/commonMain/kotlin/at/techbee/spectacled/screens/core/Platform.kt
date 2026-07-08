@@ -1,5 +1,7 @@
 package at.techbee.spectacled.screens.core
 
+import kotlinx.coroutines.CoroutineDispatcher
+
 
 enum class Platforms { ANDROID, IOS, DESKTOP, WASM }
 
@@ -9,3 +11,5 @@ interface Platform {
 }
 
 expect fun getPlatform(): Platform
+
+expect val ioDispatcher: CoroutineDispatcher

@@ -1,5 +1,8 @@
 package at.techbee.spectacled.screens.core
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+
 
 class WasmPlatform: Platform {
     override val platform: Platforms = Platforms.WASM
@@ -21,3 +24,5 @@ private external fun formatWithFormatter(formatter: JsAny, millis: Double): Stri
 @JsFun("() => navigator.language")
 private external fun getNavigatorLanguage(): String
 
+
+actual val ioDispatcher: CoroutineDispatcher = Dispatchers.Default
