@@ -87,9 +87,8 @@ class CalendarRepositoryImpl(
     }
 
     override suspend fun upsertPrincipal(principal: Principal): Long = withContext(ioDispatcher) {
-
-        val principalDto = principal.toDto()
         val db = getDatabase()
+        val principalDto = principal.toDto()
 
         db.principal_dtoQueries.transaction {
             // first update, if the entry doesn't exist, this is ignored
@@ -110,18 +109,19 @@ class CalendarRepositoryImpl(
     }
 
     override suspend fun upsertHomeCollection(homeCollection: HomeCollection, principalUrl: Url): Long = withContext(ioDispatcher) {
+        val db = getDatabase()
         val homeCollectionDto = homeCollection.toDto()
 
-        getDatabase().home_collection_dtoQueries.transaction {
+        db.home_collection_dtoQueries.transaction {
             // first update, if the entry doesn't exist, this is ignored
-            getDatabase().home_collection_dtoQueries.updateHomeCollection(
+            db.home_collection_dtoQueries.updateHomeCollection(
                 principalUrl = principalUrl.toString(),
                 url = homeCollectionDto.url,
                 calDavPrivileges = homeCollectionDto.calDavPrivileges,
                 attachmentCollectionUrl = homeCollectionDto.attachmentCollectionUrl
             )
             // insert, but if the entry exists, it will be ignored
-            getDatabase().home_collection_dtoQueries.insertHomeCollection(
+            db.home_collection_dtoQueries.insertHomeCollection(
                 principalUrl = principalUrl.toString(),
                 url = homeCollectionDto.url,
                 calDavPrivileges = homeCollectionDto.calDavPrivileges,
@@ -129,16 +129,17 @@ class CalendarRepositoryImpl(
             )
         }
 
-        getDatabase().home_collection_dtoQueries.getHomeCollectionsByUrl(homeCollectionDto.url).awaitAsOne().id
+        db.home_collection_dtoQueries.getHomeCollectionsByUrl(homeCollectionDto.url).awaitAsOne().id
     }
 
     override suspend fun upsertCalendar(calendar: Calendar, homeCollectionUrl: Url): Long = withContext(ioDispatcher) {
+        val db = getDatabase()
         val calendarDto = calendar.toDto()
 
-        getDatabase().calendar_dtoQueries.transaction {
+        db.calendar_dtoQueries.transaction {
 
             // first update, if the entry doesn't exist, this is ignored
-            getDatabase().calendar_dtoQueries.updateCalendar(
+            db.calendar_dtoQueries.updateCalendar(
                 homeCollectionUrl = homeCollectionUrl.toString(),
                 url = calendarDto.url,
                 displayName = calendarDto.displayName,
@@ -152,7 +153,7 @@ class CalendarRepositoryImpl(
                 attachmentCollectionUrl = calendarDto.attachmentCollectionUrl
             )
             // insert, but if the entry exists, it will be ignored
-            getDatabase().calendar_dtoQueries.insertCalendar(
+            db.calendar_dtoQueries.insertCalendar(
                 homeCollectionUrl = homeCollectionUrl.toString(),
                 url = calendarDto.url,
                 displayName = calendarDto.displayName,
@@ -167,7 +168,7 @@ class CalendarRepositoryImpl(
             )
         }
 
-        getDatabase().calendar_dtoQueries.getCalendarByUrl(calendarDto.url).awaitAsOne().id
+        db.calendar_dtoQueries.getCalendarByUrl(calendarDto.url).awaitAsOne().id
     }
 
     override suspend fun deletePrincipal(id: Long) {
