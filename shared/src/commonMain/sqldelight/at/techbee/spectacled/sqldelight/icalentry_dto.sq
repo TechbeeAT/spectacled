@@ -31,6 +31,10 @@ CREATE TABLE IcalEntryDto (
     url TEXT
 );
 
+CREATE INDEX idx_icalentry_calendarId ON IcalEntryDto(calendarId);
+CREATE INDEX idx_icalentry_href ON IcalEntryDto(href);
+CREATE INDEX idx_icalentry_parentUid ON IcalEntryDto(parentUid);
+
 getIcalEntriesByCalendar:
 SELECT * FROM IcalEntryDto WHERE calendarId = ?;
 
