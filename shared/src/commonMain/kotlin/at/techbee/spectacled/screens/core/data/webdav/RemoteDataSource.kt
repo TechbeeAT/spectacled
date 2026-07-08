@@ -818,7 +818,8 @@ suspend fun putResourceMultiplatform(
     client: HttpClient,
     calendar: Calendar,
     icalEntry: IcalEntry,
-    credentials: Credentials?
+    credentials: Credentials?,
+    fileManager: FileManager? = null
 ): PutResourceResult {
 
     val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
@@ -828,7 +829,7 @@ suspend fun putResourceMultiplatform(
             basicAuth(credentials.username, credentials.password)
         }
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
-        setBody(serializeVCalendar(icalEntry))
+        setBody(serializeVCalendar(icalEntry, fileManager))
         headers.apply {
             if(icalEntry.etag != null)    // send etag or * if a new entry should be created
                 append(HttpHeaders.IfMatch, icalEntry.etag)     // update

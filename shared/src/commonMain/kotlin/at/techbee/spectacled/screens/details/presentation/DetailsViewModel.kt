@@ -704,7 +704,7 @@ class DetailsViewModel(
     }
 
     @OptIn(ExperimentalTime::class)
-    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?) {
+    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
         viewModelScope.launch {
             val attachmentUid = Uuid.random().toString()
             val localPath = fileManager.saveAttachment("$fileName-${attachmentUid.take(8)}", bytes)
@@ -715,6 +715,7 @@ class DetailsViewModel(
                 localPath = localPath,
                 mimeType = mimeType,
                 size = bytes.size.toLong(),
+                isInline = isInline,
                 syncState = AttachmentSyncState.LOCAL_MODIFIED
             )
 
@@ -791,7 +792,8 @@ class DetailsViewModel(
         onAddAttachment(
             fileName = "drawing_" + Uuid.random().toString().take(8) + ".svg",
             bytes = svg.toByteArray(),
-            mimeType = MIMETYPE_SVG
+            mimeType = MIMETYPE_SVG,
+            isInline = true
         )
 
         replaceAttachmentUid?.let { onDeleteAttachment(it) }

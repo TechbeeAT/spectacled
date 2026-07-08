@@ -21,6 +21,7 @@ data class Attachment(
     val fileName: String? = null,
     val mimeType: String? = null,
     val size: Long? = null,
+    val isInline: Boolean = false,
     val syncState: AttachmentSyncState = AttachmentSyncState.LOCAL_MODIFIED
 ) {
     fun isSVG() = mimeType == MIMETYPE_SVG

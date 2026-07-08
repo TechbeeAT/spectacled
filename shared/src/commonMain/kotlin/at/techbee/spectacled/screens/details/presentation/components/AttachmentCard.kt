@@ -119,7 +119,7 @@ fun AttachmentCard(
                     }
                 }
 
-                AnimatedVisibility(true) {
+                AnimatedVisibility(isDownloading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp).padding(4.dp),
                         strokeWidth = 2.dp

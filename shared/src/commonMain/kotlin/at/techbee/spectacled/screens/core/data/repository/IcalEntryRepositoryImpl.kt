@@ -235,6 +235,7 @@ class IcalEntryRepositoryImpl(
                     fileName = attachmentDto.fileName,
                     mimeType = attachmentDto.mimeType,
                     size = attachmentDto.size,
+                    isInline = attachmentDto.isInline,
                     syncState = attachmentDto.syncState
                 )
             }
@@ -308,6 +309,7 @@ class IcalEntryRepositoryImpl(
             fileName = dto.fileName,
             mimeType = dto.mimeType,
             size = dto.size,
+            isInline = dto.isInline,
             syncState = dto.syncState
         )
     }

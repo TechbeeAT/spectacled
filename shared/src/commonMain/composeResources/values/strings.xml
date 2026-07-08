@@ -118,10 +118,12 @@
     <string name="entry_deleted">Entry deleted</string>
     <string name="subtask">Subtask</string>
     <string name="add_subtask">Add subtask</string>
+    <string name="subtasks_not_supported_in_collection">Not supported in this collection</string>
     <string name="url">URL</string>
     <string name="add_url">Add URL</string>
     <string name="add_attachment">Add attachment</string>
     <string name="attachment">Attachment</string>
+    <string name="attachment_not_supported_by_server">Not supported by server</string>
     <string name="add_photo">Add photo</string>
     <string name="add_from_gallery">Add from gallery</string>
     <string name="add_drawing">Add drawing</string>

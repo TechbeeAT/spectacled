@@ -222,7 +222,8 @@ fun parseIcalEntryBlock(
                             fileName = displayFileName,
                             mimeType = mimeType,
                             size = bytes.size.toLong(),
-                            syncState = AttachmentSyncState.LOCAL_MODIFIED // It's new locally from an inline block
+                            isInline = true,
+                            syncState = AttachmentSyncState.SYNCED // It's already synced as part of the ICS
                         )
                     )
                 } catch (_: Exception) {

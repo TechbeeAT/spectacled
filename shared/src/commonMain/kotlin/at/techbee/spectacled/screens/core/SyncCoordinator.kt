@@ -445,7 +445,7 @@ class SyncCoordinator(
 
             SyncState.LOCAL_MODIFIED -> {
                 val entryToPush = pushAttachments(dirtyIcalEntry, calendar)    // TODO: store error?
-                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials)
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials, fileManager)
                 when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
@@ -481,7 +481,7 @@ class SyncCoordinator(
             // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_CLIENT_WINS -> {
                 val entryToPush = pushAttachments(dirtyIcalEntry, calendar)
-                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials)
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials, fileManager)
                 when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
@@ -592,7 +592,7 @@ class SyncCoordinator(
 
     private suspend fun pushAttachments(icalEntry: IcalEntry, calendar: Calendar): IcalEntry {
         val updatedAttachments = icalEntry.attachments.map { attachment ->
-            if (attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED && attachment.localPath != null) {
+            if (!attachment.isInline && attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED && attachment.localPath != null) {
                 val fileName = "${attachment.uid}_${attachment.fileName ?: "file"}"
                 val uploadBaseUrl = calendar.attachmentCollectionUrl ?: calendar.url
                 val safeTargetUrl = Url(uploadBaseUrl.toString().trimEnd('/') + "/" + fileName)

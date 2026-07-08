@@ -7,7 +7,8 @@ CREATE TABLE AttachmentDto (
     fileName TEXT,
     mimeType TEXT,
     size INTEGER,
-    syncState TEXT NOT NULL -- 'LOCAL_MODIFIED', 'SYNCED', 'PENDING_DOWNLOAD'
+    syncState TEXT NOT NULL, -- 'LOCAL_MODIFIED', 'SYNCED', 'PENDING_DOWNLOAD'
+    isInline INTEGER NOT NULL DEFAULT 0
 );
 
 getAttachmentsForEntry:
@@ -37,8 +38,9 @@ INSERT OR REPLACE INTO AttachmentDto (
     fileName,
     mimeType,
     size,
-    syncState
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    syncState,
+    isInline
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateAttachmentSyncState:
 UPDATE AttachmentDto SET syncState = ? WHERE id = ?;

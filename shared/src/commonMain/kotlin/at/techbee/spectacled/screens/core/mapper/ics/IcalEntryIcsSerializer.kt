@@ -5,6 +5,9 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsParamName
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsPropertyName
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.FileManager
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
@@ -89,9 +92,9 @@ fun formatIcsDateTime(icsDateTime: IcsDateTime?): Pair<String, String?>? {
 }
 
 
-fun serializeVCalendar(icalEntry: IcalEntry) = serializeVCalendar(listOf(icalEntry))
+fun serializeVCalendar(icalEntry: IcalEntry, fileManager: FileManager? = null) = serializeVCalendar(listOf(icalEntry), fileManager)
 
-fun serializeVCalendar(icalEntries: List<IcalEntry>): String {
+fun serializeVCalendar(icalEntries: List<IcalEntry>, fileManager: FileManager? = null): String {
     val lines = mutableListOf<String>()
 
     lines += "BEGIN:VCALENDAR"
@@ -103,7 +106,7 @@ fun serializeVCalendar(icalEntries: List<IcalEntry>): String {
     }
 
     icalEntries.forEach { icalEntry ->
-        lines += serializeVJournal(icalEntry)
+        lines += serializeVJournal(icalEntry, fileManager)
             .split("\r\n")
     }
 
@@ -113,7 +116,7 @@ fun serializeVCalendar(icalEntries: List<IcalEntry>): String {
 }
 
 
-fun serializeVJournal(icalEntry: IcalEntry): String {
+fun serializeVJournal(icalEntry: IcalEntry, fileManager: FileManager? = null): String {
     val lines = mutableListOf<String>()
 
     lines += "BEGIN:${icalEntry.calendarComponent.name}"    // BEGIN:VJOURNAL or BEGIN:VTODO
@@ -177,13 +180,32 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
     }
 
     icalEntry.attachments.forEach { attachment ->
-        attachment.remoteUrl?.let { remoteUrl ->
-            val params = mutableListOf<String>()
-            attachment.mimeType?.let { params += "${KnownIcsParamName.FMTTYPE.paramName}=$it" }
-            attachment.fileName?.let { params += "${KnownIcsParamName.FILENAME.paramName}=${escapeIcsValue(it)}" }
+        if (attachment.isInline && fileManager != null && attachment.localPath != null) {
+            try {
+                val bytes = fileManager.readAttachment(attachment.localPath)
+                @OptIn(ExperimentalEncodingApi::class)
+                val base64 = Base64.encode(bytes)
+                
+                val params = mutableListOf<String>()
+                params += "${KnownIcsParamName.VALUE.paramName}=BINARY"
+                params += "${KnownIcsParamName.ENCODING.paramName}=BASE64"
+                attachment.mimeType?.let { params += "${KnownIcsParamName.FMTTYPE.paramName}=$it" }
+                attachment.fileName?.let { params += "${KnownIcsParamName.FILENAME.paramName}=${escapeIcsValue(it)}" }
 
-            val paramPart = if (params.isNotEmpty()) params.joinToString(";", prefix = ";") else ""
-            lines += "${KnownIcsPropertyName.ATTACH.propertyName}$paramPart:$remoteUrl"
+                val paramPart = params.joinToString(";", prefix = ";")
+                lines += "${KnownIcsPropertyName.ATTACH.propertyName}$paramPart:$base64"
+            } catch (_: Exception) {
+                // Skip if failed to read/encode
+            }
+        } else {
+            attachment.remoteUrl?.let { remoteUrl ->
+                val params = mutableListOf<String>()
+                attachment.mimeType?.let { params += "${KnownIcsParamName.FMTTYPE.paramName}=$it" }
+                attachment.fileName?.let { params += "${KnownIcsParamName.FILENAME.paramName}=${escapeIcsValue(it)}" }
+
+                val paramPart = if (params.isNotEmpty()) params.joinToString(";", prefix = ";") else ""
+                lines += "${KnownIcsPropertyName.ATTACH.propertyName}$paramPart:$remoteUrl"
+            }
         }
     }
 
