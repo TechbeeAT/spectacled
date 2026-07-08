@@ -16,25 +16,26 @@ actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
     private val credentialStore: PlatformCredentialStore by inject()
     private val calendarRepository: CalendarRepository by inject()
     private val icalEntryRepository: IcalEntryRepository by inject()
+    private val fileManager: PlatformFileManager by inject()
     private val client: HttpClient by inject()
     private val scope = MainScope()
 
 
     actual override fun requestImmediate() {
         scope.launch {
-            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, credentialStore, client)
+            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
         }
     }
 
     actual override fun requestImmediate(calendarIds: List<Long>) {
         scope.launch {
-            SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, credentialStore, client)
+            SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
         }
     }
 
     actual override fun requestImmediatePush(calendarId: Long) {
         scope.launch {
-            SyncCoordinator.pushLocalChanges(calendarId, calendarRepository, icalEntryRepository, credentialStore, client)
+            SyncCoordinator.pushLocalChanges(calendarId, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
         }
     }
 

@@ -1,18 +1,20 @@
 package at.techbee.spectacled.screens.core.data
 
+import eu.anifantakis.lib.ksafe.KSafe
+import eu.anifantakis.lib.ksafe.KSafeWriteMode
 import io.ktor.http.Url
 
 actual class PlatformCredentialStore(): CredentialStore {
 
-    private var cached: Credentials? = null
+    private val ksafe = KSafe(CREDENTIALS_FILE_NAME)
 
     actual override suspend fun save(credentials: Credentials) {
-        cached = credentials
+        ksafe.put(credentials.server, credentials, KSafeWriteMode.Encrypted())
     }
 
-    actual override suspend fun load(server: Url) = cached
+    actual override suspend fun load(server: Url): Credentials? = ksafe.get(server.toString(), null)
 
     actual override suspend fun clear(server: Url) {
-        cached = null
+        ksafe.delete(server.toString())
     }
 }
