@@ -1,7 +1,7 @@
 CREATE TABLE IcalEntryDto (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     calendarId INTEGER NOT NULL REFERENCES CalendarDto(id) ON DELETE CASCADE,
-    uid TEXT NOT NULL UNIQUE,
+    uid TEXT NOT NULL,
     summary TEXT,
     description TEXT,
     dtstart TEXT,
@@ -28,7 +28,8 @@ CREATE TABLE IcalEntryDto (
     calendarComponent TEXT,
     parentUid TEXT,
     relType TEXT,
-    url TEXT
+    url TEXT,
+    UNIQUE(calendarId, uid)
 );
 
 CREATE INDEX idx_icalentry_calendarId ON IcalEntryDto(calendarId);
@@ -45,7 +46,7 @@ getDeletedDeltaHrefs:
 SELECT IcalEntryDto.href FROM IcalEntryDto  WHERE calendarId = ? AND href NOT IN ? AND syncState != 'REMOTE_DELETED_LOCAL_TRASHBIN' AND href NOT NULL;
 
 getIcalEntryByUid:
-SELECT * FROM IcalEntryDto WHERE uid = ?;
+SELECT * FROM IcalEntryDto WHERE calendarId = ? AND uid = ?;
 
 getIcalEntryById:
 SELECT * FROM IcalEntryDto WHERE id = ?;
@@ -57,7 +58,7 @@ getIcalEntryByHref:
 SELECT * FROM IcalEntryDto WHERE href = ?;
 
 getSubtasksByParentUid:
-SELECT * FROM IcalEntryDto WHERE parentUid = :parentUid AND relType = 'PARENT';
+SELECT * FROM IcalEntryDto WHERE calendarId = :calendarId AND parentUid = :parentUid AND relType = 'PARENT';
 
 getAllColors:
 SELECT DISTINCT color FROM IcalEntryDto WHERE color IS NOT NULL ORDER BY lastModified DESC;
@@ -162,7 +163,7 @@ SET
     parentUid = :parentUid,
     relType = :relType,
     url = :url
-WHERE uid = :uid;
+WHERE calendarId = :calendarId AND uid = :uid;
 
 deleteTrashed:
 DELETE FROM IcalEntryDto WHERE lastModified < :cutOffTimestamp AND syncState = 'REMOTE_DELETED_LOCAL_TRASHBIN';

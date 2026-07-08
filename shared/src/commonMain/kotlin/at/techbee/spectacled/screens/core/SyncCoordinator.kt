@@ -345,7 +345,7 @@ class SyncCoordinator(
         }
 
         if (localIcalEntry == null) {
-            localIcalEntry = icalEntryRepository.getIcalEntryByUid(serverIcalEntry.uid)
+            localIcalEntry = icalEntryRepository.getIcalEntryByUid(calendar.id, serverIcalEntry.uid)
         }
 
         if (localIcalEntry == null) {     // Local IcalEntry doesn't exist, we insert

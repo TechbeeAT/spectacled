@@ -119,7 +119,7 @@ class DetailsViewModel(
                 navigateUp = false
             ) }
 
-            observeIcalEntry(icalEntry.uid)
+            observeIcalEntry(icalEntry.calendarId, icalEntry.uid)
         }
     }
 
@@ -143,7 +143,7 @@ class DetailsViewModel(
                 navigateUp = false
             ) }
 
-            observeIcalEntry(newIcalEntry.uid)
+            observeIcalEntry(newIcalEntry.calendarId, newIcalEntry.uid)
         }
     }
 
@@ -165,7 +165,7 @@ class DetailsViewModel(
                 navigateUp = false
             ) }
 
-            observeIcalEntry(newIcalEntry.uid)
+            observeIcalEntry(newIcalEntry.calendarId, newIcalEntry.uid)
         }
     }
 
@@ -203,7 +203,7 @@ class DetailsViewModel(
                 navigateUp = false
             ) }
 
-            observeIcalEntry(copiedIcalEntry.uid)
+            observeIcalEntry(copiedIcalEntry.calendarId, copiedIcalEntry.uid)
         }
     }
 
@@ -235,20 +235,20 @@ class DetailsViewModel(
     }
 
     private suspend fun observeSubtasks() {
-        _state.map { it.icalEntry.uid }
+        _state.map { it.icalEntry.calendarId to it.icalEntry.uid }
             .distinctUntilChanged()
-            .flatMapLatest { uid ->
-                icalEntryRepository.getSubtasksByParentUid(uid)
+            .flatMapLatest { (calendarId, uid) ->
+                icalEntryRepository.getSubtasksByParentUid(calendarId, uid)
             }
             .collect { subtasks ->
                 _state.update { it.copy(subtasks = subtasks) }
             }
     }
 
-    private fun observeIcalEntry(uid: String) {
+    private fun observeIcalEntry(calendarId: Long, uid: String) {
         entryObservationJob?.cancel()
         entryObservationJob = viewModelScope.launch {
-            icalEntryRepository.getIcalEntryByUidFlow(uid)
+            icalEntryRepository.getIcalEntryByUidFlow(calendarId, uid)
                 .collect { dbEntry ->
                     if (dbEntry == null) return@collect
                     _state.update { currentState ->
@@ -567,7 +567,7 @@ class DetailsViewModel(
                 val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
                 SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).pushDirtyIcalEntry(icalEntry, calendar)
-                val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.uid) ?: throw Exception(
+                val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.calendarId, icalEntry.uid) ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
 

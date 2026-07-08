@@ -46,9 +46,9 @@ class IcalEntryRepositoryImpl(
         }.flowOn(ioDispatcher)
     }
 
-    override fun getIcalEntryByUidFlow(uid: String): Flow<IcalEntry?> {
+    override fun getIcalEntryByUidFlow(calendarId: Long, uid: String): Flow<IcalEntry?> {
         return dbFlow.flatMapLatest { db ->
-            db.icalentry_dtoQueries.getIcalEntryByUid(uid).asFlow()
+            db.icalentry_dtoQueries.getIcalEntryByUid(calendarId, uid).asFlow()
                 .map { query ->
                     val dto = query.awaitAsOneOrNull() ?: return@map null
                     val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
@@ -64,9 +64,9 @@ class IcalEntryRepositoryImpl(
             dto.toDomain(attachments)
     }
 
-    override suspend fun getIcalEntryByUid(uid: String): IcalEntry? = withContext(ioDispatcher) {
+    override suspend fun getIcalEntryByUid(calendarId: Long, uid: String): IcalEntry? = withContext(ioDispatcher) {
         val db = getDatabase()
-        val dto = db.icalentry_dtoQueries.getIcalEntryByUid(uid).awaitAsOneOrNull() ?: return@withContext null
+        val dto = db.icalentry_dtoQueries.getIcalEntryByUid(calendarId, uid).awaitAsOneOrNull() ?: return@withContext null
         val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
         dto.toDomain(attachments)
     }
@@ -135,9 +135,9 @@ class IcalEntryRepositoryImpl(
         }.flowOn(ioDispatcher)
     }
 
-    override fun getSubtasksByParentUid(parentUid: String): Flow<List<IcalEntry>> {
+    override fun getSubtasksByParentUid(calendarId: Long, parentUid: String): Flow<List<IcalEntry>> {
         return dbFlow.flatMapLatest { db ->
-            db.icalentry_dtoQueries.getSubtasksByParentUid(parentUid).asFlow()
+            db.icalentry_dtoQueries.getSubtasksByParentUid(calendarId, parentUid).asFlow()
                 .map { query -> query.awaitAsList().map { it.toDomain() } }
         }.flowOn(ioDispatcher)
     }
@@ -214,7 +214,7 @@ class IcalEntryRepositoryImpl(
         }
 
         // Get the actual ID of the entry (it's either the existing one or the one just inserted)
-        val entryId = db.icalentry_dtoQueries.getIcalEntryByUid(icalEntry.uid).awaitAsOne().id
+        val entryId = db.icalentry_dtoQueries.getIcalEntryByUid(icalEntry.calendarId, icalEntry.uid).awaitAsOne().id
 
         // Handle attachments within the same transaction
         val existingAttachments = db.attachment_dtoQueries.getAttachmentsForEntry(entryId).awaitAsList()
@@ -244,7 +244,7 @@ class IcalEntryRepositoryImpl(
             }
         }
         
-        getIcalEntryByUid(icalEntry.uid)!!
+        getIcalEntryByUid(icalEntry.calendarId, icalEntry.uid)!!
     }
 
     override suspend fun markAsDeleted(ids: List<Long>) {
