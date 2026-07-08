@@ -297,7 +297,7 @@ private fun findTransition(timeZone: TimeZone, before: Instant, after: Instant):
 private fun generateVTimeZone(timeZone: TimeZone, instants: List<Instant>): List<String> {
     val lines = mutableListOf("BEGIN:VTIMEZONE", "TZID:${timeZone.id}")
 
-    instants.map { it.toLocalDateTime(timeZone).year }.toSortedSet().forEach { year ->
+    instants.map { it.toLocalDateTime(timeZone).year }.toSet().sorted().forEach { year ->
         val sampleA = LocalDate(year, 1, 15).atStartOfDayIn(TimeZone.UTC)
         val sampleB = LocalDate(year, 7, 15).atStartOfDayIn(TimeZone.UTC)
         val offsetA = timeZone.offsetAt(sampleA)
