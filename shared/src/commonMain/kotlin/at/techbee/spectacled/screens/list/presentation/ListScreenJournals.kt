@@ -35,6 +35,7 @@ import at.techbee.spectacled.screens.list.presentation.components.MonthHeader
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
+import at.techbee.spectacled.theme.rememberColorSchemeResolver
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -50,6 +51,7 @@ fun JournalsListJournals(
 
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val colorSchemeFor = rememberColorSchemeResolver()
 
     @Composable
     fun LazyItemScope.getListItem(
@@ -85,7 +87,8 @@ fun JournalsListJournals(
                 .heightIn(min = 50.dp)
                 .padding(end = 8.dp, start = if(icalEntry.isNote()) 44.dp else 0.dp)
                 .then(modifier)
-                .animateItem()
+                .animateItem(),
+            colorScheme = colorSchemeFor(icalEntry.color)
         )
 
         subtasks.forEach { subtask ->
@@ -102,7 +105,8 @@ fun JournalsListJournals(
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                 onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                modifier = Modifier.padding(start = 64.dp, end = 16.dp)
+                modifier = Modifier.padding(start = 64.dp, end = 16.dp),
+                colorScheme = colorSchemeFor(subtask.color)
             )
         }
     }

@@ -33,6 +33,7 @@ import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeade
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.theme.rememberColorSchemeResolver
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
@@ -50,6 +51,7 @@ fun ListScreenTasks(
 ) {
 
     val hapticFeedback = LocalHapticFeedback.current
+    val colorSchemeFor = rememberColorSchemeResolver()
 
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
@@ -82,7 +84,8 @@ fun ListScreenTasks(
                 .widthIn(max = 700.dp)
                 .heightIn(min = 50.dp)
                 .then(modifier)
-                .animateItem()
+                .animateItem(),
+            colorScheme = colorSchemeFor(icalEntry.color)
         )
 
         subtasks.forEach { subtask ->

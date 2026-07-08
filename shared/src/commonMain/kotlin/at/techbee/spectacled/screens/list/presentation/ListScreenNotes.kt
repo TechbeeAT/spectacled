@@ -39,6 +39,7 @@ import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.theme.rememberColorSchemeResolver
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
@@ -56,6 +57,7 @@ fun ListScreenNotes(
 ) {
 
     val hapticFeedback = LocalHapticFeedback.current
+    val colorSchemeFor = rememberColorSchemeResolver()
 
     val lazyStaggeredGridState: LazyStaggeredGridState = rememberLazyStaggeredGridState()
     val reorderableLazyListState = rememberReorderableLazyStaggeredGridState(lazyStaggeredGridState) { from, to ->
@@ -100,7 +102,8 @@ fun ListScreenNotes(
                     .widthIn(max = 700.dp)
                     .heightIn(min = 50.dp)
                     .then(modifier)
-                    .animateItem()
+                    .animateItem(),
+                colorScheme = colorSchemeFor(icalEntry.color)
             )
 
             subtasks.forEach { subtask ->
@@ -117,7 +120,8 @@ fun ListScreenNotes(
                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                     onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                     onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                    modifier = Modifier.padding(start = 48.dp)
+                    modifier = Modifier.padding(start = 48.dp),
+                    colorScheme = colorSchemeFor(subtask.color)
                 )
             }
         }
