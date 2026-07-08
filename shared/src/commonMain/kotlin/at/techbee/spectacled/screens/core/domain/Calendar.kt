@@ -23,6 +23,8 @@ data class Calendar(
 ) {
     fun isAttachmentSyncSupported(): Boolean = attachmentCollectionUrl != null
 
+    fun isTasksSupported(): Boolean = supportedComponents.contains(CalendarComponent.VTODO)
+
     companion object {
         fun getCalendarForPreview(): Calendar = Calendar(
             id = 0,

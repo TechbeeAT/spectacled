@@ -366,11 +366,12 @@ fun DetailsScreenRoot(
                                 text = {
                                     Column {
                                         Text(stringResource(Res.string.add_attachment))
-                                        Text(
-                                            text = stringResource(Res.string.attachment_not_supported_by_server),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.error
-                                        )
+                                        if(!detailsState.isAttachmentSupportEnabled())
+                                            Text(
+                                                text = stringResource(Res.string.attachment_not_supported_by_server),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
                                     }
                                 },
                                 leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
@@ -428,11 +429,12 @@ fun DetailsScreenRoot(
                                 text = {
                                     Column {
                                         Text(stringResource(Res.string.add_subtask))
-                                        Text(
-                                            text = stringResource(Res.string.subtasks_not_supported_in_collection),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.error
-                                        )
+                                        if(detailsState.calendar?.isTasksSupported() != true)
+                                            Text(
+                                                text = stringResource(Res.string.subtasks_not_supported_in_collection),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
                                     }
                                 },
                                 leadingIcon = { Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask)) },
