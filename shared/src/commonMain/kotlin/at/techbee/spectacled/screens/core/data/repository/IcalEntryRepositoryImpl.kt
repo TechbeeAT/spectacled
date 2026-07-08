@@ -14,6 +14,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
+import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
@@ -23,7 +24,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class IcalEntryRepositoryImpl(
@@ -40,7 +43,7 @@ class IcalEntryRepositoryImpl(
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).asFlow()
                 .map { query -> query.awaitAsList().map { it.toDomain() } }
-        }
+        }.flowOn(ioDispatcher)
     }
 
     override fun getIcalEntryByUidFlow(uid: String): Flow<IcalEntry?> {
@@ -51,55 +54,55 @@ class IcalEntryRepositoryImpl(
                     val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
                     dto.toDomain(attachments)
                 }
-        }
+        }.flowOn(ioDispatcher)
     }
 
-    override suspend fun getIcalEntryById(id: Long): IcalEntry? {
+    override suspend fun getIcalEntryById(id: Long): IcalEntry? = withContext(ioDispatcher) {
+            val db = getDatabase()
+            val dto = db.icalentry_dtoQueries.getIcalEntryById(id).awaitAsOneOrNull() ?: return@withContext null
+            val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
+            dto.toDomain(attachments)
+    }
+
+    override suspend fun getIcalEntryByUid(uid: String): IcalEntry? = withContext(ioDispatcher) {
         val db = getDatabase()
-        val dto = db.icalentry_dtoQueries.getIcalEntryById(id).awaitAsOneOrNull() ?: return null
+        val dto = db.icalentry_dtoQueries.getIcalEntryByUid(uid).awaitAsOneOrNull() ?: return@withContext null
         val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
-        return dto.toDomain(attachments)
+        dto.toDomain(attachments)
     }
 
-    override suspend fun getIcalEntryByUid(uid: String): IcalEntry? {
+    override suspend fun getIcalEntryByHref(href: Url): IcalEntry? = withContext(ioDispatcher) {
         val db = getDatabase()
-        val dto = db.icalentry_dtoQueries.getIcalEntryByUid(uid).awaitAsOneOrNull() ?: return null
+        val dto = db.icalentry_dtoQueries.getIcalEntryByHref(href.toString()).awaitAsOneOrNull() ?: return@withContext null
         val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
-        return dto.toDomain(attachments)
+        dto.toDomain(attachments)
     }
 
-    override suspend fun getIcalEntryByHref(href: Url): IcalEntry? {
+    override suspend fun getDirtyIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = withContext(ioDispatcher) {
         val db = getDatabase()
-        val dto = db.icalentry_dtoQueries.getIcalEntryByHref(href.toString()).awaitAsOneOrNull() ?: return null
-        val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
-        return dto.toDomain(attachments)
-    }
-
-    override suspend fun getDirtyIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> {
-        val db = getDatabase()
-        return db.icalentry_dtoQueries.getDirtyIcalEntriesByCalendar(calendarId).awaitAsList().map { dto ->
+        db.icalentry_dtoQueries.getDirtyIcalEntriesByCalendar(calendarId).awaitAsList().map { dto ->
             val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
             dto.toDomain(attachments)
         }
     }
 
-    override suspend fun getIcalEntriesByHrefs(hrefs: List<Url>): List<IcalEntry> {
+    override suspend fun getIcalEntriesByHrefs(hrefs: List<Url>): List<IcalEntry> = withContext(ioDispatcher) {
         val db = getDatabase()
-        return db.icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs.map { it.toString() }).awaitAsList().map { dto ->
+        db.icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs.map { it.toString() }).awaitAsList().map { dto ->
             val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
             dto.toDomain(attachments)
         }
     }
 
-    override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> {
-        return getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
+    override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = withContext(ioDispatcher) {
+        getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
     }
 
     override suspend fun getDeletedDeltaHrefs(
         calendarId: Long,
         allServerHrefs: List<Url>
-    ): List<Url> {
-        return getDatabase()
+    ): List<Url> = withContext(ioDispatcher) {
+        getDatabase()
             .icalentry_dtoQueries.getDeletedDeltaHrefs(calendarId, allServerHrefs.map { it.toString() })
             .awaitAsList()
             .mapNotNull { result -> result.href?.let { hrefString -> Url(hrefString) } }
@@ -109,7 +112,7 @@ class IcalEntryRepositoryImpl(
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getAllColors().asFlow()
                 .map { query -> query.awaitAsList().map { Color(it) } }
-        }
+        }.flowOn(ioDispatcher)
     }
 
     override fun getAllCategories(): Flow<List<String>> {
@@ -122,24 +125,24 @@ class IcalEntryRepositoryImpl(
                     }
                     allCategories.toList()
                 }
-        }
+        }.flowOn(ioDispatcher)
     }
 
     override fun getLastUsedTimezones(): Flow<List<String>> {
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getLastUsedTimezones().asFlow()
                 .map { query -> query.awaitAsList() }
-        }
+        }.flowOn(ioDispatcher)
     }
 
     override fun getSubtasksByParentUid(parentUid: String): Flow<List<IcalEntry>> {
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getSubtasksByParentUid(parentUid).asFlow()
                 .map { query -> query.awaitAsList().map { it.toDomain() } }
-        }
+        }.flowOn(ioDispatcher)
     }
 
-    override suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry): IcalEntry {
+    override suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry): IcalEntry = withContext(ioDispatcher) {
 
         val icalEntryDto = icalEntry.toDto()
         val db = getDatabase()
@@ -241,52 +244,64 @@ class IcalEntryRepositoryImpl(
             }
         }
         
-        return getIcalEntryByUid(icalEntry.uid)!!
+        getIcalEntryByUid(icalEntry.uid)!!
     }
 
     override suspend fun markAsDeleted(ids: List<Long>) {
-        getDatabase().icalentry_dtoQueries.markAsDeleted(ids)
+        withContext(ioDispatcher) {
+            getDatabase().icalentry_dtoQueries.markAsDeleted(ids)
+        }
     }
 
     override suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState) {
-        getDatabase().icalentry_dtoQueries.updateProgress(
-            newPercent = percentComplete,
-            newStatus = status?.name,
-            lastModified = lastModified?.let { formatIcsDateTime(it)?.first },
-            syncState = syncState.name,
-            id = id
-        )
+        withContext(ioDispatcher) {
+            getDatabase().icalentry_dtoQueries.updateProgress(
+                newPercent = percentComplete,
+                newStatus = status?.name,
+                lastModified = lastModified?.let { formatIcsDateTime(it)?.first },
+                syncState = syncState.name,
+                id = id
+            )
+        }
     }
 
     override suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>) {
-        val db = getDatabase()
-        db.icalentry_dtoQueries.transaction {
-            sortedIcalEntryIds.forEachIndexed { index, icalEntryId ->
-                db.icalentry_dtoQueries.updateOrderNo(orderNo = index.toLong(), id = icalEntryId)
+        withContext(ioDispatcher) {
+            val db = getDatabase()
+            db.icalentry_dtoQueries.transaction {
+                sortedIcalEntryIds.forEachIndexed { index, icalEntryId ->
+                    db.icalentry_dtoQueries.updateOrderNo(orderNo = index.toLong(), id = icalEntryId)
+                }
             }
         }
     }
 
     override suspend fun updateColor(id: Long, color: Color?, lastModified: IcsDateTime?, syncState: SyncState) {
-        getDatabase().icalentry_dtoQueries.updateColor(
-            newColor = color?.toArgb()?.toLong(),
-            lastModified = lastModified?.let { formatIcsDateTime(it)?.first },
-            syncState = syncState.name,
-            id = id
-        )
+        withContext(ioDispatcher) {
+            getDatabase().icalentry_dtoQueries.updateColor(
+                newColor = color?.toArgb()?.toLong(),
+                lastModified = lastModified?.let { formatIcsDateTime(it)?.first },
+                syncState = syncState.name,
+                id = id
+            )
+        }
     }
 
     override suspend fun updateCategory(id: Long, categories: List<String>, lastModified: IcsDateTime?, syncState: SyncState) {
-        getDatabase().icalentry_dtoQueries.updateCategory(
-            newCategories = categories.joinToString(CATEGORY_SPLIT_DELIMITER).ifEmpty { null },
-            lastModified = lastModified?.let { formatIcsDateTime(it)?.first },
-            syncState = syncState.name,
-            id = id
-        )
+        withContext(ioDispatcher) {
+            getDatabase().icalentry_dtoQueries.updateCategory(
+                newCategories = categories.joinToString(CATEGORY_SPLIT_DELIMITER).ifEmpty { null },
+                lastModified = lastModified?.let { formatIcsDateTime(it)?.first },
+                syncState = syncState.name,
+                id = id
+            )
+        }
     }
 
     override suspend fun deleteTrashed(cutoffDateTime: IcsDateTime) {    // TODO: Test again!
-        getDatabase().icalentry_dtoQueries.deleteTrashed(formatIcsDateTime(cutoffDateTime)?.first)
+        withContext(ioDispatcher) {
+            getDatabase().icalentry_dtoQueries.deleteTrashed(formatIcsDateTime(cutoffDateTime)?.first)
+        }
     }
 
     override suspend fun updateSyncMetadata(
@@ -295,30 +310,36 @@ class IcalEntryRepositoryImpl(
         syncState: SyncState?,
         id: Long
     ) {
-        getDatabase().icalentry_dtoQueries.updateSyncMetadata(etag, href?.toString(), syncState?.name, id)
+        withContext(ioDispatcher) {
+            getDatabase().icalentry_dtoQueries.updateSyncMetadata(etag, href?.toString(), syncState?.name, id)
+        }
     }
 
     override suspend fun insertOrUpdateAttachment(attachment: Attachment) {
-        val db = getDatabase()
-        val dto = attachment.toDto()
-        db.attachment_dtoQueries.insertAttachment(
-            icalEntryId = dto.icalEntryId,
-            uid = dto.uid,
-            localPath = dto.localPath,
-            remoteUrl = dto.remoteUrl,
-            fileName = dto.fileName,
-            mimeType = dto.mimeType,
-            size = dto.size,
-            isInline = dto.isInline,
-            syncState = dto.syncState
-        )
+        withContext(ioDispatcher) {
+            val db = getDatabase()
+            val dto = attachment.toDto()
+            db.attachment_dtoQueries.insertAttachment(
+                icalEntryId = dto.icalEntryId,
+                uid = dto.uid,
+                localPath = dto.localPath,
+                remoteUrl = dto.remoteUrl,
+                fileName = dto.fileName,
+                mimeType = dto.mimeType,
+                size = dto.size,
+                isInline = dto.isInline,
+                syncState = dto.syncState
+            )
+        }
     }
 
     override suspend fun deleteAttachment(id: Long) {
-        getDatabase().attachment_dtoQueries.deleteAttachment(id)
+        withContext(ioDispatcher) {
+            getDatabase().attachment_dtoQueries.deleteAttachment(id)
+        }
     }
 
-    override suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment> {
-        return getDatabase().attachment_dtoQueries.getAttachmentsForEntry(entryId).awaitAsList().map { it.toDomain() }
+    override suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment> = withContext(ioDispatcher) {
+        getDatabase().attachment_dtoQueries.getAttachmentsForEntry(entryId).awaitAsList().map { it.toDomain() }
     }
 }
