@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -113,12 +114,15 @@ fun ListScreenTasks(
                     enabled = true
                 ) { isDragging ->
 
-                    if(isDragging)
-                        onAction(ListAction.OnDraggingIcalEntry(icalEntry.id))
-                    else if (state.draggingIcalEntryId == icalEntry.id && !isDragging) {
-                        onAction(ListAction.OnPersistOrderNo)
-                        onAction(ListAction.OnDraggingIcalEntry(null))
+                    LaunchedEffect(isDragging) {
+                        if (isDragging) {
+                            onAction(ListAction.OnDraggingIcalEntry(icalEntry.id))
+                        } else if (state.draggingIcalEntryId == icalEntry.id) {
+                            onAction(ListAction.OnPersistOrderNo)
+                            onAction(ListAction.OnDraggingIcalEntry(null))
+                        }
                     }
+                    
                     val listScope = this
 
                     Column(modifier = Modifier.fillMaxWidth()) {
