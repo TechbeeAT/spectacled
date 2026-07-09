@@ -20,6 +20,7 @@ object HttpClientFactory {
         jsonContentNegotiation: Boolean = true
     ): HttpClient {
         return HttpClient(engine) {
+            followRedirects = false
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {

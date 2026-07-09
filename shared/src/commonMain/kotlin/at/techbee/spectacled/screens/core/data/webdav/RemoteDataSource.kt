@@ -30,6 +30,7 @@ import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 import io.ktor.http.contentType
 import io.ktor.http.fullPath
+import io.ktor.http.isSecure
 import io.ktor.http.isSuccess
 import io.ktor.http.takeFrom
 import io.ktor.http.withCharset
@@ -67,9 +68,23 @@ suspend fun discoverPrincipalsMultiplatform(
             // Nextcloud and others often redirect .well-known/caldav to the actual DAV endpoint.
             // We follow these redirects using a GET request to find the effective discovery URL.
             val discoveryUrl = try {
-                client.get(wellKnownUrl) {
+                val response = client.get(wellKnownUrl) {
                     if (credentials != null) basicAuth(credentials.username, credentials.password)
-                }.call.request.url
+                }
+
+                if (response.status.value in 300..399) {
+                    val redirectUrl = response.headers[HttpHeaders.Location]?.let {
+                        URLBuilder(wellKnownUrl).takeFrom(it).build()
+                    }
+                    // block redirect from https to http
+                    if (redirectUrl != null && wellKnownUrl.protocol.isSecure() && !redirectUrl.protocol.isSecure()) {
+                        wellKnownUrl
+                    } else {
+                        redirectUrl ?: wellKnownUrl
+                    }
+                } else {
+                    response.call.request.url
+                }
             } catch (_: Exception) {
                 wellKnownUrl
             }
@@ -121,6 +136,9 @@ private suspend fun discoverPrincipalsInternal(
                 URLBuilder(location).takeFrom(it).build()
             }
             if (redirectUrl != null && redirectUrl != location) {
+                if (location.protocol.isSecure() && !redirectUrl.protocol.isSecure()) {
+                    return DiscoverPrincipalsResult.Failed(httpResponse.status, "HTTPS to HTTP downgrade blocked")
+                }
                 return discoverPrincipalsInternal(client, redirectUrl, credentials, redirectCount + 1)
             }
         }
