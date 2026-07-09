@@ -25,13 +25,17 @@ actual class DatabaseDriverFactory(val spectacledVariant: SpectacledVariant) {
         return mutex.withLock {
             database ?: run {
                 val dbFile = File(System.getProperty("user.home"), ".spectacled/${spectacledVariant.dbName}")
-                val newDriver = JdbcSqliteDriver("jdbc:sqlite:${dbFile.absolutePath}")
+                dbFile.parentFile.mkdirs()
 
-                if (!dbFile.exists()) {
-                    dbFile.parentFile.mkdirs()
-                    schema.synchronous().create(newDriver).await()
-                    newDriver.execute(null, "PRAGMA foreign_keys=ON;", 0)
-                }
+                val newDriver = JdbcSqliteDriver(
+                    url = "jdbc:sqlite:${dbFile.absolutePath}",
+                    schema = schema.synchronous(),
+                )
+
+                // PRAGMA foreign_keys is a per-connection setting, not persisted in the DB file,
+                // so it must be (re-)enabled on every open, not just on first creation.
+                newDriver.execute(null, "PRAGMA foreign_keys=ON;", 0)
+
                 SpectacledDatabase(newDriver).also { db ->
                     // 🔥 FORCE DB OPEN HERE
                     db.calendar_dtoQueries.getAllCalendars().executeAsList()
