@@ -2,24 +2,28 @@ package at.techbee.spectacled.screens.core.presentation
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 
-class MarkdownVisualTransformation(val localContentColor: Color) : VisualTransformation {
+class MarkdownVisualTransformation(
+    val localContentColor: Color,
+    val linkColor: Color = Color(0xFF2196F3)
+) : VisualTransformation {
 
     val tagAlpha = 0.33f
 
     override fun filter(text: AnnotatedString): TransformedText {
-
-
         return TransformedText(formatAnnotatedString(text), OffsetMapping.Identity)
     }
 
-    fun formatAnnotatedString(text: String?) = formatAnnotatedString(androidx.compose.ui.text.AnnotatedString(text ?: ""))
+    fun formatAnnotatedString(text: String?) = formatAnnotatedString(AnnotatedString(text ?: ""))
 
     fun formatAnnotatedString(text: AnnotatedString): AnnotatedString {
 
@@ -72,6 +76,35 @@ class MarkdownVisualTransformation(val localContentColor: Color) : VisualTransfo
             builder.append(input[i])
             i++
         }
-        return builder.toAnnotatedString()
+
+        val result = builder.toAnnotatedString()
+        val finalBuilder = AnnotatedString.Builder(result)
+
+        // URL detection
+        val urlRegex = Regex("""https?://[^\s\n]+""")
+        urlRegex.findAll(input).forEach { match ->
+            // Clean up trailing punctuation often included in simple regex
+            val url = match.value.removeSuffix(".").removeSuffix(",").removeSuffix(";").removeSuffix(")")
+            val rangeEnd = match.range.first + url.length
+
+            val linkStyle = SpanStyle(
+                color = linkColor,
+                textDecoration = TextDecoration.Underline
+            )
+
+            finalBuilder.addStyle(
+                linkStyle,
+                match.range.first,
+                rangeEnd
+            )
+            
+            finalBuilder.addLink(
+                LinkAnnotation.Url(url, styles = TextLinkStyles(style = linkStyle)),
+                match.range.first,
+                rangeEnd
+            )
+        }
+
+        return finalBuilder.toAnnotatedString()
     }
 }
