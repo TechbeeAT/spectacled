@@ -24,6 +24,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
+import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException
@@ -35,6 +36,8 @@ import io.ktor.http.Url
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -49,6 +52,17 @@ class SyncCoordinator(
 ) {
 
     companion object {
+
+        // Guards against a background sync and a manual push/refresh racing on the same
+        // calendar's syncToken and rows. One Mutex per calendarId; the outer lock only guards
+        // creating that per-calendar Mutex, it isn't held during the sync itself.
+        private val calendarSyncMutexesLock = Mutex()
+        private val calendarSyncMutexes = mutableMapOf<Long, Mutex>()
+
+        private suspend fun mutexFor(calendarId: Long): Mutex =
+            calendarSyncMutexesLock.withLock {
+                calendarSyncMutexes.getOrPut(calendarId) { Mutex() }
+            }
 
         @OptIn(ExperimentalTime::class)
         suspend fun syncAllPrincipals(
@@ -122,13 +136,32 @@ class SyncCoordinator(
                 calendarRepository.getPrincipalForCalendar(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
             val credentials = credentialStore.load(principal.principalUrl)
 
-            SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).pushLocalChanges(calendar)
+            SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).pushLocalChangesLocked(calendar)
         }
     }
 
-    private suspend fun syncCalendar(calendar: Calendar) = sync(calendar, null)
+    private suspend fun withCalendarSyncLock(calendarId: Long, block: suspend () -> Unit) {
+        val mutex = mutexFor(calendarId)
+        if (!mutex.tryLock()) {
+            Napier.d("Sync already in progress for calendar $calendarId, skipping")
+            return
+        }
+        try {
+            block()
+        } finally {
+            mutex.unlock()
+        }
+    }
 
-    suspend fun pushDirtyIcalEntry(dirtyIcalEntry: IcalEntry, calendar: Calendar) = sync(calendar, dirtyIcalEntry)
+    private suspend fun syncCalendar(calendar: Calendar) = withCalendarSyncLock(calendar.id) { sync(calendar, null) }
+
+    suspend fun pushDirtyIcalEntry(dirtyIcalEntry: IcalEntry, calendar: Calendar) =
+        withCalendarSyncLock(calendar.id) { sync(calendar, dirtyIcalEntry) }
+
+    // Entry point for a push-only trigger that bypasses sync()/pull entirely - needs its own
+    // lock since it doesn't go through syncCalendar()/pushDirtyIcalEntry() above.
+    private suspend fun pushLocalChangesLocked(calendar: Calendar) =
+        withCalendarSyncLock(calendar.id) { pushLocalChanges(calendar) }
 
     private suspend fun sync(
         calendar: Calendar,
