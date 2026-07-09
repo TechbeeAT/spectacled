@@ -3,7 +3,6 @@ package at.techbee.spectacled.screens.core.data.claude
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
-import at.techbee.spectacled.shared.BuildKonfig
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -28,7 +27,7 @@ class KtorRemoteClaudeDataSource(
     val client: HttpClient
 ) {
 
-    suspend fun applyAiMetadata(icalEntry: IcalEntry): ClaudeRemoteResponseResult {
+    suspend fun applyAiMetadata(icalEntry: IcalEntry, apiKey: String): ClaudeRemoteResponseResult {
 
         val dtStartPromptPart = if (icalEntry.isJournal()) {
             """
@@ -71,10 +70,7 @@ class KtorRemoteClaudeDataSource(
         try {
             val response = client.post(ANTHROPIC_BASE_URL) {
                 contentType(ContentType.Application.Json)
-                header(
-                    "x-api-key",
-                    BuildKonfig.ANTHROPIC_API_KEY
-                )
+                header("x-api-key", apiKey)
                 header("anthropic-version", "2023-06-01")
                 setBody(buildJsonObject {
                     put("model", "claude-sonnet-4-6")

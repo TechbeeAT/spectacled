@@ -314,6 +314,7 @@ fun AccountListScreenRoot(
             SettingsBottomSheet(
                 sheetState = settingsBottomSheet,
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
+                aiSettingsStore = viewModel.aiSettingsStore,
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) }
             )
         }

@@ -182,6 +182,13 @@
     <string name="theme_palette_style">Palette style</string>
     <string name="theme_font">Font</string>
 
+    <string name="ai_extract_settings_title">AI Extract (Claude)</string>
+    <string name="ai_api_key_label">Anthropic API key</string>
+    <string name="ai_api_key_helper">Used only for the "AI Extract" action, stored on this device only.</string>
+    <string name="ai_api_key_get_key">Get an API key</string>
+    <string name="ai_api_key_save">Save</string>
+    <string name="ai_api_key_missing">Add your Anthropic API key in Settings to use AI Extract.</string>
+
     <string name="status">Status</string>
     <string name="status_no_status">No status</string>
     <string name="status_final">Final</string>

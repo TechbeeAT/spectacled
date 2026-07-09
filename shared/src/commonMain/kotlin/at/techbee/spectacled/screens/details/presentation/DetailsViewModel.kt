@@ -11,6 +11,7 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
+import at.techbee.spectacled.screens.core.data.PlatformAiSettingsStore
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
 import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
@@ -44,6 +45,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.ai_api_key_missing
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.entry_copy
@@ -62,6 +64,7 @@ class DetailsViewModel(
     private val calendarRepository: CalendarRepository,
     private val icalEntryRepository: IcalEntryRepository,
     private val credentialStore: PlatformCredentialStore,
+    private val aiSettingsStore: PlatformAiSettingsStore,
     private val fileManager: PlatformFileManager,
     private val fileLauncher: PlatformFileLauncher,
     private val client: HttpClient,
@@ -661,10 +664,16 @@ class DetailsViewModel(
     }
 
     private fun onProcessWithAI() {
-        _state.update { it.copy(isLoading = true) }
-
         viewModelScope.launch {
-            val remoteResult = KtorRemoteClaudeDataSource(client).applyAiMetadata(_state.value.icalEntry)
+            val apiKey = aiSettingsStore.loadAnthropicApiKey()
+            if (apiKey.isNullOrBlank()) {
+                _state.update { it.copy(snackbarText = getString(Res.string.ai_api_key_missing)) }
+                return@launch
+            }
+
+            _state.update { it.copy(isLoading = true) }
+
+            val remoteResult = KtorRemoteClaudeDataSource(client).applyAiMetadata(_state.value.icalEntry, apiKey)
 
             when(remoteResult) {
                 is ClaudeRemoteResponseResult.Failed -> {

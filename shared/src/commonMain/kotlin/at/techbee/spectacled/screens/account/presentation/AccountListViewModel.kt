@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.Credentials
+import at.techbee.spectacled.screens.core.data.PlatformAiSettingsStore
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.webdav.DeleteCalendarResult
@@ -48,7 +49,8 @@ class AccountListViewModel(
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val client: HttpClient,
     val spectacledVariant: SpectacledVariant,
-    val userAppPreferencesStore: PlatformUserAppPreferencesStore
+    val userAppPreferencesStore: PlatformUserAppPreferencesStore,
+    val aiSettingsStore: PlatformAiSettingsStore
     ): ViewModel() {
 
     private val _state = MutableStateFlow(AccountListState())
