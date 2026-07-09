@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,7 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Visibility
@@ -113,12 +115,30 @@ fun AddPrincipalBottomSheet(
                     }
                 },
             ) {
-                Crossfade(pagerState.currentPage == 0) { isFirst ->
-                    if (isFirst)
-                        Text(stringResource(Res.string.cancel))
-                    else
-                        Text(stringResource(Res.string.back))
-                }
+
+                AnimatedVisibility(pagerState.currentPage == 0) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Spacer(modifier = Modifier.height(32.dp))
+                            Text(stringResource(Res.string.cancel))
+                        }
+                    }
+
+                AnimatedVisibility(pagerState.currentPage != 0){
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ChevronLeft,
+                                contentDescription = stringResource(Res.string.back)
+                            )
+                            Text(text = stringResource(Res.string.back))
+                        }
+
+                    }
 
             }
         },
@@ -342,7 +362,9 @@ fun AddAccountScreen(
                         val domain = username.substringAfter("@").trim()
                         if (domain.isNotEmpty()) "https://$domain" else null
                     } else null
-                    Text(inferred?.let { "Inferred: $it" } ?: "Optional")
+                    AnimatedVisibility(inferred?.isNotBlank() == true) {
+                        Text("Inferred: $inferred")
+                    }
                 },
                 label = { Text("Server (optional)") },
                 trailingIcon = {
