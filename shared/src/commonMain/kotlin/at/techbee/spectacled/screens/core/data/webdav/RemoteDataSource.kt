@@ -76,9 +76,11 @@ suspend fun discoverPrincipalsMultiplatform(
                     val redirectUrl = response.headers[HttpHeaders.Location]?.let {
                         URLBuilder(wellKnownUrl).takeFrom(it).build()
                     }
-                    // block redirect from https to http
                     if (redirectUrl != null && wellKnownUrl.protocol.isSecure() && !redirectUrl.protocol.isSecure()) {
-                        wellKnownUrl
+                        return DiscoverPrincipalsResult.Failed(HttpStatusCode.Forbidden, "HTTPS to HTTP downgrade blocked", "Redirect from ${wellKnownUrl.protocol.name} to ${redirectUrl.protocol.name} was blocked for security reasons.")
+                    } else if (redirectUrl != null && (wellKnownUrl.host != redirectUrl.host || wellKnownUrl.protocol != redirectUrl.protocol)) {
+                        // SECURITY: Abort if host or scheme changes during discovery
+                        return DiscoverPrincipalsResult.Failed(HttpStatusCode.Forbidden, "Cross-domain redirect blocked", "Redirect from ${wellKnownUrl.host} to ${redirectUrl.host} was blocked for security reasons.")
                     } else {
                         redirectUrl ?: wellKnownUrl
                     }
@@ -139,6 +141,11 @@ private suspend fun discoverPrincipalsInternal(
                 if (location.protocol.isSecure() && !redirectUrl.protocol.isSecure()) {
                     return DiscoverPrincipalsResult.Failed(httpResponse.status, "HTTPS to HTTP downgrade blocked")
                 }
+                // SECURITY: Abort if host or scheme changes
+                if (location.host != redirectUrl.host || location.protocol != redirectUrl.protocol) {
+                    return DiscoverPrincipalsResult.Failed(httpResponse.status, "Cross-domain redirect blocked", "Redirect from ${location.host} to ${redirectUrl.host} was blocked for security reasons.")
+                }
+
                 return discoverPrincipalsInternal(client, redirectUrl, credentials, redirectCount + 1)
             }
         }
