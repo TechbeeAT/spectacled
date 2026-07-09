@@ -184,7 +184,8 @@ fun DetailsScreenRoot(
             DetailsMoreBottomSheet(
                 onAction = { action -> detailsViewModel.onAction(action) },
                 icalEntry = detailsState.icalEntry,
-                canWriteContent = detailsState.allowEditing()
+                canWriteContent = detailsState.allowEditing(),
+                claudeUserApiKeyProvided = !detailsState.claudeUserApiKey.isNullOrEmpty()
             )
         }
 

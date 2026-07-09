@@ -113,28 +113,6 @@ fun DetailsTopBar(
 
                     SpectacledVariant.TASKS -> {}
                 }
-/*
-                var dropdownExpanded by remember { mutableStateOf(false) }
-
-                TextButton(onClick = { dropdownExpanded = true }) {
-
-                    Icon(Icons.Outlined.MoreVert, null)
-
-                    DropdownMenu(
-                        expanded = dropdownExpanded,
-                        onDismissRequest = { dropdownExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("AI Extract (Claude; experimental)") },
-                            onClick = {
-                                dropdownExpanded = false
-                                onAction(DetailsAction.OnProcessWithAI)
-                            }
-                        )
-                    }
-                }
-
- */
             }
         },
         modifier = modifier,

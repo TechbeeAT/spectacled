@@ -12,6 +12,7 @@ import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
 import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -67,6 +68,7 @@ class DetailsViewModel(
     private val client: HttpClient,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
+    private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -99,7 +101,8 @@ class DetailsViewModel(
             _state.update { it.copy(
                 allPrincipals = allPrincipals,
                 allHomeCollections = allHomeCollections,
-                allCalendars = allCalendars
+                allCalendars = allCalendars,
+                claudeUserApiKey = userAppPreferencesStore.claudeUserApiKey
             ) }
         }
     }
@@ -661,10 +664,21 @@ class DetailsViewModel(
     }
 
     private fun onProcessWithAI() {
+        if(state.value.claudeUserApiKey.isNullOrEmpty()) {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    snackbarText = "API key not provided. Please update the API key in the settings."
+                )
+            }
+            return
+        }
+
         _state.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
-            val remoteResult = KtorRemoteClaudeDataSource(client).applyAiMetadata(_state.value.icalEntry)
+
+            val remoteResult = KtorRemoteClaudeDataSource(client, state.value.claudeUserApiKey?:"").applyAiMetadata(_state.value.icalEntry)
 
             when(remoteResult) {
                 is ClaudeRemoteResponseResult.Failed -> {

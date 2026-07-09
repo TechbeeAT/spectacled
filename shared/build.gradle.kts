@@ -1,7 +1,6 @@
 ﻿import com.codingfeline.buildkonfig.compiler.FieldSpec
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -15,6 +14,7 @@ plugins {
     alias(libs.plugins.buildKonfig)
 }
 
+/*
 val localProperties = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
@@ -22,7 +22,8 @@ val localProperties = Properties().apply {
     }
 }
 
-val anthropicApiKey = localProperties.getProperty("ANTHROPIC_API_KEY") ?: System.getenv("ANTHROPIC_API_KEY") ?: ""
+val xxxKey = localProperties.getProperty("XXX_API_KEY") ?: System.getenv("XXX_API_KEY") ?: ""
+ */
 
 kotlin {
     // Android target configured via androidLibrary block (replaces androidTarget + android{})
@@ -153,7 +154,6 @@ buildkonfig {
         buildConfigField(STRING, "APP_VERSION_STRING", libs.versions.appVersionString.get())
         buildConfigField(FieldSpec.Type.INT, "APP_BUILD_NUMBER", libs.versions.appBuildNumber.get())
         buildConfigField(STRING, "APP_VERSION_CODENAME", libs.versions.appVersionCodename.get())
-        buildConfigField(STRING, "ANTHROPIC_API_KEY", anthropicApiKey)
     }
 }
 
