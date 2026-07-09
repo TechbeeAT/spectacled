@@ -358,12 +358,23 @@ fun AddAccountScreen(
                 onValueChange = { server = it },
                 placeholder = { Text("https://") },
                 supportingText = {
+                    val trimmedServer = server.trim()
+                    val isInsecure = trimmedServer.startsWith("http://")
                     val inferred = if (server.isBlank() && username.contains("@")) {
                         val domain = username.substringAfter("@").trim()
                         if (domain.isNotEmpty()) "https://$domain" else null
                     } else null
-                    AnimatedVisibility(inferred?.isNotBlank() == true) {
-                        Text("Inferred: $inferred")
+
+                    Column {
+                        AnimatedVisibility(inferred?.isNotBlank() == true) {
+                            Text("Inferred: $inferred")
+                        }
+                        AnimatedVisibility(isInsecure) {
+                            Text(
+                                text = "Warning: Insecure connection (HTTP)",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 },
                 label = { Text("Server (optional)") },
