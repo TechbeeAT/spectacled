@@ -39,7 +39,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import at.techbee.spectacled.screens.core.FileManager
-import at.techbee.spectacled.screens.core.PlatformFileManager
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
 import at.techbee.spectacled.screens.core.presentation.components.PathData
@@ -60,7 +59,7 @@ fun AttachmentCard(
     attachment: Attachment,
     onAction: (DetailsAction) -> Unit,
     isDownloading: Boolean = false,
-    fileManager: FileManager =  koinInject<PlatformFileManager>(),
+    fileManager: FileManager = koinInject<FileManager>(),
     modifier: Modifier = Modifier
 ) {
 
