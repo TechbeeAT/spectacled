@@ -11,18 +11,12 @@ config.resolve = {
     }
 };
 
-const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 config.plugins.push(
     new CopyWebpackPlugin({
         patterns: [
             { from: '../../node_modules/sql.js/dist/sql-wasm.wasm', to: 'sql-wasm.wasm' },
-            { from: '../../node_modules/sql.js/dist/sql-wasm.js', to: 'sql-wasm.js' },
-            // __dirname always points at this webpack.config.d directory, unlike the
-            // relative patterns above which resolve against webpack's own build context -
-            // that context isn't guaranteed to be 2 levels above the repo root, it just
-            // happens to coincide with node_modules being hoisted/symlinked nearby.
-            { from: path.resolve(__dirname, '../../webWorker/spectacledSqlWorker.js'), to: 'spectacledSqlWorker.js' }
+            { from: '../../node_modules/sql.js/dist/sql-wasm.js', to: 'sql-wasm.js' }
         ]
     })
 );
