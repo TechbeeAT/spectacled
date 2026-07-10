@@ -15,9 +15,8 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 config.plugins.push(
     new CopyWebpackPlugin({
         patterns: [
-            '../../node_modules/sql.js/dist/sql-wasm.wasm',
-            '../../node_modules/sql.js/dist/sql-wasm.js',
-            '../../webWorker/spectacledSqlWorker.js'
+            { from: '../../node_modules/sql.js/dist/sql-wasm.wasm', to: 'sql-wasm.wasm' },
+            { from: '../../node_modules/sql.js/dist/sql-wasm.js', to: 'sql-wasm.js' }
         ]
     })
 );
