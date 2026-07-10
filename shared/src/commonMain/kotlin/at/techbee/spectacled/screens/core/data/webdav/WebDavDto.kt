@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.data.webdav
 
 import androidx.compose.ui.graphics.Color
+import io.github.aakira.napier.Napier
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -50,7 +51,7 @@ val calDavXml = XML {
     policy = DefaultXmlSerializationPolicy.Builder().apply {
         unknownChildHandler = UnknownChildHandler { _, _, _, name, _->
             // Return an empty list to signify "do nothing and continue parsing"
-            println("Unknown children found: $name")
+            Napier.d("Unknown children found: $name")
             emptyList()
         }
     }.build()

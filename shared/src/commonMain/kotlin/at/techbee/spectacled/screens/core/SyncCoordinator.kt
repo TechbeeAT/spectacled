@@ -148,7 +148,6 @@ class SyncCoordinator(
             )
 
             val syncCollectionResponse = syncCollectionMultiplatform(client, calendar, credentials)
-            println(syncCollectionResponse)
             when (syncCollectionResponse) {
 
                 is MultigetSyncCollectionResult.Failed -> {

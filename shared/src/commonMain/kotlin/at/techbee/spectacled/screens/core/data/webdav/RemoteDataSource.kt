@@ -12,6 +12,7 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcalEntries
 import at.techbee.spectacled.screens.core.mapper.ics.serializeVCalendar
+import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.accept
@@ -191,8 +192,7 @@ private suspend fun discoverPrincipalsInternal(
             return DiscoverPrincipalsResult.Success(principals.toList())
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return DiscoverPrincipalsResult.Failed(httpResponse.status, "Collections couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -282,8 +282,7 @@ suspend fun discoverHomeCollections(
             return DiscoverHomeCollectionsResult.Success(principalDisplayName, principalCalendarUserAddressSet, homeCollections.toList())
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return DiscoverHomeCollectionsResult.Failed(response.status, "Home Collections couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -393,8 +392,7 @@ suspend fun discoverCalendars(
             return DiscoverCalendarsResult.Success(calDavPrivileges, calendars)
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return DiscoverCalendarsResult.Failed(response.status, "Calendars couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -451,8 +449,7 @@ suspend fun multigetResourceHrefsMultiplatform(
             }
             return MultigetResourceHrefETagResult.Success(hrefMap, multistatusResponse.syncToken)
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return MultigetResourceHrefETagResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -499,8 +496,7 @@ suspend fun syncCollectionMultiplatform(
             }
             return MultigetSyncCollectionResult.Success(syncToken = multistatusResponse.syncToken, hrefMap)
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return MultigetSyncCollectionResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -561,8 +557,7 @@ suspend fun fetchSingleEntryMultiplatform(
             return MultigetResourceResult.Success(icalEntries)
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return MultigetResourceResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -693,7 +688,7 @@ suspend fun createCalendarMultiplatform(
             }
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
+            Napier.e("Parsing failed: ${e.message}", e)
             return UpsertCalendarResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -797,7 +792,7 @@ suspend fun updateCalDavCalendarMultiplatform(
                 }
             }
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
+            Napier.e("Parsing failed: ${e.message}", e)
             return UpsertCalendarResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }

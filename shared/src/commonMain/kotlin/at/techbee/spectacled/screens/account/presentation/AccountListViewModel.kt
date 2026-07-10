@@ -420,7 +420,7 @@ class AccountListViewModel(
 
             } catch (e: Exception) {
                 _state.update { it.copy(processingState = ProcessingState.Error(message = e.message ?: "Unknown error", detail = e.stackTraceToString())) }
-                println(e.stackTraceToString())
+                Napier.e(e.stackTraceToString())
             }
         }
     }

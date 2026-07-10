@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.about.data
 
 import at.techbee.spectacled.screens.about.domain.GitHubContributor
+import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -20,7 +21,7 @@ class KtorRemoteGitHubContributorDataSource(
             response.body<List<GitHubContributorDto>>().map { it.toGitHubContributor() }
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
-            println("Error: ${e.stackTraceToString()}")
+            Napier.w("Error: ${e.stackTraceToString()}")
             emptyList()
         }
     }

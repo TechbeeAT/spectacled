@@ -66,7 +66,7 @@ actual class PlatformShareManager : ShareManager {
                 viewControllerToPresent = activityController,
                 animated = true,
                 completion = {
-                    //println("PlatformShareManager: Presentation complete callback triggered") //debugging
+                    //Napier.d("PlatformShareManager: Presentation complete callback triggered") //debugging
                 }
             )
         }

@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.about.domain.GitHubRelease
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
+import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_release_notes
@@ -63,7 +64,7 @@ fun GitHubReleases(
                         try {
                             uriHandler.openUri(release.githubUrl)
                         } catch (e: Exception) {
-                            println(e.stackTraceToString())
+                            Napier.w(e.stackTraceToString())
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -90,7 +91,7 @@ fun GitHubReleases(
                         try {
                             uriHandler.openUri(GITHUB_RELEASES_URL)
                         } catch (e: Exception) {
-                            println(e.stackTraceToString())
+                            Napier.w(e.stackTraceToString())
                         }
                     },
                     modifier = Modifier.padding(8.dp)
