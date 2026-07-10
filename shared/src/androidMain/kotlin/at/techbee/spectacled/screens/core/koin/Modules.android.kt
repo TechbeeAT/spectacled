@@ -14,7 +14,7 @@ import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.module.dsl.bind
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 actual val platformModule = module {
