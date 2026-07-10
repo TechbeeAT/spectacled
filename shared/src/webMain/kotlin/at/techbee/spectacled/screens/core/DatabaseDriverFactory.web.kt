@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core
 
 import app.cash.sqldelight.db.QueryResult
+import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.worker.WebWorkerDriver
 import at.techbee.spectacled.db.SpectacledDatabase
@@ -12,7 +13,11 @@ import org.w3c.dom.Worker
 
 @OptIn(ExperimentalWasmJsInterop::class)
 fun jsWorker(): Worker =
-    js("""new Worker(new URL("@cashapp/sqldelight-sqljs-worker/sqljs.worker.js", import.meta.url))""")
+    // spectacledSqlWorker.js is our own copy of @cashapp/sqldelight-sqljs-worker's
+    // sqljs.worker.js with IndexedDB persistence added (see DAT-6). It's copied to the
+    // web root by each app's webpack.config.d/sqljs-config.js, so it's loaded as a plain
+    // static asset rather than resolved through the npm package.
+    js("""new Worker("/spectacledSqlWorker.js")""")
 
 actual class DatabaseDriverFactory {
 
@@ -29,14 +34,40 @@ actual class DatabaseDriverFactory {
             database ?: run {
                 Napier.d("Creating WebWorker Driver")
                 val d = WebWorkerDriver(jsWorker())
-                Napier.d("Awaiting schema creation")
-                schema.create(d).await()
+
+                // spectacledSqlWorker.js now restores the database from IndexedDB on startup
+                // (see DAT-6), so this can no longer unconditionally call schema.create() -
+                // that would try to re-create tables that already exist on every reload after
+                // the first one. Track the schema version the same way Android/iOS/Desktop do.
+                val targetVersion = schema.version
+                val currentVersion = readUserVersion(d)
+
+                if (currentVersion == 0L) {
+                    Napier.d("Creating database schema at version $targetVersion")
+                    schema.create(d).await()
+                    d.execute(null, "PRAGMA user_version = $targetVersion;", 0).await()
+                } else if (currentVersion < targetVersion) {
+                    Napier.d("Migrating database from version $currentVersion to $targetVersion")
+                    schema.migrate(d, currentVersion, targetVersion).await()
+                    d.execute(null, "PRAGMA user_version = $targetVersion;", 0).await()
+                } else {
+                    Napier.d("Database already at version $currentVersion")
+                }
+
                 Napier.d("Enabling foreign keys")
-                d.execute(null, "PRAGMA foreign_keys=ON;", 0)
+                d.execute(null, "PRAGMA foreign_keys=ON;", 0).await()
 
                 Napier.d("Driver fully initialized")
                 SpectacledDatabase(d).also { database = it }
             }
         }
     }
+
+    private suspend fun readUserVersion(driver: SqlDriver): Long =
+        driver.executeQuery(
+            identifier = null,
+            sql = "PRAGMA user_version;",
+            mapper = { cursor -> QueryResult.AsyncValue { if (cursor.next().await()) cursor.getLong(0) ?: 0L else 0L } },
+            parameters = 0,
+        ).await()
 }
