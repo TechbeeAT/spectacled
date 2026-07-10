@@ -14,7 +14,7 @@ import org.w3c.dom.Worker
 @OptIn(ExperimentalWasmJsInterop::class)
 fun jsWorker(): Worker =
     // spectacledSqlWorker.js is our own copy of @cashapp/sqldelight-sqljs-worker's
-    // sqljs.worker.js with IndexedDB persistence added (see DAT-6). It lives in each
+    // sqljs.worker.js with IndexedDB persistence added. It lives in each
     // compose*App's src/webMain/resources (same place as favicon.ico/index.html/
     // styles.css), which the Kotlin Gradle plugin copies to the web root for both the
     // js() and wasmJs() browser targets automatically - shared/src/webMain/resources
