@@ -72,6 +72,7 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.username
@@ -90,6 +91,7 @@ fun AddPrincipalBottomSheet(
     var selectedPage by rememberSaveable { mutableStateOf(AddPrincipalBottomSheetPage.SELECTION) }
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val scope = rememberCoroutineScope()
+    var showInsecureConnectionAlert by rememberSaveable { mutableStateOf(false) }
     var credentials by rememberSaveable { mutableStateOf<Credentials?>(null) }
 
     LaunchedEffect(selectedPage) {
@@ -97,6 +99,17 @@ fun AddPrincipalBottomSheet(
             scope.launch { pagerState.animateScrollToPage(0) }
         else
             scope.launch { pagerState.animateScrollToPage(1) }
+    }
+
+    if(showInsecureConnectionAlert) {
+        InsecureConnectionWarningDialog(
+            server = credentials?.server?.toString()?:"",
+            onDismiss = { showInsecureConnectionAlert = false },
+            onConfirm = {
+                credentials?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
+                showInsecureConnectionAlert = false
+            }
+        )
     }
 
     BottomSheetWithMenu(
@@ -146,7 +159,10 @@ fun AddPrincipalBottomSheet(
             AnimatedVisibility(selectedPage == AddPrincipalBottomSheetPage.USE_EXISTING) {
                 TextButton(
                     onClick = {
-                        credentials?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
+                        if(credentials?.server?.toString()?.startsWith("http://") == true)
+                            showInsecureConnectionAlert = true
+                        else
+                            credentials?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
                     },
                     enabled = credentials != null && processingState !is ProcessingState.Processing
                 ) {
@@ -371,7 +387,7 @@ fun AddAccountScreen(
                         }
                         AnimatedVisibility(isInsecure) {
                             Text(
-                                text = "Warning: Insecure connection (HTTP)",
+                                text = stringResource(Res.string.insecure_connection_warning),
                                 color = MaterialTheme.colorScheme.error
                             )
                         }

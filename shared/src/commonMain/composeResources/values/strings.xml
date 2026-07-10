@@ -31,6 +31,10 @@
     <string name="open_foldername">Open %1$s</string>
     <string name="add_account">Add account</string>
     <string name="remove_account">Remove account</string>
+    <string name="insecure_connection_warning">Warning: Insecure connection (HTTP)</string>
+    <string name="insecure_connection_title">Connect to "%1$s" without encryption?</string>
+    <string name="insecure_connection_message">Your password and everything you sync will be sent in plain text — visible to anyone else on this network. Only continue if you trust the network this server is on, for example your home Wi-Fi.</string>
+    <string name="insecure_connection_connect_anyway">Connect anyway</string>
     <string name="create_folder">Create folder</string>
     <string name="update_folder">Update folder</string>
     <string name="edit_folders">Edit folders</string>
