@@ -1,0 +1,1 @@
+CREATE INDEX idx_attachment_icalEntryId ON AttachmentDto(icalEntryId);

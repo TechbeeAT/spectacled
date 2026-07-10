@@ -11,6 +11,8 @@ CREATE TABLE AttachmentDto (
     isInline INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE INDEX idx_attachment_icalEntryId ON AttachmentDto(icalEntryId);
+
 getAttachmentsForEntry:
 SELECT * FROM AttachmentDto WHERE icalEntryId = ?;
 
