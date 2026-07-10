@@ -27,9 +27,9 @@ object HttpClientFactory {
                         Napier.d(tag = "HttpClient", message = message)
                     }
                 }
-                level = LogLevel.ALL
+                level = LogLevel.HEADERS  // replace with LogLevel.ALL for detailed debug logs
                 sanitizeHeader { header ->
-                    // sanitizing x-api-key is specifically for Anthropic and might be removed in the future
+                    // sanitizing x-api-key is specifically for Anthropic
                     header == HttpHeaders.Authorization || header.equals("x-api-key", ignoreCase = true)
                 }
             }
