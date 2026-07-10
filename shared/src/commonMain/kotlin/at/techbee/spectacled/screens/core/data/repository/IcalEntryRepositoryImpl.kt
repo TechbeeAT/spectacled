@@ -78,20 +78,27 @@ class IcalEntryRepositoryImpl(
         dto.toDomain(attachments)
     }
 
+    private suspend fun attachmentsGroupedByEntryId(entryIds: List<Long>): Map<Long, List<Attachment>> {
+        if (entryIds.isEmpty()) return emptyMap()
+
+        val db = getDatabase()
+        return db.attachment_dtoQueries.getAttachmentsForEntries(entryIds).awaitAsList()
+            .map { it.toDomain() }
+            .groupBy { it.icalEntryId }
+    }
+
     override suspend fun getDirtyIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = withContext(ioDispatcher) {
         val db = getDatabase()
-        db.icalentry_dtoQueries.getDirtyIcalEntriesByCalendar(calendarId).awaitAsList().map { dto ->
-            val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
-            dto.toDomain(attachments)
-        }
+        val icalEntryDtos = db.icalentry_dtoQueries.getDirtyIcalEntriesByCalendar(calendarId).awaitAsList()
+        val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
+        icalEntryDtos.map { icalEntryDto -> icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList()) }
     }
 
     override suspend fun getIcalEntriesByHrefs(hrefs: List<Url>): List<IcalEntry> = withContext(ioDispatcher) {
         val db = getDatabase()
-        db.icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs.map { it.toString() }).awaitAsList().map { dto ->
-            val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
-            dto.toDomain(attachments)
-        }
+        val icalEntryDtos = db.icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs.map { it.toString() }).awaitAsList()
+        val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
+        icalEntryDtos.map { icalEntryDto -> icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList()) }
     }
 
     override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = withContext(ioDispatcher) {
