@@ -22,6 +22,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.put
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -42,6 +43,11 @@ import nl.adaptivity.xmlutil.serialization.XmlParsingException
 import nl.adaptivity.xmlutil.xmlStreaming
 import kotlin.collections.none
 import kotlin.uuid.ExperimentalUuidApi
+
+// get the X-Target-Url that is the actual URL if a proxy was used (especially for the web-target)
+// if there's no X-Target-Url, we just take the call.request.url
+private val HttpResponse.realUrl: Url
+    get() = call.request.headers["X-Target-Url"]?.let { Url(it) } ?: call.request.url
 
 
 suspend fun discoverPrincipalsMultiplatform(
@@ -86,7 +92,7 @@ suspend fun discoverPrincipalsMultiplatform(
                         redirectUrl ?: wellKnownUrl
                     }
                 } else {
-                    response.call.request.url
+                    response.realUrl
                 }
             } catch (_: Exception) {
                 wellKnownUrl
@@ -171,7 +177,7 @@ private suspend fun discoverPrincipalsInternal(
             }
 
 
-            val effectiveLocation = httpResponse.call.request.url
+            val effectiveLocation = httpResponse.realUrl
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
 
@@ -249,7 +255,7 @@ suspend fun discoverHomeCollections(
                 allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverHomeCollectionsResult.Failed(response.status, "Home Collection couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
             }
 
-            val effectiveLocation = response.call.request.url
+            val effectiveLocation = response.realUrl
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
 
