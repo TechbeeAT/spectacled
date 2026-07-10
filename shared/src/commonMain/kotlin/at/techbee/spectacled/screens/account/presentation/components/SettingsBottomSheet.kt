@@ -325,6 +325,7 @@ private fun SettingsBottomSheet_Preview() {
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 userAppPreferencesStore = object: UserAppPreferencesStore {
                     override fun save(key: String, value: String) { }
+                    override fun saveEncrypted(key: String, value: String) { }
                     override fun load(key: String): String? { return null }
                     override fun loadAsFlow(key: String): Flow<String?> { return flowOf(null ) }
                     override fun remove(key: String) { }

@@ -29,6 +29,7 @@ const val CLAUDE_USER_API_KEY = "claude_user_api_key"
 
 interface UserAppPreferencesStore {
     fun save(key: String, value: String)
+    fun saveEncrypted(key: String, value: String)
     fun load(key: String): String?
     fun loadAsFlow(key: String): Flow<String?>
     fun remove(key: String)
@@ -96,7 +97,7 @@ interface UserAppPreferencesStore {
 
     var claudeUserApiKey: String?
         get() = this.load(CLAUDE_USER_API_KEY)?.ifEmpty { null }
-        set(value) = if(value == null) this.remove(CLAUDE_USER_API_KEY) else this.save(CLAUDE_USER_API_KEY, value)
+        set(value) = if(value == null) this.remove(CLAUDE_USER_API_KEY) else this.saveEncrypted(CLAUDE_USER_API_KEY, value)
     //fun getClaudeUserApiKeyAsFlow(): Flow<String?> = this.loadAsFlow(CLAUDE_USER_API_KEY)
 
 
@@ -104,6 +105,7 @@ interface UserAppPreferencesStore {
     companion object {
         fun getEmptyPreferenceStoreForPreview() = object: UserAppPreferencesStore {
             override fun save(key: String, value: String) {}
+            override fun saveEncrypted(key: String, value: String) {}
             override fun load(key: String): String? {return null }
             override fun loadAsFlow(key: String): Flow<String?> { return flowOf(null) }
             override fun remove(key: String) {}
@@ -114,6 +116,7 @@ interface UserAppPreferencesStore {
 expect class PlatformUserAppPreferencesStore: UserAppPreferencesStore {
 
     override fun save(key: String, value: String)
+    override fun saveEncrypted(key: String, value: String)
     override fun load(key: String): String?
     override fun loadAsFlow(key: String): Flow<String?>
     override fun remove(key: String)
