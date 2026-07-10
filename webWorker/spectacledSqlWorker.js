@@ -12,6 +12,17 @@
 // app.cash.sqldelight's WebWorkerDriver exactly, so the Kotlin side needs no
 // changes. Loaded as a classic (non-module) worker via importScripts so it
 // doesn't depend on webpack's npm-package bundling.
+//
+// Forked from sqljs.worker.js as shipped in @cashapp/sqldelight-sqljs-worker
+// version 2.3.2 (matches the `sqldelight` version pinned in
+// gradle/libs.versions.toml), source:
+// https://github.com/cashapp/sqldelight/blob/2.3.2/drivers/web-worker-driver/sqljs/sqljs.worker.js
+// The exec/begin_transaction/end_transaction/rollback_transaction cases below
+// are byte-for-byte identical to that version - only the imports, the
+// createDatabase()/loadSnapshot() init, and the schedulePersist() calls are
+// new. If `sqldelight` is ever bumped, re-diff this file against the new
+// version's sqljs.worker.js and re-apply these changes on top - the upstream
+// protocol could change without notice.
 
 importScripts('/sql-wasm.js');
 
