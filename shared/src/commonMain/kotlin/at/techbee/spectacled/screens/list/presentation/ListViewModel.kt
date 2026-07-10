@@ -66,25 +66,25 @@ class ListViewModel(
         userAppPreferencesStore.lastUsedCalendarId = calendarId
 
         observationJob = viewModelScope.launch {
-            try {
-                val principal = calendarRepository.getPrincipalForCalendar(calendarId) ?: throw NullPointerException("Principal not found")
-                val credentials = credentialStore.load(principal.principalUrl) ?: throw NullPointerException("Credentials not found")
-                val calendar = calendarRepository.getCalendarById(calendarId) ?: throw NullPointerException("Calendar not found")
+            val principal = calendarRepository.getPrincipalForCalendar(calendarId)
+            val credentials = principal?.let { credentialStore.load(it.principalUrl) }
+            val calendar = calendarRepository.getCalendarById(calendarId)
 
-                _state.update { it.copy(
-                    principal = principal,
-                    credentials = credentials,
-                    calendar = calendar
-                ) }
-
-                launch { observeCalendar(calendarId) }
-                launch { observeIcalentries(calendarId) }
-                launch { observeColors() }
-                launch { observeCategories() }
-
-            } catch (_: NullPointerException) {
+            if (principal == null || credentials == null || calendar == null) {
                 _state.update { it.copy(navigateUp = true, isRefreshing = false) }
+                return@launch
             }
+
+            _state.update { it.copy(
+                principal = principal,
+                credentials = credentials,
+                calendar = calendar
+            ) }
+
+            launch { observeCalendar(calendarId) }
+            launch { observeIcalentries(calendarId) }
+            launch { observeColors() }
+            launch { observeCategories() }
         }
     }
 

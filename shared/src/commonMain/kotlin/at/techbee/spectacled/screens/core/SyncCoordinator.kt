@@ -245,14 +245,6 @@ class SyncCoordinator(
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
-        } catch (e: NullPointerException) {   // Seems to be thrown when not authenticated
-            calendarRepository.updateCalendarSyncStatus(
-                CalendarSyncStatus(
-                    CalendarSyncStatusType.NOT_AUTHORIZED,
-                    "Connection error. Please check your internet connection, username and password and try again.",
-                    e.stackTraceToString()
-                ).serialize(), calendar.syncToken, calendar.id
-            )
         } catch (e: Exception) {   //The base class for all exceptions related to non-success HTTP responses.
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
