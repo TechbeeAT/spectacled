@@ -235,7 +235,6 @@ class ListViewModel(
                     }
                 }
             }
-            //platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
         }
     }
 
@@ -253,7 +252,7 @@ class ListViewModel(
     private fun onDeleteSelectedItems() {
         viewModelScope.launch {
             _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(it) }
-            syncTrigger.requestImmediatePush(_state.value.calendar.id)
+            syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
             _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false) }
         }
@@ -273,7 +272,6 @@ class ListViewModel(
                     )
                 }
             }
-            //platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
         }
     }
 

@@ -512,7 +512,7 @@ class DetailsViewModel(
         if(getPlatform().platform == Platforms.WASM)
             syncAndAwaitResult()
         else
-            platformSyncTrigger.requestImmediatePush(_state.value.icalEntry.calendarId)
+            platformSyncTrigger.requestImmediate(listOf(_state.value.icalEntry.calendarId))
     }
 
     private fun onRestoreEntry() {
@@ -569,7 +569,7 @@ class DetailsViewModel(
 
                 val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
-                SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).pushDirtyIcalEntry(icalEntry, calendar)
+                SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendar(calendar)
                 val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.calendarId, icalEntry.uid) ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )

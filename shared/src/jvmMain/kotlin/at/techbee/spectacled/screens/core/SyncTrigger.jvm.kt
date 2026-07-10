@@ -37,12 +37,6 @@ actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
         }
     }
 
-    actual override fun requestImmediatePush(calendarId: Long) {
-        scope.launch {
-            SyncCoordinator.pushLocalChanges(calendarId, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
-        }
-    }
-
     actual override fun schedulePeriodic() {
         job = scope.launch {
             while (isActive) {
