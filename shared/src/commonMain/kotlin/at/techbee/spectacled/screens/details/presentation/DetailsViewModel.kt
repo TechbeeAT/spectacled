@@ -569,7 +569,7 @@ class DetailsViewModel(
 
                 val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
-                SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendar(calendar)
+                SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendarWithSyncLock(calendar)
                 val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.calendarId, icalEntry.uid) ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )

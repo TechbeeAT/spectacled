@@ -89,7 +89,7 @@ class SyncCoordinator(
                                         fileManager,
                                         client,
                                         credentials
-                                    ).syncCalendar(calendar)
+                                    ).syncCalendarWithSyncLock(calendar)
                                 }
                             }
                         }
@@ -117,28 +117,26 @@ class SyncCoordinator(
                         val principal = calendarRepository.getPrincipalForCalendar(calendar.id)
                             ?: return@launch  // TODO: Maybe better enter sync-problem in DB
                         val credentials = credentialStore.load(principal.principalUrl)
-                        SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendar(calendar)
+                        SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendarWithSyncLock(calendar)
                     }
                 }
             }
         }
-
     }
 
-    private suspend fun withCalendarSyncLock(calendarId: Long, block: suspend () -> Unit) {
-        val mutex = mutexFor(calendarId)
+
+    suspend fun syncCalendarWithSyncLock(calendar: Calendar) {
+        val mutex = mutexFor(calendar.id)
         if (!mutex.tryLock()) {
-            Napier.d("Sync already in progress for calendar $calendarId, skipping")
+            Napier.d("Sync already in progress for calendar ${calendar.id}, skipping")
             return
         }
         try {
-            block()
+            sync(calendar)
         } finally {
             mutex.unlock()
         }
     }
-
-    suspend fun syncCalendar(calendar: Calendar) = withCalendarSyncLock(calendar.id) { sync(calendar) }
 
     private suspend fun sync(calendar: Calendar) {
 
@@ -612,5 +610,4 @@ class SyncCoordinator(
         }
         return icalEntry.copy(attachments = updatedAttachments)
     }
-
 }
