@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -100,7 +101,8 @@ fun ListScreenNotes(
                     .widthIn(max = 700.dp)
                     .heightIn(min = 50.dp)
                     .then(modifier)
-                    .animateItem()
+                    .animateItem(),
+                colorScheme = state.colorSchemes[icalEntry.color] ?: MaterialTheme.colorScheme
             )
 
             subtasks.forEach { subtask ->
@@ -117,7 +119,8 @@ fun ListScreenNotes(
                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                     onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                     onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                    modifier = Modifier.padding(start = 48.dp)
+                    modifier = Modifier.padding(start = 48.dp),
+                    colorScheme = state.colorSchemes[subtask.color] ?: MaterialTheme.colorScheme
                 )
             }
         }

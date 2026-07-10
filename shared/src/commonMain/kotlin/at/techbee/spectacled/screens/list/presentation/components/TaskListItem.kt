@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material3.ElevatedFilterChip
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -59,13 +60,14 @@ fun TaskListItem(
     onToggleProgress: () -> Unit,
     onFilterCategory: (category: String) -> Unit,
     dragHandle: @Composable (() -> Unit) = { },
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    colorScheme: ColorScheme? = null // pass a scheme resolved elsewhere (e.g. ListState.colorSchemes) to avoid regenerating it per item in a list
 ) {
 
     val hapticFeedback = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
 
-    MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
+    MaterialTheme(colorScheme = colorScheme ?: getColorSchemeForSeedColor(icalEntry.color)) {
 
         ElevatedFilterChip(
             modifier = modifier,

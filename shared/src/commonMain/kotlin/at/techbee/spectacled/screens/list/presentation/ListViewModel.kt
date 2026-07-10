@@ -19,6 +19,7 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListSorted
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.ExperimentalTime
@@ -81,6 +82,7 @@ class ListViewModel(
                 launch { observeIcalentries(calendarId) }
                 launch { observeColors() }
                 launch { observeCategories() }
+                launch { observeThemePreferences() }
 
             } catch (_: NullPointerException) {
                 _state.update { it.copy(navigateUp = true, isRefreshing = false) }
@@ -107,13 +109,28 @@ class ListViewModel(
                     errorMessage = null,
                     navigateUp = false,
                     snackbarText = null
-                ).recompute() }
+                ).recompute().recomputeColorSchemes() }
 
                 dragAndDropList.apply {
                     clear()
                     addAll(_state.value.displayMap.flatMap { it.value })
                     sortBy { icalEntry -> icalEntry.orderNo }
                 }
+            }
+    }
+
+    private suspend fun observeThemePreferences() {
+        combine(
+            userAppPreferencesStore.getThemeOptionAsFlow(),
+            userAppPreferencesStore.getThemePaletteStlyeAsFlow(),
+            userAppPreferencesStore.getThemeAmoledAsFlow()
+        ) { themeOption, themePaletteStyle, themeAmoled -> Triple(themeOption, themePaletteStyle, themeAmoled) }
+            .collect { (themeOption, themePaletteStyle, themeAmoled) ->
+                _state.update { it.copy(
+                    themeOption = themeOption,
+                    themePaletteStyle = themePaletteStyle,
+                    themeAmoled = themeAmoled
+                ).recomputeColorSchemes() }
             }
     }
 
@@ -188,6 +205,7 @@ class ListViewModel(
             is ListAction.OnUpdateColorOfSelected -> { onUpdateColorOfSelectedItems(action.color) }
             ListAction.OnSelectAllMultiselectItems -> { _state.update { it.copy(multiselectItems = it.displayMap.flatMap { map -> map.value }.map { icalEntry -> icalEntry.id }) } }
             is ListAction.OnDraggingIcalEntry -> { _state.update { it.copy(draggingIcalEntryId = action.icalEntryId) } }
+            is ListAction.OnSystemDarkThemeChanged -> { _state.update { it.copy(isSystemDark = action.isDark).recomputeColorSchemes() } }
             is ListAction.OnShowUpdateCategoryOfSelectedBottomSheet -> {
                 _state.update {
                     if(action.show)

@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -85,7 +86,8 @@ fun JournalsListJournals(
                 .heightIn(min = 50.dp)
                 .padding(end = 8.dp, start = if(icalEntry.isNote()) 44.dp else 0.dp)
                 .then(modifier)
-                .animateItem()
+                .animateItem(),
+            colorScheme = state.colorSchemes[icalEntry.color] ?: MaterialTheme.colorScheme
         )
 
         subtasks.forEach { subtask ->
@@ -102,7 +104,8 @@ fun JournalsListJournals(
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                 onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                modifier = Modifier.padding(start = 64.dp, end = 16.dp)
+                modifier = Modifier.padding(start = 64.dp, end = 16.dp),
+                colorScheme = state.colorSchemes[subtask.color] ?: MaterialTheme.colorScheme
             )
         }
     }

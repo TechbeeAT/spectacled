@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -82,7 +83,8 @@ fun ListScreenTasks(
                 .widthIn(max = 700.dp)
                 .heightIn(min = 50.dp)
                 .then(modifier)
-                .animateItem()
+                .animateItem(),
+            colorScheme = state.colorSchemes[icalEntry.color] ?: MaterialTheme.colorScheme
         )
 
         subtasks.forEach { subtask ->

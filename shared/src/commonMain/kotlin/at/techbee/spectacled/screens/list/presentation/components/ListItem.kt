@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SyncProblem
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -64,12 +65,13 @@ fun ListItem(
     overrideBottomRoundedCornerSize: Dp? = null,
     showDayBlock: Boolean = false,
     dragHandle: @Composable (() -> Unit) = { },
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    colorScheme: ColorScheme? = null // pass a scheme resolved elsewhere (e.g. ListState.colorSchemes) to avoid regenerating it per item in a list
 ) {
 
     val hapticFeedback = LocalHapticFeedback.current
 
-    MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
+    MaterialTheme(colorScheme = colorScheme ?: getColorSchemeForSeedColor(icalEntry.color)) {
 
         Row(modifier = modifier) {
             if(icalEntry.isJournal()) {

@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.list.presentation
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
@@ -13,6 +14,10 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilter
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.theme.ThemeOption
+import com.materialkolor.PaletteStyle
+import com.materialkolor.dynamicColorScheme
+import com.materialkolor.dynamiccolor.ColorSpec
 import io.ktor.http.Url
 import kotlinx.datetime.number
 
@@ -66,6 +71,14 @@ data class ListState(
     val listCollapsedGroups: Set<String> = emptySet(),
     val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES,  // must be overwritten immediately on load
 
+    // Resolved theme inputs, kept in sync from UserAppPreferencesStore (+ isSystemDark, bridged in
+    // from Compose since system dark-mode can't be observed outside composition) - used to build colorSchemes.
+    val themeOption: ThemeOption = ThemeOption.SYSTEM,
+    val themePaletteStyle: PaletteStyle = PaletteStyle.Expressive,
+    val themeAmoled: Boolean = false,
+    val isSystemDark: Boolean = false,
+    val colorSchemes: Map<Color, ColorScheme> = emptyMap(),
+
     val displayMap: Map<ListGrouping, List<IcalEntry>> = emptyMap(),
     val displayMapByDtStartDay: Map<String, List<IcalEntry>> = emptyMap(),
     val displayMapByDtStartMonth: Map<String, List<IcalEntry>> = emptyMap(),
@@ -76,6 +89,32 @@ data class ListState(
 
     val isSearchBarExpanded: Boolean
         get() = listFilterCriteria.anyFilterActive()
+
+    /**
+     * Rebuilds [colorSchemes] for every distinct seed color currently present in [icalEntries],
+     * using the resolved theme inputs above. Cheap (a handful of colors, dynamicColorScheme is a
+     * plain pure function) - call whenever icalEntries or the theme inputs change, independently
+     * of [recompute] (which handles filtering/sorting/grouping and doesn't depend on theme).
+     */
+    fun recomputeColorSchemes(): ListState {
+        val effectiveIsDark = when (themeOption) {
+            ThemeOption.SYSTEM -> isSystemDark
+            ThemeOption.LIGHT -> false
+            ThemeOption.DARK -> true
+        }
+
+        return this.copy(
+            colorSchemes = icalEntries.mapNotNull { it.color }.distinct().associateWith { seedColor ->
+                dynamicColorScheme(
+                    primary = seedColor,
+                    isDark = effectiveIsDark,
+                    style = themePaletteStyle,
+                    isAmoled = themeAmoled,
+                    specVersion = ColorSpec.SpecVersion.SPEC_2025
+                )
+            }
+        )
+    }
 
     fun recompute(): ListState {
         val baseList = getBaseList(icalEntries)
