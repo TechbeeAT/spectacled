@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.about.data
 
 import at.techbee.spectacled.screens.about.domain.GitHubRelease
+import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -19,7 +20,7 @@ class KtorRemoteGitHubReleaseDataSource(
             response.body<List<GitHubReleaseDto>>().map { it.toGitHubRelease() }
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
-            println("Error: ${e.stackTraceToString()}")
+            Napier.w("Error: ${e.stackTraceToString()}")
             emptyList()
         }
     }

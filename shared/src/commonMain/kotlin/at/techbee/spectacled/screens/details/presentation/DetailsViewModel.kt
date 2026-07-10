@@ -12,6 +12,7 @@ import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
+import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
 import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -67,6 +68,7 @@ class DetailsViewModel(
     private val client: HttpClient,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
+    private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -99,7 +101,8 @@ class DetailsViewModel(
             _state.update { it.copy(
                 allPrincipals = allPrincipals,
                 allHomeCollections = allHomeCollections,
-                allCalendars = allCalendars
+                allCalendars = allCalendars,
+                claudeUserApiKey = userAppPreferencesStore.claudeUserApiKey
             ) }
         }
     }
@@ -119,7 +122,7 @@ class DetailsViewModel(
                 navigateUp = false
             ) }
 
-            observeIcalEntry(icalEntry.uid)
+            observeIcalEntry(icalEntry.calendarId, icalEntry.uid)
         }
     }
 
@@ -143,7 +146,7 @@ class DetailsViewModel(
                 navigateUp = false
             ) }
 
-            observeIcalEntry(newIcalEntry.uid)
+            observeIcalEntry(newIcalEntry.calendarId, newIcalEntry.uid)
         }
     }
 
@@ -165,7 +168,7 @@ class DetailsViewModel(
                 navigateUp = false
             ) }
 
-            observeIcalEntry(newIcalEntry.uid)
+            observeIcalEntry(newIcalEntry.calendarId, newIcalEntry.uid)
         }
     }
 
@@ -203,7 +206,7 @@ class DetailsViewModel(
                 navigateUp = false
             ) }
 
-            observeIcalEntry(copiedIcalEntry.uid)
+            observeIcalEntry(copiedIcalEntry.calendarId, copiedIcalEntry.uid)
         }
     }
 
@@ -235,20 +238,20 @@ class DetailsViewModel(
     }
 
     private suspend fun observeSubtasks() {
-        _state.map { it.icalEntry.uid }
+        _state.map { it.icalEntry.calendarId to it.icalEntry.uid }
             .distinctUntilChanged()
-            .flatMapLatest { uid ->
-                icalEntryRepository.getSubtasksByParentUid(uid)
+            .flatMapLatest { (calendarId, uid) ->
+                icalEntryRepository.getSubtasksByParentUid(calendarId, uid)
             }
             .collect { subtasks ->
                 _state.update { it.copy(subtasks = subtasks) }
             }
     }
 
-    private fun observeIcalEntry(uid: String) {
+    private fun observeIcalEntry(calendarId: Long, uid: String) {
         entryObservationJob?.cancel()
         entryObservationJob = viewModelScope.launch {
-            icalEntryRepository.getIcalEntryByUidFlow(uid)
+            icalEntryRepository.getIcalEntryByUidFlow(calendarId, uid)
                 .collect { dbEntry ->
                     if (dbEntry == null) return@collect
                     _state.update { currentState ->
@@ -509,7 +512,7 @@ class DetailsViewModel(
         if(getPlatform().platform == Platforms.WASM)
             syncAndAwaitResult()
         else
-            platformSyncTrigger.requestImmediatePush(_state.value.icalEntry.calendarId)
+            platformSyncTrigger.requestImmediate(listOf(_state.value.icalEntry.calendarId))
     }
 
     private fun onRestoreEntry() {
@@ -566,8 +569,8 @@ class DetailsViewModel(
 
                 val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
-                SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).pushDirtyIcalEntry(icalEntry, calendar)
-                val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.uid) ?: throw Exception(
+                SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendarWithSyncLock(calendar)
+                val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.calendarId, icalEntry.uid) ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
 
@@ -661,10 +664,21 @@ class DetailsViewModel(
     }
 
     private fun onProcessWithAI() {
+        if(state.value.claudeUserApiKey.isNullOrEmpty()) {
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    snackbarText = "API key not provided. Please update the API key in the settings."
+                )
+            }
+            return
+        }
+
         _state.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
-            val remoteResult = KtorRemoteClaudeDataSource(client).applyAiMetadata(_state.value.icalEntry)
+
+            val remoteResult = KtorRemoteClaudeDataSource(client, state.value.claudeUserApiKey?:"").applyAiMetadata(_state.value.icalEntry)
 
             when(remoteResult) {
                 is ClaudeRemoteResponseResult.Failed -> {
@@ -704,7 +718,7 @@ class DetailsViewModel(
     }
 
     @OptIn(ExperimentalTime::class)
-    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?) {
+    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
         viewModelScope.launch {
             val attachmentUid = Uuid.random().toString()
             val localPath = fileManager.saveAttachment("$fileName-${attachmentUid.take(8)}", bytes)
@@ -715,6 +729,7 @@ class DetailsViewModel(
                 localPath = localPath,
                 mimeType = mimeType,
                 size = bytes.size.toLong(),
+                isInline = isInline,
                 syncState = AttachmentSyncState.LOCAL_MODIFIED
             )
 
@@ -738,7 +753,7 @@ class DetailsViewModel(
         } else if (attachment.remoteUrl != null) {
             viewModelScope.launch {
                 try {
-                    _state.update { it.copy(isLoading = true) }
+                    _state.update { it.copy(downloadingAttachmentUids = it.downloadingAttachmentUids + attachmentUid) }
                     
                     val principalUrl = calendarRepository.getPrincipalUrlForCalendarId(_state.value.icalEntry.calendarId)
                         ?.let { Url(it) } ?: throw Exception("Principal not found")
@@ -761,7 +776,7 @@ class DetailsViewModel(
                 } catch (e: Exception) {
                     _state.update { it.copy(snackbarText = "Error: ${e.message}") }
                 } finally {
-                    _state.update { it.copy(isLoading = false) }
+                    _state.update { it.copy(downloadingAttachmentUids = it.downloadingAttachmentUids - attachmentUid) }
                 }
             }
         }
@@ -791,7 +806,8 @@ class DetailsViewModel(
         onAddAttachment(
             fileName = "drawing_" + Uuid.random().toString().take(8) + ".svg",
             bytes = svg.toByteArray(),
-            mimeType = MIMETYPE_SVG
+            mimeType = MIMETYPE_SVG,
+            isInline = true
         )
 
         replaceAttachmentUid?.let { onDeleteAttachment(it) }

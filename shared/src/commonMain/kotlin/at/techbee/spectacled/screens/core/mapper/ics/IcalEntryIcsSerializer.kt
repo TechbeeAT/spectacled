@@ -5,12 +5,19 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsParamName
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsPropertyName
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.FileManager
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.UtcOffset
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.number
 import kotlinx.datetime.offsetAt
 import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 
 fun foldIcsLine(line: String, limit: Int = 75): String {
@@ -54,6 +61,17 @@ fun formatIcsDate(date: LocalDate): String =
         append(date.day.pad2())
     }
 
+private fun formatLocalDateTimeValue(dt: LocalDateTime): String =
+    buildString(15) {
+        append(dt.year.pad4())
+        append(dt.month.number.pad2())
+        append(dt.day.pad2())
+        append('T')
+        append(dt.hour.pad2())
+        append(dt.minute.pad2())
+        append(dt.second.pad2())
+    }
+
 fun formatIcsDateTime(icsDateTime: IcsDateTime?): Pair<String, String?>? {
 
     if (icsDateTime == null) return null
@@ -68,17 +86,7 @@ fun formatIcsDateTime(icsDateTime: IcsDateTime?): Pair<String, String?>? {
     } else {
 
         val effectiveZone = icsDateTime.timeZone ?: TimeZone.UTC
-        val dt = icsDateTime.instant.toLocalDateTime(effectiveZone)
-
-        val value = buildString(16) {
-            append(dt.year.pad4())
-            append(dt.month.number.pad2())
-            append(dt.day.pad2())
-            append('T')
-            append(dt.hour.pad2())
-            append(dt.minute.pad2())
-            append(dt.second.pad2())
-        }
+        val value = formatLocalDateTimeValue(icsDateTime.instant.toLocalDateTime(effectiveZone))
 
         when(icsDateTime.timeZone) {
             null -> value to null
@@ -89,21 +97,21 @@ fun formatIcsDateTime(icsDateTime: IcsDateTime?): Pair<String, String?>? {
 }
 
 
-fun serializeVCalendar(icalEntry: IcalEntry) = serializeVCalendar(listOf(icalEntry))
+fun serializeVCalendar(icalEntry: IcalEntry, fileManager: FileManager? = null) = serializeVCalendar(listOf(icalEntry), fileManager)
 
-fun serializeVCalendar(icalEntries: List<IcalEntry>): String {
+fun serializeVCalendar(icalEntries: List<IcalEntry>, fileManager: FileManager? = null): String {
     val lines = mutableListOf<String>()
 
     lines += "BEGIN:VCALENDAR"
     lines += "VERSION:2.0"
     lines += "PRODID:-//Techbee e.U.//CalDAV Notes 1.0//EN"
 
-    collectTimeZones(icalEntries).forEach { tz ->
-        lines += generateVTimeZone(tz)
+    collectZonedInstants(icalEntries).forEach { (timeZone, instants) ->
+        lines += generateVTimeZone(timeZone, instants)
     }
 
     icalEntries.forEach { icalEntry ->
-        lines += serializeVJournal(icalEntry)
+        lines += serializeVJournal(icalEntry, fileManager)
             .split("\r\n")
     }
 
@@ -113,7 +121,7 @@ fun serializeVCalendar(icalEntries: List<IcalEntry>): String {
 }
 
 
-fun serializeVJournal(icalEntry: IcalEntry): String {
+fun serializeVJournal(icalEntry: IcalEntry, fileManager: FileManager? = null): String {
     val lines = mutableListOf<String>()
 
     lines += "BEGIN:${icalEntry.calendarComponent.name}"    // BEGIN:VJOURNAL or BEGIN:VTODO
@@ -177,13 +185,32 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
     }
 
     icalEntry.attachments.forEach { attachment ->
-        attachment.remoteUrl?.let { remoteUrl ->
-            val params = mutableListOf<String>()
-            attachment.mimeType?.let { params += "${KnownIcsParamName.FMTTYPE.paramName}=$it" }
-            attachment.fileName?.let { params += "${KnownIcsParamName.FILENAME.paramName}=${escapeIcsValue(it)}" }
+        if (attachment.isInline && fileManager != null && attachment.localPath != null) {
+            try {
+                val bytes = fileManager.readAttachment(attachment.localPath)
+                @OptIn(ExperimentalEncodingApi::class)
+                val base64 = Base64.encode(bytes)
+                
+                val params = mutableListOf<String>()
+                params += "${KnownIcsParamName.VALUE.paramName}=BINARY"
+                params += "${KnownIcsParamName.ENCODING.paramName}=BASE64"
+                attachment.mimeType?.let { params += "${KnownIcsParamName.FMTTYPE.paramName}=$it" }
+                attachment.fileName?.let { params += "${KnownIcsParamName.FILENAME.paramName}=${escapeIcsValue(it)}" }
 
-            val paramPart = if (params.isNotEmpty()) params.joinToString(";", prefix = ";") else ""
-            lines += "${KnownIcsPropertyName.ATTACH.propertyName}$paramPart:$remoteUrl"
+                val paramPart = params.joinToString(";", prefix = ";")
+                lines += "${KnownIcsPropertyName.ATTACH.propertyName}$paramPart:$base64"
+            } catch (_: Exception) {
+                // Skip if failed to read/encode
+            }
+        } else {
+            attachment.remoteUrl?.let { remoteUrl ->
+                val params = mutableListOf<String>()
+                attachment.mimeType?.let { params += "${KnownIcsParamName.FMTTYPE.paramName}=$it" }
+                attachment.fileName?.let { params += "${KnownIcsParamName.FILENAME.paramName}=${escapeIcsValue(it)}" }
+
+                val paramPart = if (params.isNotEmpty()) params.joinToString(";", prefix = ";") else ""
+                lines += "${KnownIcsPropertyName.ATTACH.propertyName}$paramPart:$remoteUrl"
+            }
         }
     }
 
@@ -196,39 +223,118 @@ fun serializeVJournal(icalEntry: IcalEntry): String {
     return lines.joinToString("\r\n", transform = ::foldIcsLine)
 }
 
-private fun collectTimeZones(icalEntries: List<IcalEntry>): Set<TimeZone> =
-    buildSet {
+/**
+ * Collects, per non-UTC timezone actually referenced by dtStart/due/completed, every instant
+ * that uses it - so generateVTimeZone can emit a VTIMEZONE that is valid for those specific
+ * dates (this app has no recurring events, so a perpetual RRULE-based rule isn't needed).
+ */
+private fun collectZonedInstants(icalEntries: List<IcalEntry>): Map<TimeZone, List<Instant>> =
+    buildMap<TimeZone, MutableList<Instant>> {
         icalEntries.forEach { icalEntry ->
-            icalEntry.dtStart?.timeZone?.let { add(it) }
+            listOfNotNull(icalEntry.dtStart, icalEntry.due, icalEntry.completed).forEach { icsDateTime ->
+                val zone = icsDateTime.timeZone
+                if (zone != null && zone != TimeZone.UTC) {
+                    getOrPut(zone) { mutableListOf() } += icsDateTime.instant
+                }
+            }
         }
-    }.filter { it != TimeZone.UTC }.toSet()
+    }
 
-private fun generateVTimeZone(timeZone: TimeZone): List<String> {
-
-    val now = Clock.System.now()
-    val currentOffset = timeZone.offsetAt(now)
-
-    val totalSeconds = currentOffset.totalSeconds
+private fun formatUtcOffset(offset: UtcOffset): String {
+    val totalSeconds = offset.totalSeconds
     val sign = if (totalSeconds >= 0) "+" else "-"
     val absSeconds = kotlin.math.abs(totalSeconds)
 
     val hours = absSeconds / 3600
     val minutes = (absSeconds % 3600) / 60
 
-    val offsetString = buildString {
+    return buildString {
         append(sign)
         append(hours.pad2())
         append(minutes.pad2())
     }
+}
 
-    return listOf(
-        "BEGIN:VTIMEZONE",
-        "TZID:${timeZone.id}",
-        "BEGIN:STANDARD",
-        "DTSTART:19700101T000000",
-        "TZOFFSETFROM:$offsetString",
-        "TZOFFSETTO:$offsetString",
-        "END:STANDARD",
-        "END:VTIMEZONE"
-    )
+private fun timeZoneObservanceBlock(
+    name: String,
+    fromOffset: UtcOffset,
+    toOffset: UtcOffset,
+    localStart: LocalDateTime
+): List<String> = listOf(
+    "BEGIN:$name",
+    "DTSTART:${formatLocalDateTimeValue(localStart)}",
+    "TZOFFSETFROM:${formatUtcOffset(fromOffset)}",
+    "TZOFFSETTO:${formatUtcOffset(toOffset)}",
+    "END:$name"
+)
+
+/**
+ * Binary-searches for the instant where [timeZone]'s UTC offset changes, between [before]
+ * (a known offset) and [after] (a different, known offset). Assumes exactly one transition
+ * lies in the range, which holds when before/after are ~6 months apart.
+ */
+private fun findTransition(timeZone: TimeZone, before: Instant, after: Instant): Instant {
+    var lo = before
+    var hi = after
+    val loOffset = timeZone.offsetAt(lo)
+
+    while (hi - lo > 60.seconds) {
+        val mid = lo + (hi - lo) / 2
+        if (timeZone.offsetAt(mid) == loOffset) lo = mid else hi = mid
+    }
+    return hi
+}
+
+/**
+ * Generates a VTIMEZONE valid for the given [instants] (the actual dtStart/due/completed
+ * values referenced by this TZID). For each year among them, samples two dates six months
+ * apart to detect whether the zone observes daylight saving that year:
+ * - if not, emits a single STANDARD block (fixed offset, anchored to that year rather than
+ *   "now" as before);
+ * - if so, locates the two real transition instants and emits matching DAYLIGHT/STANDARD
+ *   blocks, so times spanning a DST boundary no longer drift by an hour on interop.
+ */
+private fun generateVTimeZone(timeZone: TimeZone, instants: List<Instant>): List<String> {
+    val lines = mutableListOf("BEGIN:VTIMEZONE", "TZID:${timeZone.id}")
+
+    instants.map { it.toLocalDateTime(timeZone).year }.toSet().sorted().forEach { year ->
+        val sampleA = LocalDate(year, 1, 15).atStartOfDayIn(TimeZone.UTC)
+        val sampleB = LocalDate(year, 7, 15).atStartOfDayIn(TimeZone.UTC)
+        val offsetA = timeZone.offsetAt(sampleA)
+        val offsetB = timeZone.offsetAt(sampleB)
+
+        if (offsetA == offsetB) {
+            // No DST observed this year - a single fixed offset applies, same as always.
+            lines += timeZoneObservanceBlock(
+                name = "STANDARD",
+                fromOffset = offsetA,
+                toOffset = offsetA,
+                localStart = LocalDateTime(1970, 1, 1, 0, 0, 0)
+            )
+            return@forEach
+        }
+
+        // DST is always ahead of standard time, regardless of hemisphere/season.
+        val daylightOffset = if (offsetA.totalSeconds > offsetB.totalSeconds) offsetA else offsetB
+        val nextSampleA = LocalDate(year + 1, 1, 15).atStartOfDayIn(TimeZone.UTC)
+
+        // Exactly one transition lies within each 6-month sampling window.
+        val firstTransition = findTransition(timeZone, sampleA, sampleB)
+        val secondTransition = findTransition(timeZone, sampleB, nextSampleA)
+
+        listOf(
+            Triple(firstTransition, offsetA, offsetB),
+            Triple(secondTransition, offsetB, offsetA)
+        ).forEach { (transition, fromOffset, toOffset) ->
+            lines += timeZoneObservanceBlock(
+                name = if (toOffset == daylightOffset) "DAYLIGHT" else "STANDARD",
+                fromOffset = fromOffset,
+                toOffset = toOffset,
+                localStart = transition.toLocalDateTime(timeZone)
+            )
+        }
+    }
+
+    lines += "END:VTIMEZONE"
+    return lines
 }

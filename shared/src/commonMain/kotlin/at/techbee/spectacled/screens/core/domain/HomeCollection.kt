@@ -6,7 +6,8 @@ data class HomeCollection(
     val id: Long,
     val principalId: Long,
     val url: Url,
-    var calDavPrivileges: List<CalDavPrivilege>
+    var calDavPrivileges: List<CalDavPrivilege>,
+    val attachmentCollectionUrl: Url? = null
 ) {
     companion object {
         fun getHomeCollectionForPreview() = HomeCollection(

@@ -8,7 +8,7 @@ const val CREDENTIALS_FILE_NAME = "credentials"
 
 @Serializable
 data class Credentials(
-    val server: String,
+    val server: Url,
     val username: String,
     val password: String
 )

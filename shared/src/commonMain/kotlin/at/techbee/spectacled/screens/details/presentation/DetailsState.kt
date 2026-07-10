@@ -34,13 +34,18 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val showDrawingCanvasBottomSheet: DetailsAction.OnShowDrawingCanvasBottomSheet = DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
 
     val isLoading: Boolean = true,
+    val downloadingAttachmentUids: Set<String> = emptySet(),
 
     val snackbarText: String? = null,
     val navigateUp: Boolean = false,
-    val navigateToIcalEntryId: Long? = null
+    val navigateToIcalEntryId: Long? = null,
+
+    val claudeUserApiKey: String? = null
 ) {
 
     fun allowEditing() = calendar?.canWriteContent() == true && !icalEntry.syncState.isDeletedState()
 
     fun allowRestore() = calendar?.canWriteContent() == true && icalEntry.syncState.isDeletedState()
+
+    fun isAttachmentSupportEnabled() = calendar?.isAttachmentSyncSupported() == true
 }

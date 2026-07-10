@@ -1,0 +1,72 @@
+-- Disable foreign key checks during migration
+PRAGMA foreign_keys=0;
+
+-- Drop indexes explicitly to avoid name collisions during migration
+DROP INDEX IF EXISTS idx_icalentry_calendarId;
+DROP INDEX IF EXISTS idx_icalentry_href;
+DROP INDEX IF EXISTS idx_icalentry_parentUid;
+
+-- 1. Create temporary table with the new schema
+CREATE TABLE IcalEntryDto_temp (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    calendarId INTEGER NOT NULL REFERENCES CalendarDto(id) ON DELETE CASCADE,
+    uid TEXT NOT NULL,
+    summary TEXT,
+    description TEXT,
+    dtstart TEXT,
+    dtStartTimeZone TEXT,
+    due TEXT,
+    dueTimeZone TEXT,
+    completed TEXT,
+    completedTimeZone TEXT,
+    status TEXT,
+    percentComplete INTEGER,
+    priority INTEGER,
+    classification TEXT,
+    dtstamp TEXT,
+    color INTEGER,
+    sequence INTEGER,
+    categories TEXT,
+    created TEXT,
+    lastModified TEXT,
+    extraProperties TEXT,
+    orderNo INTEGER,
+    syncState TEXT,
+    etag TEXT,
+    href TEXT,
+    calendarComponent TEXT,
+    parentUid TEXT,
+    relType TEXT,
+    url TEXT,
+    UNIQUE(calendarId, uid)
+);
+
+-- 2. Copy data from the old table
+INSERT INTO IcalEntryDto_temp (
+    id, calendarId, uid, summary, description, dtstart, dtStartTimeZone,
+    due, dueTimeZone, completed, completedTimeZone, status, percentComplete,
+    priority, classification, dtstamp, color, sequence, categories, created,
+    lastModified, extraProperties, orderNo, syncState, etag, href,
+    calendarComponent, parentUid, relType, url
+)
+SELECT
+    id, calendarId, uid, summary, description, dtstart, dtStartTimeZone,
+    due, dueTimeZone, completed, completedTimeZone, status, percentComplete,
+    priority, classification, dtstamp, color, sequence, categories, created,
+    lastModified, extraProperties, orderNo, syncState, etag, href,
+    calendarComponent, parentUid, relType, url
+FROM IcalEntryDto;
+
+-- 3. Drop the old table
+DROP TABLE IcalEntryDto;
+
+-- 4. Rename the temporary table to the original name
+ALTER TABLE IcalEntryDto_temp RENAME TO IcalEntryDto;
+
+-- 5. Recreate indexes
+CREATE INDEX idx_icalentry_calendarId ON IcalEntryDto(calendarId);
+CREATE INDEX idx_icalentry_href ON IcalEntryDto(href);
+CREATE INDEX idx_icalentry_parentUid ON IcalEntryDto(parentUid);
+
+-- Re-enable foreign key checks
+PRAGMA foreign_keys=1;

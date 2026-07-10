@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.details.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -85,12 +86,14 @@ import spectacled.shared.generated.resources.add_from_gallery
 import spectacled.shared.generated.resources.add_photo
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_url
+import spectacled.shared.generated.resources.attachment_not_supported_by_server
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.restore
 import spectacled.shared.generated.resources.subtask
+import spectacled.shared.generated.resources.subtasks_not_supported_in_collection
 import kotlin.time.ExperimentalTime
 
 
@@ -181,7 +184,8 @@ fun DetailsScreenRoot(
             DetailsMoreBottomSheet(
                 onAction = { action -> detailsViewModel.onAction(action) },
                 icalEntry = detailsState.icalEntry,
-                canWriteContent = detailsState.allowEditing()
+                canWriteContent = detailsState.allowEditing(),
+                claudeUserApiKeyProvided = !detailsState.claudeUserApiKey.isNullOrEmpty()
             )
         }
 
@@ -360,18 +364,30 @@ fun DetailsScreenRoot(
 
 
                             DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_attachment)) },
+                                text = {
+                                    Column {
+                                        Text(stringResource(Res.string.add_attachment))
+                                        if(!detailsState.isAttachmentSupportEnabled())
+                                            Text(
+                                                text = stringResource(Res.string.attachment_not_supported_by_server),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                    }
+                                },
                                 leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
+                                enabled = detailsState.isAttachmentSupportEnabled(),
                                 onClick = {
                                     filePicker.pickFile() /* Result handled in rememberFilePicker callback */
                                     addMoreExpanded = false
                                 },
                             )
 
-                            if(getPlatform().platform == Platforms.IOS || getPlatform().platform == Platforms.ANDROID) {
+                            if(getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID) && detailsState.isAttachmentSupportEnabled()) {
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(Res.string.add_photo)) },
+                                    text = {  Text(stringResource(Res.string.add_photo)) },
                                     leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
+                                    enabled = detailsState.isAttachmentSupportEnabled(),
                                     onClick = {
                                         imagePicker.takePhoto()
                                         addMoreExpanded = false
@@ -379,14 +395,17 @@ fun DetailsScreenRoot(
                                 )
                             }
 
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_from_gallery)) },
-                                leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
-                                onClick = {
-                                    imagePicker.pickImage()
-                                    addMoreExpanded = false
-                                },
-                            )
+                            if(detailsState.isAttachmentSupportEnabled()) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(Res.string.add_from_gallery)) },
+                                    leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
+                                    enabled = detailsState.isAttachmentSupportEnabled(),
+                                    onClick = {
+                                        imagePicker.pickImage()
+                                        addMoreExpanded = false
+                                    },
+                                )
+                            }
 
                             DropdownMenuItem(
                                 text = { Text(stringResource(Res.string.add_drawing)) },
@@ -408,7 +427,17 @@ fun DetailsScreenRoot(
                             )
 
                             DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_subtask)) },
+                                text = {
+                                    Column {
+                                        Text(stringResource(Res.string.add_subtask))
+                                        if(detailsState.calendar?.isTasksSupported() != true)
+                                            Text(
+                                                text = stringResource(Res.string.subtasks_not_supported_in_collection),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                    }
+                                },
                                 leadingIcon = { Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask)) },
                                 onClick = {
                                     detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet))

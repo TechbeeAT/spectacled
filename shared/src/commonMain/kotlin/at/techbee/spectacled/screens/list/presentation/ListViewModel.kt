@@ -66,25 +66,25 @@ class ListViewModel(
         userAppPreferencesStore.lastUsedCalendarId = calendarId
 
         observationJob = viewModelScope.launch {
-            try {
-                val principal = calendarRepository.getPrincipalForCalendar(calendarId) ?: throw NullPointerException("Principal not found")
-                val credentials = credentialStore.load(principal.principalUrl) ?: throw NullPointerException("Credentials not found")
-                val calendar = calendarRepository.getCalendarById(calendarId) ?: throw NullPointerException("Calendar not found")
+            val principal = calendarRepository.getPrincipalForCalendar(calendarId)
+            val credentials = principal?.let { credentialStore.load(it.principalUrl) }
+            val calendar = calendarRepository.getCalendarById(calendarId)
 
-                _state.update { it.copy(
-                    principal = principal,
-                    credentials = credentials,
-                    calendar = calendar
-                ).recompute() }
-
-                launch { observeCalendar(calendarId) }
-                launch { observeIcalentries(calendarId) }
-                launch { observeColors() }
-                launch { observeCategories() }
-
-            } catch (_: NullPointerException) {
-                _state.update { it.copy(navigateUp = true, isRefreshing = false).recompute() }
+            if (principal == null || credentials == null || calendar == null) {
+                _state.update { it.copy(navigateUp = true, isRefreshing = false) }
+                return@launch
             }
+
+            _state.update { it.copy(
+                principal = principal,
+                credentials = credentials,
+                calendar = calendar
+            ) }
+
+            launch { observeCalendar(calendarId) }
+            launch { observeIcalentries(calendarId) }
+            launch { observeColors() }
+            launch { observeCategories() }
         }
     }
 
@@ -94,7 +94,7 @@ class ListViewModel(
                 val emittedCalendar = calendars.find { it.id == calendarId } ?: return@collect
                 _state.update { it.copy(
                     calendar = emittedCalendar
-                ).recompute() }
+                ) }
             }
     }
 
@@ -122,7 +122,7 @@ class ListViewModel(
             .collect { emittedColors ->
                 _state.update { it.copy(
                     allColors = emittedColors
-                ).recompute() }
+                ) }
             }
     }
 
@@ -131,7 +131,7 @@ class ListViewModel(
             .collect { allCategories ->
                 _state.update { it.copy(
                     allCategories = allCategories
-                ).recompute() }
+                ) }
             }
     }
 
@@ -143,14 +143,14 @@ class ListViewModel(
                 updateList(_state.value.listSortedBy, _state.value.listSortedByAscending, action.listFilterCriteria)
             }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
-            is ListAction.OnIcalEntryClicked -> {  _state.update { it.copy(navigateToIcalEntryId = action.id).recompute() } }
+            is ListAction.OnIcalEntryClicked -> {  _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is ListAction.OnSortedByChanged -> {
                 updateList(action.listSortedBy, action.listSortedByAscending, _state.value.listFilterCriteria)
                 userAppPreferencesStore.listSortedBy = action.listSortedBy
                 userAppPreferencesStore.listSortedByAscending = action.listSortedByAscending
             }
             is ListAction.OnViewModeChanged -> {
-                _state.update { it.copy(listLayout = action.listLayout).recompute() }
+                _state.update { it.copy(listLayout = action.listLayout) }
                 userAppPreferencesStore.listLayout = action.listLayout
             }
             is ListAction.OnSearchBarExpanded -> {
@@ -165,13 +165,13 @@ class ListViewModel(
             is ListAction.OnNavigateUp -> {
                 if(action.navigateUp)
                     userAppPreferencesStore.lastUsedCalendarId = null // reset lastUsedCalendarId
-                _state.update { it.copy(navigateUp = action.navigateUp).recompute() }
+                _state.update { it.copy(navigateUp = action.navigateUp) }
             }
-            is ListAction.OnUpdateSnackbar -> { _state.update { it.copy(snackbarText = action.message).recompute() } }
-            ListAction.OnToggleShowDeletedItems -> { _state.update { it.copy(showDeletedItems = !it.showDeletedItems).recompute() } }
+            is ListAction.OnUpdateSnackbar -> { _state.update { it.copy(snackbarText = action.message) } }
+            ListAction.OnToggleShowDeletedItems -> { _state.update { it.copy(showDeletedItems = !it.showDeletedItems) } }
             is ListAction.OnToggleMultiselectItem -> toggleMultiselectItem(action.icalEntryId)
-            ListAction.OnClearMultiselectItems -> { _state.update { it.copy(multiselectItems = null).recompute() } }
-            is ListAction.OnShowDeleteSelectedItemsDialog -> { _state.update { it.copy(showDeleteSelectedItemsDialog = action.showDialog).recompute() }}
+            ListAction.OnClearMultiselectItems -> { _state.update { it.copy(multiselectItems = null) } }
+            is ListAction.OnShowDeleteSelectedItemsDialog -> { _state.update { it.copy(showDeleteSelectedItemsDialog = action.showDialog) }}
             ListAction.OnDeleteSelectedItems -> onDeleteSelectedItems()
             is ListAction.OnUpdateOrderNo -> onUpdateOrderNo(action.fromIndex, action.toIndex)
             ListAction.OnPersistOrderNo -> onPersistOrderNo()
@@ -179,25 +179,25 @@ class ListViewModel(
             is ListAction.OnShowUpdateColorOfSelectedBottomSheet -> {
                 _state.update {
                     if(action.show)
-                        it.copy(showUpdateColorOfSelectedBottomSheet = true).recompute()
+                        it.copy(showUpdateColorOfSelectedBottomSheet = true)
                     else {
-                        it.copy(showUpdateColorOfSelectedBottomSheet = false, multiselectItems = null).recompute()
+                        it.copy(showUpdateColorOfSelectedBottomSheet = false, multiselectItems = null)
                     }
                 }
             }
             is ListAction.OnUpdateColorOfSelected -> { onUpdateColorOfSelectedItems(action.color) }
-            ListAction.OnSelectAllMultiselectItems -> { _state.update { it.copy(multiselectItems = it.displayMap.flatMap { map -> map.value }.map { icalEntry -> icalEntry.id }).recompute() } }
-            is ListAction.OnDraggingIcalEntry -> { _state.update { it.copy(draggingIcalEntryId = action.icalEntryId).recompute() } }
+            ListAction.OnSelectAllMultiselectItems -> { _state.update { it.copy(multiselectItems = it.displayMap.flatMap { map -> map.value }.map { icalEntry -> icalEntry.id }) } }
+            is ListAction.OnDraggingIcalEntry -> { _state.update { it.copy(draggingIcalEntryId = action.icalEntryId) } }
             is ListAction.OnShowUpdateCategoryOfSelectedBottomSheet -> {
                 _state.update {
                     if(action.show)
-                        it.copy(showUpdateCategoryOfSelectedBottomSheet = true).recompute()
+                        it.copy(showUpdateCategoryOfSelectedBottomSheet = true)
                     else {
-                        it.copy(showUpdateCategoryOfSelectedBottomSheet = false, multiselectItems = null).recompute()
+                        it.copy(showUpdateCategoryOfSelectedBottomSheet = false, multiselectItems = null)
                     }
                 }
             }
-            is ListAction.OnShowDateSelectorBottomSheet -> { _state.update { it.copy(showDateSelectorBottomSheet = action.show).recompute() } }
+            is ListAction.OnShowDateSelectorBottomSheet -> { _state.update { it.copy(showDateSelectorBottomSheet = action.show) } }
             is ListAction.OnUpdateCategoryOfSelected -> { onUpdateCategoryOfSelectedItems(action.addCategory, action.removeCategory) }
             is ListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
             is ListAction.OnGoToSelectedDate -> { onGoToDate(action.selectedDate) }
@@ -235,7 +235,6 @@ class ListViewModel(
                     }
                 }
             }
-            //platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
         }
     }
 
@@ -253,9 +252,9 @@ class ListViewModel(
     private fun onDeleteSelectedItems() {
         viewModelScope.launch {
             _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(it) }
-            syncTrigger.requestImmediatePush(_state.value.calendar.id)
+            syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
-            _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false).recompute() }
+            _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false) }
         }
     }
 
@@ -273,7 +272,6 @@ class ListViewModel(
                     )
                 }
             }
-            //platformSyncTrigger.requestImmediatePush(_state.value.calendar.id)
         }
     }
 
@@ -299,10 +297,10 @@ class ListViewModel(
     private fun toggleMultiselectItem(icalEntryId: Long?) {
 
         if(icalEntryId == null && _state.value.multiselectItems == null) {
-            _state.update { it.copy(multiselectItems = emptyList()).recompute() }
+            _state.update { it.copy(multiselectItems = emptyList()) }
             return
         } else if(icalEntryId == null && _state.value.multiselectItems != null) {
-            _state.update { it.copy(multiselectItems = null).recompute() }
+            _state.update { it.copy(multiselectItems = null) }
             return
         }
 
@@ -314,9 +312,9 @@ class ListViewModel(
         } ?: listOf(icalEntryId!!)
 
         if(newMultiselectList.isEmpty())
-            _state.update { it.copy(multiselectItems = null).recompute() }
+            _state.update { it.copy(multiselectItems = null) }
         else
-            _state.update { it.copy(multiselectItems = newMultiselectList).recompute() }
+            _state.update { it.copy(multiselectItems = newMultiselectList) }
     }
 
     private fun onUpdateOrderNo(fromIndex: Int, toIndex: Int) {
@@ -342,12 +340,12 @@ class ListViewModel(
                     it.listCollapsedGroups.minus(listGroup)
                 else
                     it.listCollapsedGroups.plus(listGroup)
-            ).recompute()
+            )
         }
         userAppPreferencesStore.listCollapsedGroups = _state.value.listCollapsedGroups
     }
 
     private fun onGoToDate(selectedDate: IcsDateTime?) {
-        selectedDate?.let { _state.update { it.copy(scrollToDate = selectedDate).recompute() } }
+        selectedDate?.let { _state.update { it.copy(scrollToDate = selectedDate) } }
     }
 }

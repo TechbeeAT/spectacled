@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentPaste
-import androidx.compose.material.icons.outlined.ContentPasteGo
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.FileCopy
@@ -57,6 +56,7 @@ import spectacled.shared.generated.resources.share
 fun DetailsMoreBottomSheet(
     onAction: (DetailsAction) -> Unit,
     icalEntry: IcalEntry,
+    claudeUserApiKeyProvided: Boolean,
     canWriteContent: Boolean
 ) {
 
@@ -162,13 +162,25 @@ fun DetailsMoreBottomSheet(
                 leadingIcon = {
                     Icon(
                         painterResource(Res.drawable.ic_cognition),
-                        "AI Extract (Claude; experimental)"
+                        "AI Extract (Claude)"
                     )
                 },
-                text = { Text("AI Extract (Claude; experimental)") },
+                text = {
+                    Column {
+                        Text("AI Extract (Claude)")
+                        if(!claudeUserApiKeyProvided)
+                            Text(
+                                text = "Add your Anthropic API key in Settings to use AI Extract.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                                )
+                    }
+
+                       },
                 onClick = {
                     onAction(DetailsAction.OnProcessWithAI)
                 },
+                enabled = canWriteContent && claudeUserApiKeyProvided,
                 colors = MenuDefaults.itemColors().copy(
                     textColor = MaterialTheme.colorScheme.primary,
                     leadingIconColor = MaterialTheme.colorScheme.primary
@@ -214,7 +226,8 @@ fun DetailsMoreBottomSheetPreview() {
             DetailsMoreBottomSheet(
                 onAction = {},
                 icalEntry = IcalEntry.getSampleIcalEntry(),
-                canWriteContent = true
+                canWriteContent = true,
+                claudeUserApiKeyProvided = true
             )
         }
     }
@@ -228,7 +241,8 @@ fun DetailsMoreBottomSheet_ReadOnly_Preview() {
             DetailsMoreBottomSheet(
                 onAction = {},
                 icalEntry = IcalEntry.getSampleIcalEntry(),
-                canWriteContent = false
+                canWriteContent = false,
+                claudeUserApiKeyProvided = false
             )
         }
     }

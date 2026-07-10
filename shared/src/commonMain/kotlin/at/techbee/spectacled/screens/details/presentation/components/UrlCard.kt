@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import at.techbee.spectacled.theme.AppTheme
+import io.github.aakira.napier.Napier
 import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -42,7 +43,7 @@ fun UrlCard(
             try {
                 uriHandler.openUri(url.toString())
             } catch (e: Exception) {
-                println(e.stackTraceToString())
+                Napier.w(e.stackTraceToString())
             }
                   },
         elevation = CardDefaults.cardElevation(0.dp),

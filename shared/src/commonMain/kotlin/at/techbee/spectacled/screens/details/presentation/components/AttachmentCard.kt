@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Attachment
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +39,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import at.techbee.spectacled.screens.core.FileManager
-import at.techbee.spectacled.screens.core.PlatformFileManager
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
 import at.techbee.spectacled.screens.core.presentation.components.PathData
@@ -57,7 +58,8 @@ import spectacled.shared.generated.resources.drawing
 fun AttachmentCard(
     attachment: Attachment,
     onAction: (DetailsAction) -> Unit,
-    fileManager: FileManager =  koinInject<PlatformFileManager>(),
+    isDownloading: Boolean = false,
+    fileManager: FileManager = koinInject<FileManager>(),
     modifier: Modifier = Modifier
 ) {
 
@@ -114,6 +116,13 @@ fun AttachmentCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+
+                AnimatedVisibility(isDownloading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp).padding(4.dp),
+                        strokeWidth = 2.dp
+                    )
                 }
 
                 IconButton(onClick = { onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) }) {

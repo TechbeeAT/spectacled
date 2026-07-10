@@ -20,10 +20,8 @@ import java.util.concurrent.TimeUnit
 
 const val CALDAV_PERIODIC_SYNC_WORKER = "caldav-periodic-sync"
 const val CALDAV_IMMEDIATE_SYNC_WORKER = "caldav-immediate-sync"
-const val CALDAV_IMMEDIATE_SYNC_PUSH_WORKER = "caldav-immediate-sync-push"
 const val CALDAV_IMMEDIATE_SYNC_ALL_WORKER = "caldav-immediate-sync-all"
 const val WORKER_TARGET_CALENDAR_IDS = "TARGET_CALENDAR_IDS"
-const val WORKER_PUSH_ONLY = "PUSH_ONLY"
 
 actual class PlatformSyncTrigger(val context: Context) : SyncTrigger {
 
@@ -40,18 +38,6 @@ actual class PlatformSyncTrigger(val context: Context) : SyncTrigger {
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(CALDAV_IMMEDIATE_SYNC_WORKER, ExistingWorkPolicy.APPEND_OR_REPLACE, OneTimeWorkRequestBuilder<SyncWorker>().setInputData(inputData).build())
-    }
-
-    actual override fun requestImmediatePush(calendarId: Long) {
-        val inputData = Data.Builder()
-            .putLongArray(
-                WORKER_TARGET_CALENDAR_IDS,
-                longArrayOf(calendarId)
-            )
-            .putBoolean(WORKER_PUSH_ONLY, true)
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniqueWork(CALDAV_IMMEDIATE_SYNC_PUSH_WORKER, ExistingWorkPolicy.APPEND_OR_REPLACE, OneTimeWorkRequestBuilder<SyncWorker>().setInputData(inputData).build())
     }
 
     actual override fun schedulePeriodic() {
@@ -78,13 +64,10 @@ class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineW
     override suspend fun doWork(): Result {
 
         val targetCalendarIds = inputData.getLongArray(WORKER_TARGET_CALENDAR_IDS)?.toList()
-        val pushOnly = inputData.getBoolean(WORKER_PUSH_ONLY, false)
 
         if (targetCalendarIds.isNullOrEmpty()) {
             // Default behavior: Sync everything
             SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
-        } else if(pushOnly && targetCalendarIds.size == 1) {
-            SyncCoordinator.pushLocalChanges(targetCalendarIds.first(), calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
         } else {
             SyncCoordinator.syncSpecificCalendars(
                 targetCalendarIds,

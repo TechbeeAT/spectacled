@@ -23,6 +23,7 @@ import at.techbee.spectacled.screens.core.presentation.components.SpecialRounded
 import com.mikepenz.aboutlibraries.Libs
 import com.mikepenz.aboutlibraries.entity.Library
 import com.mikepenz.aboutlibraries.ui.compose.util.author
+import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_libraries
@@ -60,7 +61,7 @@ fun AboutLibraries(
                         try {
                             library.website?.let { uriHandler.openUri(it) }
                         } catch (e: Exception) {
-                            println(e.stackTraceToString())
+                            Napier.w(e.stackTraceToString())
                         }
                     },
                     modifier = Modifier.fillMaxWidth()

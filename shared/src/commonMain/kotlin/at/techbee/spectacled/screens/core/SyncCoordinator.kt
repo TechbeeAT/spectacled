@@ -24,6 +24,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
+import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException
@@ -35,6 +36,8 @@ import io.ktor.http.Url
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -49,6 +52,17 @@ class SyncCoordinator(
 ) {
 
     companion object {
+
+        // Guards against a background sync and a manual push/refresh racing on the same
+        // calendar's syncToken and rows. One Mutex per calendarId; the outer lock only guards
+        // creating that per-calendar Mutex, it isn't held during the sync itself.
+        private val calendarSyncMutexesLock = Mutex()
+        private val calendarSyncMutexes = mutableMapOf<Long, Mutex>()
+
+        private suspend fun mutexFor(calendarId: Long): Mutex =
+            calendarSyncMutexesLock.withLock {
+                calendarSyncMutexes.getOrPut(calendarId) { Mutex() }
+            }
 
         @OptIn(ExperimentalTime::class)
         suspend fun syncAllPrincipals(
@@ -75,7 +89,7 @@ class SyncCoordinator(
                                         fileManager,
                                         client,
                                         credentials
-                                    ).syncCalendar(calendar)
+                                    ).syncCalendarWithSyncLock(calendar)
                                 }
                             }
                         }
@@ -103,44 +117,30 @@ class SyncCoordinator(
                         val principal = calendarRepository.getPrincipalForCalendar(calendar.id)
                             ?: return@launch  // TODO: Maybe better enter sync-problem in DB
                         val credentials = credentialStore.load(principal.principalUrl)
-                        SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendar(calendar)
+                        SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendarWithSyncLock(calendar)
                     }
                 }
             }
         }
+    }
 
-        suspend fun pushLocalChanges(
-            calendarId: Long,
-            calendarRepository: CalendarRepository,
-            icalEntryRepository: IcalEntryRepository,
-            fileManager: FileManager,
-            credentialStore: CredentialStore,
-            client: HttpClient
-        ) {
-            val calendar = calendarRepository.getCalendarById(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
-            val principal =
-                calendarRepository.getPrincipalForCalendar(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
-            val credentials = credentialStore.load(principal.principalUrl)
 
-            SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).pushLocalChanges(calendar)
+    suspend fun syncCalendarWithSyncLock(calendar: Calendar) {
+        val mutex = mutexFor(calendar.id)
+        if (!mutex.tryLock()) {
+            Napier.d("Sync already in progress for calendar ${calendar.id}, skipping")
+            return
+        }
+        try {
+            sync(calendar)
+        } finally {
+            mutex.unlock()
         }
     }
 
-    private suspend fun syncCalendar(calendar: Calendar) = sync(calendar, null)
-
-    suspend fun pushDirtyIcalEntry(dirtyIcalEntry: IcalEntry, calendar: Calendar) = sync(calendar, dirtyIcalEntry)
-
-    private suspend fun sync(
-        calendar: Calendar,
-        dirtyIcalEntry: IcalEntry? = null   // if null all calendar is synchronized, otherwise only the dirtyIcalEntry is pushed
-    ) {
+    private suspend fun sync(calendar: Calendar) {
 
         try {
-            if (dirtyIcalEntry != null) {
-                pushSingleLocalChange(dirtyIcalEntry, calendar)
-                return
-            }
-
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(CalendarSyncStatusType.IN_PROGRESS).serialize(),
                 calendar.syncToken,
@@ -148,7 +148,6 @@ class SyncCoordinator(
             )
 
             val syncCollectionResponse = syncCollectionMultiplatform(client, calendar, credentials)
-            println(syncCollectionResponse)
             when (syncCollectionResponse) {
 
                 is MultigetSyncCollectionResult.Failed -> {
@@ -246,14 +245,6 @@ class SyncCoordinator(
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
-        } catch (e: NullPointerException) {   // Seems to be thrown when not authenticated
-            calendarRepository.updateCalendarSyncStatus(
-                CalendarSyncStatus(
-                    CalendarSyncStatusType.NOT_AUTHORIZED,
-                    "Connection error. Please check your internet connection, username and password and try again.",
-                    e.stackTraceToString()
-                ).serialize(), calendar.syncToken, calendar.id
-            )
         } catch (e: Exception) {   //The base class for all exceptions related to non-success HTTP responses.
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
@@ -345,7 +336,7 @@ class SyncCoordinator(
         }
 
         if (localIcalEntry == null) {
-            localIcalEntry = icalEntryRepository.getIcalEntryByUid(serverIcalEntry.uid)
+            localIcalEntry = icalEntryRepository.getIcalEntryByUid(calendar.id, serverIcalEntry.uid)
         }
 
         if (localIcalEntry == null) {     // Local IcalEntry doesn't exist, we insert
@@ -445,7 +436,7 @@ class SyncCoordinator(
 
             SyncState.LOCAL_MODIFIED -> {
                 val entryToPush = pushAttachments(dirtyIcalEntry, calendar)    // TODO: store error?
-                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials)
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials, fileManager)
                 when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
@@ -481,7 +472,7 @@ class SyncCoordinator(
             // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_CLIENT_WINS -> {
                 val entryToPush = pushAttachments(dirtyIcalEntry, calendar)
-                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials)
+                val insertOrUpdateIcalEntryResult = putResourceMultiplatform(client, calendar, entryToPush, credentials, fileManager)
                 when (insertOrUpdateIcalEntryResult) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
@@ -592,7 +583,7 @@ class SyncCoordinator(
 
     private suspend fun pushAttachments(icalEntry: IcalEntry, calendar: Calendar): IcalEntry {
         val updatedAttachments = icalEntry.attachments.map { attachment ->
-            if (attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED && attachment.localPath != null) {
+            if (!attachment.isInline && attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED && attachment.localPath != null) {
                 val fileName = "${attachment.uid}_${attachment.fileName ?: "file"}"
                 val uploadBaseUrl = calendar.attachmentCollectionUrl ?: calendar.url
                 val safeTargetUrl = Url(uploadBaseUrl.toString().trimEnd('/') + "/" + fileName)
@@ -611,5 +602,4 @@ class SyncCoordinator(
         }
         return icalEntry.copy(attachments = updatedAttachments)
     }
-
 }

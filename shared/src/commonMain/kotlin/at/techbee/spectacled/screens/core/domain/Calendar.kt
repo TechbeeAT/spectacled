@@ -21,6 +21,9 @@ data class Calendar(
     val syncToken: String?,
     val attachmentCollectionUrl: Url? = null
 ) {
+    fun isAttachmentSyncSupported(): Boolean = attachmentCollectionUrl != null
+
+    fun isTasksSupported(): Boolean = supportedComponents.contains(CalendarComponent.VTODO)
 
     companion object {
         fun getCalendarForPreview(): Calendar = Calendar(

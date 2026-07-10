@@ -4,11 +4,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
@@ -53,9 +56,14 @@ fun DeleteIcalEntryDialog(
 @Preview
 @Composable
 private fun DeleteIcalEntryDialog_Preview() {
-    DeleteIcalEntryDialog(
-        icalEntry = IcalEntry.getSampleIcalEntry(),
-        onConfirm = {},
-        onDismiss = {}
-    )
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            DeleteIcalEntryDialog(
+                icalEntry = IcalEntry.getSampleIcalEntry(),
+                onConfirm = {},
+                onDismiss = {}
+            )
+        }
+    }
 }

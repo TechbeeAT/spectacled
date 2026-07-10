@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.about.domain.GitHubContributor
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import coil3.compose.AsyncImage
+import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_contributors
@@ -71,7 +72,7 @@ fun GitHubContributors(
                         try {
                             contributor.url?.let { uriHandler.openUri(it) }
                         } catch (e: Exception) {
-                            println(e.stackTraceToString())
+                            Napier.w(e.stackTraceToString())
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -106,7 +107,7 @@ fun GitHubContributors(
                         try {
                             uriHandler.openUri(GITHUB_CONTRIBUTORS_URL)
                         } catch (e: Exception) {
-                            println(e.stackTraceToString())
+                            Napier.w(e.stackTraceToString())
                         }
                     },
                     modifier = Modifier.padding(8.dp)

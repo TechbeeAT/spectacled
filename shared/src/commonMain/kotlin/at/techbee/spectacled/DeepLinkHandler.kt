@@ -8,7 +8,6 @@ object DeepLinkHandler {
     var deepLinkData by mutableStateOf(DeepLinkData())
 
     fun onDeepLinkReceived(calendarId: Long?, entryId: Long?, description: String?) {
-        //println("DeepLinkHandler: Received link calendarId=$calendarId, entryId=$entryId, desc=$description")
         deepLinkData = DeepLinkData(
             initialCalendarId = calendarId,
             initialIcalEntryId = entryId,

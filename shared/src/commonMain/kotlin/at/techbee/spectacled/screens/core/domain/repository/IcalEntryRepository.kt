@@ -12,14 +12,14 @@ import kotlinx.coroutines.flow.Flow
 interface IcalEntryRepository {
 
     fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>>
-    fun getIcalEntryByUidFlow(uid: String): Flow<IcalEntry?>
+    fun getIcalEntryByUidFlow(calendarId: Long, uid: String): Flow<IcalEntry?>
     fun getAllColors(): Flow<List<Color>>
     fun getAllCategories(): Flow<List<String>>
     fun getLastUsedTimezones(): Flow<List<String>>
-    fun getSubtasksByParentUid(parentUid: String): Flow<List<IcalEntry>>
+    fun getSubtasksByParentUid(calendarId: Long, parentUid: String): Flow<List<IcalEntry>>
 
     suspend fun getIcalEntryById(id: Long): IcalEntry?
-    suspend fun getIcalEntryByUid(uid: String): IcalEntry?
+    suspend fun getIcalEntryByUid(calendarId: Long, uid: String): IcalEntry?
     suspend fun getIcalEntryByHref(href: Url): IcalEntry?
     suspend fun getDirtyIcalEntriesByCalendar(calendarId: Long): List<IcalEntry>
     suspend fun getIcalEntriesByHrefs(hrefs: List<Url>): List<IcalEntry>

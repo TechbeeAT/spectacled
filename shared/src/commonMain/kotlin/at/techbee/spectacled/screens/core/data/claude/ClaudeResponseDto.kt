@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.data.claude
 
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcsDateTime
+import io.github.aakira.napier.Napier
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -30,7 +31,7 @@ data class ClaudeResponseDto(
                 categories = data.categories ?: icalEntry.categories
             )
         } catch (e: Exception) {
-            println("Failed to parse AI response: ${e.message}")
+            Napier.e("Failed to parse AI response: ${e.message}")
             icalEntry
         }
     }

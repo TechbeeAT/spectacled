@@ -2,7 +2,8 @@ CREATE TABLE HomeCollectionDto (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     principalId INTEGER NOT NULL REFERENCES PrincipalDto(id) ON DELETE CASCADE,
     url TEXT NOT NULL UNIQUE,
-    calDavPrivileges TEXT   -- e.g. write, bind, unbind,...
+    calDavPrivileges TEXT,   -- e.g. write, bind, unbind,...
+    attachmentCollectionUrl TEXT
 );
 
 getAllHomeCollections:
@@ -23,7 +24,8 @@ UPDATE HomeCollectionDto
 SET
     principalId = (SELECT PrincipalDto.id FROM PrincipalDto WHERE PrincipalDto.principalUrl = :principalUrl),
     url = :url,
-    calDavPrivileges = :calDavPrivileges
+    calDavPrivileges = :calDavPrivileges,
+    attachmentCollectionUrl = :attachmentCollectionUrl
 WHERE
     url = :url
 ;
@@ -33,12 +35,14 @@ INSERT OR IGNORE INTO
     HomeCollectionDto (
         principalId,
         url,
-        calDavPrivileges
+        calDavPrivileges,
+        attachmentCollectionUrl
     )
 VALUES (
     (SELECT PrincipalDto.id FROM PrincipalDto WHERE PrincipalDto.principalUrl = :principalUrl),
         :url,
-        :calDavPrivileges
+        :calDavPrivileges,
+        :attachmentCollectionUrl
         )
 ;
 

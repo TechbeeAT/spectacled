@@ -12,6 +12,7 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcalEntries
 import at.techbee.spectacled.screens.core.mapper.ics.serializeVCalendar
+import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.accept
@@ -30,6 +31,7 @@ import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 import io.ktor.http.contentType
 import io.ktor.http.fullPath
+import io.ktor.http.isSecure
 import io.ktor.http.isSuccess
 import io.ktor.http.takeFrom
 import io.ktor.http.withCharset
@@ -47,6 +49,70 @@ suspend fun discoverPrincipalsMultiplatform(
     location: Url,
     credentials: Credentials?
 ): DiscoverPrincipalsResult {
+    val initialResult = discoverPrincipalsInternal(client, location, credentials)
+
+    if (initialResult is DiscoverPrincipalsResult.Success && initialResult.principals.isNotEmpty()) {
+        return initialResult
+    }
+
+    // If first attempt failed or found no principals, try .well-known/caldav redirect
+    if (initialResult is DiscoverPrincipalsResult.NotFound ||
+        (initialResult is DiscoverPrincipalsResult.Success && initialResult.principals.isEmpty()) ||
+        (initialResult is DiscoverPrincipalsResult.Failed && initialResult.status == HttpStatusCode.MethodNotAllowed)
+    ) {
+        val wellKnownUrl = URLBuilder(location).apply {
+            pathSegments = listOf(".well-known", "caldav")
+            parameters.clear()
+        }.build()
+
+        if (wellKnownUrl != location) {
+            // Nextcloud and others often redirect .well-known/caldav to the actual DAV endpoint.
+            // We follow these redirects using a GET request to find the effective discovery URL.
+            val discoveryUrl = try {
+                val response = client.get(wellKnownUrl) {
+                    if (credentials != null) basicAuth(credentials.username, credentials.password)
+                }
+
+                if (response.status.value in 300..399) {
+                    val redirectUrl = response.headers[HttpHeaders.Location]?.let {
+                        URLBuilder(wellKnownUrl).takeFrom(it).build()
+                    }
+                    if (redirectUrl != null && wellKnownUrl.protocol.isSecure() && !redirectUrl.protocol.isSecure()) {
+                        return DiscoverPrincipalsResult.Failed(HttpStatusCode.Forbidden, "HTTPS to HTTP downgrade blocked", "Redirect from ${wellKnownUrl.protocol.name} to ${redirectUrl.protocol.name} was blocked for security reasons.")
+                    } else if (redirectUrl != null && (wellKnownUrl.host != redirectUrl.host || wellKnownUrl.protocol != redirectUrl.protocol)) {
+                        // SECURITY: Abort if host or scheme changes during discovery
+                        return DiscoverPrincipalsResult.Failed(HttpStatusCode.Forbidden, "Cross-domain redirect blocked", "Redirect from ${wellKnownUrl.host} to ${redirectUrl.host} was blocked for security reasons.")
+                    } else {
+                        redirectUrl ?: wellKnownUrl
+                    }
+                } else {
+                    response.call.request.url
+                }
+            } catch (_: Exception) {
+                wellKnownUrl
+            }
+
+            val wellKnownResult = discoverPrincipalsInternal(client, discoveryUrl, credentials)
+            if (wellKnownResult is DiscoverPrincipalsResult.Success && wellKnownResult.principals.isNotEmpty()) {
+                return wellKnownResult
+            }
+            // If well-known failed with something other than NotFound, it might be more relevant (e.g., Unauthorized)
+            if (wellKnownResult !is DiscoverPrincipalsResult.NotFound) {
+                return wellKnownResult
+            }
+        }
+    }
+
+    return initialResult
+}
+
+private suspend fun discoverPrincipalsInternal(
+    client: HttpClient,
+    location: Url,
+    credentials: Credentials?,
+    redirectCount: Int = 0
+): DiscoverPrincipalsResult {
+    if (redirectCount > 3) return DiscoverPrincipalsResult.Failed(HttpStatusCode.ServiceUnavailable, "Too many redirects")
 
     val principals = mutableSetOf<Principal>()
 
@@ -65,28 +131,47 @@ suspend fun discoverPrincipalsMultiplatform(
         method = HttpMethod.parse("PROPFIND")
         contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
         setBody(xmlString)
-    }.let { response ->
+    }.let { httpResponse ->
 
-        if(!response.status.isSuccess()) {
-            return when(response.status) {
+        // Handle manual redirect for PROPFIND (Ktor default redirect plugin usually only handles GET/HEAD)
+        if (httpResponse.status.value in 300..399) {
+            val redirectUrl = httpResponse.headers[HttpHeaders.Location]?.let {
+                URLBuilder(location).takeFrom(it).build()
+            }
+            if (redirectUrl != null && redirectUrl != location) {
+                if (location.protocol.isSecure() && !redirectUrl.protocol.isSecure()) {
+                    return DiscoverPrincipalsResult.Failed(httpResponse.status, "HTTPS to HTTP downgrade blocked")
+                }
+                // SECURITY: Abort if host or scheme changes
+                if (location.host != redirectUrl.host || location.protocol != redirectUrl.protocol) {
+                    return DiscoverPrincipalsResult.Failed(httpResponse.status, "Cross-domain redirect blocked", "Redirect from ${location.host} to ${redirectUrl.host} was blocked for security reasons.")
+                }
+
+                return discoverPrincipalsInternal(client, redirectUrl, credentials, redirectCount + 1)
+            }
+        }
+
+        if(!httpResponse.status.isSuccess()) {
+            return when(httpResponse.status) {
                 HttpStatusCode.NotFound -> DiscoverPrincipalsResult.NotFound
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> DiscoverPrincipalsResult.NotAuthorized
-                else -> DiscoverPrincipalsResult.Failed(response.status, "Collections couldn't be fetched.", "${response.status.description} ${response.status.value}")
+                else -> DiscoverPrincipalsResult.Failed(httpResponse.status, "Collections couldn't be fetched.", "${httpResponse.status.description} ${httpResponse.status.value}")
             }
         }
 
         try {
             val multistatusResponse = calDavXml.decodeFromReader(
-                WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
+                WebDavMultiStatus.serializer(), xmlStreaming.newReader(httpResponse.bodyAsText())
             )
 
             val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
             when {
                 allResponseCodes.all { responseCode -> responseCode == "HTTP/1.1 403 Forbidden" } -> return DiscoverPrincipalsResult.NotAuthorized
-                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverPrincipalsResult.Failed(response.status, "Principal couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
+                allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverPrincipalsResult.Failed(httpResponse.status, "Principal couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
             }
 
 
+            val effectiveLocation = httpResponse.call.request.url
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
 
@@ -97,7 +182,7 @@ suspend fun discoverPrincipalsMultiplatform(
 
                     val currentPrincipal = Principal(
                         id = 0L,
-                        principalUrl = URLBuilder(location).takeFrom(href).build(),
+                        principalUrl = URLBuilder(effectiveLocation).takeFrom(href).build(),
                         displayName = null,
                         calendarUserAddressSet = emptyList()
                     )
@@ -107,9 +192,8 @@ suspend fun discoverPrincipalsMultiplatform(
             return DiscoverPrincipalsResult.Success(principals.toList())
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
-            return DiscoverPrincipalsResult.Failed(response.status, "Collections couldn't be parsed.", e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
+            return DiscoverPrincipalsResult.Failed(httpResponse.status, "Collections couldn't be parsed.", e.stackTraceToString())
         }
     }
 }
@@ -128,7 +212,9 @@ suspend fun discoverHomeCollections(
         prop = WebDavProp(
             displayName = "", // An empty string will serialize to <D:displayname/>
             calendarUserAddressSet = CalendarUserAddressSet(),
-            calendarHomeSet = CalendarHomeSet()
+            calendarHomeSet = CalendarHomeSet(),
+            attachmentCollection = HrefProperty(),
+            dropboxHomeSet = HrefProperty()
         )
     )
     val xmlString = calDavXml.encodeToString(propfindRequest)
@@ -163,6 +249,7 @@ suspend fun discoverHomeCollections(
                 allResponseCodes.none { responseCode -> responseCode == "HTTP/1.1 200 OK" } -> return DiscoverHomeCollectionsResult.Failed(response.status, "Home Collection couldn't be processed. None of the response codes returned OK. ", allResponseCodes.joinToString(separator = ", "))
             }
 
+            val effectiveLocation = response.call.request.url
             multistatusResponse.responses.forEach { response ->
                 response.propstat.forEach { propStat ->
 
@@ -173,25 +260,29 @@ suspend fun discoverHomeCollections(
                     propStat.prop.calendarUserAddressSet?.hrefs?.let { principalCalendarUserAddressSet.addAll(it) }
 
                     val calendarHomeSets = propStat.prop.calendarHomeSet?.hrefs ?: return@forEach
+                    
+                    val sharedAttachmentUrl = (propStat.prop.attachmentCollection?.href ?: propStat.prop.dropboxHomeSet?.href)?.let { 
+                        URLBuilder(effectiveLocation).takeFrom(it).build() 
+                    }
 
                     calendarHomeSets.forEach { calendarHomeSet ->
                         homeCollections.add(
                             HomeCollection(
                                 id = 0L,
                                 principalId = 0L,
-                                url = URLBuilder(principal.principalUrl).takeFrom(calendarHomeSet).build(),
+                                url = URLBuilder(effectiveLocation).takeFrom(calendarHomeSet).build(),
                                 calDavPrivileges = emptyList(),  // populated later
+                                attachmentCollectionUrl = sharedAttachmentUrl
                             )
                         )
                     }
                 }
             }
-
+            
             return DiscoverHomeCollectionsResult.Success(principalDisplayName, principalCalendarUserAddressSet, homeCollections.toList())
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return DiscoverHomeCollectionsResult.Failed(response.status, "Home Collections couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -200,7 +291,6 @@ suspend fun discoverHomeCollections(
 suspend fun discoverCalendars(
     client: HttpClient,
     homeCollection: HomeCollection,
-    //supportedCalendarComponent: CalendarComponent,
     credentials: Credentials?
 ): DiscoverCalendarsResult {
 
@@ -213,7 +303,8 @@ suspend fun discoverCalendars(
             calendarDescription = "",
             getCTag = "",
             calendarColor = Color.Unspecified,
-            attachmentCollection = AttachmentCollection(),
+            attachmentCollection = HrefProperty(),
+            calendarDropbox = HrefProperty(),
             supportedCalendarComponentSet = SupportedCalendarComponentSet(),
             resourceType = ResourceType(),
             currentUserPrivilegeSet = CurrentUserPrivilegeSet()
@@ -275,6 +366,10 @@ suspend fun discoverCalendars(
                     if(propStat.prop.resourceType?.calendar == null || supportedCalendarComponentSet.none { it == CalendarComponent.VJOURNAL || it == CalendarComponent.VTODO })
                         return@forEach
 
+                    val attachmentUrl = (propStat.prop.attachmentCollection?.href ?: propStat.prop.calendarDropbox?.href)?.let { 
+                        URLBuilder(homeCollection.url).takeFrom(it).build() 
+                    } ?: homeCollection.attachmentCollectionUrl
+
                     calendars.add(
                         Calendar(
                             id = 0L,
@@ -288,7 +383,7 @@ suspend fun discoverCalendars(
                             calDavPrivileges = propStat.prop.currentUserPrivilegeSet?.privileges?.mapNotNull { CalDavPrivilege.fromTag(it.name) }?: emptyList(),
                             calendarSyncStatus = null,
                             syncToken = null,
-                            attachmentCollectionUrl = propStat.prop.attachmentCollection?.href?.let { URLBuilder(homeCollection.url).takeFrom(it).build() }
+                            attachmentCollectionUrl = attachmentUrl
                         )
                     )
                 }
@@ -297,8 +392,7 @@ suspend fun discoverCalendars(
             return DiscoverCalendarsResult.Success(calDavPrivileges, calendars)
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return DiscoverCalendarsResult.Failed(response.status, "Calendars couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -355,8 +449,7 @@ suspend fun multigetResourceHrefsMultiplatform(
             }
             return MultigetResourceHrefETagResult.Success(hrefMap, multistatusResponse.syncToken)
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return MultigetResourceHrefETagResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -403,8 +496,7 @@ suspend fun syncCollectionMultiplatform(
             }
             return MultigetSyncCollectionResult.Success(syncToken = multistatusResponse.syncToken, hrefMap)
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return MultigetSyncCollectionResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -465,8 +557,7 @@ suspend fun fetchSingleEntryMultiplatform(
             return MultigetResourceResult.Success(icalEntries)
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
-            println(e.stackTraceToString())
+            Napier.e("Parsing failed: ${e.message}", e)
             return MultigetResourceResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -536,7 +627,8 @@ suspend fun createCalendarMultiplatform(
             calendarDescription = "",
             getCTag = "",
             calendarColor = Color.Unspecified,
-            attachmentCollection = AttachmentCollection(),
+            attachmentCollection = HrefProperty(),
+            calendarDropbox = HrefProperty(),
             supportedCalendarComponentSet = SupportedCalendarComponentSet(),
             resourceType = ResourceType(),
             currentUserPrivilegeSet = CurrentUserPrivilegeSet()
@@ -596,7 +688,7 @@ suspend fun createCalendarMultiplatform(
             }
 
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
+            Napier.e("Parsing failed: ${e.message}", e)
             return UpsertCalendarResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -700,7 +792,7 @@ suspend fun updateCalDavCalendarMultiplatform(
                 }
             }
         } catch (e: XmlParsingException) {
-            println("Parsing failed: ${e.message}")
+            Napier.e("Parsing failed: ${e.message}", e)
             return UpsertCalendarResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
         }
     }
@@ -746,7 +838,8 @@ suspend fun putResourceMultiplatform(
     client: HttpClient,
     calendar: Calendar,
     icalEntry: IcalEntry,
-    credentials: Credentials?
+    credentials: Credentials?,
+    fileManager: FileManager? = null
 ): PutResourceResult {
 
     val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
@@ -756,7 +849,7 @@ suspend fun putResourceMultiplatform(
             basicAuth(credentials.username, credentials.password)
         }
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
-        setBody(serializeVCalendar(icalEntry))
+        setBody(serializeVCalendar(icalEntry, fileManager))
         headers.apply {
             if(icalEntry.etag != null)    // send etag or * if a new entry should be created
                 append(HttpHeaders.IfMatch, icalEntry.etag)     // update

@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.shared.BuildKonfig
+import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -125,7 +126,7 @@ fun AboutApp(
                     try {
                         uriHandler.openUri("https://www.techbee.at/")   // TODO: Update URL
                     } catch (e: Exception) {
-                        println(e.stackTraceToString())
+                        Napier.w(e.stackTraceToString())
                     }
                 }
             )
@@ -200,7 +201,7 @@ fun AboutApp(
                     try {
                         uriHandler.openUri("https://nlnet.nl/")
                     } catch (e: Exception) {
-                        println(e.stackTraceToString())
+                        Napier.w(e.stackTraceToString())
                     }
                 },
                 modifier = Modifier

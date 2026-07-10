@@ -5,11 +5,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
 import at.techbee.spectacled.DeepLinkData
 import at.techbee.spectacled.DeepLinkHandler
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.setupShortcuts
 import at.techbee.spectacled.widget.SpectacledWidget
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -17,7 +19,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        setupShortcuts(this, SpectacledVariant.JOURNALS)
+        lifecycleScope.launch { setupShortcuts(this@MainActivity, SpectacledVariant.JOURNALS) }
         processIntent(intent)
 
         setContent {

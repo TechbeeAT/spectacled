@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -147,11 +148,13 @@ fun ListScreenNotes(
                     enabled = true
                 ) { isDragging ->
 
-                    if(isDragging)
-                        onAction(ListAction.OnDraggingIcalEntry(icalEntry.id))
-                    else if (state.draggingIcalEntryId == icalEntry.id && !isDragging) {
-                        onAction(ListAction.OnPersistOrderNo)
-                        onAction(ListAction.OnDraggingIcalEntry(null))
+                    LaunchedEffect(isDragging) {
+                        if (isDragging) {
+                            onAction(ListAction.OnDraggingIcalEntry(icalEntry.id))
+                        } else if (state.draggingIcalEntryId == icalEntry.id) {
+                            onAction(ListAction.OnPersistOrderNo)
+                            onAction(ListAction.OnDraggingIcalEntry(null))
+                        }
                     }
 
                     getNoteListItem(

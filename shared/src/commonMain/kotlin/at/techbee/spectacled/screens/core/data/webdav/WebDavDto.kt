@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.data.webdav
 
 import androidx.compose.ui.graphics.Color
+import io.github.aakira.napier.Napier
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -50,7 +51,7 @@ val calDavXml = XML {
     policy = DefaultXmlSerializationPolicy.Builder().apply {
         unknownChildHandler = UnknownChildHandler { _, _, _, name, _->
             // Return an empty list to signify "do nothing and continue parsing"
-            println("Unknown children found: $name")
+            Napier.d("Unknown children found: $name")
             emptyList()
         }
     }.build()
@@ -199,7 +200,15 @@ data class WebDavProp(
 
     @XmlElement
     @XmlSerialName("attachment-collection", NAMESPACE_CALDAV, PREFIX_CALDAV)
-    val attachmentCollection: AttachmentCollection? = null,
+    val attachmentCollection: HrefProperty? = null,
+
+    @XmlElement
+    @XmlSerialName("calendar-dropbox", NAMESPACE_APPLE_ICAL, PREFIX_APPLE_ICAL)
+    val calendarDropbox: HrefProperty? = null,
+
+    @XmlElement
+    @XmlSerialName("dropbox-home-set", NAMESPACE_CALDAV, PREFIX_CALDAV)
+    val dropboxHomeSet: HrefProperty? = null,
 
     @XmlElement(true)
     @XmlSerialName("supported-calendar-component-set", NAMESPACE_CALDAV, PREFIX_CALDAV)
@@ -387,9 +396,9 @@ class DavPrincipal
 @XmlSerialName("calendar", NAMESPACE_CALDAV, PREFIX_CALDAV)
 class CaldavCalendar
 
+
 @Serializable
-@XmlSerialName("attachment-collection", NAMESPACE_CALDAV, PREFIX_CALDAV)
-data class AttachmentCollection(
+data class HrefProperty(
     @XmlElement
     @XmlSerialName("href", NAMESPACE_DAV, PREFIX_WILDCARD)
     val href: String? = null

@@ -10,23 +10,20 @@ import androidx.core.graphics.drawable.toBitmap
 import at.techbee.spectacled.shared.R
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.CALENDAR_ID_KEY
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.ICAL_ENTRY_ID_KEY
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_journal
 import spectacled.shared.generated.resources.add_note
 import spectacled.shared.generated.resources.add_task
 
-fun setupShortcuts(context: Context, spectacledVariant: SpectacledVariant) {
+suspend fun setupShortcuts(context: Context, spectacledVariant: SpectacledVariant) {
 
     val shortcutManager = context.getSystemService(ShortcutManager::class.java)
-    val label = runBlocking {
-        getString(when(spectacledVariant) {
-            SpectacledVariant.JOURNALS -> Res.string.add_journal
-            SpectacledVariant.NOTES -> Res.string.add_note
-            SpectacledVariant.TASKS -> Res.string.add_task
-        })
-    }
+    val label = getString(when(spectacledVariant) {
+        SpectacledVariant.JOURNALS -> Res.string.add_journal
+        SpectacledVariant.NOTES -> Res.string.add_note
+        SpectacledVariant.TASKS -> Res.string.add_task
+    })
 
     val iconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_add)
     val icon = iconDrawable?.let {

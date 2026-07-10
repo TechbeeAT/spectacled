@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
@@ -37,9 +38,15 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -78,7 +85,11 @@ fun DetailsScreen(
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
+
+    var summaryLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var descriptionLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     // removes the keyboard when user scrolls to the top
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
@@ -95,11 +106,12 @@ fun DetailsScreen(
     }
 
 
-    Column(
-        modifier = modifier
-            .nestedScroll(nestedScrollConnection)
-            .verticalScroll(scrollState)
-    ) {
+    SelectionContainer {
+        Column(
+            modifier = modifier
+                .nestedScroll(nestedScrollConnection)
+                .verticalScroll(scrollState)
+        ) {
 
         if(state.icalEntry.isTask() || state.icalEntry.isJournal()) {
             FlowRow(
@@ -196,11 +208,42 @@ fun DetailsScreen(
                     color = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                 ),
                 enabled = state.allowEditing(),
-                visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
+                onTextLayout = { summaryLayoutResult = it },
+                visualTransformation = MarkdownVisualTransformation(
+                    localContentColor = LocalContentColor.current,
+                    linkColor = MaterialTheme.colorScheme.primary
+                ),
                 cursorBrush = SolidColor(LocalContentColor.current),
                 modifier = Modifier
                     .onFocusChanged { summaryIsFocused = it.isFocused }
                     .weight(1f)
+                    .pointerInput(uriHandler) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                if (event.changes.any { it.changedToUp() }) {
+                                    val position = event.changes.first().position
+                                    summaryLayoutResult?.let { layoutResult ->
+                                        val offset = layoutResult.getOffsetForPosition(position)
+                                        val text = layoutResult.layoutInput.text
+                                        val range = text.getLinkAnnotations(0, text.length)
+                                            .firstOrNull { offset >= it.start && offset < it.end }
+
+                                        if (range != null) {
+                                            (range.item as? LinkAnnotation.Url)?.let { urlAnnotation ->
+                                                try {
+                                                    uriHandler.openUri(urlAnnotation.url)
+                                                    event.changes.forEach { it.consume() }
+                                                } catch (t: Throwable) {
+                                                    // ignore
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
             )
 
             if (state.icalEntry.isTask()) {
@@ -222,13 +265,44 @@ fun DetailsScreen(
                 color = if (!descriptionIsFocused && state.icalEntry.description.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
             ),
             enabled = state.allowEditing(),
-            visualTransformation = MarkdownVisualTransformation(LocalContentColor.current),
+            onTextLayout = { descriptionLayoutResult = it },
+            visualTransformation = MarkdownVisualTransformation(
+                localContentColor = LocalContentColor.current,
+                linkColor = MaterialTheme.colorScheme.primary
+            ),
             cursorBrush = SolidColor(LocalContentColor.current),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 100.dp)
                 .onFocusChanged {
                     descriptionIsFocused = it.isFocused
+                }
+                .pointerInput(uriHandler) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            if (event.changes.any { it.changedToUp() }) {
+                                val position = event.changes.first().position
+                                descriptionLayoutResult?.let { layoutResult ->
+                                    val offset = layoutResult.getOffsetForPosition(position)
+                                    val text = layoutResult.layoutInput.text
+                                    val range = text.getLinkAnnotations(0, text.length)
+                                        .firstOrNull { offset >= it.start && offset < it.end }
+
+                                    if (range != null) {
+                                        (range.item as? LinkAnnotation.Url)?.let { urlAnnotation ->
+                                            try {
+                                                uriHandler.openUri(urlAnnotation.url)
+                                                event.changes.forEach { it.consume() }
+                                            } catch (t: Throwable) {
+                                                // ignore
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
         )
 
@@ -253,7 +327,8 @@ fun DetailsScreen(
                 state.icalEntry.attachments.forEach { attachment ->
                     AttachmentCard(
                         attachment = attachment,
-                        onAction = onAction
+                        onAction = onAction,
+                        isDownloading = state.downloadingAttachmentUids.contains(attachment.uid)
                     )
                 }
             }
@@ -308,6 +383,7 @@ fun DetailsScreen(
             }
         }
     }
+}
 }
 
 
