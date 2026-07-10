@@ -123,21 +123,6 @@ class SyncCoordinator(
             }
         }
 
-        suspend fun pushLocalChanges(
-            calendarId: Long,
-            calendarRepository: CalendarRepository,
-            icalEntryRepository: IcalEntryRepository,
-            fileManager: FileManager,
-            credentialStore: CredentialStore,
-            client: HttpClient
-        ) {
-            val calendar = calendarRepository.getCalendarById(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
-            val principal =
-                calendarRepository.getPrincipalForCalendar(calendarId) ?: return     // TODO: Maybe better enter sync-problem in DB
-            val credentials = credentialStore.load(principal.principalUrl)
-
-            SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).pushLocalChangesLocked(calendar)
-        }
     }
 
     private suspend fun withCalendarSyncLock(calendarId: Long, block: suspend () -> Unit) {
@@ -153,27 +138,11 @@ class SyncCoordinator(
         }
     }
 
-    private suspend fun syncCalendar(calendar: Calendar) = withCalendarSyncLock(calendar.id) { sync(calendar, null) }
+    suspend fun syncCalendar(calendar: Calendar) = withCalendarSyncLock(calendar.id) { sync(calendar) }
 
-    suspend fun pushDirtyIcalEntry(dirtyIcalEntry: IcalEntry, calendar: Calendar) =
-        withCalendarSyncLock(calendar.id) { sync(calendar, dirtyIcalEntry) }
-
-    // Entry point for a push-only trigger that bypasses sync()/pull entirely - needs its own
-    // lock since it doesn't go through syncCalendar()/pushDirtyIcalEntry() above.
-    private suspend fun pushLocalChangesLocked(calendar: Calendar) =
-        withCalendarSyncLock(calendar.id) { pushLocalChanges(calendar) }
-
-    private suspend fun sync(
-        calendar: Calendar,
-        dirtyIcalEntry: IcalEntry? = null   // if null all calendar is synchronized, otherwise only the dirtyIcalEntry is pushed
-    ) {
+    private suspend fun sync(calendar: Calendar) {
 
         try {
-            if (dirtyIcalEntry != null) {
-                pushSingleLocalChange(dirtyIcalEntry, calendar)
-                return
-            }
-
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(CalendarSyncStatusType.IN_PROGRESS).serialize(),
                 calendar.syncToken,

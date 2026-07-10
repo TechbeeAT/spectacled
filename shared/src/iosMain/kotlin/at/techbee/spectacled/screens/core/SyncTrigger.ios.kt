@@ -29,12 +29,6 @@ actual class PlatformSyncTrigger : SyncTrigger {
         }
     }
 
-    actual override fun requestImmediatePush(calendarId: Long) {
-        Napier.d("PlatformSyncTrigger: Immediate push for specific calendar requested")
-        IOSSyncEntryPoint.runBackgroundPushForSpecificCalendar(calendarId) {
-            Napier.d("PlatformSyncTrigger: Immediate push for specific calendar finished")  // callback is mainly for iOS code, not relevant here
-        }    }
-
     actual override fun schedulePeriodic() { /* handled directly in swift code in iOSApp.swift & AppDelegate.swift */ }
     actual override fun cancel() { /* nothing to cancel in iOS */ }
     actual override fun triggerWidgetUpdate() { /* no widget implemented yet */ }
@@ -68,18 +62,6 @@ object IOSSyncEntryPoint : KoinComponent {
                 Napier.d("BG Sync for specific calendars coroutine started")
                 SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
                 Napier.d("BG Sync for specific calendars coroutine finished")
-            } finally {
-                onFinished()
-            }
-        }
-    }
-
-    fun runBackgroundPushForSpecificCalendar(calendarId: Long, onFinished: () -> Unit) {
-        bgScope.launch {
-            try {
-                Napier.d("BG Push for specific calendar coroutine started")
-                SyncCoordinator.pushLocalChanges(calendarId, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
-                Napier.d("BG Push for specific calendar coroutine finished")
             } finally {
                 onFinished()
             }
