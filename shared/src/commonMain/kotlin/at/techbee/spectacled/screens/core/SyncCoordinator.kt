@@ -583,7 +583,9 @@ class SyncCoordinator(
 
     private suspend fun pushAttachments(icalEntry: IcalEntry, calendar: Calendar): IcalEntry {
         val updatedAttachments = icalEntry.attachments.map { attachment ->
-            if (!attachment.isInline && attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED && attachment.localPath != null) {
+            val isRetryEligible = attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED
+                    || attachment.syncState == AttachmentSyncState.FAILED
+            if (!attachment.isInline && isRetryEligible && attachment.localPath != null) {
                 val fileName = "${attachment.uid}_${attachment.fileName ?: "file"}"
                 val uploadBaseUrl = calendar.attachmentCollectionUrl ?: calendar.url
                 val safeTargetUrl = Url(uploadBaseUrl.toString().trimEnd('/') + "/" + fileName)
@@ -591,8 +593,12 @@ class SyncCoordinator(
                 val bytes = fileManager.readAttachment(attachment.localPath)
 
                 val uploadResult = uploadFileMultiplatform(client, safeTargetUrl, bytes, attachment.mimeType, credentials)
-                if (uploadResult.isSuccess()) {        // TODO: Instead of handling only success here, inform user in case of a problem
-                    val syncedAttachment = attachment.copy(remoteUrl = safeTargetUrl.toString(), syncState = AttachmentSyncState.SYNCED)
+                if (uploadResult.isSuccess()) {
+                    val syncedAttachment = attachment.copy(
+                        remoteUrl = safeTargetUrl.toString(),
+                        syncState = AttachmentSyncState.SYNCED,
+                        syncErrorMessage = null
+                    )
                     icalEntryRepository.insertOrUpdateAttachment(syncedAttachment)
                     syncedAttachment
                 } else {
@@ -608,24 +614,5 @@ class SyncCoordinator(
             }
         }
         return icalEntry.copy(attachments = updatedAttachments)
-
-
-        /*
-
-        // SyncCoordinator.pushAttachments, replacing the current if/else
-if (uploadResult.isSuccess()) {
-    val synced = attachment.copy(remoteUrl = safeTargetUrl.toString(), syncState = AttachmentSyncState.SYNCED)
-    icalEntryRepository.insertOrUpdateAttachment(synced)
-    synced
-} else {
-    val failed = attachment.copy(
-        syncState = AttachmentSyncState.FAILED,
-        syncErrorMessage = uploadResult.errorMessageOrNull() ?: "Upload failed",
-        syncErrorAt = IcsDateTime.now()
-    )
-    icalEntryRepository.insertOrUpdateAttachment(failed)
-    failed
-}
-         */
     }
 }
