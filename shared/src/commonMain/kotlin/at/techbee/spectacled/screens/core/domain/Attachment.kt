@@ -6,7 +6,8 @@ import kotlin.uuid.Uuid
 enum class AttachmentSyncState {
     LOCAL_MODIFIED,
     SYNCED,
-    PENDING_DOWNLOAD
+    PENDING_DOWNLOAD,
+    FAILED
 }
 
 const val MIMETYPE_SVG = "image/svg+xml"

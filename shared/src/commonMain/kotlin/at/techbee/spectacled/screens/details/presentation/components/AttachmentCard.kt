@@ -52,12 +52,14 @@ import at.techbee.spectacled.screens.core.presentation.components.drawPath
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import coil3.compose.AsyncImage
 import io.ktor.utils.io.core.toByteArray
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.attachment
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.drawing
+import spectacled.shared.generated.resources.ic_cloud_error
 
 @Composable
 fun AttachmentCard(
@@ -145,6 +147,12 @@ fun AttachmentCard(
                                 }
                                 AttachmentSyncState.PENDING_DOWNLOAD -> {
                                     Icon(Icons.Outlined.CloudDownload, "Pending download")
+                                }
+                                AttachmentSyncState.FAILED -> {
+                                    Icon(
+                                        painterResource(Res.drawable.ic_cloud_error),
+                                        "Attachment sync error"
+                                    )
                                 }
                             }
 
