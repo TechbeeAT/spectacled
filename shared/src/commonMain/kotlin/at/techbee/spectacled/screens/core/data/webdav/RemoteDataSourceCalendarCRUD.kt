@@ -5,13 +5,10 @@ import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
-import at.techbee.spectacled.screens.core.domain.HomeCollection
-import at.techbee.spectacled.screens.core.domain.Principal
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
-import io.ktor.client.request.get
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -20,9 +17,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
-import io.ktor.http.Url
 import io.ktor.http.contentType
-import io.ktor.http.isSecure
 import io.ktor.http.isSuccess
 import io.ktor.http.takeFrom
 import io.ktor.http.withCharsetIfNeeded
@@ -31,7 +26,6 @@ import kotlinx.serialization.encodeToString
 import nl.adaptivity.xmlutil.serialization.XmlParsingException
 import nl.adaptivity.xmlutil.xmlStreaming
 import kotlin.uuid.ExperimentalUuidApi
-
 
 
 @OptIn(ExperimentalUuidApi::class)
@@ -302,109 +296,3 @@ suspend fun deleteCalendarMultiplatform(
     }
 }
 
-
-
-
-suspend fun multigetResourceHrefsMultiplatform(
-    client: HttpClient,
-    calendar: Calendar,
-    credentials: Credentials?
-): MultigetResourceHrefETagResult {
-    val componentFilter = calendar.supportedComponents.map { CompFilter(name = it.name) }
-
-    val calendarFilter = CompFilter(name = "VCALENDAR", compFilters = componentFilter)
-    val mainFilter = CalFilter(compFilter = calendarFilter)
-
-    val calendarQuery = CalendarQuery(
-        prop = WebDavProp(getETag = ""),
-        filter = mainFilter
-    )
-    val xmlString = calDavXml.encodeToString(calendarQuery)
-
-    client.request(calendar.url) {
-        if (credentials != null) {
-            basicAuth(credentials.username, credentials.password)
-        }
-        headers.append(HttpHeaders.Depth, "1")
-        method = HttpMethod.parse("REPORT")
-        contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
-        setBody(xmlString)
-    }.let { response ->
-
-        if (!response.status.isSuccess()) {
-            return when(response.status) {
-                HttpStatusCode.NotFound -> MultigetResourceHrefETagResult.NotFound
-                HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> MultigetResourceHrefETagResult.NotAuthorized
-                else -> MultigetResourceHrefETagResult.Failed(response.status, "Calendar couldn't be fetched.", "${response.status.description} ${response.status.value}" )
-            }
-        }
-
-        try {
-            val multistatusResponse = calDavXml.decodeFromReader(
-                WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
-            )
-
-            val hrefMap = mutableMapOf<Url, String?>()
-            multistatusResponse.responses.forEach { response ->
-                response.propstat.forEach { propStat ->
-                    if(propStat.status == "HTTP/1.1 200 OK") {
-                        val href = URLBuilder(calendar.url).takeFrom(response.href).build()
-                        val eTag = propStat.prop.getETag
-                        hrefMap[href] = eTag
-                    }
-                }
-            }
-            return MultigetResourceHrefETagResult.Success(hrefMap, multistatusResponse.syncToken)
-        } catch (e: XmlParsingException) {
-            Napier.e("Parsing failed: ${e.message}", e)
-            return MultigetResourceHrefETagResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
-        }
-    }
-}
-
-suspend fun syncCollectionMultiplatform(
-    client: HttpClient,
-    calendar: Calendar,
-    credentials: Credentials?
-): MultigetSyncCollectionResult {
-
-    val syncCollection = SyncCollection(syncToken = calendar.syncToken ?: "")
-    val xmlString = calDavXml.encodeToString(syncCollection)
-
-    client.request(calendar.url) {
-        if (credentials != null) {
-            basicAuth(credentials.username, credentials.password)
-        }
-        headers.append(HttpHeaders.Depth, "1")
-        method = HttpMethod.parse("REPORT")
-        contentType(ContentType.Application.Xml.withCharsetIfNeeded(Charsets.UTF_8))
-        setBody(xmlString)
-    }.let { response ->
-
-        if (!response.status.isSuccess()) {
-            return when(response.status) {
-                HttpStatusCode.NotFound -> MultigetSyncCollectionResult.NotFound
-                HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> MultigetSyncCollectionResult.NotAuthorized
-                else -> MultigetSyncCollectionResult.Failed(response.status, "Calendar couldn't be fetched.", "${response.status.description} ${response.status.value}" )
-            }
-        }
-
-        try {
-            val multistatusResponse = calDavXml.decodeFromReader(
-                WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
-            )
-            print("Parsed response syncCollectionMultiplatform: $multistatusResponse")
-
-            val hrefMap = mutableMapOf<Url, String?>()
-            multistatusResponse.responses.forEach { response ->
-                val href = URLBuilder(calendar.url).takeFrom(response.href).build()
-                val eTag = response.propstat.firstOrNull { it.status == "HTTP/1.1 200 OK" }?.prop?.getETag
-                hrefMap[href] = eTag
-            }
-            return MultigetSyncCollectionResult.Success(syncToken = multistatusResponse.syncToken, hrefMap)
-        } catch (e: XmlParsingException) {
-            Napier.e("Parsing failed: ${e.message}", e)
-            return MultigetSyncCollectionResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
-        }
-    }
-}

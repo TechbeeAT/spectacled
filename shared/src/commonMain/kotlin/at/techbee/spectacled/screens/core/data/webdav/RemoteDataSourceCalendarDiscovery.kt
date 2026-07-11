@@ -9,7 +9,6 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
-import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.request
@@ -30,7 +29,6 @@ import io.ktor.utils.io.charsets.Charsets
 import kotlinx.serialization.encodeToString
 import nl.adaptivity.xmlutil.serialization.XmlParsingException
 import nl.adaptivity.xmlutil.xmlStreaming
-import kotlin.uuid.ExperimentalUuidApi
 
 
 suspend fun discoverPrincipalsMultiplatform(
