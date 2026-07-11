@@ -26,6 +26,7 @@ const val THEME_AMOLED = "theme_amoled"
 const val THEME_FONT = "theme_font"
 
 const val CLAUDE_USER_API_KEY = "claude_user_api_key"
+const val USER_PROXY_SERVER = "user_proxy_server"
 
 interface UserAppPreferencesStore {
     fun save(key: String, value: String)
@@ -102,6 +103,11 @@ interface UserAppPreferencesStore {
         get() = this.load(CLAUDE_USER_API_KEY)?.ifEmpty { null }
         set(value) = if(value == null) this.remove(CLAUDE_USER_API_KEY) else this.saveEncrypted(CLAUDE_USER_API_KEY, value)
     //fun getClaudeUserApiKeyAsFlow(): Flow<String?> = this.loadAsFlow(CLAUDE_USER_API_KEY)
+
+    var userProxyServer: String?
+        get() = this.load(USER_PROXY_SERVER)?.ifEmpty { null }
+        set(value) = if(value == null) this.remove(USER_PROXY_SERVER) else this.saveEncrypted(USER_PROXY_SERVER, value)
+    fun getUserProxyServerAsFlow(): Flow<String?> = this.loadAsFlow(USER_PROXY_SERVER)
 
 
 
