@@ -1,407 +1,222 @@
-﻿# 🚀 Compose Multiplatform Template — AGP 9 + Kotlin 2.3 + Gradle 9 (Ready to Use)
+﻿# Spectacled
 
-A production-ready **Compose Multiplatform (KMP)** template fully migrated to **AGP 9.0.1**, **Kotlin 2.3**, and **Gradle 9.1**. Build apps for **Android, iOS, Desktop (Windows/macOS/Linux), Web (JS + Wasm), and Server** — all from one codebase.
+**Open, standards-based journals, notes, and tasks — synced over CalDAV, on your own server.**
 
-> **Clone → Rename → Build → Ship.** No JDK install. No Gradle install. No version conflicts.
+Spectacled is a family of apps for Android, iOS, Web, and Desktop, built on the `VJOURNAL` and `VTODO` components of the iCalendar standard and synced over CalDAV. No proprietary backend, no account required — your data lives on whatever CalDAV server you already trust (Nextcloud, Radicale, or anything else that speaks CalDAV), and Spectacled is just the client.
 
----
+It's one shared [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html) / [Compose Multiplatform](https://www.jetbrains.com/compose-multiplatform/) codebase, built into three apps:
 
-## 📋 What's Inside
-
-| Module | Purpose | Platforms |
-|---|---|---|
-| `composeApp` | Shared UI with Compose Multiplatform | Android, iOS, Desktop, Web |
-| `shared` | Shared business logic (no UI) | All platforms |
-| `androidApp` | Android entry point | Android |
-| `iosApp` | iOS entry point (Xcode project) | iOS |
-| `server` | Ktor backend server | JVM |
+| App                     | Uses       | For                                    |
+|-------------------------|------------|----------------------------------------|
+| **Spectacled Journals** | `VJOURNAL` | Dated journal entries                  |
+| **Spectacled Notes**    | `VJOURNAL` | Free-form notes                        |
+| **Spectacled Tasks**    | `VTODO`    | To-dos, with status/priority/due dates |
 
 ---
 
-## 🛠️ Tech Stack & Versions
+## 📸 Screenshots
 
-| Tool                  | Version                                    |
-|-----------------------|--------------------------------------------|
-| Kotlin                | `2.3.0`                                    |
-| Compose Multiplatform | `1.10.0`                                   |
-| Android Gradle Plugin | `9.0.1`                                    |
-| Gradle                | `9.1.0` (bundled — no install needed)      |
-| JDK                   | `17` (auto-downloaded — no install needed) |
-| Ktor                  | `3.3.3`                                    | 
-| Max Android SDK       | `35` (Android 16.0+)                       |
-| Min Android SDK       | `24` (Android 7.0+)                        |
+<!--
+TODO: add real screenshots before publishing. Suggested layout - one row per app,
+one column per platform. Drop images under docs/screenshots/ and reference them below.
 
-### ⚡ No Java / Gradle Installation Needed!
+| | Android | iOS | Web | Desktop |
+|---|---|---|---|---|
+| **Journals** | ![](docs/screenshots/journals-android.png) | ![](docs/screenshots/journals-ios.png) | ![](docs/screenshots/journals-web.png) | ![](docs/screenshots/journals-desktop.png) |
+| **Notes**    | ![](docs/screenshots/notes-android.png)    | ![](docs/screenshots/notes-ios.png)    | ![](docs/screenshots/notes-web.png)    | ![](docs/screenshots/notes-desktop.png)    |
+| **Tasks**    | ![](docs/screenshots/tasks-android.png)    | ![](docs/screenshots/tasks-ios.png)    | ![](docs/screenshots/tasks-web.png)    | ![](docs/screenshots/tasks-desktop.png)    |
+-->
 
-This template uses **Gradle Wrapper** + **Foojay Toolchain**. When you build for the first time, everything is automatically downloaded. You only need **Android Studio** installed.
+*Screenshots coming soon.*
 
 ---
 
-## 🏁 Getting Started
+## Why
 
-### Step 1 — Clone This Repo
+The iCalendar standard ([RFC 5545](https://www.rfc-editor.org/rfc/rfc5545)) has included the `VJOURNAL` component for journal/note entries since 1998, but almost nothing actually supports it: [KOrganizer](https://apps.kde.org/korganizer/) and [GNOME Evolution](https://gitlab.gnome.org/GNOME/evolution) offer rudimentary support on Linux only, and [jtx Board](https://github.com/TechbeeAT/jtxBoard) — an earlier project by the same author — was the first mobile app to support it fully, but relies on [DAVx5](https://www.davx5.com/) for sync and only exists on Android.
 
-```bash
-git clone https://github.com/parmarsanket/Compose-Multiplatform-Template-AGP-9.git
-```
+Spectacled aims to close that gap: a single, standards-based app for journals, notes, and tasks that works the same way on Android, iOS, Web, and Desktop, talks CalDAV directly, and leaves your data exactly where you put it. No vendor lock-in, no proprietary sync protocol — just iCalendar and CalDAV, the same open standards your calendar app probably already uses.
 
-### Step 2 — Rename to Your Project (See section below)
+## Features
 
-### Step 3 — Open in Android Studio → Click ▶️ Run
+- Connect to any CalDAV server and browse its collections
+- Create, edit, and delete journal/note/task entries, with summary, description, categories, and classification
+- Search and filter your entries
+- Attachments (inline or linked)
+- Parent/child relationships between entries (`RELATED-TO`)
+- Sync runs in the background and locally caches everything, so the app stays usable offline
+- Light/dark theme, one consistent UI across every platform
 
----
+## Download
 
-## ✏️ How to Change Project Name & Package Name
+Spectacled is under active development. Planned distribution channels:
 
-This template includes **rename scripts** that do everything automatically.
+| Platform | Where                                                                                         |
+|----------|-----------------------------------------------------------------------------------------------|
+| Android  | Google Play *(link coming soon)* · [F-Droid](https://f-droid.org/) *(link coming soon)*       |
+| iOS      | Apple App Store *(link coming soon)*                                                          |
+| Web      | [spectacled.techbee.at](https://spectacled.techbee.at) *(coming soon)*                        |
+| Desktop  | Build it yourself for now — see [Building & Running](#-building--running-each-platform) below |
 
-### 🪟 On Windows
+Until then, building from source (see below) is the way to run it.
 
-```
-1. Open the project folder in File Explorer
-2. Double-click  rename_project.bat
-3. A window opens showing:
+## Support the project
 
-   Detected Existing Project Name:  spectacled
-   Detected Existing Package Name:  at.techbee.spectacled
+Spectacled is, and will stay, open source. Maintaining it across five platforms (Android, iOS, Web, Desktop, plus the shared backend logic) is ongoing work — if it's useful to you, consider supporting it:
 
-4. Type your NEW project name, press Enter
-5. Type your NEW package name, press Enter
-6. Done! Open in Android Studio and build.
-```
+- [GitHub Sponsors](https://github.com/sponsors/patrickunterwegs)
+- [Liberapay](https://liberapay.com/techbee.at)
+- <!-- TODO: add Ko-fi / Open Collective / Patreon links here if/when set up -->
 
-**Example input:**
-```
-Enter NEW Project Name: MyAwesomeApp
-Enter NEW Package Name: com.mycompany.awesomeapp
-```
-
-### 🍎 On macOS / 🐧 On Linux
-
-```bash
-# Make the script executable (only once):
-chmod +x rename_project.sh
-
-# Run it:
-./rename_project.sh
-```
-
-It will show:
-```
-Detected Existing Project Name: spectacled
-Detected Existing Package Name: at.techbee.spectacled
-
-Enter NEW Project Name: MyAwesomeApp
-Enter NEW Package Name: com.mycompany.awesomeapp
-```
-
-### What the script changes automatically:
-
-| What | Where |
-|---|---|
-| `rootProject.name` | `settings.gradle.kts` |
-| `namespace` | All `build.gradle.kts` files |
-| `applicationId` | `androidApp/build.gradle.kts` |
-| `package` declarations | All `.kt` files |
-| `import` statements | All `.kt` files |
-| App display name | `strings.xml` |
-| iOS bundle ID | `Config.xcconfig` |
-| iOS product name | `Config.xcconfig` |
-| Desktop package name | `composeApp/build.gradle.kts` |
-| Server group name | `server/build.gradle.kts` |
-| Kotlin source folders | Moved to match new package |
-
-### After renaming, in Android Studio:
-
-```
-File → Sync Project with Gradle Files
-Build → Clean Project
-Build → Rebuild Project
-```
+(See [`.github/FUNDING.yml`](.github/FUNDING.yml) for the current list.)
 
 ---
 
-## 📱 How to Build & Run on Each Platform
+## 🛠️ Tech Stack
 
----
+Built with [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html) and [Compose Multiplatform](https://www.jetbrains.com/compose-multiplatform/). Local storage and sync use [SQLDelight](https://sqldelight.github.io/sqldelight/) (SQLite everywhere, including a persisted IndexedDB-backed store on Web), networking is [Ktor](https://ktor.io/), and dependency injection is [Koin](https://insert-koin.io/).
 
-### 🤖 Android
+Exact versions aren't listed here to avoid this file going stale — see [`gradle/libs.versions.toml`](gradle/libs.versions.toml) for the current pinned versions of everything, including the supported Android SDK range.
 
-**What you need:** Android Studio (Narwhal 2025.1 or newer)
+### ⚡ No Java / Gradle installation needed
 
-**Steps:**
-```
-1. Open project in Android Studio
-2. Wait for Gradle sync to finish (first time takes a few minutes)
-3. Select an emulator or connected device from the toolbar
-4. Click ▶️ Run
-```
-
-**Or from terminal:**
-```bash
-# Build debug APK
-./gradlew :androidApp:assembleDebug
-
-# APK location:
-# androidApp/build/outputs/apk/debug/androidApp-debug.apk
-```
-
-**Or build release APK:**
-```bash
-./gradlew :androidApp:assembleRelease
-```
-
----
-
-### 🖥️ Desktop (Windows / macOS / Linux)
-
-**What you need:** Nothing extra! Just the project.
-
-**Run from Android Studio:**
-```
-1. In the Run Configurations dropdown (top toolbar), select "composeApp"
-2. Click ▶️ Run
-```
-
-**Run from terminal:**
-```bash
-# Launch the desktop app directly
-./gradlew :composeApp:run
-```
-
-**Create native installer:**
-```bash
-# Windows → .msi installer
-./gradlew :composeApp:packageMsi
-
-# macOS → .dmg installer
-./gradlew :composeApp:packageDmg
-
-# Linux → .deb package
-./gradlew :composeApp:packageDeb
-```
-
-**Installer output location:**
-```
-composeApp/build/compose/binaries/
-```
-
----
-
-### 🌐 Web (JavaScript)
-
-**What you need:** Nothing extra! Just a modern browser.
-
-**Run from terminal:**
-```bash
-./gradlew :composeApp:jsBrowserDevelopmentRun
-```
-
-**What happens:**
-```
-1. Gradle compiles your Kotlin code to JavaScript
-2. A dev server starts automatically
-3. Opens your browser at  http://localhost:8080
-4. You can see your app running in the browser!
-```
-
-**Build production bundle:**
-```bash
-./gradlew :composeApp:jsBrowserProductionWebpack
-
-# Output: composeApp/build/dist/js/productionExecutable/
-```
-
----
-
-### 🌐 Web (WebAssembly / Wasm)
-
-**What you need:** A modern browser (Chrome 119+, Firefox 120+, Safari 18.2+)
-
-```bash
-./gradlew :composeApp:wasmJsBrowserDevelopmentRun
-```
-
-> ⚠️ **Note:** Wasm support is experimental. For production web apps, use the JS target above.
-
----
-
-### 🍎 iOS
-
-**What you need:** macOS + Xcode 16+
-
-**Option A — Build from Xcode (recommended):**
-```
-1. Open  iosApp/iosApp.xcodeproj  in Xcode
-2. Select a simulator (e.g. iPhone 16)
-3. Click ▶️ Run
-```
-
-**Option B — Build from Android Studio:**
-```
-1. Install the "Kotlin Multiplatform" plugin in Android Studio
-   (Settings → Plugins → search "Kotlin Multiplatform")
-2. Select the iOS run configuration from the dropdown
-3. Click ▶️ Run
-```
-
-**For physical device:** Edit `iosApp/Configuration/Config.xcconfig`:
-```
-TEAM_ID=YOUR_APPLE_TEAM_ID
-```
-
----
-
-### ⚙️ Server (Ktor Backend)
-
-**What you need:** Nothing extra!
-
-```bash
-./gradlew :server:run
-```
-
-**What happens:**
-```
-Server starts at  http://localhost:8080
-```
+This project uses the **Gradle Wrapper** and the **Foojay toolchain resolver**. The first build downloads Gradle and a JDK automatically — you only need Android Studio (for Android/Desktop/Web) and, for iOS, Xcode.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-📦 project-root/
- ┣ 📂 androidApp/              ← Android app entry point
- ┃ ┣ 📂 src/main/kotlin/       ← MainActivity.kt
- ┃ ┗ 📄 build.gradle.kts
+📦 spectacled/
+ ┣ 📂 shared/                  ← Almost everything lives here: UI screens, CalDAV sync,
+ ┃                                iCalendar parsing, local database, repositories — used
+ ┃                                by every app and every platform
  ┃
- ┣ 📂 composeApp/              ← Shared Compose UI (★ main code here)
- ┃ ┣ 📂 src/
- ┃ ┃ ┣ 📂 commonMain/          ← ★ Shared UI code (App.kt)
- ┃ ┃ ┣ 📂 androidMain/         ← Android-specific UI
- ┃ ┃ ┣ 📂 iosMain/             ← iOS-specific UI
- ┃ ┃ ┣ 📂 jvmMain/             ← Desktop entry point
- ┃ ┃ ┣ 📂 jsMain/              ← Web JS entry point
- ┃ ┃ ┗ 📂 wasmJsMain/          ← Web Wasm entry point
- ┃ ┗ 📄 build.gradle.kts
+ ┣ 📂 composeJournalsApp/      ← Platform entry point for the Journals app
+ ┣ 📂 composeNotesApp/         ← Platform entry point for the Notes app
+ ┣ 📂 composeTasksApp/         ← Platform entry point for the Tasks app
+ ┃    (each targets Android, iOS, Desktop/JVM, Web/JS, and Web/Wasm; each is a thin
+ ┃     wrapper that picks a variant and hands off to shared/'s UI)
  ┃
- ┣ 📂 shared/                  ← Shared business logic (no UI)
- ┃ ┣ 📂 src/
- ┃ ┃ ┣ 📂 commonMain/          ← ★ Platform-independent logic
- ┃ ┃ ┣ 📂 androidMain/         ← Android expect/actual
- ┃ ┃ ┣ 📂 iosMain/             ← iOS expect/actual
- ┃ ┃ ┣ 📂 jvmMain/             ← JVM expect/actual
- ┃ ┃ ┗ 📂 jsMain/              ← JS expect/actual
- ┃ ┗ 📄 build.gradle.kts
+ ┣ 📂 androidJournalsApp/      ← Android entry point for Journals
+ ┣ 📂 androidNotesApp/         ← Android entry point for Notes
+ ┣ 📂 androidTasksApp/         ← Android entry point for Tasks
  ┃
- ┣ 📂 iosApp/                  ← iOS Xcode project
- ┃ ┣ 📂 iosApp/                ← Swift source files
- ┃ ┗ 📂 Configuration/         ← Config.xcconfig (Team ID here)
+ ┣ 📂 iosJournalsApp/          ← iOS Xcode project for Journals
+ ┣ 📂 iosNotesApp/             ← iOS Xcode project for Notes
+ ┣ 📂 iosTasksApp/             ← iOS Xcode project for Tasks
+ ┣ 📄 spectacled.xcworkspace   ← Xcode workspace combining all three iOS apps
  ┃
- ┣ 📂 server/                  ← Ktor backend server
+ ┣ 📂 server/                  ← Ktor backend scaffold — currently unused template
+ ┃                                boilerplate, not required to build or run any app
  ┃
- ┣ 📂 gradle/
- ┃ ┣ 📄 libs.versions.toml     ← ★ All dependency versions here
- ┃ ┗ 📂 wrapper/               ← Gradle wrapper (auto-downloads Gradle)
- ┃
- ┣ 📄 rename_project.bat       ← 🪟 Windows rename script
- ┣ 📄 rename_project.sh        ← 🍎🐧 macOS/Linux rename script
- ┣ 📄 rename_project.ps1       ← PowerShell logic (used by .bat)
- ┗ 📄 gradlew / gradlew.bat    ← ★ Always use this, NOT system Gradle
+ ┗ 📂 gradle/
+    ┗ 📄 libs.versions.toml    ← ★ All dependency versions live here
 ```
 
----
+Why three separate apps instead of one with a mode switch? Each is published as its own listing (its own icon, name, and store page), which matches how people actually think about journals vs. notes vs. tasks — but all three share every line of business logic *and* almost all of their UI, which both live in `shared/`. `compose<Variant>App` is just the per-platform entry point: it picks a variant and wires it up for Android/iOS/Desktop/Web. If you're contributing a fix, it almost always belongs in `shared/`.
 
 ## ✏️ Where to Write Your Code
 
-| What you want to do | Put code here |
-|---|---|
-| Shared UI screens & components | `composeApp/src/commonMain/kotlin/` |
-| Android-only code | `androidApp/src/main/kotlin/` |
-| iOS-only Swift code | `iosApp/iosApp/` |
-| Business logic (all platforms) | `shared/src/commonMain/kotlin/` |
-| Platform-specific logic | `shared/src/<platform>Main/kotlin/` |
-| Server API endpoints | `server/src/main/kotlin/` |
-| Images & shared resources | `composeApp/src/commonMain/composeResources/` |
-| Android resources (xml, drawables) | `androidApp/src/main/res/` |
+| What you want to do                                                  | Put code here                                |
+|----------------------------------------------------------------------|----------------------------------------------|
+| UI screens, CalDAV sync, iCalendar parsing, database, business logic | `shared/src/commonMain/kotlin/`              |
+| Platform-specific logic (e.g. credential storage, file access)       | `shared/src/<platform>Main/kotlin/`          |
+| Platform entry-point wiring for one app (rarely needed)              | `compose<Variant>App/src/commonMain/kotlin/` |
+| Static web assets (favicon, index.html, the sql.js worker)           | `compose<Variant>App/src/webMain/resources/` |
+| Android-only entry point code                                        | `android<Variant>App/src/main/kotlin/`       |
+| iOS-only Swift code                                                  | `ios<Variant>App/ios<Variant>App/`           |
+| Shared strings/images (used by all 3 apps)                           | `shared/src/commonMain/composeResources/`    |
 
 ---
 
-## 📝 Quick Gradle Commands Reference
+## 🏁 Building & Running Each Platform
 
-| Command | What it does |
-|---|---|
-| `./gradlew :androidApp:assembleDebug` | Build Android debug APK |
-| `./gradlew :androidApp:assembleRelease` | Build Android release APK |
-| `./gradlew :composeApp:run` | Run Desktop app |
-| `./gradlew :composeApp:packageMsi` | Create Windows .msi installer |
-| `./gradlew :composeApp:packageDmg` | Create macOS .dmg installer |
-| `./gradlew :composeApp:packageDeb` | Create Linux .deb package |
-| `./gradlew :composeApp:jsBrowserDevelopmentRun` | Run Web app (JS) in browser |
-| `./gradlew :composeApp:wasmJsBrowserDevelopmentRun` | Run Web app (Wasm) in browser |
-| `./gradlew :server:run` | Run Ktor server |
-| `./gradlew allTests` | Run all tests |
-| `./gradlew clean` | Delete all build outputs |
-| `./gradlew --stop` | Stop all Gradle daemons |
+Each command below works for any of the three apps — just swap `composeJournalsApp` / `androidJournalsApp` / `iosJournalsApp` for the `Notes` or `Tasks` equivalent.
 
-> 💡 **Always use `./gradlew`** (not `gradle`). This uses the bundled Gradle version and avoids version mismatch errors.
+### 🤖 Android
+
+```bash
+# Debug build
+./gradlew :androidJournalsApp:assembleDebug
+# APK: androidJournalsApp/build/outputs/apk/debug/
+
+# Or just open the project in Android Studio, select an androidJournalsApp run
+# configuration and a device/emulator, and click ▶️ Run.
+```
+
+### 🖥️ Desktop (Windows / macOS / Linux)
+
+```bash
+# Run directly
+./gradlew :composeJournalsApp:run
+
+# Native installers
+./gradlew :composeJournalsApp:packageMsi   # Windows
+./gradlew :composeJournalsApp:packageDmg   # macOS
+./gradlew :composeJournalsApp:packageDeb   # Linux
+
+# Output: composeJournalsApp/build/compose/binaries/
+```
+
+### 🌐 Web (JavaScript)
+
+```bash
+./gradlew :composeJournalsApp:jsBrowserDevelopmentRun
+# Opens http://localhost:8080 with hot reload
+
+# Production bundle:
+./gradlew :composeJournalsApp:jsBrowserProductionWebpack
+```
+
+### 🌐 Web (WebAssembly)
+
+```bash
+./gradlew :composeJournalsApp:wasmJsBrowserDevelopmentRun
+```
+
+Requires a recent browser (Chrome 119+, Firefox 120+, Safari 18.2+).
+
+### 🍎 iOS
+
+Requires macOS + Xcode 16+.
+
+```
+1. Open spectacled.xcworkspace (or iosJournalsApp/iosJournalsApp.xcodeproj directly)
+   in Xcode.
+2. Select a simulator or device.
+3. Click ▶️ Run.
+```
+
+For a physical device, set your Apple Developer Team in `ios<Variant>App/Configuration/Config.xcconfig`:
+
+```
+DEVELOPMENT_TEAM=YOUR_APPLE_TEAM_ID
+```
+
+### 📝 Useful Gradle commands
+
+| Command                      | What it does                                                   |
+|------------------------------|----------------------------------------------------------------|
+| `./gradlew :shared:allTests` | Run the shared module's test suite                             |
+| `./gradlew clean`            | Delete all build outputs                                       |
+| `./gradlew --stop`           | Stop all Gradle daemons (useful after a bad incremental build) |
+
+> 💡 Always use `./gradlew` (the wrapper), not a system-installed `gradle` — it pins the exact Gradle version this project needs.
 
 ---
 
-## 🔧 Troubleshooting
+## Contributing
 
-### ❌ "SDK location not found"
+Issues and pull requests are welcome — this is an open-source project and stays that way. A few starting points:
 
-Android Studio creates `local.properties` automatically. If missing, create it manually:
+- **Bug reports / feature requests:** open a [GitHub Issue](../../issues)
+- **Questions / discussion:** [GitHub Discussions](../../discussions)
+- **Translations:** not yet set up — planned via Crowdin or Weblate; watch this space
+- **Chat / updates:** Mastodon handle coming soon
 
-```properties
-# Windows
-sdk.dir=C\:\\Users\\YOUR_NAME\\AppData\\Local\\Android\\Sdk
+If you're touching CalDAV sync or iCalendar parsing, start in `shared/src/commonMain/kotlin/at/techbee/spectacled/screens/core/` — that's where the platform-independent logic lives, and it's the part every app and every platform depends on.
 
-# macOS
-sdk.dir=/Users/YOUR_NAME/Library/Android/sdk
+## License
 
-# Linux
-sdk.dir=/home/YOUR_NAME/Android/Sdk
-```
-
-### ❌ "Unsupported class file major version" or JDK errors
-
-```bash
-./gradlew clean
-./gradlew --stop
-./gradlew :androidApp:assembleDebug
-```
-
-### ❌ Gradle version errors
-
-**Never use system Gradle.** Always use the bundled wrapper:
-
-```bash
-# ✅ Correct
-./gradlew :androidApp:assembleDebug
-
-# ❌ Wrong (will cause version errors)
-gradle :androidApp:assembleDebug
-```
-
-### ❌ iOS "Framework not found"
-
-```bash
-./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
-```
-
-### ❌ First build is very slow
-
-This is normal! The first build downloads:
-- Gradle `9.1.0` 
-- JDK 17 
-- All dependencies 
-
-Subsequent builds are much faster (cached).
-
----
-
-## 📄 License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 — see [LICENSE](LICENSE) for details.
