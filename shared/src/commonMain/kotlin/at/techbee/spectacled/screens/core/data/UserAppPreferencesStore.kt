@@ -34,6 +34,9 @@ interface UserAppPreferencesStore {
     fun loadAsFlow(key: String): Flow<String?>
     fun remove(key: String)
 
+    /** No-op everywhere except Web, where it awaits KSafe's async key setup. */
+    suspend fun awaitReady() {}
+
     var lastUsedCalendarId: Long?
         get() = this.load(LAST_USED_CALENDAR_ID)?.toLongOrNull()
         set(value) {

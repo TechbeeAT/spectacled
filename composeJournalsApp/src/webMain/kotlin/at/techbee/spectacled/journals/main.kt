@@ -1,11 +1,15 @@
-﻿package at.techbee.spectacled.journals
+package at.techbee.spectacled.journals
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
+import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.SecureStorageReadyGate
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     ComposeViewport {
-        JournalsApp()
+        SecureStorageReadyGate(SpectacledVariant.JOURNALS) {
+            JournalsApp()
+        }
     }
 }
