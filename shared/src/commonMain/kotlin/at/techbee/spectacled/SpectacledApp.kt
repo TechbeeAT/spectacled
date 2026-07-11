@@ -22,6 +22,7 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.account.presentation.AccountListScreenRoot
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
+import at.techbee.spectacled.screens.core.SecureStorageReadyGate
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.koin.sharedModule
@@ -118,6 +119,7 @@ fun SpectacledApp(
     val syncTrigger = koinInject<PlatformSyncTrigger>()
     val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
 
+    SecureStorageReadyGate {
     AppTheme(
         spectacledVariant = spectacledVariant
     ) {
@@ -275,6 +277,7 @@ fun SpectacledApp(
                 }
             }
         }
+    }
     }
 }
 

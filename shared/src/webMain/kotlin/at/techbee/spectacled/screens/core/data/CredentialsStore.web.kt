@@ -17,4 +17,6 @@ actual class PlatformCredentialStore(): CredentialStore {
     actual override suspend fun clear(server: Url) {
         ksafe.delete(server.toString())
     }
+
+    override suspend fun awaitReady() = ksafe.awaitCacheReady()
 }
