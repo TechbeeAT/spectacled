@@ -106,7 +106,7 @@ interface UserAppPreferencesStore {
 
     var userProxyServer: String?
         get() = this.load(USER_PROXY_SERVER)?.ifEmpty { null }
-        set(value) = if(value == null) this.remove(USER_PROXY_SERVER) else this.saveEncrypted(USER_PROXY_SERVER, value)
+        set(value) = if(value == null) this.remove(USER_PROXY_SERVER) else this.save(USER_PROXY_SERVER, value)
     fun getUserProxyServerAsFlow(): Flow<String?> = this.loadAsFlow(USER_PROXY_SERVER)
 
 

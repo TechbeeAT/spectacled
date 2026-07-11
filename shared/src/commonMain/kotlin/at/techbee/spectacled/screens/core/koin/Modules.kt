@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.core.koin
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
+import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.repository.CalendarRepositoryImpl
 import at.techbee.spectacled.screens.core.data.repository.IcalEntryRepositoryImpl
@@ -17,7 +18,13 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val sharedModule = module {
-    single { HttpClientFactory.create(getPlatformEngine()) }
+    single {
+        val preferences: UserAppPreferencesStore = get()
+        HttpClientFactory.create(
+            engine = getPlatformEngine(),
+            userProxyUrlProvider = { preferences.userProxyServer }
+        )
+    }
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
     singleOf(::IcalEntryRepositoryImpl) { bind<IcalEntryRepository>() }
 

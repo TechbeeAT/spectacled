@@ -22,14 +22,15 @@ object HttpClientFactory {
     fun create(
         engine: HttpClientEngine,
         jsonContentNegotiation: Boolean = true,
-        proxyUrl: String? = if(getPlatform().platform == Platforms.WASM) "http://localhost:8088" else null
+        userProxyUrlProvider: () -> String? = { null }  /** This provider is evaluated for every request within a Ktor interceptor, ensuring that any changes the user makes in the settings are picked up immediately by the HttpClient without requiring an app restart.*/
     ): HttpClient {
         return HttpClient(engine) {
             followRedirects = false
 
-            if (proxyUrl != null) {
-                install("ProxyInterceptor") {
-                    requestPipeline.intercept(HttpRequestPipeline.Transform) {
+            install("ProxyInterceptor") {
+                requestPipeline.intercept(HttpRequestPipeline.Transform) {
+                    val proxyUrl = userProxyUrlProvider()
+                    if (proxyUrl?.isNotBlank() == true) {
                         val originalUrl = context.url.buildString()
                         // Only proxy external requests, not the proxy itself
                         if (originalUrl.startsWith("http") && !originalUrl.startsWith(proxyUrl)) {
