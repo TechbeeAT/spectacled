@@ -17,7 +17,7 @@ import org.koin.mp.KoinPlatform
  * async key setup has completed for every KSafe-backed store, so a synchronous read of an
  * encrypted value right after startup (e.g. UserAppPreferencesStore.claudeUserApiKey, read
  * through KSafe's getDirect) can't race the key becoming available and silently return the
- * default. See SEC-9.
+ * default.
  *
  * Android/iOS/Desktop don't need this - KSafe's key setup there isn't async - so this lives
  * only in webMain instead of as a no-op wrapper on every other platform.

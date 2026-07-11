@@ -18,7 +18,7 @@ interface CredentialStore {
     suspend fun load(server: Url): Credentials?
     suspend fun clear(server: Url)
 
-    /** No-op everywhere except Web, where it awaits KSafe's async key setup. See SEC-9. */
+    /** No-op everywhere except Web, where it awaits KSafe's async key setup. */
     suspend fun awaitReady() {}
 }
 
