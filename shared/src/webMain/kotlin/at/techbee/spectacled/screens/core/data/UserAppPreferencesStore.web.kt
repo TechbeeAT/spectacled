@@ -13,4 +13,6 @@ actual class PlatformUserAppPreferencesStore: UserAppPreferencesStore {
     actual override fun load(key: String): String? = ksafe.getDirect(key, null)
     actual override fun loadAsFlow(key: String): Flow<String?> = ksafe.getFlow(key, null)
     actual override fun remove(key: String) = ksafe.deleteDirect(key)
+
+    override suspend fun awaitReady() = ksafe.awaitCacheReady()
 }

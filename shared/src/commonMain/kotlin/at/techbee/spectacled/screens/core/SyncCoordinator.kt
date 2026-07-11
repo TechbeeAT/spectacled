@@ -583,18 +583,31 @@ class SyncCoordinator(
 
     private suspend fun pushAttachments(icalEntry: IcalEntry, calendar: Calendar): IcalEntry {
         val updatedAttachments = icalEntry.attachments.map { attachment ->
-            if (!attachment.isInline && attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED && attachment.localPath != null) {
+            val isRetryEligible = attachment.syncState == AttachmentSyncState.LOCAL_MODIFIED
+                    || attachment.syncState == AttachmentSyncState.FAILED
+            if (!attachment.isInline && isRetryEligible && attachment.localPath != null) {
                 val fileName = "${attachment.uid}_${attachment.fileName ?: "file"}"
                 val uploadBaseUrl = calendar.attachmentCollectionUrl ?: calendar.url
                 val safeTargetUrl = Url(uploadBaseUrl.toString().trimEnd('/') + "/" + fileName)
 
                 val bytes = fileManager.readAttachment(attachment.localPath)
-                if (uploadFileMultiplatform(client, safeTargetUrl, bytes, attachment.mimeType, credentials).isSuccess()) {        // TODO: Instead of handling only success here, inform user in case of a problem
-                    val syncedAttachment = attachment.copy(remoteUrl = safeTargetUrl.toString(), syncState = AttachmentSyncState.SYNCED)
+
+                val uploadResult = uploadFileMultiplatform(client, safeTargetUrl, bytes, attachment.mimeType, credentials)
+                if (uploadResult.isSuccess()) {
+                    val syncedAttachment = attachment.copy(
+                        remoteUrl = safeTargetUrl.toString(),
+                        syncState = AttachmentSyncState.SYNCED,
+                        syncErrorMessage = null
+                    )
                     icalEntryRepository.insertOrUpdateAttachment(syncedAttachment)
                     syncedAttachment
                 } else {
-                    attachment
+                    val failedAttachment = attachment.copy(
+                        syncState = AttachmentSyncState.FAILED,
+                        syncErrorMessage = "Uploading attachment failed: ${uploadResult.description} (${uploadResult.value})"
+                    )
+                    icalEntryRepository.insertOrUpdateAttachment(failedAttachment)
+                    failedAttachment
                 }
             } else {
                 attachment

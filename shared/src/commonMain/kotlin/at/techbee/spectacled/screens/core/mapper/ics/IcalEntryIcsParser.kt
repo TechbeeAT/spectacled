@@ -41,15 +41,56 @@ fun unfoldLines(input: String): List<String> =
         }
 
 
-fun parseProperty(line: String): IcsProperty {
-    val (left, rawValue) = line.split(":", limit = 2)
-    val parts = left.split(";")
+/**
+ * Finds the first occurrence of [target] in [s] that is not inside a "quoted-string"
+ * (RFC 5545 §3.1: a param-value wrapped in double quotes may itself contain ';', ':',
+ * and ',' — those are only real delimiters outside of quotes). Returns -1 if not found.
+ */
+private fun findUnquotedIndex(s: String, target: Char): Int {
+    var inQuotes = false
+    for (i in s.indices) {
+        val c = s[i]
+        if (c == '"') inQuotes = !inQuotes
+        else if (c == target && !inQuotes) return i
+    }
+    return -1
+}
 
+/** Splits [s] on [delimiter], but never inside a "quoted-string" (see [findUnquotedIndex]). */
+private fun splitRespectingQuotes(s: String, delimiter: Char): List<String> {
+    val parts = mutableListOf<String>()
+    val current = StringBuilder()
+    var inQuotes = false
+    for (c in s) {
+        when {
+            c == '"' -> { inQuotes = !inQuotes; current.append(c) }
+            c == delimiter && !inQuotes -> { parts.add(current.toString()); current.clear() }
+            else -> current.append(c)
+        }
+    }
+    parts.add(current.toString())
+    return parts
+}
+
+private fun unquote(value: String): String =
+    if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) value.substring(1, value.length - 1)
+    else value
+
+fun parseProperty(line: String): IcsProperty {
+    // The value is everything after the first ':' that isn't inside a quoted param value -
+    // e.g. ATTENDEE;DELEGATED-FROM="mailto:jane@example.com":mailto:john@example.com must
+    // split at the *second* colon, not the first one (which sits inside the quoted param).
+    val colonIndex = findUnquotedIndex(line, ':')
+    val left = if (colonIndex == -1) line else line.substring(0, colonIndex)
+    val rawValue = if (colonIndex == -1) "" else line.substring(colonIndex + 1)
+
+    val parts = splitRespectingQuotes(left, ';')
     val name = parts.first()
     val params = parts
-        .drop(1).associate {
-            val (key, value) = it.split("=", limit = 2)
-            key to value
+        .drop(1).associate { part ->
+            val eqIndex = findUnquotedIndex(part, '=')
+            if (eqIndex == -1) part to ""
+            else part.substring(0, eqIndex) to unquote(part.substring(eqIndex + 1))
         }
 
     val value = rawValue

@@ -15,7 +15,8 @@ fun AttachmentDto.toDomain(): Attachment {
         mimeType = this.mimeType,
         size = this.size,
         isInline = this.isInline != 0L,
-        syncState = AttachmentSyncState.valueOf(this.syncState)
+        syncState = AttachmentSyncState.valueOf(this.syncState),
+        syncErrorMessage = this.syncErrorMessage
     )
 }
 
@@ -30,6 +31,7 @@ fun Attachment.toDto(): AttachmentDto {
         mimeType = this.mimeType,
         size = this.size,
         isInline = if (this.isInline) 1L else 0L,
-        syncState = this.syncState.name
+        syncState = this.syncState.name,
+        syncErrorMessage = this.syncErrorMessage
     )
 }

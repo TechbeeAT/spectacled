@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.outlined.Colorize
 import androidx.compose.material.icons.outlined.FontDownload
 import androidx.compose.material.icons.outlined.FormatPaint
 import androidx.compose.material.icons.outlined.ModeNight
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AssistChip
@@ -28,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Switch
@@ -43,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -62,6 +66,7 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.close
 import spectacled.shared.generated.resources.ic_cognition
+import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.settings
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.theme
@@ -93,12 +98,15 @@ fun SettingsBottomSheet(
     val themeFont by userAppPreferencesStore.getThemeFontAsFlow().collectAsState(userAppPreferencesStore.themeFont)
 
     //var advancedSectionExpanded by remember { mutableStateOf(false) }
+
     var isClaudeUserApiKeyVisible by remember { mutableStateOf(false) }
     val claudeUserApiKeyState = rememberTextFieldState(userAppPreferencesStore.claudeUserApiKey?:"")
-
     LaunchedEffect(claudeUserApiKeyState.text) {
         userAppPreferencesStore.claudeUserApiKey = claudeUserApiKeyState.text.toString()
     }
+
+    var userProxyServerDropdownExpanded by remember { mutableStateOf(false) }
+    val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
 
 
     BottomSheetWithMenu(
@@ -311,6 +319,56 @@ fun SettingsBottomSheet(
                 },
                 modifier = Modifier.widthIn(min = 350.dp)
             )
+
+
+            if(getPlatform().platform == Platforms.WASM || LocalInspectionMode.current) {
+                OutlinedTextField(
+                    value = userProxyServer ?: "",
+                    onValueChange = { userAppPreferencesStore.userProxyServer = it.ifBlank { null } },
+                    placeholder = { Text("https://") },
+                    supportingText = {
+                        val trimmedServer = userProxyServer?.trim() ?: ""
+                        val isInsecure = trimmedServer.startsWith("http://")
+
+                        Column {
+                            AnimatedVisibility(isInsecure) {
+                                Text(
+                                    text = stringResource(Res.string.insecure_connection_warning),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            Text("TODO: Info about proxy server")
+                        }
+                    },
+                    label = { Text("Proxy server") },
+                    trailingIcon = {
+                        TextButton(
+                            onClick = { userProxyServerDropdownExpanded = !userProxyServerDropdownExpanded },
+                        ) {
+                            Icon(Icons.Outlined.MoreVert, null)
+
+                            DropdownMenu(
+                                expanded = userProxyServerDropdownExpanded,
+                                onDismissRequest = { userProxyServerDropdownExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text("Development test")
+                                            Text("http://0.0.0.0:8088")
+                                        }
+                                    },
+                                    onClick = {
+                                        userAppPreferencesStore.userProxyServer = "http://0.0.0.0:8088"
+                                        userProxyServerDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier.widthIn(min = 350.dp)
+                )
+            }
         }
     }
 }
