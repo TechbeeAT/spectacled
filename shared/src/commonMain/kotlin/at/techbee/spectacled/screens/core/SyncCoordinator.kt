@@ -589,17 +589,43 @@ class SyncCoordinator(
                 val safeTargetUrl = Url(uploadBaseUrl.toString().trimEnd('/') + "/" + fileName)
 
                 val bytes = fileManager.readAttachment(attachment.localPath)
-                if (uploadFileMultiplatform(client, safeTargetUrl, bytes, attachment.mimeType, credentials).isSuccess()) {        // TODO: Instead of handling only success here, inform user in case of a problem
+
+                val uploadResult = uploadFileMultiplatform(client, safeTargetUrl, bytes, attachment.mimeType, credentials)
+                if (uploadResult.isSuccess()) {        // TODO: Instead of handling only success here, inform user in case of a problem
                     val syncedAttachment = attachment.copy(remoteUrl = safeTargetUrl.toString(), syncState = AttachmentSyncState.SYNCED)
                     icalEntryRepository.insertOrUpdateAttachment(syncedAttachment)
                     syncedAttachment
                 } else {
-                    attachment
+                    val failedAttachment = attachment.copy(
+                        syncState = AttachmentSyncState.FAILED,
+                        syncErrorMessage = "Uploading attachment failed: ${uploadResult.description} (${uploadResult.value})"
+                    )
+                    icalEntryRepository.insertOrUpdateAttachment(failedAttachment)
+                    failedAttachment
                 }
             } else {
                 attachment
             }
         }
         return icalEntry.copy(attachments = updatedAttachments)
+
+
+        /*
+
+        // SyncCoordinator.pushAttachments, replacing the current if/else
+if (uploadResult.isSuccess()) {
+    val synced = attachment.copy(remoteUrl = safeTargetUrl.toString(), syncState = AttachmentSyncState.SYNCED)
+    icalEntryRepository.insertOrUpdateAttachment(synced)
+    synced
+} else {
+    val failed = attachment.copy(
+        syncState = AttachmentSyncState.FAILED,
+        syncErrorMessage = uploadResult.errorMessageOrNull() ?: "Upload failed",
+        syncErrorAt = IcsDateTime.now()
+    )
+    icalEntryRepository.insertOrUpdateAttachment(failed)
+    failed
+}
+         */
     }
 }

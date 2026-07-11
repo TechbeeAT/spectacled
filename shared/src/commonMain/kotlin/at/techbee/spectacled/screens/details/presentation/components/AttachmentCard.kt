@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -121,6 +122,14 @@ fun AttachmentCard(
                             text = "${attachment.size / 1024} KB",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    attachment.syncErrorMessage?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -338,6 +347,33 @@ private fun AttachmentCard_SyncState_PENDING_DOWNLOAD_Preview() {
         attachment = Attachment(
             id = 1L,
             syncState = AttachmentSyncState.PENDING_DOWNLOAD,
+            fileName = "my document.pdf",
+            mimeType = "application/pdf",
+            size = 125000L
+        ),
+        onAction = {},
+        fileManager = object: FileManager {
+            override fun getAttachmentsDirectory() = "/"
+            override fun saveAttachment(fileName: String, bytes: ByteArray) = "/test.pdf"
+            override fun readAttachment(path: String) = "".toByteArray()
+            override fun deleteAttachment(path: String) = false
+            override fun exists(path: String) = true
+
+        },
+        modifier = Modifier.padding(8.dp)
+    )
+}
+
+@Preview
+@Composable
+private fun AttachmentCard_SyncState_FAILED_Preview() {
+
+
+    AttachmentCard(
+        attachment = Attachment(
+            id = 1L,
+            syncState = AttachmentSyncState.FAILED,
+            syncErrorMessage = "The upload of the attachment failed because of unknown reasons.",
             fileName = "my document.pdf",
             mimeType = "application/pdf",
             size = 125000L

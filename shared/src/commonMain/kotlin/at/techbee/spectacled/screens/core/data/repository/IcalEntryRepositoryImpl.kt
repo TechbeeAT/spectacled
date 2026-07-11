@@ -246,7 +246,8 @@ class IcalEntryRepositoryImpl(
                     mimeType = attachmentDto.mimeType,
                     size = attachmentDto.size,
                     isInline = attachmentDto.isInline,
-                    syncState = attachmentDto.syncState
+                    syncState = attachmentDto.syncState,
+                    syncErrorMessage = attachmentDto.syncErrorMessage
                 )
             }
         }
@@ -335,7 +336,8 @@ class IcalEntryRepositoryImpl(
                 mimeType = dto.mimeType,
                 size = dto.size,
                 isInline = dto.isInline,
-                syncState = dto.syncState
+                syncState = dto.syncState,
+                syncErrorMessage = dto.syncErrorMessage
             )
         }
     }
