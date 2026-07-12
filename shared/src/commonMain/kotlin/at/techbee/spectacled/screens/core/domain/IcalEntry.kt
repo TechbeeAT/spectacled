@@ -151,12 +151,13 @@ data class IcalEntry(
     }
 
     fun getProgressTriState() = when {
+        status == Status.IN_PROCESS -> ToggleableState.Indeterminate
+        status == Status.COMPLETED -> ToggleableState.On
+        status == Status.NEEDS_ACTION -> ToggleableState.Off
         percentComplete == 0L -> ToggleableState.Off
         percentComplete in 1L .. 99L -> ToggleableState.Indeterminate
         percentComplete == 100L -> ToggleableState.On
-        status == null || status == Status.NEEDS_ACTION -> ToggleableState.Off
-        status == Status.IN_PROCESS -> ToggleableState.Indeterminate
-        status == Status.COMPLETED -> ToggleableState.On
+        status == null -> ToggleableState.Off
         else -> ToggleableState.Indeterminate   // undefined
     }
 

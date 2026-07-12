@@ -93,13 +93,34 @@ fun parseProperty(line: String): IcsProperty {
             else part.substring(0, eqIndex) to unquote(part.substring(eqIndex + 1))
         }
 
-    val value = rawValue
-        .replace("\\n", "\n")
-        .replace("\\,", ",")
-        .replace("\\;", ";")
-        .replace("\\\\", "\\")
+    return IcsProperty(name, params, unescapeIcsValue(rawValue))
+}
 
-    return IcsProperty(name, params, value)
+/**
+ * Single-pass inverse of escapeIcsValue (RFC 5545 §3.3.11 TEXT). Sequential String.replace
+ * calls are not a correct inverse: escaping "C:\Users\name" yields "C:\\Users\\name", whose
+ * middle "\\n" a sequential replace("\\n", "\n") pass misreads as an escaped newline,
+ * corrupting the text to "C:\Users<newline>ame". A single left-to-right scan can't pair a
+ * backslash with a character that was itself produced by an earlier escape. Also accepts
+ * the uppercase "\N" newline form RFC 5545 allows from other producers.
+ */
+fun unescapeIcsValue(value: String): String {
+    val sb = StringBuilder(value.length)
+    var i = 0
+    while (i < value.length) {
+        val c = value[i]
+        if (c == '\\' && i + 1 < value.length) {
+            when (val next = value[i + 1]) {
+                'n', 'N' -> { sb.append('\n'); i += 2 }
+                ',', ';', '\\' -> { sb.append(next); i += 2 }
+                else -> { sb.append(c); i += 1 }
+            }
+        } else {
+            sb.append(c)
+            i += 1
+        }
+    }
+    return sb.toString()
 }
 
 fun parseIcsDateTime(
