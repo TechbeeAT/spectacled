@@ -1,4 +1,4 @@
-﻿rootProject.name = "spectacled"
+rootProject.name = "spectacled"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
@@ -42,6 +42,8 @@ include(":composeTasksApp")
 include(":server")
 include(":shared")
 
-include(":iosJournalsApp")
-include(":iosNotesApp")
-include(":iosTasksApp")
+// NOTE: The iOS apps (iosJournalsApp, iosNotesApp, iosTasksApp) are standalone
+// Xcode projects, not Gradle modules. They consume the shared framework via the
+// `embedAndSignAppleFrameworkForXcode` build phase in their .xcodeproj, so they
+// must NOT be declared with include(...) here. Doing so gives Gradle empty,
+// build-script-less subprojects and breaks Android Studio's module tree.
