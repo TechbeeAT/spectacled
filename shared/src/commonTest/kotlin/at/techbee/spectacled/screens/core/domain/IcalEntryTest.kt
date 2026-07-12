@@ -69,6 +69,8 @@ class IcalEntryTest {
         assertEquals(ToggleableState.Off, task.copy(percentComplete = 0L).getProgressTriState())
         assertEquals(ToggleableState.Indeterminate, task.copy(percentComplete = 50L).getProgressTriState())
         assertEquals(ToggleableState.On, task.copy(percentComplete = 100L).getProgressTriState())
+        assertEquals(ToggleableState.Off, task.copy(percentComplete = 0L, status = null).getProgressTriState())
+        assertEquals(ToggleableState.On, task.copy(percentComplete = 0L, status = Status.COMPLETED).getProgressTriState())
     }
 
     @Test

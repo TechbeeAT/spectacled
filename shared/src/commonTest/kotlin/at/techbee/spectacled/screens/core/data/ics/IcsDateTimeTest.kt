@@ -1,10 +1,13 @@
 package at.techbee.spectacled.screens.core.data.ics
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toInstant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -40,6 +43,16 @@ class IcsDateTimeTest {
         assertTrue(dateOnly.isDateOnly)
         assertNull(dateOnly.timeZone)
         assertEquals(LocalDate(2026, 7, 12).atStartOfDayIn(TimeZone.UTC), dateOnly.instant)
+    }
+
+    @Test
+    fun asDateTime_usesTheLocalDateOfTheEffectiveZone() {
+        val zoned = IcsDateTime(Instant.parse("2026-07-12T00:00:00Z"), isDateOnly = true)
+        val dateTime = zoned.asDateTime()
+
+        assertFalse(dateTime.isDateOnly)
+        assertNull(dateTime.timeZone)
+        assertEquals(LocalDateTime(2026, 7, 12, 0, 0).toInstant(TimeZone.UTC), dateTime.instant)
     }
 
     @Test
