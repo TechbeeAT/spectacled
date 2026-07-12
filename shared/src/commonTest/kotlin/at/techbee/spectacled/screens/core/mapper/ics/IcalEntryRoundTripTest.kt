@@ -177,6 +177,30 @@ class IcalEntryRoundTripTest {
     }
 
     @Test
+    fun categoriesWithCommasAndSpecialCharactersRoundTrip() {
+        val categories = listOf("Work, Private", "a,b", "semi;colon", "back\\slash", "Plain")
+        val original = IcalEntry(uid = "cat-uid", categories = categories, dtstamp = utcDateTime, created = utcDateTime, calendarComponent = CalendarComponent.VJOURNAL)
+        assertEquals(categories, parseIcalEntries(serializeVCalendar(original)).single().categories)
+    }
+
+    @Test
+    fun multipleCategoriesPropertiesAreMerged() {
+        // RFC 5545 allows an entry to carry several CATEGORIES properties; some clients
+        // emit one per category instead of a single comma-joined list.
+        val ics = listOf(
+            "BEGIN:VCALENDAR",
+            "BEGIN:VJOURNAL",
+            "UID:multi-cat-uid",
+            "CATEGORIES:First,Second",
+            "CATEGORIES:Third",
+            "END:VJOURNAL",
+            "END:VCALENDAR"
+        ).joinToString("\r\n")
+
+        assertEquals(listOf("First", "Second", "Third"), parseIcalEntries(ics).single().categories)
+    }
+
+    @Test
     fun relatedToWithExplicitRelTypeRoundTrips() {
         val original = IcalEntry(uid = "child-uid", parentUid = "parent-uid", relType = "CHILD", dtstamp = utcDateTime, created = utcDateTime, calendarComponent = CalendarComponent.VTODO)
         val parsed = parseIcalEntries(serializeVCalendar(original)).single()
