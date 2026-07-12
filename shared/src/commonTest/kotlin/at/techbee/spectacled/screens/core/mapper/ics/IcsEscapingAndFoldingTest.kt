@@ -59,6 +59,34 @@ class IcsEscapingAndFoldingTest {
     }
 
     @Test
+    fun splitIcsList_separatesOnUnescapedCommasOnly() {
+        assertEquals(listOf("Personal", "Ideas"), splitIcsList("Personal,Ideas"))
+        assertEquals(listOf("Work, Private"), splitIcsList("Work\\, Private"))
+        assertEquals(listOf("a,b", "c"), splitIcsList("a\\,b,c"))
+    }
+
+    @Test
+    fun splitIcsList_handlesBackslashHeavyElements() {
+        // A category ending in a backslash, escaped to "\\", directly followed by the
+        // separator comma - the scanner must not treat that comma as escaped.
+        assertEquals(listOf("ends with backslash\\", "next"), splitIcsList("ends with backslash\\\\,next"))
+        assertEquals(listOf("semi;colon", "back\\slash"), splitIcsList("semi\\;colon,back\\\\slash"))
+    }
+
+    @Test
+    fun splitIcsList_dropsEmptyElements() {
+        assertEquals(listOf("A", "B"), splitIcsList("A,,B"))
+        assertEquals(emptyList<String>(), splitIcsList(""))
+    }
+
+    @Test
+    fun splitIcsList_roundTripsThroughPerElementEscaping() {
+        val categories = listOf("Work, Private", "a,b", "semi;colon", "back\\slash", "line\nbreak")
+        val raw = categories.joinToString(",") { escapeIcsValue(it) }
+        assertEquals(categories, splitIcsList(raw))
+    }
+
+    @Test
     fun foldIcsLine_lineAtLimitIsUnchanged() {
         val line = "A".repeat(75)
         assertEquals(line, foldIcsLine(line))
