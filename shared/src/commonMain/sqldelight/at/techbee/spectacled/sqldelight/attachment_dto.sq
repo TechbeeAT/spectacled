@@ -8,7 +8,8 @@ CREATE TABLE AttachmentDto (
     mimeType TEXT,
     size INTEGER,
     syncState TEXT NOT NULL, -- 'LOCAL_MODIFIED', 'SYNCED', 'PENDING_DOWNLOAD'
-    isInline INTEGER NOT NULL DEFAULT 0
+    isInline INTEGER NOT NULL DEFAULT 0,
+    syncErrorMessage TEXT
 );
 
 CREATE INDEX idx_attachment_icalEntryId ON AttachmentDto(icalEntryId);
@@ -41,11 +42,12 @@ INSERT OR REPLACE INTO AttachmentDto (
     mimeType,
     size,
     syncState,
-    isInline
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    isInline,
+    syncErrorMessage
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateAttachmentSyncState:
-UPDATE AttachmentDto SET syncState = ? WHERE id = ?;
+UPDATE AttachmentDto SET syncState = ?, syncErrorMessage = ? WHERE id = ?;
 
 updateAttachmentRemoteUrl:
 UPDATE AttachmentDto SET remoteUrl = ?, syncState = ? WHERE id = ?;

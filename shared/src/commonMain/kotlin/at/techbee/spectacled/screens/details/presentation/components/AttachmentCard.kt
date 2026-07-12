@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.details.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Attachment
+import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material3.Card
@@ -34,12 +38,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.domain.Attachment
+import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
 import at.techbee.spectacled.screens.core.presentation.components.PathData
 import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter
@@ -47,12 +53,14 @@ import at.techbee.spectacled.screens.core.presentation.components.drawPath
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import coil3.compose.AsyncImage
 import io.ktor.utils.io.core.toByteArray
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.attachment
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.drawing
+import spectacled.shared.generated.resources.ic_cloud_error
 
 @Composable
 fun AttachmentCard(
@@ -116,6 +124,14 @@ fun AttachmentCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    attachment.syncErrorMessage?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
 
                 AnimatedVisibility(isDownloading) {
@@ -123,6 +139,34 @@ fun AttachmentCard(
                         modifier = Modifier.size(24.dp).padding(4.dp),
                         strokeWidth = 2.dp
                     )
+                }
+
+                AnimatedVisibility(!isDownloading && !attachment.isInline) {
+                    IconButton(
+                        onClick = {},
+                        enabled = false
+                    ) {
+                        Crossfade(attachment.syncState) { attachmentSyncState ->
+                            when(attachmentSyncState) {
+                                AttachmentSyncState.LOCAL_MODIFIED -> {
+                                    Icon(Icons.Outlined.CloudUpload, "Pending upload")
+                                }
+                                AttachmentSyncState.SYNCED -> {
+                                    Icon(Icons.Outlined.CloudDone, "Synchronized")
+                                }
+                                AttachmentSyncState.PENDING_DOWNLOAD -> {
+                                    Icon(Icons.Outlined.CloudDownload, "Pending download")
+                                }
+                                AttachmentSyncState.FAILED -> {
+                                    Icon(
+                                        painterResource(Res.drawable.ic_cloud_error),
+                                        "Attachment sync error"
+                                    )
+                                }
+                            }
+
+                        }
+                    }
                 }
 
                 IconButton(onClick = { onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) }) {
@@ -259,6 +303,86 @@ private fun AttachmentCard_Drawing_Preview() {
             override fun getAttachmentsDirectory() = "/"
             override fun saveAttachment(fileName: String, bytes: ByteArray) = "/drawing.svg"
             override fun readAttachment(path: String) = sampleSVG.toByteArray()
+            override fun deleteAttachment(path: String) = false
+            override fun exists(path: String) = true
+
+        },
+        modifier = Modifier.padding(8.dp)
+    )
+}
+
+
+@Preview
+@Composable
+private fun AttachmentCard_SyncState_SYNCHRONIZED_Preview() {
+
+
+    AttachmentCard(
+        attachment = Attachment(
+            id = 1L,
+            syncState = AttachmentSyncState.SYNCED,
+            fileName = "my document.pdf",
+            mimeType = "application/pdf",
+            size = 125000L
+        ),
+        onAction = {},
+        fileManager = object: FileManager {
+            override fun getAttachmentsDirectory() = "/"
+            override fun saveAttachment(fileName: String, bytes: ByteArray) = "/test.pdf"
+            override fun readAttachment(path: String) = "".toByteArray()
+            override fun deleteAttachment(path: String) = false
+            override fun exists(path: String) = true
+
+        },
+        modifier = Modifier.padding(8.dp)
+    )
+}
+
+@Preview
+@Composable
+private fun AttachmentCard_SyncState_PENDING_DOWNLOAD_Preview() {
+
+
+    AttachmentCard(
+        attachment = Attachment(
+            id = 1L,
+            syncState = AttachmentSyncState.PENDING_DOWNLOAD,
+            fileName = "my document.pdf",
+            mimeType = "application/pdf",
+            size = 125000L
+        ),
+        onAction = {},
+        fileManager = object: FileManager {
+            override fun getAttachmentsDirectory() = "/"
+            override fun saveAttachment(fileName: String, bytes: ByteArray) = "/test.pdf"
+            override fun readAttachment(path: String) = "".toByteArray()
+            override fun deleteAttachment(path: String) = false
+            override fun exists(path: String) = true
+
+        },
+        modifier = Modifier.padding(8.dp)
+    )
+}
+
+@Preview
+@Composable
+private fun AttachmentCard_SyncState_FAILED_Preview() {
+
+
+    AttachmentCard(
+        attachment = Attachment(
+            id = 1L,
+            syncState = AttachmentSyncState.FAILED,
+            syncErrorMessage = "The upload of the attachment failed because of unknown reasons.",
+            fileName = "my document.pdf",
+            mimeType = "application/pdf",
+            size = 125000L
+        ),
+        onAction = {},
+        fileManager = object: FileManager {
+            override fun getAttachmentsDirectory() = "/"
+            override fun saveAttachment(fileName: String, bytes: ByteArray) = "/test.pdf"
+            override fun readAttachment(path: String) = "".toByteArray()
             override fun deleteAttachment(path: String) = false
             override fun exists(path: String) = true
 
