@@ -172,7 +172,9 @@ fun serializeVJournal(icalEntry: IcalEntry, fileManager: FileManager? = null): S
             lines += "${KnownIcsPropertyName.PERCENT_COMPLETE.propertyName}:${it}"
     }
     if(icalEntry.categories.isNotEmpty())
-        icalEntry.categories.let { lines += "${KnownIcsPropertyName.CATEGORIES.propertyName}:${it.joinToString(",")}" }
+        // Escape each category individually so a comma INSIDE a category value ("\,")
+        // stays distinguishable from the unescaped commas separating the list elements.
+        icalEntry.categories.let { lines += "${KnownIcsPropertyName.CATEGORIES.propertyName}:${it.joinToString(",") { category -> escapeIcsValue(category) }}" }
     icalEntry.sequence?.let { lines += "${KnownIcsPropertyName.SEQUENCE.propertyName}:${it}" }
 
     icalEntry.parentUid?.let { parentUid ->

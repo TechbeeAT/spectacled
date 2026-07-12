@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.data
 
 import eu.anifantakis.lib.ksafe.KSafe
 import eu.anifantakis.lib.ksafe.KSafeWriteMode
+import eu.anifantakis.lib.ksafe.awaitCacheReady
 import kotlinx.coroutines.flow.Flow
 
 actual class PlatformUserAppPreferencesStore: UserAppPreferencesStore {

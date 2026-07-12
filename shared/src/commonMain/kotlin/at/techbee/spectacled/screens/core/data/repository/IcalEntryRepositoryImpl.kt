@@ -18,7 +18,9 @@ import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
+import at.techbee.spectacled.screens.core.mapper.ics.escapeIcsValue
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
+import at.techbee.spectacled.screens.core.mapper.ics.splitIcsList
 import io.ktor.http.Url
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -128,7 +130,7 @@ class IcalEntryRepositoryImpl(
                 .map { query ->
                     val allCategories = mutableSetOf<String>()
                     query.awaitAsList().let { unsplitCategories ->
-                        unsplitCategories.forEach { allCategories.addAll(it.split(CATEGORY_SPLIT_DELIMITER)) }
+                        unsplitCategories.forEach { allCategories.addAll(splitIcsList(it)) }
                     }
                     allCategories.toList()
                 }
@@ -298,7 +300,7 @@ class IcalEntryRepositoryImpl(
     override suspend fun updateCategory(id: Long, categories: List<String>, lastModified: IcsDateTime?, syncState: SyncState) {
         withContext(ioDispatcher) {
             getDatabase().icalentry_dtoQueries.updateCategory(
-                newCategories = categories.joinToString(CATEGORY_SPLIT_DELIMITER).ifEmpty { null },
+                newCategories = categories.joinToString(CATEGORY_SPLIT_DELIMITER) { escapeIcsValue(it) }.ifEmpty { null },
                 lastModified = lastModified?.let { formatIcsDateTime(it)?.first },
                 syncState = syncState.name,
                 id = id

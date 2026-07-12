@@ -1,4 +1,4 @@
-﻿import com.codingfeline.buildkonfig.compiler.FieldSpec
+import com.codingfeline.buildkonfig.compiler.FieldSpec
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
