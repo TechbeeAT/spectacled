@@ -9,6 +9,7 @@ import at.techbee.spectacled.screens.core.data.repository.CalendarRepositoryImpl
 import at.techbee.spectacled.screens.core.data.repository.IcalEntryRepositoryImpl
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
+import at.techbee.spectacled.screens.core.navigation.AppNavigator
 import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import org.koin.core.module.Module
@@ -28,6 +29,7 @@ val sharedModule = module {
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
     singleOf(::IcalEntryRepositoryImpl) { bind<IcalEntryRepository>() }
 
+    viewModelOf(::AppNavigator)
     viewModelOf(::ListViewModel)
     viewModelOf(::AccountListViewModel)
     viewModelOf(::DetailsViewModel)
