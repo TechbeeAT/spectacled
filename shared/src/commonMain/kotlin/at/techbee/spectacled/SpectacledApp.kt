@@ -1,14 +1,19 @@
 package at.techbee.spectacled
 
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -153,92 +158,160 @@ fun SpectacledApp(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            NavHost(
-                navController = navController,
-                startDestination = Route.HomeGraph
-            ) {
-                navigation<Route.HomeGraph>(startDestination) {
 
-                    composable<Route.AccountsList> {
+            // BoxWithConstraints observes the window size and will trigger a recomposition
+            // whenever the orientation or size changes.
+            BoxWithConstraints {
+                val isLandscape = maxWidth > maxHeight
+
+                if (isLandscape) {
+
+                    val listViewModel = koinViewModel<ListViewModel>()
+                    val listState = listViewModel.state.collectAsState()
+                    val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
+                    val detailsState = detailsViewModel.state.collectAsState()
+
+                    fun applyRoute(route: Route) {
+                        when (route) {
+                            Route.AccountsList, Route.HomeGraph -> {
+                                detailsViewModel.reset()
+                                listViewModel.reset()
+                            }
+                            is Route.AddICalEntry -> {
+                                detailsViewModel.loadNew(listViewModel.state.value.calendar.id)
+                            }
+                            is Route.IcalEntryDetails -> {
+                                detailsViewModel.load(route.icalEntryId)
+                            }
+                            is Route.IcalEntryList -> {
+                                detailsViewModel.reset()
+                                listViewModel.load(route.calendarId)
+                            }
+                        }
+                    }
+
+                    Row {
                         AccountListScreenRoot(
                             viewModel = koinViewModel<AccountListViewModel>(),
-                            onNavigate = { route -> navController.navigate(route) }
+                            onNavigate = { route -> applyRoute(route) },
+                            modifier = Modifier.weight(0.2f)
                         )
-                    }
 
-                    composable<Route.IcalEntryList>(
-                        enterTransition = { slideInHorizontally { fullWidth -> fullWidth } },
-                        exitTransition = { slideOutHorizontally { fullWidth -> -fullWidth } },
-                        popEnterTransition = { slideInHorizontally { fullWidth -> -fullWidth } },
-                        popExitTransition = { slideOutHorizontally { fullWidth -> fullWidth } }
-                    ) { args ->
+                        VerticalDivider()
 
-                        val listViewModel = koinViewModel<ListViewModel>()
-                        val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
+                        if(listState.value.isInitialized) {
+                            ListScreenRoot(
+                                listViewModel = listViewModel,
+                                onNavigate = { route -> applyRoute(route) },
+                                onNavigateUp = { listViewModel.reset() },
+                                modifier = Modifier.weight(0.4f)
 
-                        LaunchedEffect(calendarId) {
-                            listViewModel.load(calendarId)
+                            )
                         }
 
-                        ListScreenRoot(
-                            listViewModel = listViewModel,
-                            onNavigate = { route -> navController.navigate(route) },
-                            onNavigateUp = {
-                                if (!navController.popBackStack())
-                                    onCloseApp()
+                        VerticalDivider()
+
+                        if(detailsState.value.isInitialized) {
+                            DetailsScreenRoot(
+                                detailsViewModel = detailsViewModel,
+                                onNavigate = { route -> applyRoute(route) },
+                                onNavigateUp = { detailsViewModel.reset() },
+                                modifier = Modifier.weight(0.4f)
+                            )
+                        }
+                    }
+
+                } else {
+
+                    NavHost(
+                        navController = navController,
+                        startDestination = Route.HomeGraph
+                    ) {
+                        navigation<Route.HomeGraph>(startDestination) {
+
+                            composable<Route.AccountsList> {
+                                AccountListScreenRoot(
+                                    viewModel = koinViewModel<AccountListViewModel>(),
+                                    onNavigate = { route -> navController.navigate(route) }
+                                )
                             }
-                        )
-                    }
 
-                    composable<Route.IcalEntryDetails> { args ->
-                        val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
-                        val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
+                            composable<Route.IcalEntryList>(
+                                enterTransition = { slideInHorizontally { fullWidth -> fullWidth } },
+                                exitTransition = { slideOutHorizontally { fullWidth -> -fullWidth } },
+                                popEnterTransition = { slideInHorizontally { fullWidth -> -fullWidth } },
+                                popExitTransition = { slideOutHorizontally { fullWidth -> fullWidth } }
+                            ) { args ->
 
-                        LaunchedEffect(icalEntryId) {
-                            detailsViewModel.load(icalEntryId)
-                        }
+                                val listViewModel = koinViewModel<ListViewModel>()
+                                val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
 
-                        DetailsScreenRoot(
-                            detailsViewModel = detailsViewModel,
-                            onNavigate = { route -> navController.navigate(route) },
-                            onNavigateUp = {
-                                if (!navController.popBackStack()) {
-                                    onCloseApp()
+                                LaunchedEffect(calendarId) {
+                                    listViewModel.load(calendarId)
                                 }
+
+                                ListScreenRoot(
+                                    listViewModel = listViewModel,
+                                    onNavigate = { route -> navController.navigate(route) },
+                                    onNavigateUp = {
+                                        if (!navController.popBackStack())
+                                            onCloseApp()
+                                    }
+                                )
                             }
-                        )
-                    }
 
-                    composable<Route.AddICalEntry> { args ->
-                        val copyFromId = args.toRoute<Route.AddICalEntry>().copyFromId
-                        val calendarId = args.toRoute<Route.AddICalEntry>().calendarId
-                        val initialDescription = args.toRoute<Route.AddICalEntry>().initialDescription
+                            composable<Route.IcalEntryDetails> { args ->
+                                val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
+                                val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
 
-                        val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
-
-                        LaunchedEffect(copyFromId, calendarId, initialDescription) {
-                            if (copyFromId != null)
-                                detailsViewModel.loadCopy(copyFromId)
-                            else if (calendarId != 0L)
-                                detailsViewModel.loadNew(calendarId, initialDescription)
-                            else
-                                detailsViewModel.prepareNew(initialDescription)
-                        }
-
-                        DetailsScreenRoot(
-                            detailsViewModel = detailsViewModel,
-                            onNavigate = { route -> navController.navigate(route) },
-                            onNavigateUp = {
-                                if (!navController.popBackStack()) {
-                                    onCloseApp()
+                                LaunchedEffect(icalEntryId) {
+                                    detailsViewModel.load(icalEntryId)
                                 }
+
+                                DetailsScreenRoot(
+                                    detailsViewModel = detailsViewModel,
+                                    onNavigate = { route -> navController.navigate(route) },
+                                    onNavigateUp = {
+                                        if (!navController.popBackStack()) {
+                                            onCloseApp()
+                                        }
+                                    }
+                                )
                             }
-                        )
+
+                            composable<Route.AddICalEntry> { args ->
+                                val copyFromId = args.toRoute<Route.AddICalEntry>().copyFromId
+                                val calendarId = args.toRoute<Route.AddICalEntry>().calendarId
+                                val initialDescription = args.toRoute<Route.AddICalEntry>().initialDescription
+
+                                val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
+
+                                LaunchedEffect(copyFromId, calendarId, initialDescription) {
+                                    if (copyFromId != null)
+                                        detailsViewModel.loadCopy(copyFromId)
+                                    else if (calendarId != 0L)
+                                        detailsViewModel.loadNew(calendarId, initialDescription)
+                                    else
+                                        detailsViewModel.prepareNew(initialDescription)
+                                }
+
+                                DetailsScreenRoot(
+                                    detailsViewModel = detailsViewModel,
+                                    onNavigate = { route -> navController.navigate(route) },
+                                    onNavigateUp = {
+                                        if (!navController.popBackStack()) {
+                                            onCloseApp()
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
 
+        /*
         LaunchedEffect(Unit) {
             syncTrigger.schedulePeriodic()
             syncTrigger.requestImmediate()
@@ -275,6 +348,8 @@ fun SpectacledApp(
                 }
             }
         }
+
+         */
     }
 }
 

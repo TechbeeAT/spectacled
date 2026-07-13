@@ -72,7 +72,8 @@ import kotlin.time.Duration.Companion.milliseconds
 fun ListScreenRoot(
     listViewModel: ListViewModel,
     onNavigate: (Route) -> Unit,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
 
     val state by listViewModel.state.collectAsState()
@@ -266,7 +267,8 @@ fun ListScreenRoot(
             bottomBar = {
                 // WORKAROUND, keep the Bottom App Bar empty like this to color the lower part in the container color!
                 BottomAppBar(modifier = Modifier.height(32.dp)) {}
-            }
+            },
+            modifier = modifier
             /*
            bottomBar = {
                BottomAppBar(

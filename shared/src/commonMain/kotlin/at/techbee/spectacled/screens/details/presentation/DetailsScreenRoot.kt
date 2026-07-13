@@ -102,7 +102,8 @@ import kotlin.time.ExperimentalTime
 fun DetailsScreenRoot(
     detailsViewModel: DetailsViewModel,
     onNavigate: (Route) -> Unit,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
+    modifier: Modifier = Modifier.fillMaxSize()
 ) {
     val detailsState by detailsViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -253,7 +254,7 @@ fun DetailsScreenRoot(
             )
         }
 
-        if(detailsState.icalEntry.calendarId == 0L) {
+        if(detailsState.icalEntry.calendarId == 0L && detailsState.isInitialized) {
             CalendarSelectorBottomSheet(
                 sheetState = rememberModalBottomSheetState(confirmValueChange = { it != SheetValue.Hidden }),
                 principals = detailsState.allPrincipals,
@@ -481,7 +482,8 @@ fun DetailsScreenRoot(
                         }
                     }
                 }
-            }
+            },
+            modifier = modifier
         ) { paddingValues ->
 
             Box(

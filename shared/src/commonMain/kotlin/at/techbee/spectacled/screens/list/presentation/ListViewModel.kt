@@ -45,6 +45,7 @@ class ListViewModel(
 
         _state.update { it.copy(
             isRefreshing = true,
+            isInitialized = true,
             errorMessage = null,
             navigateUp = false,
             snackbarText = null,
@@ -86,6 +87,10 @@ class ListViewModel(
             launch { observeColors() }
             launch { observeCategories() }
         }
+    }
+
+    fun reset() {
+        _state.update { ListState() }
     }
 
     private suspend fun observeCalendar(calendarId: Long) {

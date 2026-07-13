@@ -39,6 +39,7 @@ data class ListState(
     ),
     val credentials: Credentials? = null,
     val isRefreshing: Boolean = false,
+    val isInitialized: Boolean = false,
     val errorMessage: String? = null,
 
     val allColors: List<Color> = emptyList(),
