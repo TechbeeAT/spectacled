@@ -35,11 +35,13 @@ fun LandscapeLayout(
     }
 
     Row(modifier = modifier) {
-        AccountListScreenRoot(
-            viewModel = accountListViewModel,
-            onNavigate = onNavigate,
-            modifier = Modifier.weight(0.2f)
-        )
+        if(!detailsState.isInitialized) {
+            AccountListScreenRoot(
+                viewModel = accountListViewModel,
+                onNavigate = onNavigate,
+                modifier = Modifier.weight(0.4f)
+            )
+        }
 
         VerticalDivider()
 
@@ -48,7 +50,7 @@ fun LandscapeLayout(
                 listViewModel = listViewModel,
                 onNavigate = onNavigate,
                 onNavigateUp = onNavigateUp,
-                modifier = Modifier.weight(0.4f)
+                modifier = Modifier.weight(if(detailsState.isInitialized) 0.4f else 0.6f)
 
             )
         }
@@ -60,7 +62,7 @@ fun LandscapeLayout(
                 detailsViewModel = detailsViewModel,
                 onNavigate = onNavigate,
                 onNavigateUp = onNavigateUp,
-                modifier = Modifier.weight(0.4f)
+                modifier = Modifier.weight(0.6f)
             )
         }
     }
