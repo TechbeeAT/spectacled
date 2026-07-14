@@ -37,12 +37,12 @@ fun AccountListScreen(
 
     PullToRefreshBox(
         isRefreshing = state.processingState == ProcessingState.Processing,
-        onRefresh = { onAction(AccountListAction.OnRerunAccountDiscovery(state.principals))  }
+        onRefresh = { onAction(AccountListAction.OnRerunAccountDiscovery(state.principals))  },
+        modifier = modifier
     ) {
 
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(1.dp),
-        modifier = modifier.padding(8.dp)
+        verticalArrangement = Arrangement.spacedBy(1.dp)
     ) {
 
         state.principals.forEachIndexed { indexPrincipal, principal ->

@@ -179,63 +179,6 @@ fun AccountListScreenRoot(
             }
         },
         modifier = modifier
-        /*
-
-        bottomBar = {
-            BottomAppBar(
-                actions = {
-
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = if (getPlatform().isIos()) 0.dp else 8.dp)
-                    ) {
-                        IconButton(
-                            onClick = { showAboutDialog = true }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Info,
-                                contentDescription = stringResource(Res.string.about),
-                                tint = if (getPlatform().isIos()) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                            )
-                        }
-
-                        Text(
-                            text = "${state.notes.size} Notes",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-
-                        if(getPlatform().isIos())
-                            IconButton(
-                                onClick = {
-                                    onNavigate(Route.AddNote)
-                                }
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Add,
-                                    stringResource(Res.string.add_note),
-                                    tint = MaterialTheme.colorScheme.primary)
-                            }
-                        else
-                            FloatingActionButton(
-                                onClick = {
-                                    onNavigate(Route.AddNote)
-                                }
-                            ) {
-                                Icon(Icons.Outlined.Add, stringResource(Res.string.add_note))
-                            }
-                    }
-                },
-                floatingActionButton = {
-
-                }
-            )
-
-        },
-
-         */
 
     ) { paddingValues ->
 
