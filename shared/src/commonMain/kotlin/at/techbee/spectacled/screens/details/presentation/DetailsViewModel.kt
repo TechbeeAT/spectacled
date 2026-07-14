@@ -34,6 +34,7 @@ import io.ktor.http.Url
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -75,7 +76,7 @@ class DetailsViewModel(
     private val _state = MutableStateFlow(DetailsState())
     val state = _state.asStateFlow()
 
-    private var entryObservationJob: kotlinx.coroutines.Job? = null
+    private var entryObservationJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -107,7 +108,6 @@ class DetailsViewModel(
         }
     }
 
-    @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     fun load(icalEntryId: Long) {
 
         viewModelScope.launch {
@@ -119,12 +119,18 @@ class DetailsViewModel(
                 originalIcalEntry = icalEntry,
                 calendar = calendar,
                 isLoading = false,
+                isInitialized = true,
                 navigateUp = false
             ) }
 
             observeIcalEntry(icalEntry.calendarId, icalEntry.uid)
         }
     }
+
+    fun reset() {
+        _state.update { DetailsState() }
+    }
+
 
     fun loadNew(calendarId: Long, initialDescription: String? = null) {
 
@@ -142,6 +148,7 @@ class DetailsViewModel(
                 originalIcalEntry = newIcalEntry,
                 calendar = calendar,
                 isLoading = false,
+                isInitialized = true,
                 showDeleteDialog = false,
                 navigateUp = false
             ) }
@@ -164,6 +171,7 @@ class DetailsViewModel(
                 icalEntry = newIcalEntry,
                 originalIcalEntry = newIcalEntry,
                 isLoading = false,
+                isInitialized = true,
                 showDeleteDialog = false,
                 navigateUp = false
             ) }
@@ -203,6 +211,7 @@ class DetailsViewModel(
                 icalEntry = copiedIcalEntry,
                 originalIcalEntry = copiedIcalEntry,
                 isLoading = false,
+                isInitialized = true,
                 navigateUp = false
             ) }
 

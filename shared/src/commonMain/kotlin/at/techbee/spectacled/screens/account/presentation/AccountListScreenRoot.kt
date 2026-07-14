@@ -55,7 +55,8 @@ import spectacled.shared.generated.resources.close
 @Composable
 fun AccountListScreenRoot(
     viewModel: AccountListViewModel,
-    onNavigate: (Route) -> Unit
+    onNavigate: (Route) -> Unit,
+    modifier: Modifier = Modifier.fillMaxSize()
 ) {
 
     val state by viewModel.state.collectAsState()
@@ -177,7 +178,7 @@ fun AccountListScreenRoot(
                 }
             }
         },
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier
         /*
 
         bottomBar = {
