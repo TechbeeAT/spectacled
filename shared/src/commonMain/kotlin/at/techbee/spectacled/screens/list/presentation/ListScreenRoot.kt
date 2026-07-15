@@ -4,16 +4,15 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditOff
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -73,6 +72,7 @@ fun ListScreenRoot(
     listViewModel: ListViewModel,
     onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit,
+    keepSafeAreaPaddingValues: Boolean = false,
     modifier: Modifier = Modifier
 ) {
 
@@ -268,10 +268,20 @@ fun ListScreenRoot(
             modifier = modifier
         ) { paddingValues ->
 
+            val currentPaddingValues = if(keepSafeAreaPaddingValues)
+                paddingValues
+            else
+                PaddingValues(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = 0.dp,
+                    start = 0.dp,
+                    end = 0.dp
+                )
+
             Box(
                 modifier = Modifier
-                    .padding(paddingValues)
-                    .consumeWindowInsets(paddingValues)
+                    .padding(currentPaddingValues)
+                    .consumeWindowInsets(currentPaddingValues)
                     .imePadding()
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter

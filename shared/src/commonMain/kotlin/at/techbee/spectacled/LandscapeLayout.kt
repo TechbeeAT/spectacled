@@ -39,6 +39,7 @@ fun LandscapeLayout(
             AccountListScreenRoot(
                 viewModel = accountListViewModel,
                 onNavigate = onNavigate,
+                keepSafeAreaPaddingValues = false,
                 modifier = Modifier.weight(0.4f)
             )
         }
@@ -50,6 +51,7 @@ fun LandscapeLayout(
                 listViewModel = listViewModel,
                 onNavigate = onNavigate,
                 onNavigateUp = onNavigateUp,
+                keepSafeAreaPaddingValues = false,
                 modifier = Modifier.weight(if(detailsState.isInitialized) 0.4f else 0.6f)
 
             )
@@ -62,6 +64,7 @@ fun LandscapeLayout(
                 detailsViewModel = detailsViewModel,
                 onNavigate = onNavigate,
                 onNavigateUp = onNavigateUp,
+                keepSafeAreaPaddingValues = false,
                 modifier = Modifier.weight(0.6f)
             )
         }

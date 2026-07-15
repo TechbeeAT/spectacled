@@ -134,7 +134,7 @@ fun AccountListScreen(
         }
 
         item {
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(112.dp))
         }
     }
 }

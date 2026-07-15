@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -103,6 +104,7 @@ fun DetailsScreenRoot(
     detailsViewModel: DetailsViewModel,
     onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit,
+    keepSafeAreaPaddingValues: Boolean = true,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
     val detailsState by detailsViewModel.state.collectAsState()
@@ -486,12 +488,20 @@ fun DetailsScreenRoot(
             modifier = modifier
         ) { paddingValues ->
 
+            val currentPaddingValues = if(keepSafeAreaPaddingValues)
+                paddingValues
+            else
+                PaddingValues(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = paddingValues.calculateBottomPadding()
+                )
+
             Box(
                 modifier = Modifier
-                    .padding(paddingValues)
-                    .consumeWindowInsets(paddingValues)
+                    .padding(currentPaddingValues)
+                    .consumeWindowInsets(currentPaddingValues)
+                    .padding(horizontal = 8.dp)
                     .imePadding()
-                    .padding(top = 8.dp, start = 8.dp, end = 8.dp)
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter
             ) {

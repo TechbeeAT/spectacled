@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.account.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,6 +57,7 @@ import spectacled.shared.generated.resources.close
 fun AccountListScreenRoot(
     viewModel: AccountListViewModel,
     onNavigate: (Route) -> Unit,
+    keepSafeAreaPaddingValues: Boolean = false,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
 
@@ -182,10 +184,20 @@ fun AccountListScreenRoot(
 
     ) { paddingValues ->
 
+        val currentPaddingValues = if(keepSafeAreaPaddingValues)
+            paddingValues
+        else
+            PaddingValues(
+                top = paddingValues.calculateTopPadding(),
+                bottom = 0.dp,
+                start = 0.dp,
+                end = 0.dp
+            )
+
         Box(
             modifier = Modifier
-                .padding(paddingValues)
-                .consumeWindowInsets(paddingValues)
+                .padding(currentPaddingValues)
+                .consumeWindowInsets(currentPaddingValues)
                 .imePadding()
                 .padding(top = 8.dp, start = 8.dp, end = 8.dp)
                 .fillMaxSize(),
