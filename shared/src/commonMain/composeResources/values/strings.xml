@@ -60,6 +60,7 @@
     <string name="select_all">Select all</string>
     <string name="select_multiple">Select multiple</string>
     <string name="show_error_details">Show error details</string>
+    <string name="undo">Undo</string>
 
     <string name="grouping_last_x_hours">Last %1$d hours</string>
     <string name="grouping_last_x_days">Last %1$d days</string>
