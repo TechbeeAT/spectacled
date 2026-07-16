@@ -127,7 +127,7 @@ compose.desktop {
         }
         if (needsPackagingJdk) {
             javaHome = javaToolchains.launcherFor {
-                languageVersion.set(JavaLanguageVersion.of(17))
+                languageVersion.set(JavaLanguageVersion.of(21))
                 vendor.set(JvmVendorSpec.ADOPTIUM)
             }.get().metadata.installationPath.asFile.absolutePath
         }
