@@ -10,6 +10,7 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.doInitKoin
 import at.techbee.spectacled.screens.core.data.CredentialStore
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.ics.loadTimeZoneDatabase
 import org.koin.mp.KoinPlatform
 
 /**
@@ -32,6 +33,10 @@ fun SecureStorageReadyGate(spectacledVariant: SpectacledVariant, content: @Compo
 
     var ready by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
+        // Load the IANA tz database so named zones (TZID=...) resolve on web. The import actually
+        // runs at module load; this call just keeps it reachable and marks the startup intent.
+        loadTimeZoneDatabase()
+
         // Resolved through Koin (not a fresh KSafe(...)) so this awaits the exact same
         // instances the rest of the app reads from - per KSafe's own docs, two separate
         // instances on the same fileName still diverge caches on web.
