@@ -25,6 +25,7 @@ import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
@@ -294,6 +295,7 @@ class SyncCoordinatorTest {
 
     // --- per-calendar locking ---
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun secondConcurrentSyncOfSameCalendarIsSkipped() = runTest {
         val gate = CompletableDeferred<Unit>()
@@ -418,7 +420,7 @@ private class FakeIcalEntryRepository(
     override fun getAllCategories(): Flow<List<String>> = TODO()
     override fun getLastUsedTimezones(): Flow<List<String>> = TODO()
     override fun getSubtasksByParentUid(calendarId: Long, parentUid: String): Flow<List<IcalEntry>> = TODO()
-    override suspend fun getIcalEntryById(id: Long): IcalEntry? = TODO()
+    override suspend fun getIcalEntryById(id: Long): IcalEntry = TODO()
     override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = TODO()
     override suspend fun markAsDeleted(ids: List<Long>) = TODO()
     override suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState) = TODO()
@@ -450,8 +452,8 @@ private class FakeCalendarRepository : CalendarRepository {
     override suspend fun getAllPrincipals(): List<Principal> = TODO()
     override suspend fun getAllHomeCollections(): List<HomeCollection> = TODO()
     override suspend fun getAllCalendars(): List<Calendar> = TODO()
-    override suspend fun getCalendarById(id: Long): Calendar? = TODO()
-    override suspend fun getPrincipalUrlForCalendarId(calendarId: Long): String? = TODO()
+    override suspend fun getCalendarById(id: Long): Calendar = TODO()
+    override suspend fun getPrincipalUrlForCalendarId(calendarId: Long): String = TODO()
     override suspend fun getCalendarsForPrincipalUrl(principalUrl: String): List<Calendar> = TODO()
     override suspend fun getCalendarsByIds(calendarIds: List<Long>): List<Calendar> = TODO()
     override suspend fun upsertPrincipal(principal: Principal): Long = TODO()
