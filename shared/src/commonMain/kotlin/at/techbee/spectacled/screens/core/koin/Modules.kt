@@ -22,6 +22,7 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val sharedModule = module {
+
     single {
         val preferences: UserAppPreferencesStore = get()
         HttpClientFactory.create(
@@ -29,11 +30,10 @@ val sharedModule = module {
             userProxyUrlProvider = { preferences.userProxyServer }
         )
     }
+
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
     singleOf(::IcalEntryRepositoryImpl) { bind<IcalEntryRepository>() }
 
-    // Stateless DAV data sources - hold only the transport (and a FileManager for entry
-    // attachments); credentials are passed per call, so these can be app-wide singletons.
     singleOf(::DefaultWebDavRemoteCalendarDataSource) { bind<WebDavRemoteCalendarDataSource>() }
     singleOf(::DefaultWebDavRemoteIcalEntryDataSource) { bind<WebDavRemoteIcalEntryDataSource>() }
 
