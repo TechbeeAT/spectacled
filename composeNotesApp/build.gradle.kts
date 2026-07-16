@@ -112,6 +112,26 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "at.techbee.spectacled.notes.MainKt"
+
+        // jpackage (used to build the native .dmg/.msi/.deb installers) is not shipped with
+        // every JDK — notably Android Studio's bundled JBR omits it, which makes `packageDmg`
+        // fail in `checkRuntime`. When a desktop packaging task is requested, point it at a
+        // full Temurin JDK provisioned via Gradle's Java toolchain support (auto-downloaded by
+        // the Foojay resolver). The vendor is pinned to one that ships jpackage so the JBR is
+        // never selected, and it's guarded by task name so Android/Web/run builds don't have
+        // to provision a JDK they don't need.
+        val needsPackagingJdk = gradle.startParameter.taskNames.any { taskName ->
+            listOf("package", "distributable", "checkRuntime", "notarize").any {
+                taskName.contains(it, ignoreCase = true)
+            }
+        }
+        if (needsPackagingJdk) {
+            javaHome = javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(17))
+                vendor.set(JvmVendorSpec.ADOPTIUM)
+            }.get().metadata.installationPath.asFile.absolutePath
+        }
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "at.techbee.spectacled.notes"
