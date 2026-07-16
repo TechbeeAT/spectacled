@@ -7,7 +7,7 @@ appPackageVariantJournals = "journals"
 appPackageVariantNotes = "notes"
 appPackageVariantTasks = "tasks"
 appBuildNumber = "33"
-appVersionString = "0.0.33"
+appVersionString = "1.0.33"
 appVersionCodename = "Love is all around"
 
 aboutLibraries = "15.0.3"
