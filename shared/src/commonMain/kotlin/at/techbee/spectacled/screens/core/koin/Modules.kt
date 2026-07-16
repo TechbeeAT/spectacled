@@ -34,8 +34,8 @@ val sharedModule = module {
 
     // Stateless DAV data sources - hold only the transport (and a FileManager for entry
     // attachments); credentials are passed per call, so these can be app-wide singletons.
-    single<WebDavRemoteCalendarDataSource> { DefaultWebDavRemoteCalendarDataSource(get()) }
-    single<WebDavRemoteIcalEntryDataSource> { DefaultWebDavRemoteIcalEntryDataSource(get(), get()) }
+    singleOf(::DefaultWebDavRemoteCalendarDataSource) { bind<WebDavRemoteCalendarDataSource>() }
+    singleOf(::DefaultWebDavRemoteIcalEntryDataSource) { bind<WebDavRemoteIcalEntryDataSource>() }
 
     viewModelOf(::ListViewModel)
     viewModelOf(::AccountListViewModel)
