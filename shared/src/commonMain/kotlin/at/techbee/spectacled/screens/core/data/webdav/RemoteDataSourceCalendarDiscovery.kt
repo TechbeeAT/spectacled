@@ -191,7 +191,7 @@ private suspend fun discoverPrincipalsInternal(
     }
 }
 
-suspend fun discoverHomeCollections(
+suspend fun discoverHomeCollectionsMultiplatform(
     client: HttpClient,
     principal: Principal,
     credentials: Credentials?
@@ -281,7 +281,7 @@ suspend fun discoverHomeCollections(
     }
 }
 
-suspend fun discoverCalendars(
+suspend fun discoverCalendarsMultiplatform(
     client: HttpClient,
     homeCollection: HomeCollection,
     credentials: Credentials?

@@ -7,6 +7,10 @@ import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.repository.CalendarRepositoryImpl
 import at.techbee.spectacled.screens.core.data.repository.IcalEntryRepositoryImpl
+import at.techbee.spectacled.screens.core.data.webdav.DefaultWebDavRemoteCalendarDataSource
+import at.techbee.spectacled.screens.core.data.webdav.DefaultWebDavRemoteIcalEntryDataSource
+import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteCalendarDataSource
+import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
@@ -27,6 +31,11 @@ val sharedModule = module {
     }
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
     singleOf(::IcalEntryRepositoryImpl) { bind<IcalEntryRepository>() }
+
+    // Stateless DAV data sources - hold only the transport (and a FileManager for entry
+    // attachments); credentials are passed per call, so these can be app-wide singletons.
+    single<WebDavRemoteCalendarDataSource> { DefaultWebDavRemoteCalendarDataSource(get()) }
+    single<WebDavRemoteIcalEntryDataSource> { DefaultWebDavRemoteIcalEntryDataSource(get(), get()) }
 
     viewModelOf(::ListViewModel)
     viewModelOf(::AccountListViewModel)

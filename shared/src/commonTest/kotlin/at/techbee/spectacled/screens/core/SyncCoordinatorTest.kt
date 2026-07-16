@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core
 
 import androidx.compose.ui.graphics.Color
+import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.DeleteResourceResult
 import at.techbee.spectacled.screens.core.data.webdav.GetResourceResult
@@ -8,7 +9,7 @@ import at.techbee.spectacled.screens.core.data.webdav.MultigetResourceHrefETagRe
 import at.techbee.spectacled.screens.core.data.webdav.MultigetResourceResult
 import at.techbee.spectacled.screens.core.data.webdav.MultigetSyncCollectionResult
 import at.techbee.spectacled.screens.core.data.webdav.PutResourceResult
-import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteDataSource
+import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
@@ -34,7 +35,7 @@ import kotlin.test.assertTrue
 
 /**
  * Drives the SyncCoordinator's conflict/sync state machine through its public
- * syncCalendarWithSyncLock entry point, with a fake WebDavRemoteDataSource scripting the
+ * syncCalendarWithSyncLock entry point, with a fake WebDavRemoteIcalEntryDataSource scripting the
  * server's responses and fake repositories recording what the coordinator decided to write.
  * No real HttpClient, server, or database is involved.
  */
@@ -64,10 +65,10 @@ class SyncCoordinatorTest {
     )
 
     private fun coordinator(
-        remote: WebDavRemoteDataSource,
+        remote: WebDavRemoteIcalEntryDataSource,
         icalRepo: FakeIcalEntryRepository,
         calRepo: FakeCalendarRepository = FakeCalendarRepository()
-    ) = SyncCoordinator(calRepo, icalRepo, FakeFileManager(), remote)
+    ) = SyncCoordinator(calRepo, icalRepo, FakeFileManager(), remote, credentials = null)
 
     // --- pushLocalChanges: LOCAL_MODIFIED ---
 
@@ -348,31 +349,33 @@ private class FakeRemote(
         { throw AssertionError("getResource not expected in this test") },
     private val deleteResult: suspend () -> DeleteResourceResult =
         { throw AssertionError("deleteResource not expected in this test") },
-) : WebDavRemoteDataSource {
+) : WebDavRemoteIcalEntryDataSource {
 
     var syncCollectionCount = 0
     var multigetHrefsCount = 0
     var fetchCount = 0
 
-    override suspend fun syncCollection(calendar: Calendar): MultigetSyncCollectionResult {
+    override suspend fun syncCollection(calendar: Calendar, credentials: Credentials?): MultigetSyncCollectionResult {
         syncCollectionCount++
         return syncCollectionResult()
     }
 
-    override suspend fun multigetResourceHrefs(calendar: Calendar): MultigetResourceHrefETagResult {
+    override suspend fun multigetResourceHrefs(calendar: Calendar, credentials: Credentials?): MultigetResourceHrefETagResult {
         multigetHrefsCount++
         return multigetHrefsResult()
     }
 
-    override suspend fun fetchSingleEntry(calendar: Calendar, href: Url): MultigetResourceResult {
+    override suspend fun fetchSingleEntry(calendar: Calendar, href: Url, credentials: Credentials?): MultigetResourceResult {
         fetchCount++
         return fetchSingleResult()
     }
 
-    override suspend fun putResource(calendar: Calendar, icalEntry: IcalEntry) = putResult()
-    override suspend fun getResource(calendar: Calendar, icalEntry: IcalEntry) = getResult()
-    override suspend fun deleteResource(calendar: Calendar, icalEntry: IcalEntry) = deleteResult()
-    override suspend fun uploadFile(targetUrl: Url, bytes: ByteArray, mimeType: String?) = HttpStatusCode.Created
+    override suspend fun putResource(calendar: Calendar, icalEntry: IcalEntry, credentials: Credentials?) = putResult()
+    override suspend fun getResource(calendar: Calendar, icalEntry: IcalEntry, credentials: Credentials?) = getResult()
+    override suspend fun deleteResource(calendar: Calendar, icalEntry: IcalEntry, credentials: Credentials?) = deleteResult()
+    override suspend fun uploadFile(targetUrl: Url, bytes: ByteArray, mimeType: String?, credentials: Credentials?) = HttpStatusCode.Created
+    override suspend fun downloadFile(sourceUrl: Url, credentials: Credentials?): ByteArray =
+        throw AssertionError("downloadFile not expected in a sync test")
 }
 
 private data class SyncMetadataUpdate(val etag: String?, val href: Url?, val syncState: SyncState?, val id: Long)
