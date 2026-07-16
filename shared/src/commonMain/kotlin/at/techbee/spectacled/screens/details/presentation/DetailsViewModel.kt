@@ -16,7 +16,7 @@ import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
 import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
-import at.techbee.spectacled.screens.core.data.webdav.downloadFileMultiplatform
+import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -67,6 +67,7 @@ class DetailsViewModel(
     private val fileManager: PlatformFileManager,
     private val fileLauncher: PlatformFileLauncher,
     private val client: HttpClient,
+    private val webDavIcalEntryDataSource: WebDavRemoteIcalEntryDataSource,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
@@ -768,7 +769,7 @@ class DetailsViewModel(
                         ?.let { Url(it) } ?: throw Exception("Principal not found")
                     val credentials = credentialStore.load(principalUrl) ?: throw Exception("Credentials not found")
                     
-                    val bytes = downloadFileMultiplatform(client, Url(attachment.remoteUrl), credentials)
+                    val bytes = webDavIcalEntryDataSource.downloadFile(Url(attachment.remoteUrl), credentials)
                     if (bytes != null) {
                         // On Web, we open directly from bytes. On Native, we save then open.
                         if (getPlatform().platform == Platforms.WASM) {
