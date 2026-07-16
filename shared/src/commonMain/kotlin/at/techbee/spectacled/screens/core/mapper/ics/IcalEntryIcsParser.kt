@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.mapper.ics
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.data.ics.ensureTimeZoneDatabaseLoaded
 import at.techbee.spectacled.screens.core.data.ics.IcsProperty
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsParamName
 import at.techbee.spectacled.screens.core.data.ics.KnownIcsPropertyName
@@ -389,6 +390,10 @@ fun parseIcalEntries(
     ics: String,
     fileManager: FileManager? = null
 ): List<IcalEntry> {
+
+    // Ensure named zones (TZID=...) can be resolved before parsing. No-op except on the web
+    // targets, where it loads the @js-joda/timezone database.
+    ensureTimeZoneDatabaseLoaded()
 
     val lines = unfoldLines(ics)
 
