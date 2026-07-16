@@ -102,10 +102,11 @@ This project uses the **Gradle Wrapper** and the **Foojay toolchain resolver**. 
  ┣ 📂 androidNotesApp/         ← Android entry point for Notes
  ┣ 📂 androidTasksApp/         ← Android entry point for Tasks
  ┃
- ┣ 📂 iosJournalsApp/          ← iOS Xcode project for Journals
- ┣ 📂 iosNotesApp/             ← iOS Xcode project for Notes
- ┣ 📂 iosTasksApp/             ← iOS Xcode project for Tasks
- ┣ 📄 spectacled.xcworkspace   ← Xcode workspace combining all three iOS apps
+ ┣ 📂 iosApp/                  ← iOS Xcode projects (kept out of the repo root so
+ ┃    ┣ 📂 iosJournalsApp/       Android Studio treats the root as a pure Gradle
+ ┃    ┣ 📂 iosNotesApp/          project; the Kotlin Multiplatform plugin still
+ ┃    ┣ 📂 iosTasksApp/          discovers these for iOS run configurations)
+ ┃    ┗ 📄 spectacled.xcworkspace  ← Xcode workspace combining all three iOS apps
  ┃
  ┣ 📂 server/                  ← Ktor backend scaffold — currently unused template
  ┃                                boilerplate, not required to build or run any app
@@ -182,8 +183,8 @@ Requires a recent browser (Chrome 119+, Firefox 120+, Safari 18.2+).
 Requires macOS + Xcode 16+.
 
 ```
-1. Open spectacled.xcworkspace (or iosJournalsApp/iosJournalsApp.xcodeproj directly)
-   in Xcode.
+1. Open iosApp/spectacled.xcworkspace (or iosApp/iosJournalsApp/iosJournalsApp.xcodeproj
+   directly) in Xcode.
 2. Select a simulator or device.
 3. Click ▶️ Run.
 ```
