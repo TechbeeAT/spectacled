@@ -65,11 +65,11 @@ class SyncCoordinatorTest {
         calendarComponent = CalendarComponent.VJOURNAL
     )
 
-    private fun coordinator(
-        remote: WebDavRemoteIcalEntryDataSource,
-        icalRepo: FakeIcalEntryRepository,
-        calRepo: FakeCalendarRepository = FakeCalendarRepository()
-    ) = SyncCoordinator(calRepo, icalRepo, FakeFileManager(), remote, credentials = null)
+    private fun fakeSyncCoordinator(
+        fakeWebDavRemoteIcalEntryDataSource: WebDavRemoteIcalEntryDataSource,
+        fakeIcalEntryRepository: FakeIcalEntryRepository,
+        fakeCalendarRepository: FakeCalendarRepository = FakeCalendarRepository()
+    ) = SyncCoordinator(fakeCalendarRepository, fakeIcalEntryRepository, FakeFileManager(), fakeWebDavRemoteIcalEntryDataSource, credentials = null)
 
     // --- pushLocalChanges: LOCAL_MODIFIED ---
 
@@ -79,7 +79,7 @@ class SyncCoordinatorTest {
         val remote = FakeRemote(putResult = { PutResourceResult.Success(entry(syncState = SyncState.SYNCED, etag = "etag-new")) })
         val calRepo = FakeCalendarRepository()
 
-        coordinator(remote, icalRepo, calRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo, calRepo).syncCalendarWithSyncLock(calendar())
 
         val update = icalRepo.syncMetadataUpdates.single()
         assertEquals(SyncState.SYNCED, update.syncState)
@@ -96,7 +96,7 @@ class SyncCoordinatorTest {
             getResult = { GetResourceResult.Success(entry(syncState = SyncState.SYNCED, etag = "etag-server")) }
         )
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED, icalRepo.upserts.single().syncState)
     }
@@ -109,7 +109,7 @@ class SyncCoordinatorTest {
             getResult = { GetResourceResult.NotFound }
         )
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, icalRepo.upserts.single().syncState)
     }
@@ -119,7 +119,7 @@ class SyncCoordinatorTest {
         val icalRepo = FakeIcalEntryRepository(dirty = listOf(entry(syncState = SyncState.LOCAL_MODIFIED)))
         val remote = FakeRemote(putResult = { PutResourceResult.NotFound })
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, icalRepo.upserts.single().syncState)
     }
@@ -129,7 +129,7 @@ class SyncCoordinatorTest {
         val icalRepo = FakeIcalEntryRepository(dirty = listOf(entry(syncState = SyncState.LOCAL_MODIFIED)))
         val remote = FakeRemote(putResult = { PutResourceResult.Failed(HttpStatusCode.InternalServerError, "boom") })
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         // Left untouched for a later retry - no entry write, no metadata update.
         assertTrue(icalRepo.upserts.isEmpty())
@@ -143,7 +143,7 @@ class SyncCoordinatorTest {
         val icalRepo = FakeIcalEntryRepository(dirty = listOf(entry(syncState = SyncState.LOCAL_DELETED)))
         val remote = FakeRemote(deleteResult = { DeleteResourceResult.Success })
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.REMOTE_DELETED_LOCAL_TRASHBIN, icalRepo.upserts.single().syncState)
     }
@@ -156,7 +156,7 @@ class SyncCoordinatorTest {
             getResult = { GetResourceResult.Success(entry(syncState = SyncState.SYNCED)) }
         )
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, icalRepo.upserts.single().syncState)
     }
@@ -174,7 +174,7 @@ class SyncCoordinatorTest {
         // A remote whose every mutating call throws would blow up if these were pushed.
         val remote = FakeRemote()
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertTrue(icalRepo.upserts.isEmpty())
         assertTrue(icalRepo.syncMetadataUpdates.isEmpty())
@@ -185,7 +185,7 @@ class SyncCoordinatorTest {
         val icalRepo = FakeIcalEntryRepository(dirty = listOf(entry(syncState = SyncState.USER_DECIDED_SERVER_WINS)))
         val remote = FakeRemote(getResult = { GetResourceResult.NotFound })
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.REMOTE_DELETED_LOCAL_TRASHBIN, icalRepo.upserts.single().syncState)
     }
@@ -200,7 +200,7 @@ class SyncCoordinatorTest {
             fetchSingleResult = { MultigetResourceResult.Success(listOf(entry(syncState = SyncState.SYNCED))) }
         )
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.SYNCED, icalRepo.upserts.single().syncState)
     }
@@ -214,7 +214,7 @@ class SyncCoordinatorTest {
             fetchSingleResult = { MultigetResourceResult.Success(listOf(entry(syncState = SyncState.SYNCED, etag = "etag-new"))) }
         )
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED, icalRepo.upserts.single().syncState)
     }
@@ -228,7 +228,7 @@ class SyncCoordinatorTest {
             // fetchSingleResult intentionally left as the throwing default - must not be called.
         )
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(0, remote.fetchCount)
         assertTrue(icalRepo.upserts.isEmpty())
@@ -243,7 +243,7 @@ class SyncCoordinatorTest {
             syncCollectionResult = { MultigetSyncCollectionResult.Success("token2", mapOf(entryHref to null)) }
         )
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.REMOTE_DELETED_LOCAL_TRASHBIN, icalRepo.upserts.single().syncState)
     }
@@ -255,7 +255,7 @@ class SyncCoordinatorTest {
             syncCollectionResult = { MultigetSyncCollectionResult.Success("token2", mapOf(entryHref to null)) }
         )
 
-        coordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, icalRepo.upserts.single().syncState)
     }
@@ -268,7 +268,7 @@ class SyncCoordinatorTest {
         val remote = FakeRemote(syncCollectionResult = { MultigetSyncCollectionResult.NotAuthorized })
         val calRepo = FakeCalendarRepository()
 
-        coordinator(remote, icalRepo, calRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo, calRepo).syncCalendarWithSyncLock(calendar())
 
         assertEquals(CalendarSyncStatusType.NOT_AUTHORIZED, calRepo.lastStatusType())
         assertTrue(icalRepo.syncMetadataUpdates.isEmpty(), "must not push local changes when not authorized")
@@ -286,7 +286,7 @@ class SyncCoordinatorTest {
         )
         val calRepo = FakeCalendarRepository()
 
-        coordinator(remote, icalRepo, calRepo).syncCalendarWithSyncLock(calendar())
+        fakeSyncCoordinator(remote, icalRepo, calRepo).syncCalendarWithSyncLock(calendar())
 
         // Failed sync-token report triggers the tokenless REPORT fallback, which then succeeds.
         assertEquals(1, remote.multigetHrefsCount)
@@ -307,7 +307,7 @@ class SyncCoordinatorTest {
             }
         )
         val cal = calendar(id = 99L)
-        val coordinator = coordinator(remote, icalRepo)
+        val coordinator = fakeSyncCoordinator(remote, icalRepo)
 
         val first = launch { coordinator.syncCalendarWithSyncLock(cal) }
         runCurrent()   // let the first sync acquire the per-calendar lock and park on the gate
