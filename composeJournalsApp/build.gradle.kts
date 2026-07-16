@@ -134,6 +134,16 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+
+            // jpackage trims the bundled runtime with jlink and can't see reflectively
+            // loaded modules, so it drops these and the packaged app crashes at runtime:
+            //   - java.sql: required by SQLDelight's JDBC SQLite driver (NoClassDefFoundError:
+            //     java/sql/DriverManager) — without it every database call fails.
+            //   - jdk.unsupported: sun.misc.Unsafe, needed by KSafe for the DataStore backend
+            //     and OS-backed key custody; without it KSafe silently falls back to a
+            //     plain-JSON store.
+            modules("java.sql", "jdk.unsupported")
+
             packageName = "at.techbee.spectacled.journals"
             packageVersion = libs.versions.appVersionString.get()
 
