@@ -294,7 +294,7 @@ fun ListScreenNotes(
         }
 
         item(span = StaggeredGridItemSpan.FullLine) {
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(112.dp))
         }
     }
 

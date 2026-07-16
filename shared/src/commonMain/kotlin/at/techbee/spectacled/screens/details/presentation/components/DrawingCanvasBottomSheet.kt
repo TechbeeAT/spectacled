@@ -65,7 +65,10 @@ fun DrawingCanvasBottomSheet(
         DrawingCanvas(
             paths = pathData,
             onAddPath = { pathData.add(it) },
-            onRemovePaths = { pathData.removeAll(it) },   // TODO
+            onRemovePaths = { pathData.removeAll(it) },
+            onRestorePaths = {
+                pathData.clear()
+                pathData.addAll(it) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(800.dp)

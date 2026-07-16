@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.account.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,7 +56,9 @@ import spectacled.shared.generated.resources.close
 @Composable
 fun AccountListScreenRoot(
     viewModel: AccountListViewModel,
-    onNavigate: (Route) -> Unit
+    onNavigate: (Route) -> Unit,
+    keepSafeAreaPaddingValues: Boolean = false,
+    modifier: Modifier = Modifier.fillMaxSize()
 ) {
 
     val state by viewModel.state.collectAsState()
@@ -177,71 +180,24 @@ fun AccountListScreenRoot(
                 }
             }
         },
-        modifier = Modifier.fillMaxSize()
-        /*
-
-        bottomBar = {
-            BottomAppBar(
-                actions = {
-
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = if (getPlatform().isIos()) 0.dp else 8.dp)
-                    ) {
-                        IconButton(
-                            onClick = { showAboutDialog = true }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Info,
-                                contentDescription = stringResource(Res.string.about),
-                                tint = if (getPlatform().isIos()) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                            )
-                        }
-
-                        Text(
-                            text = "${state.notes.size} Notes",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-
-                        if(getPlatform().isIos())
-                            IconButton(
-                                onClick = {
-                                    onNavigate(Route.AddNote)
-                                }
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Add,
-                                    stringResource(Res.string.add_note),
-                                    tint = MaterialTheme.colorScheme.primary)
-                            }
-                        else
-                            FloatingActionButton(
-                                onClick = {
-                                    onNavigate(Route.AddNote)
-                                }
-                            ) {
-                                Icon(Icons.Outlined.Add, stringResource(Res.string.add_note))
-                            }
-                    }
-                },
-                floatingActionButton = {
-
-                }
-            )
-
-        },
-
-         */
+        modifier = modifier
 
     ) { paddingValues ->
 
+        val currentPaddingValues = if(keepSafeAreaPaddingValues)
+            paddingValues
+        else
+            PaddingValues(
+                top = paddingValues.calculateTopPadding(),
+                bottom = 0.dp,
+                start = 0.dp,
+                end = 0.dp
+            )
+
         Box(
             modifier = Modifier
-                .padding(paddingValues)
-                .consumeWindowInsets(paddingValues)
+                .padding(currentPaddingValues)
+                .consumeWindowInsets(currentPaddingValues)
                 .imePadding()
                 .padding(top = 8.dp, start = 8.dp, end = 8.dp)
                 .fillMaxSize(),

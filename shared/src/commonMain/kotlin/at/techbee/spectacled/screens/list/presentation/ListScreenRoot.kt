@@ -4,16 +4,15 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditOff
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -72,7 +71,9 @@ import kotlin.time.Duration.Companion.milliseconds
 fun ListScreenRoot(
     listViewModel: ListViewModel,
     onNavigate: (Route) -> Unit,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
+    keepSafeAreaPaddingValues: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
 
     val state by listViewModel.state.collectAsState()
@@ -263,84 +264,24 @@ fun ListScreenRoot(
                     }
                 }
             },
-            bottomBar = {
-                // WORKAROUND, keep the Bottom App Bar empty like this to color the lower part in the container color!
-                BottomAppBar(modifier = Modifier.height(32.dp)) {}
-            }
-            /*
-           bottomBar = {
-               BottomAppBar(
-                   actions = {
-
-                       Row(
-                           horizontalArrangement = Arrangement.SpaceBetween,
-                           verticalAlignment = Alignment.CenterVertically,
-                           modifier = Modifier
-                               .fillMaxWidth()
-                               .padding(horizontal = if (getPlatform().isIos()) 0.dp else 8.dp)
-                       ) {
-
-                           /*
-                           IconButton(
-                               onClick = {
-                                   //showAboutDialog = true
-                                   }
-                           ) {
-                               Icon(
-                                   imageVector = Icons.Outlined.Info,
-                                   contentDescription = stringResource(Res.string.about),
-                                   tint = if (getPlatform().isIos()) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                               )
-                           }
-
-                            */
-
-                           Text(
-                               text = "${state.notes.size} Notes",
-                               style = MaterialTheme.typography.labelLarge
-                           )
-
-                           if(getPlatform().isIos())
-                               TextButton(
-                                   onClick = {
-                                       onNavigate(Route.AddNote)
-                                   }
-                               ) {
-                                   Icon(
-                                       Icons.Outlined.Add,
-                                       stringResource(Res.string.add_note),
-                                       )
-                               }
-                           else
-                               FloatingActionButton(
-                                   onClick = {
-                                       onNavigate(Route.AddNote)
-                                   }
-                               ) {
-                                   Icon(Icons.Outlined.Add, stringResource(Res.string.add_note))
-                               }
-                       }
-                   },
-                   floatingActionButton = {
-                       FloatingActionButton(
-                           onClick = {
-                               onNavigate(Route.AddNote)
-                           }
-                       ) {
-                           Icon(Icons.Outlined.Add, stringResource(Res.string.add_note))
-                       }
-                   }
-               )
-
-           },
-           */
-
+            bottomBar = { },
+            modifier = modifier
         ) { paddingValues ->
+
+            val currentPaddingValues = if(keepSafeAreaPaddingValues)
+                paddingValues
+            else
+                PaddingValues(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = 0.dp,
+                    start = 0.dp,
+                    end = 0.dp
+                )
 
             Box(
                 modifier = Modifier
-                    .padding(paddingValues)
-                    .consumeWindowInsets(paddingValues)
+                    .padding(currentPaddingValues)
+                    .consumeWindowInsets(currentPaddingValues)
                     .imePadding()
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter
