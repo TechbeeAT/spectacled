@@ -7,6 +7,10 @@ import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.repository.CalendarRepositoryImpl
 import at.techbee.spectacled.screens.core.data.repository.IcalEntryRepositoryImpl
+import at.techbee.spectacled.screens.core.data.webdav.DefaultWebDavRemoteCalendarDataSource
+import at.techbee.spectacled.screens.core.data.webdav.DefaultWebDavRemoteIcalEntryDataSource
+import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteCalendarDataSource
+import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
@@ -18,6 +22,7 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val sharedModule = module {
+
     single {
         val preferences: UserAppPreferencesStore = get()
         HttpClientFactory.create(
@@ -25,8 +30,12 @@ val sharedModule = module {
             userProxyUrlProvider = { preferences.userProxyServer }
         )
     }
+
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
     singleOf(::IcalEntryRepositoryImpl) { bind<IcalEntryRepository>() }
+
+    singleOf(::DefaultWebDavRemoteCalendarDataSource) { bind<WebDavRemoteCalendarDataSource>() }
+    singleOf(::DefaultWebDavRemoteIcalEntryDataSource) { bind<WebDavRemoteIcalEntryDataSource>() }
 
     viewModelOf(::ListViewModel)
     viewModelOf(::AccountListViewModel)

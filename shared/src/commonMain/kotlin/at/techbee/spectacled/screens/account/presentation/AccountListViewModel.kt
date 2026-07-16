@@ -14,12 +14,7 @@ import at.techbee.spectacled.screens.core.data.webdav.DiscoverCalendarsResult
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverHomeCollectionsResult
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverPrincipalsResult
 import at.techbee.spectacled.screens.core.data.webdav.UpsertCalendarResult
-import at.techbee.spectacled.screens.core.data.webdav.createCalendarMultiplatform
-import at.techbee.spectacled.screens.core.data.webdav.deleteCalendarMultiplatform
-import at.techbee.spectacled.screens.core.data.webdav.discoverCalendars
-import at.techbee.spectacled.screens.core.data.webdav.discoverHomeCollections
-import at.techbee.spectacled.screens.core.data.webdav.discoverPrincipalsMultiplatform
-import at.techbee.spectacled.screens.core.data.webdav.updateCalDavCalendarMultiplatform
+import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteCalendarDataSource
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
@@ -28,7 +23,6 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import io.github.aakira.napier.Napier
-import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,7 +41,7 @@ class AccountListViewModel(
     private val calendarRepository: CalendarRepository,
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
-    private val client: HttpClient,
+    private val webDavCalendarDataSource: WebDavRemoteCalendarDataSource,
     val spectacledVariant: SpectacledVariant,
     val userAppPreferencesStore: PlatformUserAppPreferencesStore
     ): ViewModel() {
@@ -155,7 +149,7 @@ class AccountListViewModel(
             try {
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
 
-                deleteCalendarMultiplatform(client, calendar, credentials).let { remoteResult ->
+                webDavCalendarDataSource.deleteCalendar(calendar, credentials).let { remoteResult ->
 
                     when (remoteResult) {
                         is DeleteCalendarResult.SuccessfullyDeleted, is DeleteCalendarResult.AlreadyDeleted -> {
@@ -269,7 +263,7 @@ class AccountListViewModel(
             try {
 
                 // STEP 1: Discover principals
-                val discoverPrincipalsResult = discoverPrincipalsMultiplatform(client, credentials.server, credentials)
+                val discoverPrincipalsResult = webDavCalendarDataSource.discoverPrincipals(credentials.server, credentials)
                 when(discoverPrincipalsResult) {
                     is DiscoverPrincipalsResult.Failed -> {
                         _state.update { it.copy(processingState = ProcessingState.Error(message = discoverPrincipalsResult.message, detail = discoverPrincipalsResult.details)) }
@@ -297,7 +291,7 @@ class AccountListViewModel(
                 val discoveredCalendars = mutableListOf<Calendar>()
                 discoverPrincipalsResult.principals.forEach { principal ->
 
-                    when(val discoverHomeCollectionsResult = discoverHomeCollections(client, principal, credentials)) {
+                    when(val discoverHomeCollectionsResult = webDavCalendarDataSource.discoverHomeCollections(principal, credentials)) {
                         is DiscoverHomeCollectionsResult.Failed -> {
                             _state.update { it.copy(
                                 processingState = ProcessingState.Error(
@@ -323,8 +317,7 @@ class AccountListViewModel(
 
                     // STEP 3: Discover Calendars
                     discoveredHomeCollections.forEach { homeCollection ->
-                        when(val discoverCalendarsResult = discoverCalendars(
-                            client = client,
+                        when(val discoverCalendarsResult = webDavCalendarDataSource.discoverCalendars(
                             homeCollection = homeCollection,
                             credentials = credentials
                         )) {
@@ -403,9 +396,9 @@ class AccountListViewModel(
             try {
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
                 val upsertCalendarResult = if(calendar.id == 0L) {
-                    createCalendarMultiplatform(client,calendar, credentials)
+                    webDavCalendarDataSource.createCalendar(calendar, credentials)
                 } else {
-                    updateCalDavCalendarMultiplatform(client, calendar, credentials)
+                    webDavCalendarDataSource.updateCalendar(calendar, credentials)
                 }
 
                 when(upsertCalendarResult) {

@@ -140,5 +140,12 @@ data class IcsDateTime(
 object TimeZoneSerializer : KSerializer<TimeZone> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TimeZone", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: TimeZone) = encoder.encodeString(value.id)
-    override fun deserialize(decoder: Decoder): TimeZone = TimeZone.of(decoder.decodeString())
+
+    // Fall back to UTC for unknown or unresolvable zone ids instead of throwing, mirroring the ICS
+    // parser (IcalEntryIcsParser). On web the tz database is loaded at startup (SecureStorageReadyGate);
+    // this guard keeps a corrupt or unexpected id from crashing while loading a stored entry.
+    override fun deserialize(decoder: Decoder): TimeZone {
+        val id = decoder.decodeString()
+        return runCatching { TimeZone.of(id) }.getOrDefault(TimeZone.UTC)
+    }
 }

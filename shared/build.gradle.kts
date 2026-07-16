@@ -108,6 +108,8 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.mock)
         }
 
         androidMain.dependencies {
@@ -144,6 +146,11 @@ kotlin {
             implementation(devNpm("copy-webpack-plugin", libs.versions.webPackPlugin.get()))
             implementation(npm("@cashapp/sqldelight-sqljs-worker", libs.versions.sqldelight.get()))
             implementation(npm("sql.js", libs.versions.sqlJs.get()))
+            // Provides the IANA time-zone database for kotlinx-datetime on js/wasmJs. Without it,
+            // TimeZone.of("Europe/Vienna") and friends throw IllegalTimeZoneException in the browser
+            // (the JVM/native targets get their zones from the platform). Needed both for the ICS
+            // timezone tests and for correct wall-clock handling of zoned entries on the web target.
+            implementation(npm("@js-joda/timezone", libs.versions.jsJodaTimezone.get()))
         }
     }
 }
