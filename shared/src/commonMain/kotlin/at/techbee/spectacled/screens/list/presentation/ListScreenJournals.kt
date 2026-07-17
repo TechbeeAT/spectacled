@@ -38,6 +38,7 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.nothing_here
 import spectacled.shared.generated.resources.trashbin
 
 
@@ -200,7 +201,7 @@ fun JournalsListJournals(
             if (state.trashbin.isEmpty())
                 item {
                     Text(
-                        text = "Nothing here",
+                        text = stringResource(Res.string.nothing_here),
                         fontStyle = FontStyle.Italic
                     )
                 }

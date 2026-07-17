@@ -17,7 +17,7 @@ jobs:
         uses: gradle/actions/wrapper-validation@v6
 
       - name: All tests and androidLint
-        run: ./gradlew :shared:cleanJvmTest :shared:allTest :androidJournalsApp:lintDebug :androidNotesApp:lintDebug :androidTasksApp:lintDebug
+        run: ./gradlew :shared:allTests :androidJournalsApp:lintDebug :androidNotesApp:lintDebug :androidTasksApp:lintDebug
       - name: Print failing test details
         if: failure()
         run: |

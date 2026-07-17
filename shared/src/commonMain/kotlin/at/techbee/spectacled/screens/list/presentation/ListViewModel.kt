@@ -67,8 +67,8 @@ class ListViewModel(
 
         userAppPreferencesStore.lastUsedCalendarId = calendarId
 
-        // Off the Main dispatcher: reads the credential store (disk) and keeps the flow
-        // collectors — including the CPU-bound recompute() — off the UI thread.
+        // Kept on IO for the CPU-bound recompute() run by the flow collectors below — that work
+        // isn't behind a self-dispatching data source (the credential store now dispatches itself).
         observationJob = viewModelScope.launch(ioDispatcher) {
             val principal = calendarRepository.getPrincipalForCalendar(calendarId)
             val credentials = principal?.let { credentialStore.load(it.principalUrl) }
