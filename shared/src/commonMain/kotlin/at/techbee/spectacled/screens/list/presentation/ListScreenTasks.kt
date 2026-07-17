@@ -38,6 +38,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.nothing_here
 import spectacled.shared.generated.resources.pinned
 import spectacled.shared.generated.resources.trashbin
 
@@ -235,7 +236,7 @@ fun ListScreenTasks(
         if(state.trashbin.isNotEmpty() &&  LIST_COLLAPSED_GROUP_TRASHBIN in state.listCollapsedGroups) {
             if (state.trashbin.isEmpty())
                 item { Text(
-                    text = "Nothing here",
+                    text = stringResource(Res.string.nothing_here),
                     fontStyle = FontStyle.Italic
                 ) }
             else

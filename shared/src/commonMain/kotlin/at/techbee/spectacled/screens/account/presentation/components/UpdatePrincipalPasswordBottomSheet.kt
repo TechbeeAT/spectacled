@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,11 @@ fun UpdatePrincipalPasswordBottomSheet(
     var password by rememberSaveable { mutableStateOf("") }
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
+
+    LaunchedEffect(processingState) {
+        if(processingState is ProcessingState.Success)
+            onDismiss()   // close when successful
+    }
 
     BottomSheetWithMenu(
         headline = stringResource(Res.string.update_password),
