@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
+import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -66,7 +67,9 @@ class ListViewModel(
 
         userAppPreferencesStore.lastUsedCalendarId = calendarId
 
-        observationJob = viewModelScope.launch {
+        // Off the Main dispatcher: reads the credential store (disk) and keeps the flow
+        // collectors — including the CPU-bound recompute() — off the UI thread.
+        observationJob = viewModelScope.launch(ioDispatcher) {
             val principal = calendarRepository.getPrincipalForCalendar(calendarId)
             val credentials = principal?.let { credentialStore.load(it.principalUrl) }
             val calendar = calendarRepository.getCalendarById(calendarId)

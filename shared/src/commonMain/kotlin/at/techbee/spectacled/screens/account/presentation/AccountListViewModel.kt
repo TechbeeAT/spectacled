@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
+import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
@@ -143,7 +144,7 @@ class AccountListViewModel(
 
     private fun deleteCalendar(principal: Principal, calendar: Calendar) {
         _state.update { it.copy(processingState = ProcessingState.Processing) }
-        viewModelScope.launch {
+        viewModelScope.launch(ioDispatcher) {
 
             try {
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
@@ -254,7 +255,11 @@ class AccountListViewModel(
         Napier.d("Adding principals")
         _state.update { it.copy(processingState = ProcessingState.Processing) }
 
-        viewModelScope.launch {
+        // Run the whole discovery pipeline off the Main dispatcher. On Compose Desktop the
+        // viewModelScope's Main dispatcher does not reliably resume suspended network
+        // continuations (nor the HttpTimeout timer), so leaving this on Main makes discovery
+        // hang forever without ever hitting a timeout. IO resumes reliably on every platform.
+        viewModelScope.launch(ioDispatcher) {
             try {
 
                 // STEP 1: Discover principals
@@ -386,7 +391,7 @@ class AccountListViewModel(
         Napier.d("Adding calendar")
         _state.update { it.copy(processingState = ProcessingState.Processing) }
 
-        viewModelScope.launch {
+        viewModelScope.launch(ioDispatcher) {
 
             try {
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
