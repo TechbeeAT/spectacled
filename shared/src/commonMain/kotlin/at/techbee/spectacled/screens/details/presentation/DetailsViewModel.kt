@@ -11,6 +11,7 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
+import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
@@ -564,7 +565,8 @@ class DetailsViewModel(
 
         _state.update { it.copy(isLoading = true) }
 
-        viewModelScope.launch {
+        // Full CalDAV sync (network + iCal parsing) — keep it off the Main dispatcher.
+        viewModelScope.launch(ioDispatcher) {
             try {
 
                 val principalUrl = calendarRepository.getPrincipalUrlForCalendarId(icalEntry.calendarId)
@@ -686,7 +688,8 @@ class DetailsViewModel(
 
         _state.update { it.copy(isLoading = true) }
 
-        viewModelScope.launch {
+        // Claude API network call — keep it off the Main dispatcher.
+        viewModelScope.launch(ioDispatcher) {
 
             val remoteResult = KtorRemoteClaudeDataSource(client, state.value.claudeUserApiKey?:"").applyAiMetadata(_state.value.icalEntry)
 
@@ -729,7 +732,8 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
-        viewModelScope.launch {
+        // Writes the attachment bytes to disk — keep the file I/O off the Main dispatcher.
+        viewModelScope.launch(ioDispatcher) {
             val attachmentUid = Uuid.random().toString()
             val localPath = fileManager.saveAttachment("$fileName-${attachmentUid.take(8)}", bytes)
             val newAttachment = Attachment(
@@ -761,7 +765,8 @@ class DetailsViewModel(
         if (attachment.localPath != null && fileManager.exists(attachment.localPath)) {
             fileLauncher.openFile(attachment.localPath, attachment.mimeType)
         } else if (attachment.remoteUrl != null) {
-            viewModelScope.launch {
+            // WebDAV download + saving the file to disk — keep it off the Main dispatcher.
+            viewModelScope.launch(ioDispatcher) {
                 try {
                     _state.update { it.copy(downloadingAttachmentUids = it.downloadingAttachmentUids + attachmentUid) }
                     
@@ -793,7 +798,8 @@ class DetailsViewModel(
     }
 
     private fun onDeleteAttachment(attachmentUid: String) {
-        viewModelScope.launch {
+        // Deletes the attachment file from disk — keep the file I/O off the Main dispatcher.
+        viewModelScope.launch(ioDispatcher) {
             val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid }
             if (attachment != null) {
                 attachment.localPath?.let { fileManager.deleteAttachment(it) }
