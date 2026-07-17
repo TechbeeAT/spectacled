@@ -16,8 +16,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/wrapper-validation@v6
 
-      - name: JVM tests and androidLint
-        run: ./gradlew :shared:cleanJvmTest :shared:jvmTest :androidJournalsApp:lintDebug :androidNotesApp:lintDebug :androidTasksApp:lintDebug
+      - name: All tests and androidLint
+        run: ./gradlew :shared:cleanJvmTest :shared:allTest :androidJournalsApp:lintDebug :androidNotesApp:lintDebug :androidTasksApp:lintDebug
       - name: Archive results
         uses: actions/upload-artifact@v7
         with:
