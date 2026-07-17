@@ -6,6 +6,9 @@
     <title>spectacled Tasks</title>
     <link type="text/css" rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    <meta name="theme-color" content="#296f23">
 </head>
 <body style="text-align: center; align-content: center">
 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 50 50" role="presentation">
@@ -17,5 +20,16 @@
     </circle>
 </svg>
 <script type="application/javascript" src="composeTasksApp.js"></script>
+<script>
+    // Register the offline service worker (see service-worker.js). Guarded so it is a no-op in
+    // browsers without service-worker support.
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('service-worker.js').catch(function (error) {
+                console.warn('Service worker registration failed:', error);
+            });
+        });
+    }
+</script>
 </body>
 </html>
