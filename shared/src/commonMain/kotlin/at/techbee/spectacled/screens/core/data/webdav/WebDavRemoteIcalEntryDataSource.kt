@@ -4,9 +4,11 @@ import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.ioDispatcher
 import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
+import kotlinx.coroutines.withContext
 
 /**
  * All CalDAV server operations about the resources within a calendar - enumerating/syncing
@@ -31,32 +33,39 @@ interface WebDavRemoteIcalEntryDataSource {
     suspend fun downloadFile(sourceUrl: Url, credentials: Credentials?): ByteArray?
 }
 
+/**
+ * Every call dispatches its own work onto [ioDispatcher] — the network transfer plus, for the
+ * fetch/put paths, the iCal parsing/serialization and inline-attachment file I/O that runs inside
+ * those top-level functions. Callers can launch on Main without naming a dispatcher, matching the
+ * repositories. As with [WebDavRemoteCalendarDataSource], IO is also what makes network
+ * continuations resume reliably on Compose Desktop.
+ */
 class DefaultWebDavRemoteIcalEntryDataSource(
     private val client: HttpClient,
     private val fileManager: FileManager,
 ) : WebDavRemoteIcalEntryDataSource {
 
     override suspend fun syncCollection(calendar: Calendar, credentials: Credentials?) =
-        syncCollectionMultiplatform(client, calendar, credentials)
+        withContext(ioDispatcher) { syncCollectionMultiplatform(client, calendar, credentials) }
 
     override suspend fun multigetResourceHrefs(calendar: Calendar, credentials: Credentials?) =
-        multigetResourceHrefsMultiplatform(client, calendar, credentials)
+        withContext(ioDispatcher) { multigetResourceHrefsMultiplatform(client, calendar, credentials) }
 
     override suspend fun fetchSingleEntry(calendar: Calendar, href: Url, credentials: Credentials?) =
-        fetchSingleEntryMultiplatform(client, calendar, href, credentials, fileManager)
+        withContext(ioDispatcher) { fetchSingleEntryMultiplatform(client, calendar, href, credentials, fileManager) }
 
     override suspend fun putResource(calendar: Calendar, icalEntry: IcalEntry, credentials: Credentials?) =
-        putResourceMultiplatform(client, calendar, icalEntry, credentials, fileManager)
+        withContext(ioDispatcher) { putResourceMultiplatform(client, calendar, icalEntry, credentials, fileManager) }
 
     override suspend fun getResource(calendar: Calendar, icalEntry: IcalEntry, credentials: Credentials?) =
-        getResourceMultiplatform(client, calendar, icalEntry, credentials, fileManager)
+        withContext(ioDispatcher) { getResourceMultiplatform(client, calendar, icalEntry, credentials, fileManager) }
 
     override suspend fun deleteResource(calendar: Calendar, icalEntry: IcalEntry, credentials: Credentials?) =
-        deleteResourceMultiplatform(client, calendar, icalEntry, credentials)
+        withContext(ioDispatcher) { deleteResourceMultiplatform(client, calendar, icalEntry, credentials) }
 
     override suspend fun uploadFile(targetUrl: Url, bytes: ByteArray, mimeType: String?, credentials: Credentials?) =
-        uploadFileMultiplatform(client, targetUrl, bytes, mimeType, credentials)
+        withContext(ioDispatcher) { uploadFileMultiplatform(client, targetUrl, bytes, mimeType, credentials) }
 
     override suspend fun downloadFile(sourceUrl: Url, credentials: Credentials?) =
-        downloadFileMultiplatform(client, sourceUrl, credentials)
+        withContext(ioDispatcher) { downloadFileMultiplatform(client, sourceUrl, credentials) }
 }
