@@ -2,10 +2,8 @@ package at.techbee.spectacled.screens.core.data.claude
 
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import io.github.aakira.napier.Napier
-import kotlinx.coroutines.withContext
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.header
@@ -70,35 +68,31 @@ class KtorRemoteClaudeDataSource(
         ${icalEntry.description}
     """.trimIndent()
 
-        // Dispatch the network call (and response parsing) onto ioDispatcher so callers launch on
-        // Main without naming a dispatcher.
-        return withContext(ioDispatcher) {
-            try {
-                val response = client.post(ANTHROPIC_BASE_URL) {
-                    contentType(ContentType.Application.Json)
-                    header("x-api-key", claudeUserApiKey)
-                    header("anthropic-version", "2023-06-01")
-                    setBody(buildJsonObject {
-                        put("model", "claude-sonnet-4-6")
-                        put("max_tokens", 1000)
-                        putJsonArray("messages") {
-                            addJsonObject {
-                                put("role", "user")
-                                put("content", prompt)
-                            }
+        try {
+            val response = client.post(ANTHROPIC_BASE_URL) {
+                contentType(ContentType.Application.Json)
+                header("x-api-key", claudeUserApiKey)
+                header("anthropic-version", "2023-06-01")
+                setBody(buildJsonObject {
+                    put("model", "claude-sonnet-4-6")
+                    put("max_tokens", 1000)
+                    putJsonArray("messages") {
+                        addJsonObject {
+                            put("role", "user")
+                            put("content", prompt)
                         }
-                    })
-                }.body<ClaudeResponseDto>()
+                    }
+                })
+            }.body<ClaudeResponseDto>()
 
-                ClaudeRemoteResponseResult.Success(response.applyClaudeResponse(icalEntry))
+            return ClaudeRemoteResponseResult.Success(response.applyClaudeResponse(icalEntry))
 
-            } catch (e: Exception) {
-                Napier.e("AI metadata request failed", e)
-                ClaudeRemoteResponseResult.Failed(
-                    message = "Fetching AI response failed",
-                    details = e.message
-                )
-            }
+        } catch (e: Exception) {
+            Napier.e("AI metadata request failed", e)
+            return ClaudeRemoteResponseResult.Failed(
+                message = "Fetching AI response failed",
+                details = e.message
+            )
         }
     }
 }
