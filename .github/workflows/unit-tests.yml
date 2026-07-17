@@ -18,20 +18,10 @@ jobs:
 
       - name: All tests and androidLint
         run: ./gradlew :shared:allTests :androidJournalsApp:lintDebug :androidNotesApp:lintDebug :androidTasksApp:lintDebug
-      - name: Print failing test details
-        if: failure()
-        run: |
-          grep -rl "<failure" shared/build/test-results --include="*.xml" 2>/dev/null | while read f; do
-            echo "===== $f ====="
-            cat "$f"
-          done
       - name: Archive results
-        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: test-results2
           path: |
             app/build/outputs/lint*
             app/build/reports
-            shared/build/reports/tests
-            shared/build/test-results
