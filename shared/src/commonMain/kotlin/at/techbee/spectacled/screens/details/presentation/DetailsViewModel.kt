@@ -33,6 +33,7 @@ import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import io.ktor.utils.io.core.toByteArray
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -44,6 +45,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
@@ -778,12 +780,12 @@ class DetailsViewModel(
                     if (bytes != null) {
                         // On Web, we open directly from bytes. On Native, we save then open.
                         if (getPlatform().platform == Platforms.WASM) {
-                            fileLauncher.openFile(bytes, attachment.fileName ?: "file", attachment.mimeType)
+                            withContext(Dispatchers.Main) { fileLauncher.openFile(bytes, attachment.fileName ?: "file", attachment.mimeType) }
                         } else {
                             val localPath = fileManager.saveAttachment("${attachment.uid}_${attachment.fileName ?: "file"}", bytes)
                             val updatedAttachment = attachment.copy(localPath = localPath, syncState = AttachmentSyncState.SYNCED)
                             icalEntryRepository.insertOrUpdateAttachment(updatedAttachment)
-                            fileLauncher.openFile(localPath, attachment.mimeType)
+                            withContext(Dispatchers.Main) { fileLauncher.openFile(localPath, attachment.mimeType) }
                         }
                     } else {
                         throw Exception("Download failed")
