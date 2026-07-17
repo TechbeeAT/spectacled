@@ -24,8 +24,8 @@ class AboutViewModel(
     val state = _state.asStateFlow()
 
     init {
-        // The GitHub data sources self-dispatch their network now, but the AboutLibraries step
-        // still reads and parses libraries.json (CPU) inline here, so keep this launch on IO.
+        // GitHub network calls, the resource read and JSON parsing must not run on the
+        // Main dispatcher; run them on IO (repository/DB work self-dispatches, network does not).
         viewModelScope.launch(ioDispatcher) {
 
             launch {
