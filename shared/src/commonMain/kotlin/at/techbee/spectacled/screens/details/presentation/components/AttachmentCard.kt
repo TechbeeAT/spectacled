@@ -58,6 +58,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.attachment
+import spectacled.shared.generated.resources.attachment_sync_state_pending_download
+import spectacled.shared.generated.resources.attachment_sync_state_pending_upload
+import spectacled.shared.generated.resources.attachment_sync_state_sync_error
+import spectacled.shared.generated.resources.attachment_sync_state_synchronized
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.drawing
 import spectacled.shared.generated.resources.ic_cloud_error
@@ -149,18 +153,18 @@ fun AttachmentCard(
                         Crossfade(attachment.syncState) { attachmentSyncState ->
                             when(attachmentSyncState) {
                                 AttachmentSyncState.LOCAL_MODIFIED -> {
-                                    Icon(Icons.Outlined.CloudUpload, "Pending upload")
+                                    Icon(Icons.Outlined.CloudUpload, stringResource(Res.string.attachment_sync_state_pending_upload))
                                 }
                                 AttachmentSyncState.SYNCED -> {
-                                    Icon(Icons.Outlined.CloudDone, "Synchronized")
+                                    Icon(Icons.Outlined.CloudDone, stringResource(Res.string.attachment_sync_state_synchronized))
                                 }
                                 AttachmentSyncState.PENDING_DOWNLOAD -> {
-                                    Icon(Icons.Outlined.CloudDownload, "Pending download")
+                                    Icon(Icons.Outlined.CloudDownload, stringResource(Res.string.attachment_sync_state_pending_download))
                                 }
                                 AttachmentSyncState.FAILED -> {
                                     Icon(
                                         painterResource(Res.drawable.ic_cloud_error),
-                                        "Attachment sync error"
+                                        stringResource(Res.string.attachment_sync_state_sync_error)
                                     )
                                 }
                             }
@@ -184,7 +188,6 @@ fun AttachmentCard(
                         .clipToBounds()
                         .fillMaxWidth()
                         .height(600.dp)
-                        //.weight(1f)
                         .background(Color.White)
                 ) {
                     drawingPaths?.fastForEach { pathData ->
