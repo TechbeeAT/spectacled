@@ -567,7 +567,9 @@ class DetailsViewModel(
 
         _state.update { it.copy(isLoading = true) }
 
-        // Full CalDAV sync (network + iCal parsing) — keep it off the Main dispatcher.
+        // The data sources dispatch the network + iCal parsing themselves, but SyncCoordinator
+        // still reads attachment bytes off disk directly (synchronous FileManager) while pushing,
+        // so keep this launch on IO until FileManager itself becomes suspend (QUA-12 follow-up).
         viewModelScope.launch(ioDispatcher) {
             try {
 
@@ -690,8 +692,8 @@ class DetailsViewModel(
 
         _state.update { it.copy(isLoading = true) }
 
-        // Claude API network call — keep it off the Main dispatcher.
-        viewModelScope.launch(ioDispatcher) {
+        // Plain launch on Main: KtorRemoteClaudeDataSource dispatches its own network call onto IO.
+        viewModelScope.launch {
 
             val remoteResult = KtorRemoteClaudeDataSource(client, state.value.claudeUserApiKey?:"").applyAiMetadata(_state.value.icalEntry)
 
@@ -734,7 +736,8 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
-        // Writes the attachment bytes to disk — keep the file I/O off the Main dispatcher.
+        // Direct synchronous FileManager disk write — kept on IO until FileManager becomes
+        // suspend (QUA-12 follow-up); the mapper and a composable read it synchronously today.
         viewModelScope.launch(ioDispatcher) {
             val attachmentUid = Uuid.random().toString()
             val localPath = fileManager.saveAttachment("$fileName-${attachmentUid.take(8)}", bytes)
@@ -767,7 +770,9 @@ class DetailsViewModel(
         if (attachment.localPath != null && fileManager.exists(attachment.localPath)) {
             fileLauncher.openFile(attachment.localPath, attachment.mimeType)
         } else if (attachment.remoteUrl != null) {
-            // WebDAV download + saving the file to disk — keep it off the Main dispatcher.
+            // The download self-dispatches now, but the save-to-disk (synchronous FileManager)
+            // does not, so keep this on IO (QUA-12 follow-up: make FileManager suspend). The
+            // openFile UI calls below hop back to Main explicitly.
             viewModelScope.launch(ioDispatcher) {
                 try {
                     _state.update { it.copy(downloadingAttachmentUids = it.downloadingAttachmentUids + attachmentUid) }
@@ -800,7 +805,7 @@ class DetailsViewModel(
     }
 
     private fun onDeleteAttachment(attachmentUid: String) {
-        // Deletes the attachment file from disk — keep the file I/O off the Main dispatcher.
+        // Direct synchronous FileManager disk delete — kept on IO (QUA-12 follow-up: suspend FileManager).
         viewModelScope.launch(ioDispatcher) {
             val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid }
             if (attachment != null) {
