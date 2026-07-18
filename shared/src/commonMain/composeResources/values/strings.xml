@@ -202,7 +202,7 @@
     <string name="login_message_forbidden">Not authorized. Please check your server, username and password.</string>
 
     <string name="add_account_header_info">Spectacled works with CalDAV-compatible providers. You can either sign in with an existing account or create a new account with one of our recommended providers.</string>
-    <string name="add_account_option_x">Option %1%d</string>
+    <string name="add_account_option_x">Option %1$d</string>
     <string name="add_account_option1_headline">Have an account?</string>
     <string name="add_account_option1_text">Connect any CalDAV-compatible server using your existing credentials.</string>
     <string name="add_account_option2_headline">Need an account?</string>
