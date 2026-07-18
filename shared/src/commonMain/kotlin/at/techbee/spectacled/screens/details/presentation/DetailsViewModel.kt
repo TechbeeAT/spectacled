@@ -99,6 +99,12 @@ class DetailsViewModel(
         viewModelScope.launch { observeSubtasks() }
 
         viewModelScope.launch {
+            userAppPreferencesStore.getClaudeUserApiKeyAsFlow().collect { apiKey ->
+                _state.update { it.copy(claudeUserApiKey = apiKey) }
+            }
+        }
+
+        viewModelScope.launch {
             val allPrincipals = calendarRepository.getAllPrincipals()
             val allHomeCollections = calendarRepository.getAllHomeCollections()
             val allCalendars = calendarRepository.getAllCalendars()

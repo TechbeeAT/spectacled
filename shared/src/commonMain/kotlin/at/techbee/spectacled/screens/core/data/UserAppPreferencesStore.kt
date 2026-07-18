@@ -101,8 +101,8 @@ interface UserAppPreferencesStore {
 
     var claudeUserApiKey: String?
         get() = this.load(CLAUDE_USER_API_KEY)?.ifEmpty { null }
-        set(value) = if(value == null) this.remove(CLAUDE_USER_API_KEY) else this.saveEncrypted(CLAUDE_USER_API_KEY, value)
-    //fun getClaudeUserApiKeyAsFlow(): Flow<String?> = this.loadAsFlow(CLAUDE_USER_API_KEY)
+        set(value) = if(value.isNullOrBlank()) this.remove(CLAUDE_USER_API_KEY) else this.saveEncrypted(CLAUDE_USER_API_KEY, value)
+    fun getClaudeUserApiKeyAsFlow(): Flow<String?> = this.loadAsFlow(CLAUDE_USER_API_KEY)
 
     var userProxyServer: String?
         get() = this.load(USER_PROXY_SERVER)?.ifEmpty { null }
