@@ -58,8 +58,6 @@ import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -380,13 +378,7 @@ private fun SettingsBottomSheet_Preview() {
         Scaffold {
             SettingsBottomSheet(
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                userAppPreferencesStore = object: UserAppPreferencesStore {
-                    override fun save(key: String, value: String) { }
-                    override fun saveEncrypted(key: String, value: String) { }
-                    override fun load(key: String): String? { return null }
-                    override fun loadAsFlow(key: String): Flow<String?> { return flowOf(null ) }
-                    override fun remove(key: String) { }
-                },
+                userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
                 onDismiss = {}
             )
         }

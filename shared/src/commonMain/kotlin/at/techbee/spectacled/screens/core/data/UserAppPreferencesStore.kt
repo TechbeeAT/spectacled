@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.data
 
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.ThemeFont
@@ -29,6 +30,9 @@ const val CLAUDE_USER_API_KEY = "claude_user_api_key"
 const val USER_PROXY_SERVER = "user_proxy_server"
 
 interface UserAppPreferencesStore {
+
+    val variant: SpectacledVariant
+
     fun save(key: String, value: String)
     fun saveEncrypted(key: String, value: String)
     fun load(key: String): String?
@@ -45,23 +49,17 @@ interface UserAppPreferencesStore {
             else this.save(LAST_USED_CALENDAR_ID, value.toString())
         }
 
-    var listSortedBy: ListSortedBy?
-        get() = this.load(LIST_SORTED_BY)?.let { savedSortedBy -> ListSortedBy.entries.find { savedSortedBy == it.name } }
-        set(value) {
-            if (value == null) this.remove(LIST_SORTED_BY)
-            else this.save(LIST_SORTED_BY, value.name)
-        }
+    var listSortedBy: ListSortedBy
+        get() = this.load(LIST_SORTED_BY)?.let { savedSortedBy -> ListSortedBy.entries.find { savedSortedBy == it.name } } ?: variant.defaultListSortedBy
+        set(value) { this.save(LIST_SORTED_BY, value.name) }
 
     var listSortedByAscending: Boolean
-        get() = this.load(LIST_SORTED_BY_ASCENDING)?.toBooleanStrictOrNull() ?: true
+        get() = this.load(LIST_SORTED_BY_ASCENDING)?.toBooleanStrictOrNull() ?: false
         set(value) = this.save(LIST_SORTED_BY_ASCENDING, if(value) "true" else "false")
 
-    var listLayout: ListLayout?
-        get() = this.load(LIST_LAYOUT)?.let { savedLayout -> ListLayout.entries.find { savedLayout == it.name } }
-        set(value) {
-            if (value == null) this.remove(LIST_LAYOUT)
-            else this.save(LIST_LAYOUT, value.name)
-        }
+    var listLayout: ListLayout
+        get() = this.load(LIST_LAYOUT)?.let { savedLayout -> ListLayout.entries.find { savedLayout == it.name } } ?: variant.defaultListLayout
+        set(value) { this.save(LIST_LAYOUT, value.name) }
 
     var listCollapsedGroups: Set<String>
         get() = this.load(LIST_COLLAPSED_GROUPS)
@@ -93,10 +91,10 @@ interface UserAppPreferencesStore {
     fun getThemeAmoledAsFlow(): Flow<Boolean> = this.loadAsFlow(THEME_AMOLED).map { it?.toBooleanStrictOrNull() ?: false }
 
     var themeFont: ThemeFont
-        get() = this.load(THEME_FONT)?.let { ThemeFont.entries.find { themeFont -> themeFont.name == it } } ?: ThemeFont.ROBOTO
+        get() = this.load(THEME_FONT)?.let { ThemeFont.entries.find { themeFont -> themeFont.name == it } } ?: variant.defaultThemeFont
         set(value) = this.save(THEME_FONT, value.name)
     fun getThemeFontAsFlow(): Flow<ThemeFont> = this.loadAsFlow(THEME_FONT).map { name ->
-        ThemeFont.entries.find { it.name == name } ?: ThemeFont.ROBOTO
+        ThemeFont.entries.find { it.name == name } ?: variant.defaultThemeFont
     }
 
     var claudeUserApiKey: String?
@@ -110,9 +108,9 @@ interface UserAppPreferencesStore {
     fun getUserProxyServerAsFlow(): Flow<String?> = this.loadAsFlow(USER_PROXY_SERVER)
 
 
-
     companion object {
-        fun getEmptyPreferenceStoreForPreview() = object: UserAppPreferencesStore {
+        fun getEmptyPreferenceStoreForPreview(variant: SpectacledVariant = SpectacledVariant.NOTES) = object: UserAppPreferencesStore {
+            override val variant: SpectacledVariant = variant
             override fun save(key: String, value: String) {}
             override fun saveEncrypted(key: String, value: String) {}
             override fun load(key: String): String? {return null }
@@ -123,7 +121,7 @@ interface UserAppPreferencesStore {
 }
 
 expect class PlatformUserAppPreferencesStore: UserAppPreferencesStore {
-
+    override val variant: SpectacledVariant
     override fun save(key: String, value: String)
     override fun saveEncrypted(key: String, value: String)
     override fun load(key: String): String?

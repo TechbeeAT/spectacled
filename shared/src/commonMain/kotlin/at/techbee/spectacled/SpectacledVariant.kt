@@ -2,6 +2,9 @@ package at.techbee.spectacled
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.theme.ThemeFont
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import spectacled.shared.generated.resources.Res
@@ -19,7 +22,10 @@ enum class SpectacledVariant(
     val mainCalendarComponent: CalendarComponent,
     val themeSeedColor: Color,
     val deeplinkUriScheme: String,
-    val deeplinkWebUri: String
+    val deeplinkWebUri: String,
+    val defaultListSortedBy: ListSortedBy,
+    val defaultListLayout: ListLayout,
+    val defaultThemeFont: ThemeFont
 ) {
 
     JOURNALS(
@@ -29,7 +35,10 @@ enum class SpectacledVariant(
         CalendarComponent.VJOURNAL,
         Color(0, 104, 150),
         "spectacled-journals",
-        "https://spectacled.techbee.at/journals"
+        "https://spectacled.techbee.at/journals",
+        ListSortedBy.DATE,
+        ListLayout.LIST,
+        ThemeFont.NOTO_SERIF
     ),
     NOTES(
         "spectacled_notes.db",
@@ -38,7 +47,10 @@ enum class SpectacledVariant(
         CalendarComponent.VJOURNAL,
         Color(153, 76, 44),
         "spectacled-notes",
-        "https://spectacled.techbee.at/notes"
+        "https://spectacled.techbee.at/notes",
+        ListSortedBy.LAST_MODIFIED,
+        ListLayout.STAGGERED_GRID,
+        ThemeFont.ABEEZEE
 
     ),
     TASKS(
@@ -48,6 +60,9 @@ enum class SpectacledVariant(
         CalendarComponent.VTODO,
         Color(41, 111, 35),
         "spectacled-tasks",
-        "https://spectacled.techbee.at/tasks"
+        "https://spectacled.techbee.at/tasks",
+        ListSortedBy.DRAGANDDROP,
+        ListLayout.LIST,
+        ThemeFont.ROBOTO
     );
 }

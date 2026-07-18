@@ -1,12 +1,16 @@
 package at.techbee.spectacled.screens.core.data
 
 import android.content.Context
+import at.techbee.spectacled.SpectacledVariant
 import eu.anifantakis.lib.ksafe.KSafe
 import eu.anifantakis.lib.ksafe.KSafeWriteMode
 import kotlinx.coroutines.flow.Flow
 
 
-actual class PlatformUserAppPreferencesStore(context: Context): UserAppPreferencesStore {
+actual class PlatformUserAppPreferencesStore(
+    context: Context,
+    actual override val variant: SpectacledVariant
+): UserAppPreferencesStore {
 
     private val ksafe = KSafe(context.applicationContext, APP_PREFERENCES_FILE_NAME)
 
