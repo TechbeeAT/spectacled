@@ -31,6 +31,7 @@
     <string name="folder">Folder</string>
     <string name="open_foldername">Open %1$s</string>
     <string name="open_in_browser">Open in browser</string>
+    <string name="welcome">Welcome</string>
     <string name="add_account">Add account</string>
     <string name="remove_account">Remove account</string>
     <string name="insecure_connection_warning">Warning: Insecure connection (HTTP)</string>

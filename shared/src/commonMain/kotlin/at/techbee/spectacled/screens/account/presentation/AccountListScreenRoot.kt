@@ -241,6 +241,7 @@ fun AccountListScreenRoot(
             AddPrincipalBottomSheet(
                 sheetState = addPrincipalBottomSheetState,
                 processingState = state.processingState,
+                isFirstAccount = state.principals.isEmpty(),
                 onAction = { viewModel.onAction(it) },
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAddPrincipalBottomSheet(false)) }
             )

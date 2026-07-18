@@ -89,6 +89,7 @@ import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.server_optional
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.username
+import spectacled.shared.generated.resources.welcome
 
 enum class AddPrincipalBottomSheetPage { SELECTION, USE_EXISTING, SELECT_FROM_LIST }
 
@@ -97,6 +98,7 @@ enum class AddPrincipalBottomSheetPage { SELECTION, USE_EXISTING, SELECT_FROM_LI
 fun AddPrincipalBottomSheet(
     sheetState: SheetState,
     processingState: ProcessingState,
+    isFirstAccount: Boolean,
     onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -191,6 +193,7 @@ fun AddPrincipalBottomSheet(
         ) {
             if (pagerState.currentPage == 0) {
                 SelectAccountOptionScreen(
+                    isFirstAccount = isFirstAccount,
                     onPageChanged = { selectedPage = it },
                     modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
                 )
@@ -215,6 +218,7 @@ fun AddPrincipalBottomSheet(
 
 @Composable
 fun SelectAccountOptionScreen(
+    isFirstAccount: Boolean,
     onPageChanged: (AddPrincipalBottomSheetPage) -> Unit,
     modifier: Modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
 ) {
@@ -224,6 +228,12 @@ fun SelectAccountOptionScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
+
+        Text(
+            text = stringResource(if(isFirstAccount) Res.string.welcome else Res.string.add_account),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.headlineLarge
+        )
 
         Text(
             text = stringResource(Res.string.add_account_header_info),
@@ -574,6 +584,7 @@ private fun AddAccountScreen_Preview_Idle() {
             AddPrincipalBottomSheet(
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 processingState = ProcessingState.Idle,
+                isFirstAccount = true,
                 onAction = {},
                 onDismiss = {}
             )
@@ -590,6 +601,7 @@ private fun AddAccountScreen_Preview_Processing() {
             AddPrincipalBottomSheet(
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 processingState = ProcessingState.Processing,
+                isFirstAccount = false,
                 onAction = {},
                 onDismiss = {}
             )
