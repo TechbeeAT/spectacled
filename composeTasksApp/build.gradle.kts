@@ -149,7 +149,10 @@ compose.desktop {
 
             linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_tasks_png.png")) }
             windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_tasks_ico.ico")) }
-            macOS { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_tasks_icns.icns")) }
+            macOS {
+                dockName = "spectacled Tasks"
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_tasks_icns.icns"))
+            }
 
         }
     }

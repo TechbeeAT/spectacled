@@ -149,7 +149,10 @@ compose.desktop {
 
             linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_png.png")) }
             windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_ico.ico")) }
-            macOS { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_icns.icns")) }
+            macOS {
+                dockName = "spectacled Journals"
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_icns.icns"))
+            }
         }
     }
 }

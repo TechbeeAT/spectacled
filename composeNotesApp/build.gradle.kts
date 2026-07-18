@@ -149,7 +149,10 @@ compose.desktop {
 
             linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_png.png")) }
             windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_ico.ico")) }
-            macOS { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_icns.icns")) }
+            macOS {
+                dockName = "spectacled Notes"
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_icns.icns"))
+            }
         }
     }
 }
