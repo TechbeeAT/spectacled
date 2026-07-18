@@ -5,6 +5,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -102,12 +103,15 @@ fun IcalEntryListTopBar(
 
     CenterAlignedTopAppBar(
         windowInsets = if (removeHorizontalWindowInsets) TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Vertical) else TopAppBarDefaults.windowInsets,
-        title = {},
-        navigationIcon = {
+        //title = {},
+        title = {
 
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
             Crossfade(state.multiselectItems != null) { multiselectEnabled ->
 
-                Row {
+
                     if (!multiselectEnabled) {
                         TextButton(
                             onClick = {
@@ -126,7 +130,7 @@ fun IcalEntryListTopBar(
                                     text = calendar.displayName?:calendar.url.toString(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 120.dp).padding(end = 4.dp)
+                                    modifier = Modifier.padding(end = 4.dp)
                                 )
 
                                 AnimatedVisibility(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.IN_PROGRESS) {
@@ -135,39 +139,39 @@ fun IcalEntryListTopBar(
                             }
                         }
                     } else {
-                        TextButton(
-                            onClick = { onAction(ListAction.OnClearMultiselectItems) },
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                                verticalAlignment = Alignment.CenterVertically
+                        Row {
+                            TextButton(
+                                onClick = { onAction(ListAction.OnClearMultiselectItems) },
                             ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Close,
-                                    contentDescription = stringResource(Res.string.clear_selection)
-                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = stringResource(Res.string.clear_selection)
+                                    )
+                                    Text(
+                                        text = stringResource(Res.string.x_selected, state.multiselectItems?.size ?: 0),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.widthIn(max = 120.dp)
+                                    )
+                                }
+                            }
+
+                            VerticalDivider(modifier = Modifier.padding(vertical = 8.dp).heightIn(max = 30.dp))
+
+                            TextButton(
+                                onClick = { onAction(ListAction.OnSelectAllMultiselectItems) },
+                            ) {
                                 Text(
-                                    text = stringResource(Res.string.x_selected, state.multiselectItems?.size ?: 0),
+                                    text = stringResource(Res.string.select_all),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.widthIn(max = 120.dp)
                                 )
                             }
-                        }
-
-
-
-                        VerticalDivider(modifier = Modifier.padding(vertical = 8.dp).heightIn(max = 30.dp))
-
-                        TextButton(
-                            onClick = { onAction(ListAction.OnSelectAllMultiselectItems) },
-                        ) {
-                            Text(
-                                text = stringResource(Res.string.select_all),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.widthIn(max = 120.dp)
-                            )
                         }
                     }
                 }

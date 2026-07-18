@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
@@ -69,7 +70,10 @@ fun DetailsTopBar(
                             imageVector = Icons.Outlined.ChevronLeft,
                             contentDescription = stringResource(Res.string.back)
                         )
-                        Text(text = stringResource(Res.string.back))
+                        Text(
+                            text = stringResource(Res.string.back),
+                            overflow = TextOverflow.Ellipsis
+                            )
                     }
                 }
                 AnimatedVisibility(isLoading) {
