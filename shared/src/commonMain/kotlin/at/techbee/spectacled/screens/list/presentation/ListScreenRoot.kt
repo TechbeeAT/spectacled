@@ -72,7 +72,7 @@ fun ListScreenRoot(
     listViewModel: ListViewModel,
     onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit,
-    keepSafeAreaPaddingValues: Boolean = false,
+    removeSafeAreaPaddingValues: Boolean = false,
     modifier: Modifier = Modifier
 ) {
 
@@ -202,6 +202,7 @@ fun ListScreenRoot(
                     allSelectedPinned = state.multiselectItems?.all { selectedId ->
                         state.icalEntries.find { entry -> entry.id == selectedId }?.categories?.contains(IcalEntry.PINNED_CATEGORY) == true
                     } == true,
+                    removeHorizontalWindowInsets = removeSafeAreaPaddingValues,
                     modifier = Modifier.fillMaxWidth(1f)
                 )
             },
@@ -268,15 +269,15 @@ fun ListScreenRoot(
             modifier = modifier
         ) { paddingValues ->
 
-            val currentPaddingValues = if(keepSafeAreaPaddingValues)
-                paddingValues
-            else
+            val currentPaddingValues = if(removeSafeAreaPaddingValues)
                 PaddingValues(
                     top = paddingValues.calculateTopPadding(),
                     bottom = 0.dp,
                     start = 0.dp,
                     end = 0.dp
                 )
+            else
+                paddingValues
 
             Box(
                 modifier = Modifier

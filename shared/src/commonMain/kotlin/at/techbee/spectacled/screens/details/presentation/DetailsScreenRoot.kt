@@ -5,12 +5,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -104,7 +107,7 @@ fun DetailsScreenRoot(
     detailsViewModel: DetailsViewModel,
     onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit,
-    keepSafeAreaPaddingValues: Boolean = true,
+    removeSafeAreaPaddingValues: Boolean = false,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
     val detailsState by detailsViewModel.state.collectAsState()
@@ -286,11 +289,14 @@ fun DetailsScreenRoot(
                     canWriteContent = detailsState.allowEditing(),
                     isLoading = detailsState.isLoading,
                     isPinned = detailsState.icalEntry.categories.any { it == IcalEntry.PINNED_CATEGORY },
-                    onAction = { action -> detailsViewModel.onAction(action) }
+                    onAction = { action -> detailsViewModel.onAction(action) },
+                    removeHorizontalWindowInsets = removeSafeAreaPaddingValues
                 )
             },
             bottomBar = {
-                BottomAppBar {
+                BottomAppBar(
+                    windowInsets = if (removeSafeAreaPaddingValues) BottomAppBarDefaults.windowInsets.only(WindowInsetsSides.Vertical) else BottomAppBarDefaults.windowInsets,
+                ) {
                     TextButton(
                         onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(true)) },
                         enabled = detailsState.allowEditing() && !detailsState.isLoading
@@ -488,13 +494,13 @@ fun DetailsScreenRoot(
             modifier = modifier
         ) { paddingValues ->
 
-            val currentPaddingValues = if(keepSafeAreaPaddingValues)
-                paddingValues
-            else
+            val currentPaddingValues = if(removeSafeAreaPaddingValues)
                 PaddingValues(
                     top = paddingValues.calculateTopPadding(),
                     bottom = paddingValues.calculateBottomPadding()
                 )
+            else
+                paddingValues
 
             Box(
                 modifier = Modifier

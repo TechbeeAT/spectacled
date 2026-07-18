@@ -57,7 +57,7 @@ import spectacled.shared.generated.resources.close
 fun AccountListScreenRoot(
     viewModel: AccountListViewModel,
     onNavigate: (Route) -> Unit,
-    keepSafeAreaPaddingValues: Boolean = false,
+    removeSafeAreaPaddingValues: Boolean = false,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
 
@@ -162,7 +162,10 @@ fun AccountListScreenRoot(
 
     Scaffold(
         topBar = {
-            PrincipalListTopBar(onAction = { action -> viewModel.onAction(action) })
+            PrincipalListTopBar(
+                removeHorizontalWindowInsets = removeSafeAreaPaddingValues,
+                onAction = { action -> viewModel.onAction(action) }
+            )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -184,15 +187,15 @@ fun AccountListScreenRoot(
 
     ) { paddingValues ->
 
-        val currentPaddingValues = if(keepSafeAreaPaddingValues)
-            paddingValues
-        else
+        val currentPaddingValues = if(removeSafeAreaPaddingValues)
             PaddingValues(
                 top = paddingValues.calculateTopPadding(),
                 bottom = 0.dp,
                 start = 0.dp,
                 end = 0.dp
             )
+        else
+            paddingValues
 
         Box(
             modifier = Modifier
