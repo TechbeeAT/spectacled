@@ -90,6 +90,14 @@ fun AccountListScreenRoot(
         }
     }
 
+    // show bottom sheet if no account was added
+    LaunchedEffect(state.isInitialized) {
+        scope.launch {
+            if(state.isInitialized && state.principals.isEmpty())
+                viewModel.onAction(AccountListAction.OnShowAddPrincipalBottomSheet(true))
+        }
+    }
+
     LaunchedEffect(state.showUpdatePrincipalPasswordBottomSheet) {
         scope.launch {
             if(state.showUpdatePrincipalPasswordBottomSheet != null) updatePrincipalPasswordBottomSheetState.show() else updatePrincipalPasswordBottomSheetState.hide()

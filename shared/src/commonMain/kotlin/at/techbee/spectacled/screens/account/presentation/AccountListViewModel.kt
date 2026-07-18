@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
-import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
@@ -22,6 +21,7 @@ import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.ioDispatcher
 import io.github.aakira.napier.Napier
 import io.ktor.http.Url
 import kotlinx.coroutines.Job
@@ -68,7 +68,8 @@ class AccountListViewModel(
         Napier.d("Observing principals")
         calendarRepository.getAllPrincipalsFlow().collect { principals ->
             _state.update { state -> state.copy(
-                principals = principals
+                principals = principals,
+                isInitialized = true
             ) }
         }
     }
