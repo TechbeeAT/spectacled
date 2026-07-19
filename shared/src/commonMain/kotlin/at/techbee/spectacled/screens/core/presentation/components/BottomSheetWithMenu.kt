@@ -25,9 +25,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.theme.AppTheme
-import org.jetbrains.compose.resources.stringResource
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.close
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
