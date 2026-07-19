@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
-import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -14,8 +13,8 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
+import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,17 +49,9 @@ class ListViewModel(
             errorMessage = null,
             navigateUp = false,
             snackbarText = null,
-            listSortedBy = when {
-                userAppPreferencesStore.listSortedBy != null -> userAppPreferencesStore.listSortedBy!!
-                spectacledVariant == SpectacledVariant.JOURNALS -> ListSortedBy.DATE
-                else -> ListSortedBy.CREATED
-            },
+            listSortedBy = userAppPreferencesStore.listSortedBy,
             listSortedByAscending = userAppPreferencesStore.listSortedByAscending,
-            listLayout = when {
-                userAppPreferencesStore.listLayout != null -> userAppPreferencesStore.listLayout!!
-                spectacledVariant == SpectacledVariant.JOURNALS -> ListLayout.LIST
-                else -> ListLayout.STAGGERED_GRID
-            },
+            listLayout = userAppPreferencesStore.listLayout,
             listCollapsedGroups = userAppPreferencesStore.listCollapsedGroups,
             spectacledVariant = spectacledVariant
         ).recompute() }
