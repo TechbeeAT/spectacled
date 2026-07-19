@@ -166,7 +166,7 @@ data class ListState(
             }
             ListSortedBy.DATE, ListSortedBy.START -> {
                 val comparator = compareBy<IcalEntry> { it.dtStart?.toLocalDateTime() }
-                val order = if (ascending) comparator.reversed() else comparator
+                val order = if (ascending) comparator else comparator.reversed()
                 icalEntries.sortedWith(compareBy<IcalEntry> { it.dtStart == null }.then(order))
             }
             ListSortedBy.DUE -> {
