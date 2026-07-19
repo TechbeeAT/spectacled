@@ -61,7 +61,11 @@ import com.materialkolor.PaletteStyle
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.advanced
+import spectacled.shared.generated.resources.anthropic_api_key
+import spectacled.shared.generated.resources.anthropic_api_key_info
 import spectacled.shared.generated.resources.close
+import spectacled.shared.generated.resources.get_an_api_key
 import spectacled.shared.generated.resources.ic_cognition
 import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.settings
@@ -277,14 +281,14 @@ fun SettingsBottomSheet(
             )
 
             Text(
-                text = "Advanced",
+                text = stringResource(Res.string.advanced),
                 style = MaterialTheme.typography.titleLarge ,
                 modifier = Modifier.padding(top = 16.dp)
             )
 
             OutlinedSecureTextField(
                 state = claudeUserApiKeyState,
-                label = { Text("Anthropic API key") },
+                label = { Text(stringResource(Res.string.anthropic_api_key)) },
                 textObfuscationMode = if (isClaudeUserApiKeyVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
                 leadingIcon = { Icon(painterResource(Res.drawable.ic_cognition), null) },
                 trailingIcon = {
@@ -303,13 +307,13 @@ fun SettingsBottomSheet(
                 supportingText = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Used only for the \"AI Extract\" action, stored on this device only.",
+                            text = stringResource(Res.string.anthropic_api_key_info),
                             modifier = Modifier.weight(1f)
                         )
                         TextButton(
                             onClick = { uriHandler.openUri("https://console.anthropic.com/settings/keys") }   // TODO: Replace with affiliate-link?
                         ) {
-                            Text("Get an API key")
+                            Text(stringResource(Res.string.get_an_api_key))
                         }
 
                     }

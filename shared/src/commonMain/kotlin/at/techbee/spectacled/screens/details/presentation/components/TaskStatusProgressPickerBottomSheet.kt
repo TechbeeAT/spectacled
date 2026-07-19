@@ -29,6 +29,7 @@ import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.done
+import spectacled.shared.generated.resources.percent_complete
 import spectacled.shared.generated.resources.status_no_status
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,7 +67,7 @@ fun TaskStatusProgressPickerBottomSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp, start = 16.dp)
             ) {
-                Text("$percentComplete %")
+                Text(stringResource(Res.string.percent_complete, (percentComplete ?: 0).toInt()))
 
                 Slider(
                     value = percentComplete?.toFloat()?:0F,

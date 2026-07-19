@@ -71,16 +71,14 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
 import spectacled.shared.generated.resources.add_account_header_info
-import spectacled.shared.generated.resources.add_account_option1_connect_any
 import spectacled.shared.generated.resources.add_account_option1_headline
 import spectacled.shared.generated.resources.add_account_option1_text
-import spectacled.shared.generated.resources.add_account_option2_choose_from_selection
 import spectacled.shared.generated.resources.add_account_option2_headline
 import spectacled.shared.generated.resources.add_account_option2_recommendation_info
 import spectacled.shared.generated.resources.add_account_option2_recommended_providers
 import spectacled.shared.generated.resources.add_account_option2_text
 import spectacled.shared.generated.resources.add_account_option_x
-import spectacled.shared.generated.resources.add_account_spectacled_is_browser_independent
+import spectacled.shared.generated.resources.add_account_spectacled_is_provider_independent
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.insecure_connection_warning
@@ -368,14 +366,14 @@ fun AddAccountScreen(
     ) {
 
         Text(
-            text = stringResource(Res.string.add_account_spectacled_is_browser_independent),
+            text = stringResource(Res.string.add_account_spectacled_is_provider_independent),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
         Text(
-            text = stringResource(Res.string.add_account_option1_connect_any),
+            text = stringResource(Res.string.add_account_option1_text),
             textAlign = TextAlign.Center
         )
 
@@ -503,14 +501,14 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
     ) {
 
         Text(
-            text = stringResource(Res.string.add_account_spectacled_is_browser_independent),
+            text = stringResource(Res.string.add_account_spectacled_is_provider_independent),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
         Text(
-            text = stringResource(Res.string.add_account_option2_choose_from_selection),
+            text = stringResource(Res.string.add_account_option2_text),
             textAlign = TextAlign.Center
         )
 

@@ -32,7 +32,12 @@ import at.techbee.spectacled.screens.core.formatLocalized
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.entry_copy
+import spectacled.shared.generated.resources.reload_calendars_folders
 import spectacled.shared.generated.resources.retry
+import spectacled.shared.generated.resources.show_more
+import spectacled.shared.generated.resources.sync_info
+import spectacled.shared.generated.resources.update_password
 
 @Composable
 fun CalendarSyncInfoDialog(
@@ -67,7 +72,7 @@ fun CalendarSyncInfoDialog(
         },
         icon = { Icon(Icons.Outlined.SyncProblem, null) },
         title = {
-            Text("Sync Info")
+            Text(stringResource(Res.string.sync_info))
         },
         text = {
 
@@ -88,20 +93,20 @@ fun CalendarSyncInfoDialog(
                 if(calendarSyncStatus.type == CalendarSyncStatusType.NOT_AUTHORIZED) {
                     TextButton(
                         onClick = { onShowPrincipalUpdatePassword() }
-                    ) { Text("Update password") }
+                    ) { Text(stringResource(Res.string.update_password)) }
                 }
 
                 if(calendarSyncStatus.type == CalendarSyncStatusType.NOT_FOUND) {
                     TextButton(
                         onClick = { onReloadCalendars() }
-                    ) { Text("Reload calendars/folders") }
+                    ) { Text(stringResource(Res.string.reload_calendars_folders)) }
                 }
 
                 AnimatedVisibility(!calendarSyncStatus.details.isNullOrEmpty() && !showMore) {
                     TextButton(
                         onClick = { showMore = true }
                     ) {
-                        Text("Show more")
+                        Text(stringResource(Res.string.show_more))
                     }
                 }
 
@@ -123,7 +128,7 @@ fun CalendarSyncInfoDialog(
                                 )
                             }
                         ) {
-                            Text("Copy")
+                            Text(stringResource(Res.string.entry_copy))
                         }
                     }
 

@@ -64,6 +64,8 @@ import spectacled.shared.generated.resources.attachment_sync_state_sync_error
 import spectacled.shared.generated.resources.attachment_sync_state_synchronized
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.drawing
+import spectacled.shared.generated.resources.file_size_kb
+import spectacled.shared.generated.resources.unknown
 import spectacled.shared.generated.resources.ic_cloud_error
 
 @Composable
@@ -116,14 +118,14 @@ fun AttachmentCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = attachment.fileName ?: "unknown",
+                        text = attachment.fileName ?: stringResource(Res.string.unknown),
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     if (attachment.size != null) {
                         Text(
-                            text = "${attachment.size / 1024} KB",
+                            text = stringResource(Res.string.file_size_kb, (attachment.size / 1024).toInt()),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
