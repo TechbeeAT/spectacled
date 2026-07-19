@@ -46,7 +46,7 @@ import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.show_error_details
 import spectacled.shared.generated.resources.show_hide_password
-import spectacled.shared.generated.resources.update_passowrd_button
+import spectacled.shared.generated.resources.update_password_button
 import spectacled.shared.generated.resources.update_password
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,7 +88,7 @@ fun UpdatePrincipalPasswordBottomSheet(
                 },
                 enabled = password.isNotBlank() && processingState !is ProcessingState.Processing
             ) {
-                Text(stringResource(Res.string.update_passowrd_button))
+                Text(stringResource(Res.string.update_password_button))
             }
         }
     ) {

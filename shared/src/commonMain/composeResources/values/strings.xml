@@ -45,7 +45,7 @@
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="show_hide_password">Show/hide password</string>
-    <string name="update_passowrd_button">Update</string>
+    <string name="update_password_button">Update</string>
     <string name="update_password">Update password</string>
     <string name="no_entries_found_in_this_folder">No entries found in this folder</string>
     <string name="no_matching_entries_found">No matching entries found</string>
@@ -196,7 +196,7 @@
     <string name="status_final">Final</string>
     <string name="status_draft">Draft</string>
     <string name="status_cancelled">Cancelled</string>
-    <string name="status_needs_action">Needs actions</string>
+    <string name="status_needs_action">Needs action</string>
     <string name="status_in_process">In process</string>
     <string name="status_completed">Completed</string>
 
@@ -219,5 +219,29 @@
     <string name="attachment_sync_state_synchronized">Synchronized</string>
     <string name="attachment_sync_state_sync_error">Sync error</string>
 
+    <string name="advanced">Advanced</string>
+    <string name="anthropic_api_key">Anthropic API key</string>
+    <string name="anthropic_api_key_info">Used only for the "AI Extract" action, stored on this device only.</string>
+    <string name="get_an_api_key">Get an API key</string>
+    <string name="ai_extract_claude">AI Extract (Claude)</string>
+    <string name="ai_extract_no_api_key">Add your Anthropic API key in Settings to use AI Extract.</string>
+
+    <string name="sync_info">Sync Info</string>
+    <string name="reload_calendars_folders">Reload calendars/folders</string>
+    <string name="reload_folders">Reload folders</string>
+    <string name="show_more">Show more</string>
+
+    <string name="calendar_could_not_be_deleted">Calendar could not be deleted: %1$s</string>
+    <string name="include_support_for_subtasks">Include support for subtasks</string>
+    <string name="no_compatible_folders_found">No compatible folders/calendars found</string>
+    <string name="add_folder_calendar">Add folder/calendar</string>
+    <string name="insufficient_access_rights_create_folder">Insufficient access rights to create a new folder/calendar.</string>
+
+    <string name="selected_calendar">Selected calendar</string>
+    <string name="no_account_name">No account name</string>
+    <string name="unnamed_calendar">Unnamed Calendar</string>
+    <string name="unknown">Unknown</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="percent_complete">%1$d %%</string>
 
 </resources>

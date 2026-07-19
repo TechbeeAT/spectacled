@@ -25,6 +25,11 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.theme.AppTheme
+import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.no_account_name
+import spectacled.shared.generated.resources.selected_calendar
+import spectacled.shared.generated.resources.unnamed_calendar
 
 @Composable
 fun CalendarSelector(
@@ -43,7 +48,7 @@ fun CalendarSelector(
         label = {
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
-                    text = "Selected calendar",
+                    text = stringResource(Res.string.selected_calendar),
                     style = MaterialTheme.typography.labelSmall
                 )
                 calendars.find { calendar -> calendar.id == selectedCalendarId }?.let {
@@ -69,11 +74,11 @@ fun CalendarSelector(
                             text = {
                                 Column(modifier = Modifier.padding(vertical = 2.dp)) {
                                     Text(
-                                        text = principal?.displayName?:"No account name",
+                                        text = principal?.displayName ?: stringResource(Res.string.no_account_name),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontStyle = FontStyle.Italic
                                     )
-                                    Text(text = calendar.displayName ?: "Unnamed Calendar")
+                                    Text(text = calendar.displayName ?: stringResource(Res.string.unnamed_calendar))
                                     calendar.calendarDescription?.let {
                                         Text(
                                             text = it,
