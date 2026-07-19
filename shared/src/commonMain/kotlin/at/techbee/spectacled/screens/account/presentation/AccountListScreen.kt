@@ -26,6 +26,11 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.getPlatform
 import io.ktor.http.Url
+import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_folder_calendar
+import spectacled.shared.generated.resources.insufficient_access_rights_create_folder
+import spectacled.shared.generated.resources.no_compatible_folders_found
 
 
 @Composable
@@ -72,7 +77,7 @@ fun AccountListScreen(
                 if (calendars.isEmpty()) {
                     item {
                         Text(
-                            text = "No compatible folders/calendars found",
+                            text = stringResource(Res.string.no_compatible_folders_found),
                             fontStyle = FontStyle.Italic
                         )
 
@@ -88,11 +93,11 @@ fun AccountListScreen(
                                     )
                                 }
                             ) {
-                                Text("Add folder/calendar")
+                                Text(stringResource(Res.string.add_folder_calendar))
                             }
                         } else {
                             Text(
-                                text = "Insufficient access rights to create a new folder/calendar.",
+                                text = stringResource(Res.string.insufficient_access_rights_create_folder),
                                 color = MaterialTheme.colorScheme.error
                             )
                         }

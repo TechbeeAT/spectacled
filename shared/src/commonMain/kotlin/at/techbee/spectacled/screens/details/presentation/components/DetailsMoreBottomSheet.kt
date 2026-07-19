@@ -40,6 +40,8 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.copied_to_clipboard
+import spectacled.shared.generated.resources.ai_extract_claude
+import spectacled.shared.generated.resources.ai_extract_no_api_key
 import spectacled.shared.generated.resources.copy_to_clipboard
 import spectacled.shared.generated.resources.create_copy
 import spectacled.shared.generated.resources.created
@@ -162,15 +164,15 @@ fun DetailsMoreBottomSheet(
                 leadingIcon = {
                     Icon(
                         painterResource(Res.drawable.ic_cognition),
-                        "AI Extract (Claude)"
+                        stringResource(Res.string.ai_extract_claude)
                     )
                 },
                 text = {
                     Column {
-                        Text("AI Extract (Claude)")
+                        Text(stringResource(Res.string.ai_extract_claude))
                         if(!claudeUserApiKeyProvided)
                             Text(
-                                text = "Add your Anthropic API key in Settings to use AI Extract.",
+                                text = stringResource(Res.string.ai_extract_no_api_key),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error
                                 )

@@ -62,6 +62,7 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListSorted
 import at.techbee.spectacled.theme.AppTheme
 import com.materialkolor.dynamicColorScheme
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
@@ -151,8 +152,9 @@ fun IcalEntryListTopBar(
                                         imageVector = Icons.Outlined.Close,
                                         contentDescription = stringResource(Res.string.clear_selection)
                                     )
+                                    val selectedCount = state.multiselectItems?.size ?: 0
                                     Text(
-                                        text = stringResource(Res.string.x_selected, state.multiselectItems?.size ?: 0),
+                                        text = pluralStringResource(Res.plurals.x_selected, selectedCount, selectedCount),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.widthIn(max = 120.dp)
