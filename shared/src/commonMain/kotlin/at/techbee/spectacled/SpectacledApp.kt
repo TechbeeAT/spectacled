@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
@@ -105,7 +106,7 @@ fun SpectacledApp(
             // BoxWithConstraints observes the window size and will trigger a recomposition
             // whenever the orientation or size changes.
             BoxWithConstraints {
-                val isLandscape = maxWidth > maxHeight
+                val isLandscape = (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
 
                 if (isLandscape) {
 
