@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetDefaults
@@ -85,7 +86,9 @@ fun BottomSheetWithMenu(
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = modifier
+            // imePadding keeps text fields in sheets visible above the keyboard on iOS,
+            // where no window resizing or view lifting happens (OnFocusBehavior.DoNothing)
+            modifier = modifier.imePadding()
         ) {
 
             headline?.let {
