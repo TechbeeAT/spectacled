@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +17,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -74,7 +71,6 @@ fun ListScreenRoot(
     listViewModel: ListViewModel,
     onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit,
-    removeSafeAreaPaddingValues: Boolean = false,
     modifier: Modifier = Modifier
 ) {
 
@@ -204,7 +200,6 @@ fun ListScreenRoot(
                     allSelectedPinned = state.multiselectItems?.all { selectedId ->
                         state.icalEntries.find { entry -> entry.id == selectedId }?.categories?.contains(IcalEntry.PINNED_CATEGORY) == true
                     } == true,
-                    removeHorizontalWindowInsets = removeSafeAreaPaddingValues,
                     modifier = Modifier.fillMaxWidth(1f)
                 )
             },
@@ -268,12 +263,6 @@ fun ListScreenRoot(
                 }
             },
             bottomBar = { },
-            // In landscape (edge-to-edge) we drop the horizontal and bottom safe-area
-            // insets so the content fills the sides; the top bar keeps its own vertical insets.
-            contentWindowInsets = if (removeSafeAreaPaddingValues)
-                ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Top)
-            else
-                ScaffoldDefaults.contentWindowInsets,
             modifier = modifier
         ) { paddingValues ->
 
