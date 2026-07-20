@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -38,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -491,21 +491,19 @@ fun DetailsScreenRoot(
                     }
                 }
             },
+            // In landscape (edge-to-edge) we drop the horizontal safe-area insets so the
+            // content fills the sides; the top and bottom bars keep their vertical insets.
+            contentWindowInsets = if (removeSafeAreaPaddingValues)
+                ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Vertical)
+            else
+                ScaffoldDefaults.contentWindowInsets,
             modifier = modifier
         ) { paddingValues ->
 
-            val currentPaddingValues = if(removeSafeAreaPaddingValues)
-                PaddingValues(
-                    top = paddingValues.calculateTopPadding(),
-                    bottom = paddingValues.calculateBottomPadding()
-                )
-            else
-                paddingValues
-
             Box(
                 modifier = Modifier
-                    .padding(currentPaddingValues)
-                    .consumeWindowInsets(currentPaddingValues)
+                    .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
                     .padding(horizontal = 8.dp)
                     .imePadding()
                     .fillMaxSize(),
