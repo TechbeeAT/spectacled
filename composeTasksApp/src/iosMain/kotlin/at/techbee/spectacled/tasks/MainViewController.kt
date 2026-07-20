@@ -1,5 +1,11 @@
-﻿package at.techbee.spectacled.tasks
+package at.techbee.spectacled.tasks
 
+import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.window.ComposeUIViewController
 
-fun MainViewController() = ComposeUIViewController { TasksApp() }
+// The compose code handles the keyboard with imePadding() itself; the default
+// FocusableAboveKeyboard would additionally lift the whole view and thereby
+// duplicate the keyboard compensation.
+fun MainViewController() = ComposeUIViewController(
+    configure = { onFocusBehavior = OnFocusBehavior.DoNothing }
+) { TasksApp() }

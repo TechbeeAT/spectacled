@@ -4,8 +4,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -33,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -90,7 +93,8 @@ fun IcalEntryListTopBar(
     onAction: (ListAction) -> Unit,
     allSelectedPinned: Boolean,
     modifier: Modifier = Modifier,
-    spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>()
+    spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>(),
+    removeHorizontalWindowInsets: Boolean = false
     ) {
 
     var sortedByDropdownExpanded by remember { mutableStateOf(false) }
@@ -99,6 +103,7 @@ fun IcalEntryListTopBar(
     val calendar = state.calendar
 
     CenterAlignedTopAppBar(
+        windowInsets = if (removeHorizontalWindowInsets) TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Vertical) else TopAppBarDefaults.windowInsets,
         //title = {},
         title = {
 

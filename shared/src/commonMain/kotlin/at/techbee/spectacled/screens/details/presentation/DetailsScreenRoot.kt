@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -34,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -103,6 +107,7 @@ fun DetailsScreenRoot(
     detailsViewModel: DetailsViewModel,
     onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit,
+    removeSafeAreaPaddingValues: Boolean = false,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
     val detailsState by detailsViewModel.state.collectAsState()
@@ -284,11 +289,14 @@ fun DetailsScreenRoot(
                     canWriteContent = detailsState.allowEditing(),
                     isLoading = detailsState.isLoading,
                     isPinned = detailsState.icalEntry.categories.any { it == IcalEntry.PINNED_CATEGORY },
-                    onAction = { action -> detailsViewModel.onAction(action) }
+                    onAction = { action -> detailsViewModel.onAction(action) },
+                    removeHorizontalWindowInsets = removeSafeAreaPaddingValues
                 )
             },
             bottomBar = {
-                BottomAppBar {
+                BottomAppBar(
+                    windowInsets = if (removeSafeAreaPaddingValues) BottomAppBarDefaults.windowInsets.only(WindowInsetsSides.Vertical) else BottomAppBarDefaults.windowInsets,
+                ) {
                     TextButton(
                         onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(true)) },
                         enabled = detailsState.allowEditing() && !detailsState.isLoading
@@ -483,6 +491,12 @@ fun DetailsScreenRoot(
                     }
                 }
             },
+            // In landscape (edge-to-edge) we drop the horizontal safe-area insets so the
+            // content fills the sides; the top and bottom bars keep their vertical insets.
+            contentWindowInsets = if (removeSafeAreaPaddingValues)
+                ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Vertical)
+            else
+                ScaffoldDefaults.contentWindowInsets,
             modifier = modifier
         ) { paddingValues ->
 

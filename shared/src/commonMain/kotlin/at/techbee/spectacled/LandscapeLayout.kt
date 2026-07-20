@@ -1,11 +1,6 @@
 package at.techbee.spectacled
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,19 +34,19 @@ fun LandscapeLayout(
             detailsViewModel.reset()
     }
 
-    // Remove the horizontal safe-area insets once for the whole landscape layout. On phones this
-    // lets the panes fill the sides (content may sit under a display cutout) while the top/bottom
-    // insets are still applied by each screen's bars. Consuming here keeps the screens themselves
-    // orientation-agnostic - they just use the default window insets.
-    Row(
-        modifier = modifier.consumeWindowInsets(
-            WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
-        )
-    ) {
+    // The panes drop the horizontal safe-area insets via removeSafeAreaPaddingValues so they can
+    // fill the sides edge-to-edge. This must stay explicit per screen: a single
+    // consumeWindowInsets() on this Row does not work reliably on iOS, because there every
+    // WindowInsets read creates a fresh instance, which resets Scaffold's
+    // remember(contentWindowInsets) state on each recomposition of a pane while the consumption
+    // callback only fires again when the consumed insets change - the safe-area padding then
+    // reappears as side gaps (observed on iOS; Android caches the instances and is unaffected).
+    Row(modifier = modifier) {
         if(!detailsState.isInitialized) {
             AccountListScreenRoot(
                 viewModel = accountListViewModel,
                 onNavigate = onNavigate,
+                removeSafeAreaPaddingValues = true,
                 modifier = Modifier.weight(0.4f)
             )
         }
@@ -63,6 +58,7 @@ fun LandscapeLayout(
                 listViewModel = listViewModel,
                 onNavigate = onNavigate,
                 onNavigateUp = onNavigateUp,
+                removeSafeAreaPaddingValues = true,
                 modifier = Modifier.weight(if(detailsState.isInitialized) 0.4f else 0.6f)
 
             )
@@ -75,6 +71,7 @@ fun LandscapeLayout(
                 detailsViewModel = detailsViewModel,
                 onNavigate = onNavigate,
                 onNavigateUp = onNavigateUp,
+                removeSafeAreaPaddingValues = true,
                 modifier = Modifier.weight(0.6f)
             )
         }
