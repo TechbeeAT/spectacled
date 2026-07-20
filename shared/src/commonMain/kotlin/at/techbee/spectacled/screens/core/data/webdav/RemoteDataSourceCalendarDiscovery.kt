@@ -36,18 +36,23 @@ import nl.adaptivity.xmlutil.xmlStreaming
 private val HttpResponse.realUrl: Url
     get() = call.request.headers["X-Target-Url"]?.let { Url(it) } ?: call.request.url
 
-private fun isSameHostTLD(host1: String, host2: String): Boolean =
-    host1.endsWith(host2, true) || host2.endsWith(host1, true)
-
 // Validates a redirect target against its source during principal discovery.
 // Returns a Failed result if the redirect must be blocked for security reasons
 // (HTTPS -> HTTP downgrade, or a change of host/scheme), or null if it is safe to follow.
-private fun redirectSecurityFailure(from: Url, to: Url, status: HttpStatusCode): DiscoverPrincipalsResult.Failed? = when {
-    from.protocol.isSecure() && !to.protocol.isSecure() ->
-        DiscoverPrincipalsResult.Failed(status, "HTTPS to HTTP downgrade blocked", "Redirect from ${from.protocol.name} to ${to.protocol.name} was blocked for security reasons.")
-    !isSameHostTLD(from.host, to.host) || from.protocol != to.protocol ->
-        DiscoverPrincipalsResult.Failed(status, "Cross-domain redirect blocked", "Redirect from ${from.host} to ${to.host} was blocked for security reasons.")
-    else -> null
+private fun redirectSecurityFailure(from: Url, to: Url, status: HttpStatusCode): DiscoverPrincipalsResult.Failed? {
+    // Allow the same host or a sub-/parent-domain in either direction, matched on a label
+    // boundary so that e.g. "example.com" does not match "evilexample.com".
+    val sameDomain = from.host.equals(to.host, ignoreCase = true) ||
+        from.host.endsWith(".${to.host}", ignoreCase = true) ||
+        to.host.endsWith(".${from.host}", ignoreCase = true)
+
+    return when {
+        from.protocol.isSecure() && !to.protocol.isSecure() ->
+            DiscoverPrincipalsResult.Failed(status, "HTTPS to HTTP downgrade blocked", "Redirect from ${from.protocol.name} to ${to.protocol.name} was blocked for security reasons.")
+        !sameDomain || from.protocol != to.protocol ->
+            DiscoverPrincipalsResult.Failed(status, "Cross-domain redirect blocked", "Redirect from ${from.host} to ${to.host} was blocked for security reasons.")
+        else -> null
+    }
 }
 
 
