@@ -7,7 +7,11 @@ struct ComposeView: UIViewControllerRepresentable {
         MainViewControllerKt.MainViewController()
     }
 
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        // Stop SwiftUI from compounding safe-area insets into the embedded
+        // ComposeUIViewController across rotations (insets otherwise grow each turn).
+        uiViewController.additionalSafeAreaInsets = .zero
+    }
 }
 
 struct ContentView: View {
