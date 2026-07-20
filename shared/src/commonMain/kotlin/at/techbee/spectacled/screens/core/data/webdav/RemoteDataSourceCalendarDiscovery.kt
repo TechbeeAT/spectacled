@@ -36,6 +36,9 @@ import nl.adaptivity.xmlutil.xmlStreaming
 private val HttpResponse.realUrl: Url
     get() = call.request.headers["X-Target-Url"]?.let { Url(it) } ?: call.request.url
 
+private fun isSameHostTLD(host1: String, host2: String): Boolean =
+    host1.endsWith(host2, true) || host2.endsWith(host1, true)
+
 
 suspend fun discoverPrincipalsMultiplatform(
     client: HttpClient,
@@ -72,7 +75,7 @@ suspend fun discoverPrincipalsMultiplatform(
                     }
                     if (redirectUrl != null && wellKnownUrl.protocol.isSecure() && !redirectUrl.protocol.isSecure()) {
                         return DiscoverPrincipalsResult.Failed(HttpStatusCode.Forbidden, "HTTPS to HTTP downgrade blocked", "Redirect from ${wellKnownUrl.protocol.name} to ${redirectUrl.protocol.name} was blocked for security reasons.")
-                    } else if (redirectUrl != null && (wellKnownUrl.host != redirectUrl.host || wellKnownUrl.protocol != redirectUrl.protocol)) {
+                    } else if (redirectUrl != null && (!isSameHostTLD(wellKnownUrl.host, redirectUrl.host) || wellKnownUrl.protocol != redirectUrl.protocol)) {
                         // SECURITY: Abort if host or scheme changes during discovery
                         return DiscoverPrincipalsResult.Failed(HttpStatusCode.Forbidden, "Cross-domain redirect blocked", "Redirect from ${wellKnownUrl.host} to ${redirectUrl.host} was blocked for security reasons.")
                     } else {
@@ -136,7 +139,7 @@ private suspend fun discoverPrincipalsInternal(
                     return DiscoverPrincipalsResult.Failed(httpResponse.status, "HTTPS to HTTP downgrade blocked")
                 }
                 // SECURITY: Abort if host or scheme changes
-                if (location.host != redirectUrl.host || location.protocol != redirectUrl.protocol) {
+                if (!isSameHostTLD(location.host, redirectUrl.host) || location.protocol != redirectUrl.protocol) {
                     return DiscoverPrincipalsResult.Failed(httpResponse.status, "Cross-domain redirect blocked", "Redirect from ${location.host} to ${redirectUrl.host} was blocked for security reasons.")
                 }
 
