@@ -1,23 +1,2 @@
-import UIKit
-import SwiftUI
-import ComposeNotesApp
-
-struct ComposeView: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController()
-    }
-
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        // Stop SwiftUI from compounding safe-area insets into the embedded
-        // ComposeUIViewController across rotations (insets otherwise grow each turn).
-        uiViewController.additionalSafeAreaInsets = .zero
-    }
-}
-
-struct ContentView: View {
-    var body: some View {
-        ComposeView()
-            .ignoresSafeArea(.keyboard)
-            .ignoresSafeArea()
-    }
-}
+// Compose is now hosted as the window's root view controller in SceneDelegate
+// (see AppDelegate.swift). The previous SwiftUI ComposeView wrapper is no longer used.

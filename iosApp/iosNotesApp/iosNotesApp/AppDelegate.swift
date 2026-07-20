@@ -5,7 +5,8 @@ import os
 
 private let log = Logger(subsystem: "at.techbee.spectacled.notes", category: "AppDelegate")
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+@main
+class AppDelegate: UIResponder, UIApplicationDelegate {
 
     private let iOSSyncEntryPoint = IOSSyncEntryPoint.shared
     private let bGAppRefreshTaskRequestIdentifier = "at.techbee.spectacled.notes.sync"
@@ -28,8 +29,23 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
-    func scheduleFromSwiftUI() {
-        // Called when app moves to background
+    // MARK: UISceneSession Lifecycle
+
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(
+            name: "Default Configuration",
+            sessionRole: connectingSceneSession.role
+        )
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
+    }
+
+    func scheduleBackgroundSync() {
+        // Called when the app moves to the background
         schedule()
     }
 
@@ -66,5 +82,58 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             // Note: If you still see Code 1 here on a Simulator, it's a known Simulator limitation.
             log.error("Failed to schedule BG refresh: \(String(describing: error), privacy: .public)")
         }
+    }
+}
+
+
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+
+    var window: UIWindow?
+
+    func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions
+    ) {
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        let window = UIWindow(windowScene: windowScene)
+        // Host Compose as the window's root view controller directly instead of embedding it in a
+        // SwiftUI UIViewControllerRepresentable. SwiftUI was compounding the safe-area insets on
+        // every rotation; as the root VC, ComposeUIViewController reads the real window insets and
+        // the insets no longer grow.
+        window.rootViewController = MainViewControllerKt.MainViewController()
+        self.window = window
+        window.makeKeyAndVisible()
+
+        // Handle a URL the app was launched with
+        if let url = connectionOptions.urlContexts.first?.url {
+            handleURL(url)
+        }
+    }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        guard let url = URLContexts.first?.url else { return }
+        handleURL(url)
+    }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        (UIApplication.shared.delegate as? AppDelegate)?.scheduleBackgroundSync()
+    }
+
+    private func handleURL(_ url: URL) {
+        let isAddPath = url.path.hasSuffix("/add")
+        let isAddHost = url.host == DeepLinkData.companion.DEEPLINK_ADD_HOST
+
+        guard isAddHost || isAddPath else { return }
+
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
+
+        let description = components.queryItems?.first(where: { $0.name == DeepLinkData.companion.DEEPLINK_DESCRIPTION_PARAM })?.value
+
+        DeepLinkHandler.shared.onDeepLinkReceived(
+            calendarId: nil,
+            entryId: KotlinLong(value: 0),
+            description: description
+        )
     }
 }
