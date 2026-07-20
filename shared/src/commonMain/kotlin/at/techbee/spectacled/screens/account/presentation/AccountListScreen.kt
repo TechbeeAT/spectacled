@@ -18,13 +18,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.account.presentation.components.CalendarCard
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListItem
-import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
-import at.techbee.spectacled.screens.core.getPlatform
 import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -121,19 +119,6 @@ fun AccountListScreen(
                             .fillMaxWidth()
                             .animateItem(),
                     )
-                }
-            }
-        }
-
-        // TODO: remove after testing!
-        if(getPlatform().platform == Platforms.WASM) {
-            item {
-                TextButton(
-                    onClick = {
-                        onAction(AccountListAction.OnAddLocalCalendar)
-                    }
-                ) {
-                    Text("Add collection")
                 }
             }
         }

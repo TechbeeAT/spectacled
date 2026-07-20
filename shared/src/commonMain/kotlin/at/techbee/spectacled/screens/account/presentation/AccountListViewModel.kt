@@ -1,6 +1,5 @@
 package at.techbee.spectacled.screens.account.presentation
 
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
@@ -14,7 +13,6 @@ import at.techbee.spectacled.screens.core.data.webdav.DiscoverHomeCollectionsRes
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverPrincipalsResult
 import at.techbee.spectacled.screens.core.data.webdav.UpsertCalendarResult
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteCalendarDataSource
-import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
@@ -23,7 +21,6 @@ import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.ioDispatcher
 import io.github.aakira.napier.Napier
-import io.ktor.http.Url
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +29,6 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.login_message_forbidden
-import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -121,7 +117,6 @@ class AccountListViewModel(
             }
             is AccountListAction.OnDismissSyncInfoDialog -> { _state.update { it.copy(showSyncInfoDialog = null) } }
             AccountListAction.OnDismissUpdatePrincipalPasswordBottomSheet -> { _state.update { it.copy(showUpdatePrincipalPasswordBottomSheet = null) } }
-            AccountListAction.OnAddLocalCalendar -> addLocalCalendar()
             is AccountListAction.OnShowSettingsBottomSheet -> { _state.update { it.copy(showSettingsBottomSheet = action.show) } }
             is AccountListAction.OnToggleSyncEnabled -> { onToggleSyncEnabled(action.calendarId, action.enabled)}
         }
@@ -174,56 +169,6 @@ class AccountListViewModel(
             }
         }
     }
-
-
-    private fun addLocalCalendar() {
-        Napier.d("Adding local calendar")
-        viewModelScope.launch {
-            Napier.d("Entered viewModelScope for Adding local calendar")
-
-            val testUrl = Url("https://localhost/${Random.nextInt(100)}")
-
-            calendarRepository.upsertPrincipal(
-                Principal(
-                    id = 0,
-                    principalUrl = testUrl,
-                    displayName = "Local Calendar",
-                    calendarUserAddressSet = listOf("john@doe.com")
-                )
-            )
-
-            calendarRepository.upsertHomeCollection(
-                HomeCollection(
-                    id = 0,
-                    principalId = 0,
-                    url = testUrl,
-                    calDavPrivileges = listOf(CalDavPrivilege.WRITE)
-                ),
-                testUrl
-            )
-
-            calendarRepository.upsertCalendar(
-                Calendar(
-                    id = 0,
-                    homeCollectionId = 0,
-                    url = testUrl,
-                    displayName = "Local Calendar",
-                    calendarDescription = "Description of local calendar",
-                    color = Color(Random.nextInt(256), Random.nextInt(256), Random.nextInt(256)),
-                    ctag = "",
-                    supportedComponents = emptyList(),
-                    calDavPrivileges = listOf(CalDavPrivilege.WRITE),
-                    calendarSyncStatus = null,
-                    syncToken = null,
-                    attachmentCollectionUrl = null
-                ),
-                testUrl
-            )
-
-            Napier.d("Local principal, home collection and calendar added")
-        }
-    }
-
 
     private fun rerunAccountDiscovery(principal: Principal) = rerunAccountDiscovery(principal, null)
 
