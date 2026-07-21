@@ -17,7 +17,12 @@ object DeepLinkHandler {
     }
 
     fun consume() {
-        deepLinkData = deepLinkData.copy(consumed = true)
+        // Reset to an empty payload, not just consumed = true. DeepLinkHandler is a
+        // process-lifetime singleton, so leaving the calendar/entry/description set would keep
+        // isEmpty() returning false for the rest of the process — permanently disabling the
+        // "open last used calendar on startup" branch in SpectacledApp on every later (warm)
+        // launch, which is what left the app on an empty calendar with a dead back button.
+        deepLinkData = DeepLinkData()
     }
 }
 

@@ -96,8 +96,11 @@ fun SpectacledApp(
                 }
             }
 
-            // only executed when the navController is actually attached (portrait mode)
-            try { navController.navigate(route) } catch (_: IllegalStateException) { }
+            // only executed when the navController is actually attached (portrait mode).
+            // launchSingleTop keeps startup navigation idempotent: overlapping effects (the
+            // last-used-calendar effect and the landscape->portrait re-attach below) must not
+            // stack a second identical destination, which would break the back button.
+            try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { }
         }
 
         Surface(
@@ -126,7 +129,12 @@ fun SpectacledApp(
                     )
                 } else {
                     LaunchedEffect(Unit) {
-                        if (listViewModel.state.value.isInitialized)
+                        // Re-attach the portrait nav stack to an already-loaded session (e.g. after
+                        // a landscape->portrait switch). Guard against calendar.id == 0L: load()
+                        // flips isInitialized to true synchronously while calendar is still the
+                        // default (id 0) until its async DB read completes, so navigating in that
+                        // window would open the empty placeholder calendar.
+                        if (listViewModel.state.value.isInitialized && listViewModel.state.value.calendar.id != 0L)
                             followRoute(Route.IcalEntryList(listViewModel.state.value.calendar.id))
                         if(detailsViewModel.state.value.isInitialized)
                             followRoute(Route.IcalEntryDetails(detailsViewModel.state.value.icalEntry.id))
