@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -113,117 +115,183 @@ fun DetailsScreen(
                 .verticalScroll(scrollState)
         ) {
 
-        if(state.icalEntry.isTask() || state.icalEntry.isJournal()) {
-            FlowRow(
+            if (state.icalEntry.isTask() || state.icalEntry.isJournal()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (state.icalEntry.isJournal()) {
+                        DateTimeCard(
+                            icsDateTime = state.icalEntry.dtStart,
+                            enabled = state.allowEditing(),
+                            allowNoDate = false,
+                            initializeWithDateOnly = true,
+                            suggestedTimezones = state.latestUsedTimezones,
+                            onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) }
+                        )
+
+                    } else if (state.icalEntry.isTask()) {
+                        DateTimeCard(
+                            icsDateTime = state.icalEntry.dtStart,
+                            enabled = state.allowEditing(),
+                            allowNoDate = true,
+                            initializeWithDateOnly = state.icalEntry.due?.isDateOnly != false,  // only when due is NOT date only we initialize with time
+                            suggestedTimezones = state.latestUsedTimezones,
+                            onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) },
+                            headerText = stringResource(Res.string.date_start),
+                            selectableDates = if (state.icalEntry.due == null) DatePickerDefaults.AllDates else object : SelectableDates {
+                                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                                    return utcTimeMillis < state.icalEntry.due.toDatePickerMillis(TimeZone.currentSystemDefault())
+                                }
+                            }
+                        )
+
+                        DateTimeCard(
+                            icsDateTime = state.icalEntry.due,
+                            enabled = state.allowEditing(),
+                            allowNoDate = true,
+                            initializeWithDateOnly = state.icalEntry.dtStart?.isDateOnly != false,  // only when dtStart is NOT date only we initialize with time
+                            suggestedTimezones = state.latestUsedTimezones,
+                            onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDue(it)) },
+                            headerText = stringResource(Res.string.date_due),
+                            selectableDates = if (state.icalEntry.dtStart == null) DatePickerDefaults.AllDates else object :
+                                SelectableDates {
+                                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                                    return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis(TimeZone.currentSystemDefault())
+                                }
+                            }
+                        )
+                    }
+
+                    //HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+                    WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+                }
+            }
+
+            AnimatedVisibility(
+                state.icalEntry.categories.isNotEmpty() || state.icalEntry.status in listOf(
+                    Status.DRAFT,
+                    Status.CANCELLED
+                )
+            ) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                ) {
+
+                    AnimatedVisibility(state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {
+                        MetaInfoCard(
+                            icon = state.icalEntry.status?.vectorIcon ?: Status.DRAFT.vectorIcon!!,
+                            iconContentDescription = stringResource(state.icalEntry.status?.stringRes ?: Status.DRAFT.stringRes),
+                            text = stringResource(state.icalEntry.status?.stringRes ?: Status.DRAFT.stringRes)
+                        )
+                    }
+
+                    state.icalEntry.categories.sorted().forEach { category ->
+
+                        MetaInfoCard(
+                            icon = Icons.AutoMirrored.Outlined.Label,
+                            iconContentDescription = stringResource(Res.string.category),
+                            text = category,
+                            onClick = { onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) }
+                        )
+                    }
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                if (state.icalEntry.isJournal()) {
-                    DateTimeCard(
-                        icsDateTime = state.icalEntry.dtStart,
-                        enabled = state.allowEditing(),
-                        allowNoDate = false,
-                        initializeWithDateOnly = true,
-                        suggestedTimezones = state.latestUsedTimezones,
-                        onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) }
-                    )
-
-                } else if (state.icalEntry.isTask()) {
-                    DateTimeCard(
-                        icsDateTime = state.icalEntry.dtStart,
-                        enabled = state.allowEditing(),
-                        allowNoDate = true,
-                        initializeWithDateOnly = state.icalEntry.due?.isDateOnly != false,  // only when due is NOT date only we initialize with time
-                        suggestedTimezones = state.latestUsedTimezones,
-                        onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDtStart(it)) },
-                        headerText = stringResource(Res.string.date_start),
-                        selectableDates = if (state.icalEntry.due == null) DatePickerDefaults.AllDates else object : SelectableDates {
-                            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                return utcTimeMillis < state.icalEntry.due.toDatePickerMillis(TimeZone.currentSystemDefault())
-                            }
-                        }
-                    )
-
-                    DateTimeCard(
-                        icsDateTime = state.icalEntry.due,
-                        enabled = state.allowEditing(),
-                        allowNoDate = true,
-                        initializeWithDateOnly = state.icalEntry.dtStart?.isDateOnly != false,  // only when dtStart is NOT date only we initialize with time
-                        suggestedTimezones = state.latestUsedTimezones,
-                        onIcsDateTimeUpdated = { onAction(DetailsAction.OnUpdateDue(it)) },
-                        headerText = stringResource(Res.string.date_due),
-                        selectableDates = if (state.icalEntry.dtStart == null) DatePickerDefaults.AllDates else object : SelectableDates {
-                            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis(TimeZone.currentSystemDefault())
-                            }
-                        }
-                    )
-                }
-
-                //HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
-                WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
-            }
-        }
-
-        AnimatedVisibility(state.icalEntry.categories.isNotEmpty() || state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             ) {
 
-                AnimatedVisibility(state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {
-                    MetaInfoCard(
-                        icon = state.icalEntry.status?.vectorIcon ?: Status.DRAFT.vectorIcon!!,
-                        iconContentDescription = stringResource(state.icalEntry.status?.stringRes ?: Status.DRAFT.stringRes),
-                        text = stringResource(state.icalEntry.status?.stringRes ?: Status.DRAFT.stringRes)
-                    )
-                }
+                BasicTextField(
+                    value = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) stringResource(Res.string.summary) else state.icalEntry.summary
+                        ?: "",
+                    onValueChange = {
+                        onAction(DetailsAction.OnUpdateSummary(it))
+                    },
+                    textStyle = MaterialTheme.typography.headlineMedium.copy(
+                        color = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    ),
+                    enabled = state.allowEditing(),
+                    onTextLayout = { summaryLayoutResult = it },
+                    visualTransformation = MarkdownVisualTransformation(
+                        localContentColor = LocalContentColor.current,
+                        linkColor = MaterialTheme.colorScheme.primary
+                    ),
+                    cursorBrush = SolidColor(LocalContentColor.current),
+                    modifier = Modifier
+                        .onFocusChanged { summaryIsFocused = it.isFocused }
+                        .weight(1f)
+                        .pointerInput(uriHandler) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                                    if (event.changes.any { it.changedToUp() }) {
+                                        val position = event.changes.first().position
+                                        summaryLayoutResult?.let { layoutResult ->
+                                            val offset = layoutResult.getOffsetForPosition(position)
+                                            val text = layoutResult.layoutInput.text
+                                            val range = text.getLinkAnnotations(0, text.length)
+                                                .firstOrNull { offset >= it.start && offset < it.end }
 
-                state.icalEntry.categories.sorted().forEach { category ->
+                                            if (range != null) {
+                                                (range.item as? LinkAnnotation.Url)?.let { urlAnnotation ->
+                                                    try {
+                                                        uriHandler.openUri(urlAnnotation.url)
+                                                        event.changes.forEach { it.consume() }
+                                                    } catch (t: Throwable) {
+                                                        // ignore
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                )
 
-                    MetaInfoCard(
-                        icon = Icons.AutoMirrored.Outlined.Label,
-                        iconContentDescription = stringResource(Res.string.category),
-                        text = category,
-                        onClick = { onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) }
+                if (state.icalEntry.isTask()) {
+                    val entryTriState = state.icalEntry.getProgressTriState()
+                    TriStateCheckbox(
+                        state = entryTriState,
+                        onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 0 else 100)) }
                     )
                 }
             }
-        }
-
-        Row(
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(vertical = 8.dp)
-        ) {
 
             BasicTextField(
-                value = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) stringResource(Res.string.summary) else state.icalEntry.summary
+                value = if (!descriptionIsFocused && state.icalEntry.description.isNullOrEmpty()) stringResource(Res.string.description) else state.icalEntry.description
                     ?: "",
                 onValueChange = {
-                    onAction(DetailsAction.OnUpdateSummary(it))
+                    onAction(DetailsAction.OnUpdateDescription(it))
                 },
-                textStyle = MaterialTheme.typography.headlineMedium.copy(
-                    color = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    color = if (!descriptionIsFocused && state.icalEntry.description.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                 ),
                 enabled = state.allowEditing(),
-                onTextLayout = { summaryLayoutResult = it },
+                onTextLayout = { descriptionLayoutResult = it },
                 visualTransformation = MarkdownVisualTransformation(
                     localContentColor = LocalContentColor.current,
                     linkColor = MaterialTheme.colorScheme.primary
                 ),
                 cursorBrush = SolidColor(LocalContentColor.current),
                 modifier = Modifier
-                    .onFocusChanged { summaryIsFocused = it.isFocused }
-                    .weight(1f)
+                    .fillMaxWidth()
+                    .heightIn(min = 400.dp)
+                    .onFocusChanged {
+                        descriptionIsFocused = it.isFocused
+                    }
                     .pointerInput(uriHandler) {
                         awaitPointerEventScope {
                             while (true) {
                                 val event = awaitPointerEvent(PointerEventPass.Initial)
                                 if (event.changes.any { it.changedToUp() }) {
                                     val position = event.changes.first().position
-                                    summaryLayoutResult?.let { layoutResult ->
+                                    descriptionLayoutResult?.let { layoutResult ->
                                         val offset = layoutResult.getOffsetForPosition(position)
                                         val text = layoutResult.layoutInput.text
                                         val range = text.getLinkAnnotations(0, text.length)
@@ -246,144 +314,91 @@ fun DetailsScreen(
                     }
             )
 
-            if (state.icalEntry.isTask()) {
-                val entryTriState = state.icalEntry.getProgressTriState()
-                TriStateCheckbox(
-                    state = entryTriState,
-                    onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 0 else 100)) }
-                )
-            }
-        }
 
-        BasicTextField(
-            value = if (!descriptionIsFocused && state.icalEntry.description.isNullOrEmpty()) stringResource(Res.string.description) else state.icalEntry.description
-                ?: "",
-            onValueChange = {
-                onAction(DetailsAction.OnUpdateDescription(it))
-            },
-            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = if (!descriptionIsFocused && state.icalEntry.description.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-            ),
-            enabled = state.allowEditing(),
-            onTextLayout = { descriptionLayoutResult = it },
-            visualTransformation = MarkdownVisualTransformation(
-                localContentColor = LocalContentColor.current,
-                linkColor = MaterialTheme.colorScheme.primary
-            ),
-            cursorBrush = SolidColor(LocalContentColor.current),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 100.dp)
-                .onFocusChanged {
-                    descriptionIsFocused = it.isFocused
+
+            AnimatedVisibility(state.icalEntry.url != null) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    //WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+
+                    UrlCard(
+                        url = state.icalEntry.url ?: Url(""),
+                        onClick = onAction,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
                 }
-                .pointerInput(uriHandler) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent(PointerEventPass.Initial)
-                            if (event.changes.any { it.changedToUp() }) {
-                                val position = event.changes.first().position
-                                descriptionLayoutResult?.let { layoutResult ->
-                                    val offset = layoutResult.getOffsetForPosition(position)
-                                    val text = layoutResult.layoutInput.text
-                                    val range = text.getLinkAnnotations(0, text.length)
-                                        .firstOrNull { offset >= it.start && offset < it.end }
+            }
 
-                                    if (range != null) {
-                                        (range.item as? LinkAnnotation.Url)?.let { urlAnnotation ->
-                                            try {
-                                                uriHandler.openUri(urlAnnotation.url)
-                                                event.changes.forEach { it.consume() }
-                                            } catch (t: Throwable) {
-                                                // ignore
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+            AnimatedVisibility(state.icalEntry.attachments.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                ) {
+                    state.icalEntry.attachments.forEach { attachment ->
+                        AttachmentCard(
+                            attachment = attachment,
+                            onAction = onAction,
+                            isDownloading = state.downloadingAttachmentUids.contains(attachment.uid)
+                        )
                     }
                 }
-        )
-
-
-
-        AnimatedVisibility(state.icalEntry.url != null) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                //WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
-
-                UrlCard(
-                    url = state.icalEntry.url ?: Url(""),
-                    onClick = onAction,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
             }
-        }
 
-        AnimatedVisibility(state.icalEntry.attachments.isNotEmpty()) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                state.icalEntry.attachments.forEach { attachment ->
-                    AttachmentCard(
-                        attachment = attachment,
-                        onAction = onAction,
-                        isDownloading = state.downloadingAttachmentUids.contains(attachment.uid)
-                    )
-                }
-            }
-        }
+            //HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp))
+            WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
 
-        //HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp))
-        WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
-
-        val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+            val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
 
 
-        ReorderableColumn(
-            list = sortedSubtasks,
-            onSettle = { fromIndex, toIndex ->
-                onAction(DetailsAction.OnPersistOrderNo(
-                    sortedSubtasks.toMutableList().apply {
-                        add(toIndex, removeAt(fromIndex))
-                    }.map { it.id }
-                ))
-            },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-        ) { _, subtask, isDragging ->
+            ReorderableColumn(
+                list = sortedSubtasks,
+                onSettle = { fromIndex, toIndex ->
+                    onAction(
+                        DetailsAction.OnPersistOrderNo(
+                            sortedSubtasks.toMutableList().apply {
+                            add(toIndex, removeAt(fromIndex))
+                        }.map { it.id }
+                    ))
+                },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) { _, subtask, isDragging ->
 
-            key(subtask.id) {
-                ReorderableItem {
-                    TaskListItem(subtask,
-                        isDragging,
-                        onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
-                        onLongClick = {},
-                        onToggleProgress = {
-                            onAction(DetailsAction.OnUpdateSubtaskProgress(
-                                if(subtask.getProgressTriState() == ToggleableState.On) 0L else 100L,
-                                subtask.id
-                            ))
-                        },
-                        onFilterCategory = {},
-                        dragHandle = {
-                            IconButton(
-                                onClick = {},
-                                modifier = with(this) {
-                                    Modifier.draggableHandle()
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.DragIndicator,
-                                    contentDescription = stringResource(Res.string.drag_handle)
+                key(subtask.id) {
+                    ReorderableItem {
+                        TaskListItem(
+                            subtask,
+                            isDragging,
+                            onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
+                            onLongClick = {},
+                            onToggleProgress = {
+                                onAction(
+                                    DetailsAction.OnUpdateSubtaskProgress(
+                                        if (subtask.getProgressTriState() == ToggleableState.On) 0L else 100L,
+                                        subtask.id
+                                    )
                                 )
+                            },
+                            onFilterCategory = {},
+                            dragHandle = {
+                                IconButton(
+                                    onClick = {},
+                                    modifier = with(this) {
+                                        Modifier.draggableHandle()
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.DragIndicator,
+                                        contentDescription = stringResource(Res.string.drag_handle)
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
+
+            Spacer(modifier = Modifier.height(112.dp))  // scroll until all is above fab
         }
     }
-}
 }
 
 

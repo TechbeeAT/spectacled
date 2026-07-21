@@ -5,11 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -26,8 +26,6 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Restore
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -42,6 +40,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -293,184 +292,7 @@ fun DetailsScreenRoot(
                     removeHorizontalWindowInsets = removeSafeAreaPaddingValues
                 )
             },
-            bottomBar = {
-                BottomAppBar(
-                    windowInsets = if (removeSafeAreaPaddingValues) BottomAppBarDefaults.windowInsets.only(WindowInsetsSides.Vertical) else BottomAppBarDefaults.windowInsets,
-                ) {
-                    TextButton(
-                        onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(true)) },
-                        enabled = detailsState.allowEditing() && !detailsState.isLoading
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Palette,
-                            contentDescription = stringResource(Res.string.color)
-                        )
-                    }
 
-                    TextButton(
-                        onClick = { detailsViewModel.onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) },
-                        enabled = detailsState.allowEditing() && !detailsState.isLoading
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.Label,
-                            contentDescription = stringResource(Res.string.category)
-                        )
-                    }
-
-                    if (detailsState.icalEntry.isJournal()) {
-
-                        TextButton(
-                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(!detailsState.showJournalStatusPickerBottomSheet)) },
-                            enabled = detailsState.allowEditing() && !detailsState.isLoading
-                        ) {
-                            Icon(
-                                imageVector = detailsState.icalEntry.status?.vectorIcon ?: Status.FINAL.vectorIcon!!,
-                                contentDescription = stringResource(Res.string.more),
-                                tint = when (detailsState.icalEntry.status) {
-                                    Status.DRAFT -> MaterialTheme.colorScheme.error
-                                    Status.CANCELLED -> MaterialTheme.colorScheme.onSurface
-                                    else -> LocalContentColor.current
-                                }
-                            )
-                        }
-                    }
-
-                    if (detailsState.icalEntry.isTask()) {
-
-                        TextButton(
-                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
-                            enabled = detailsState.allowEditing() && !detailsState.isLoading
-                        ) {
-
-                            Box(contentAlignment = Alignment.Center) {
-
-                                Text(
-                                    text = detailsState.icalEntry.percentComplete.toString(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontSize = 8.sp
-                                )
-
-                                CircularProgressIndicator(
-                                    progress = { detailsState.icalEntry.percentComplete.toFloat() / 100 },
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    var addMoreExpanded by remember { mutableStateOf(false) }
-
-                    TextButton(
-                        onClick = { addMoreExpanded = true },
-                        enabled = detailsState.allowEditing() && !detailsState.isLoading
-                    ) {
-                        Icon(Icons.Outlined.AddBox, "Add more")
-
-                        DropdownMenu(
-                            expanded = addMoreExpanded,
-                            onDismissRequest = { addMoreExpanded = false }
-                        ) {
-
-
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(stringResource(Res.string.add_attachment))
-                                        if(!detailsState.isAttachmentSupportEnabled())
-                                            Text(
-                                                text = stringResource(Res.string.attachment_not_supported_by_server),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.error
-                                            )
-                                    }
-                                },
-                                leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
-                                enabled = detailsState.isAttachmentSupportEnabled(),
-                                onClick = {
-                                    filePicker.pickFile() /* Result handled in rememberFilePicker callback */
-                                    addMoreExpanded = false
-                                },
-                            )
-
-                            if(getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID) && detailsState.isAttachmentSupportEnabled()) {
-                                DropdownMenuItem(
-                                    text = {  Text(stringResource(Res.string.add_photo)) },
-                                    leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
-                                    enabled = detailsState.isAttachmentSupportEnabled(),
-                                    onClick = {
-                                        imagePicker.takePhoto()
-                                        addMoreExpanded = false
-                                    },
-                                )
-                            }
-
-                            if(detailsState.isAttachmentSupportEnabled()) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(Res.string.add_from_gallery)) },
-                                    leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
-                                    enabled = detailsState.isAttachmentSupportEnabled(),
-                                    onClick = {
-                                        imagePicker.pickImage()
-                                        addMoreExpanded = false
-                                    },
-                                )
-                            }
-
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_drawing)) },
-                                leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
-                                onClick = {
-                                    detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
-                                    addMoreExpanded = false
-                                },
-                            )
-
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.add_url)) },
-                                leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
-                                enabled = detailsState.icalEntry.url == null,
-                                onClick = {
-                                    detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
-                                    addMoreExpanded = false
-                                },
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(stringResource(Res.string.add_subtask))
-                                        if(detailsState.calendar?.isTasksSupported() != true)
-                                            Text(
-                                                text = stringResource(Res.string.subtasks_not_supported_in_collection),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.error
-                                            )
-                                    }
-                                },
-                                leadingIcon = { Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask)) },
-                                onClick = {
-                                    detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet))
-                                    addMoreExpanded = false
-                                },
-                                enabled = detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
-                            )
-                        }
-                    }
-
-
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    TextButton(
-                        onClick = { detailsViewModel.onAction(DetailsAction.OnShowMoreBottomSheet(true)) }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.MoreVert,
-                            contentDescription = stringResource(Res.string.more)
-                        )
-                    }
-                }
-            },
             floatingActionButton = {
                 AnimatedVisibility(detailsState.allowRestore() && !detailsState.isLoading) {
                     ExtendedFloatingActionButton(
@@ -490,11 +312,204 @@ fun DetailsScreenRoot(
                         }
                     }
                 }
+
+                AnimatedVisibility(detailsState.allowEditing() && !detailsState.isLoading) {
+                    ExtendedFloatingActionButton(onClick = {}) {
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+
+                            TextButton(
+                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(true)) },
+                                enabled = detailsState.allowEditing() && !detailsState.isLoading
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Palette,
+                                    contentDescription = stringResource(Res.string.color)
+                                )
+                            }
+
+                            TextButton(
+                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) },
+                                enabled = detailsState.allowEditing() && !detailsState.isLoading
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.Label,
+                                    contentDescription = stringResource(Res.string.category)
+                                )
+                            }
+
+                            if (detailsState.icalEntry.isJournal()) {
+
+                                TextButton(
+                                    onClick = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(!detailsState.showJournalStatusPickerBottomSheet)) },
+                                    enabled = detailsState.allowEditing() && !detailsState.isLoading
+                                ) {
+                                    Icon(
+                                        imageVector = detailsState.icalEntry.status?.vectorIcon ?: Status.FINAL.vectorIcon!!,
+                                        contentDescription = stringResource(Res.string.more),
+                                        tint = when (detailsState.icalEntry.status) {
+                                            Status.DRAFT -> MaterialTheme.colorScheme.error
+                                            Status.CANCELLED -> MaterialTheme.colorScheme.onSurface
+                                            else -> LocalContentColor.current
+                                        }
+                                    )
+                                }
+                            }
+
+                            if (detailsState.icalEntry.isTask()) {
+
+                                TextButton(
+                                    onClick = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
+                                    enabled = detailsState.allowEditing() && !detailsState.isLoading
+                                ) {
+
+                                    Box(contentAlignment = Alignment.Center) {
+
+                                        Text(
+                                            text = detailsState.icalEntry.percentComplete.toString(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontSize = 8.sp
+                                        )
+
+                                        CircularProgressIndicator(
+                                            progress = { detailsState.icalEntry.percentComplete.toFloat() / 100 },
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            var addMoreExpanded by remember { mutableStateOf(false) }
+
+                            TextButton(
+                                onClick = { addMoreExpanded = true },
+                                enabled = detailsState.allowEditing() && !detailsState.isLoading
+                            ) {
+                                Icon(Icons.Outlined.AddBox, "Add more")
+
+                                DropdownMenu(
+                                    expanded = addMoreExpanded,
+                                    onDismissRequest = { addMoreExpanded = false }
+                                ) {
+
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(stringResource(Res.string.add_attachment))
+                                                if (!detailsState.isAttachmentSupportEnabled())
+                                                    Text(
+                                                        text = stringResource(Res.string.attachment_not_supported_by_server),
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                            }
+                                        },
+                                        leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
+                                        enabled = detailsState.isAttachmentSupportEnabled(),
+                                        onClick = {
+                                            filePicker.pickFile() /* Result handled in rememberFilePicker callback */
+                                            addMoreExpanded = false
+                                        },
+                                    )
+
+                                    if (getPlatform().platform in listOf(
+                                            Platforms.IOS,
+                                            Platforms.ANDROID
+                                        ) && detailsState.isAttachmentSupportEnabled()
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.add_photo)) },
+                                            leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
+                                            enabled = detailsState.isAttachmentSupportEnabled(),
+                                            onClick = {
+                                                imagePicker.takePhoto()
+                                                addMoreExpanded = false
+                                            },
+                                        )
+                                    }
+
+                                    if (detailsState.isAttachmentSupportEnabled()) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.add_from_gallery)) },
+                                            leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
+                                            enabled = detailsState.isAttachmentSupportEnabled(),
+                                            onClick = {
+                                                imagePicker.pickImage()
+                                                addMoreExpanded = false
+                                            },
+                                        )
+                                    }
+
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.add_drawing)) },
+                                        leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
+                                        onClick = {
+                                            detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
+                                            addMoreExpanded = false
+                                        },
+                                    )
+
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.add_url)) },
+                                        leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
+                                        enabled = detailsState.icalEntry.url == null,
+                                        onClick = {
+                                            detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
+                                            addMoreExpanded = false
+                                        },
+                                    )
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(stringResource(Res.string.add_subtask))
+                                                if (detailsState.calendar?.isTasksSupported() != true)
+                                                    Text(
+                                                        text = stringResource(Res.string.subtasks_not_supported_in_collection),
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                            }
+                                        },
+                                        leadingIcon = { Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask)) },
+                                        onClick = {
+                                            detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet))
+                                            addMoreExpanded = false
+                                        },
+                                        enabled = detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
+                                    )
+                                }
+                            }
+
+
+
+                            VerticalDivider(
+                                modifier = Modifier
+                                    .height(24.dp)
+                                    .padding(horizontal = 2.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+
+                            TextButton(
+                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowMoreBottomSheet(true)) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = stringResource(Res.string.more)
+                                )
+                            }
+                        }
+                    }
+                }
             },
             // In landscape (edge-to-edge) we drop the horizontal safe-area insets so the
-            // content fills the sides; the top and bottom bars keep their vertical insets.
+            // content fills the sides; the top bar keeps the vertical insets.
             contentWindowInsets = if (removeSafeAreaPaddingValues)
-                ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Vertical)
+                ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Top)
             else
                 ScaffoldDefaults.contentWindowInsets,
             modifier = modifier
