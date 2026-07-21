@@ -35,6 +35,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -332,7 +334,7 @@ fun DetailsScreenRoot(
                             horizontalArrangement = Arrangement.Center
                         ) {
 
-                            TextButton(
+                            IconButton(
                                 onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(true)) },
                                 enabled = detailsState.allowEditing() && !detailsState.isLoading
                             ) {
@@ -342,7 +344,7 @@ fun DetailsScreenRoot(
                                 )
                             }
 
-                            TextButton(
+                            IconButton(
                                 onClick = { detailsViewModel.onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) },
                                 enabled = detailsState.allowEditing() && !detailsState.isLoading
                             ) {
@@ -354,7 +356,7 @@ fun DetailsScreenRoot(
 
                             if (detailsState.icalEntry.isJournal()) {
 
-                                TextButton(
+                                IconButton(
                                     onClick = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(!detailsState.showJournalStatusPickerBottomSheet)) },
                                     enabled = detailsState.allowEditing() && !detailsState.isLoading
                                 ) {
@@ -372,7 +374,7 @@ fun DetailsScreenRoot(
 
                             if (detailsState.icalEntry.isTask()) {
 
-                                TextButton(
+                                IconButton(
                                     onClick = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
                                     enabled = detailsState.allowEditing() && !detailsState.isLoading
                                 ) {
@@ -395,7 +397,7 @@ fun DetailsScreenRoot(
 
                             var addMoreExpanded by remember { mutableStateOf(false) }
 
-                            TextButton(
+                            IconButton(
                                 onClick = { addMoreExpanded = true },
                                 enabled = detailsState.allowEditing() && !detailsState.isLoading
                             ) {
@@ -501,11 +503,12 @@ fun DetailsScreenRoot(
                             VerticalDivider(
                                 modifier = Modifier
                                     .height(24.dp)
-                                    .padding(horizontal = 2.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    .padding(horizontal = 4.dp),
+                                thickness = 2.dp,
+                                color = IconButtonDefaults.iconButtonColors().contentColor
                             )
 
-                            TextButton(
+                            IconButton(
                                 onClick = { detailsViewModel.onAction(DetailsAction.OnShowMoreBottomSheet(true)) }
                             ) {
                                 Icon(
