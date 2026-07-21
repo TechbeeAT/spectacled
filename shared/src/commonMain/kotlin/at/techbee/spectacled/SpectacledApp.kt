@@ -16,6 +16,7 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.koin.sharedModule
 import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
@@ -58,6 +59,7 @@ fun SpectacledApp(
 
     val syncTrigger = koinInject<PlatformSyncTrigger>()
     val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
+    val calendarRepository = koinInject<CalendarRepository>()
 
     val accountListViewModel = koinViewModel<AccountListViewModel>()
     val listViewModel = koinViewModel<ListViewModel>()
@@ -150,7 +152,15 @@ fun SpectacledApp(
         LaunchedEffect(Unit) {
             //Only move to last used calendar if NO deep link was ever seen
             if (DeepLinkHandler.deepLinkData.isEmpty()) {
-                userAppPreferencesStore.lastUsedCalendarId?.let { followRoute(Route.IcalEntryList(it)) }
+                userAppPreferencesStore.lastUsedCalendarId?.let { calendarId ->
+                    // Only navigate if the calendar still exists. It may have been deleted
+                    // (account removed/unsubscribed, or dropped by a sync) since it was last
+                    // used, in which case we must not open the list view of a phantom calendar.
+                    if (calendarRepository.getCalendarById(calendarId) != null)
+                        followRoute(Route.IcalEntryList(calendarId))
+                    else
+                        userAppPreferencesStore.lastUsedCalendarId = null
+                }
             }
         }
 

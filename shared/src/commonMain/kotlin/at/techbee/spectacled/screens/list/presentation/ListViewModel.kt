@@ -66,6 +66,9 @@ class ListViewModel(
             val calendar = calendarRepository.getCalendarById(calendarId)
 
             if (principal == null || credentials == null || calendar == null) {
+                // The calendar can no longer be opened (deleted, or its account/credentials
+                // are gone). Clear the stored preference so we don't keep returning to it.
+                userAppPreferencesStore.lastUsedCalendarId = null
                 _state.update { it.copy(navigateUp = true, isRefreshing = false) }
                 return@launch
             }
