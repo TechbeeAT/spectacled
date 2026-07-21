@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.AddBox
@@ -296,7 +299,10 @@ fun DetailsScreenRoot(
             floatingActionButton = {
                 AnimatedVisibility(detailsState.allowRestore() && !detailsState.isLoading) {
                     ExtendedFloatingActionButton(
-                        onClick = { detailsViewModel.onAction(DetailsAction.OnRestoreEntry) }
+                        onClick = { detailsViewModel.onAction(DetailsAction.OnRestoreEntry) },
+                        // Lift the FAB by the bottom safe-area inset so it clears the iOS home
+                        // indicator (the content still fills to the edge, only the FAB is padded).
+                        modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -314,7 +320,12 @@ fun DetailsScreenRoot(
                 }
 
                 AnimatedVisibility(detailsState.allowEditing() && !detailsState.isLoading) {
-                    ExtendedFloatingActionButton(onClick = {}) {
+                    ExtendedFloatingActionButton(
+                        onClick = {},
+                        // Lift the FAB by the bottom safe-area inset so it clears the iOS home
+                        // indicator (the content still fills to the edge, only the FAB is padded).
+                        modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
+                    ) {
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,

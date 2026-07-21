@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.GroupAdd
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -179,7 +182,10 @@ fun AccountListScreenRoot(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { viewModel.onAction(AccountListAction.OnShowAddPrincipalBottomSheet(true)) }
+                onClick = { viewModel.onAction(AccountListAction.OnShowAddPrincipalBottomSheet(true)) },
+                // Lift the FAB by the bottom safe-area inset so it clears the iOS home indicator
+                // (the content still fills to the edge, only the FAB is padded).
+                modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
