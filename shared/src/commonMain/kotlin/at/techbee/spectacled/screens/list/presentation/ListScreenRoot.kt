@@ -268,12 +268,14 @@ fun ListScreenRoot(
                 }
             },
             bottomBar = { },
-            // In landscape (edge-to-edge) we drop the horizontal and bottom safe-area
-            // insets so the content fills the sides; the top bar keeps its own vertical insets.
+            // Drop the bottom safe-area inset so the content fills to the screen edge and there
+            // is no empty strip (the "white gap") over the iOS home indicator. In landscape we
+            // additionally drop the horizontal insets so the content fills the sides; the top bar
+            // keeps its own vertical insets in either case.
             contentWindowInsets = if (removeSafeAreaPaddingValues)
                 ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Top)
             else
-                ScaffoldDefaults.contentWindowInsets,
+                ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
             modifier = modifier
         ) { paddingValues ->
 
