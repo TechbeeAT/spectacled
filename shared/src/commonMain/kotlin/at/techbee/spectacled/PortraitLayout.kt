@@ -41,7 +41,7 @@ fun PortraitLayout(
                 composable<Route.AccountsList> {
                     AccountListScreenRoot(
                         viewModel = accountListViewModel,
-                        onNavigate = { route -> navController.navigateIfNotOnTop(route) }
+                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } }
                     )
                 }
 
@@ -60,7 +60,7 @@ fun PortraitLayout(
 
                     ListScreenRoot(
                         listViewModel = listViewModel,
-                        onNavigate = { route -> navController.navigateIfNotOnTop(route) },
+                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
                         onNavigateUp = {
                             if (!navController.popBackStack())
                                 onCloseApp()
@@ -78,7 +78,7 @@ fun PortraitLayout(
 
                     DetailsScreenRoot(
                         detailsViewModel = detailsViewModel,
-                        onNavigate = { route -> navController.navigateIfNotOnTop(route) },
+                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
                         onNavigateUp = {
                             // close the app if the list was skipped on opening
                             if(!listViewModel.state.value.isInitialized)
@@ -105,7 +105,7 @@ fun PortraitLayout(
 
                     DetailsScreenRoot(
                         detailsViewModel = detailsViewModel,
-                        onNavigate = { route -> navController.navigateIfNotOnTop(route) },
+                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
                         onNavigateUp = {
                             // close the app if the list was skipped on opening
                             if(!listViewModel.state.value.isInitialized)
