@@ -4,12 +4,14 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import androidx.navigation.hasRoute
 import androidx.navigation.toRoute
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.account.presentation.AccountListScreenRoot
@@ -58,6 +60,18 @@ fun PortraitLayout(
                         listViewModel.load(calendarId)
                     }
 
+                    // Reset the list view-model once no list destination remains on the back stack,
+                    // i.e. this screen was popped — not merely navigated past (details still above
+                    // it) or kept around by a layout switch (the retained navController still lists
+                    // it). This keeps the landscape layout, which shows panes from view-model state,
+                    // consistent with what portrait's back stack actually holds.
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            if (navController.currentBackStack.value.none { it.destination.hasRoute<Route.IcalEntryList>() })
+                                listViewModel.reset()
+                        }
+                    }
+
                     ListScreenRoot(
                         listViewModel = listViewModel,
                         onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
@@ -74,6 +88,20 @@ fun PortraitLayout(
                     LaunchedEffect(icalEntryId) {
                         if(detailsViewModel.state.value.icalEntry.id != icalEntryId)
                             detailsViewModel.load(icalEntryId)
+                    }
+
+                    // Reset the (shared) details view-model once no details/add destination remains
+                    // on the back stack — i.e. this screen was popped, not navigated past (a subtask
+                    // still above it) or kept by a layout switch. Placed before DetailsScreenRoot so
+                    // it disposes after that screen's sync-on-dispose (effects dispose LIFO). Keeps
+                    // the landscape layout, which shows panes from view-model state, consistent.
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            if (navController.currentBackStack.value.none {
+                                    it.destination.hasRoute<Route.IcalEntryDetails>() || it.destination.hasRoute<Route.AddICalEntry>()
+                                })
+                                detailsViewModel.reset()
+                        }
                     }
 
                     DetailsScreenRoot(
@@ -104,6 +132,20 @@ fun PortraitLayout(
                             detailsViewModel.loadNew(calendarId, initialDescription)
                         else
                             detailsViewModel.prepareNew(initialDescription)
+                    }
+
+                    // Reset the (shared) details view-model once no details/add destination remains
+                    // on the back stack — i.e. this screen was popped, not navigated past (a subtask
+                    // still above it) or kept by a layout switch. Placed before DetailsScreenRoot so
+                    // it disposes after that screen's sync-on-dispose (effects dispose LIFO). Keeps
+                    // the landscape layout, which shows panes from view-model state, consistent.
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            if (navController.currentBackStack.value.none {
+                                    it.destination.hasRoute<Route.IcalEntryDetails>() || it.destination.hasRoute<Route.AddICalEntry>()
+                                })
+                                detailsViewModel.reset()
+                        }
                     }
 
                     DetailsScreenRoot(
