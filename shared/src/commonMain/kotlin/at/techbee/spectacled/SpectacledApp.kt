@@ -176,7 +176,7 @@ fun SpectacledApp(
             val deepLinkData = DeepLinkHandler.deepLinkData
 
             // Handle reactive navigation for already open app (or late-arriving deep links on iOS)
-            val newRoute = if (!deepLinkData.consumed) {
+            val newRoute = if (!deepLinkData.isEmpty()) {
                 if (deepLinkData.initialIcalEntryId != null) {
                     if (deepLinkData.initialIcalEntryId == 0L) {
                         Route.AddICalEntry(

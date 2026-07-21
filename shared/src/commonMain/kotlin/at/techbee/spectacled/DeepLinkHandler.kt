@@ -11,13 +11,12 @@ object DeepLinkHandler {
         deepLinkData = DeepLinkData(
             initialCalendarId = calendarId,
             initialIcalEntryId = entryId,
-            initialIcalEntryDescription = description,
-            consumed = false
+            initialIcalEntryDescription = description
         )
     }
 
     fun consume() {
-        // Reset to an empty payload, not just consumed = true. DeepLinkHandler is a
+        // Reset to an empty payload once the deep link has been handled. DeepLinkHandler is a
         // process-lifetime singleton, so leaving the calendar/entry/description set would keep
         // isEmpty() returning false for the rest of the process — permanently disabling the
         // "open last used calendar on startup" branch in SpectacledApp on every later (warm)
@@ -29,8 +28,7 @@ object DeepLinkHandler {
 data class DeepLinkData(
     val initialCalendarId: Long? = null,
     val initialIcalEntryId: Long? = null,
-    val initialIcalEntryDescription: String? = null,
-    val consumed: Boolean = true
+    val initialIcalEntryDescription: String? = null
 ) {
     companion object {
         const val DEEPLINK_ADD_HOST = "add"
