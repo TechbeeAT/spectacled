@@ -78,7 +78,10 @@ fun PortraitLayout(
 
                     DetailsScreenRoot(
                         detailsViewModel = detailsViewModel,
-                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
+                        // No launchSingleTop here: opening a linked entry (subtask) from a detail
+                        // view should stack a new detail screen so Back returns to the parent,
+                        // rather than replacing it.
+                        onNavigate = { route -> navController.navigate(route) },
                         onNavigateUp = {
                             // close the app if the list was skipped on opening
                             if(!listViewModel.state.value.isInitialized)
