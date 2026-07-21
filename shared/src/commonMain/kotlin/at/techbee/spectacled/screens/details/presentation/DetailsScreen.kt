@@ -164,7 +164,7 @@ fun DetailsScreen(
                     }
 
                     //HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
-                    WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+                    WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
                 }
             }
 
@@ -242,7 +242,7 @@ fun DetailsScreen(
                                                     try {
                                                         uriHandler.openUri(urlAnnotation.url)
                                                         event.changes.forEach { it.consume() }
-                                                    } catch (t: Throwable) {
+                                                    } catch (_: Throwable) {
                                                         // ignore
                                                     }
                                                 }
@@ -281,7 +281,7 @@ fun DetailsScreen(
                 cursorBrush = SolidColor(LocalContentColor.current),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 400.dp)
+                    .heightIn(min = 200.dp)
                     .onFocusChanged {
                         descriptionIsFocused = it.isFocused
                     }
@@ -302,7 +302,7 @@ fun DetailsScreen(
                                                 try {
                                                     uriHandler.openUri(urlAnnotation.url)
                                                     event.changes.forEach { it.consume() }
-                                                } catch (t: Throwable) {
+                                                } catch (_: Throwable) {
                                                     // ignore
                                                 }
                                             }
@@ -318,7 +318,6 @@ fun DetailsScreen(
 
             AnimatedVisibility(state.icalEntry.url != null) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    //WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
 
                     UrlCard(
                         url = state.icalEntry.url ?: Url(""),
@@ -344,7 +343,7 @@ fun DetailsScreen(
             }
 
             //HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp))
-            WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp))
+            WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 
             val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
 
