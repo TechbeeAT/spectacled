@@ -41,7 +41,7 @@ fun PortraitLayout(
                 composable<Route.AccountsList> {
                     AccountListScreenRoot(
                         viewModel = accountListViewModel,
-                        onNavigate = { route -> navController.navigate(route) }
+                        onNavigate = { route -> navController.navigateIfNotOnTop(route) }
                     )
                 }
 
@@ -60,7 +60,7 @@ fun PortraitLayout(
 
                     ListScreenRoot(
                         listViewModel = listViewModel,
-                        onNavigate = { route -> navController.navigate(route) },
+                        onNavigate = { route -> navController.navigateIfNotOnTop(route) },
                         onNavigateUp = {
                             if (!navController.popBackStack())
                                 onCloseApp()
@@ -78,7 +78,7 @@ fun PortraitLayout(
 
                     DetailsScreenRoot(
                         detailsViewModel = detailsViewModel,
-                        onNavigate = { route -> navController.navigate(route) },
+                        onNavigate = { route -> navController.navigateIfNotOnTop(route) },
                         onNavigateUp = {
                             // close the app if the list was skipped on opening
                             if(!listViewModel.state.value.isInitialized)
@@ -105,7 +105,7 @@ fun PortraitLayout(
 
                     DetailsScreenRoot(
                         detailsViewModel = detailsViewModel,
-                        onNavigate = { route -> navController.navigate(route) },
+                        onNavigate = { route -> navController.navigateIfNotOnTop(route) },
                         onNavigateUp = {
                             // close the app if the list was skipped on opening
                             if(!listViewModel.state.value.isInitialized)

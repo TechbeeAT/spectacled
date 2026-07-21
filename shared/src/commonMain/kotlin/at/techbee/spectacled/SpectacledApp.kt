@@ -96,11 +96,12 @@ fun SpectacledApp(
                 }
             }
 
-            // only executed when the navController is actually attached (portrait mode).
-            // launchSingleTop keeps startup navigation idempotent: overlapping effects (the
-            // last-used-calendar effect and the landscape->portrait re-attach below) must not
-            // stack a second identical destination, which would break the back button.
-            try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { }
+            // Only navigates when the navController is actually attached (portrait mode).
+            // navigateIfNotOnTop keeps navigation idempotent: overlapping effects (the
+            // last-used-calendar effect and the landscape->portrait re-attach below) or a
+            // re-delivered deep link must not stack a second identical destination, which would
+            // break the back button.
+            navController.navigateIfNotOnTop(route)
         }
 
         Surface(
