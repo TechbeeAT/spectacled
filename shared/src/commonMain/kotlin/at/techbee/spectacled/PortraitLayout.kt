@@ -4,8 +4,10 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -41,7 +43,7 @@ fun PortraitLayout(
                 composable<Route.AccountsList> {
                     AccountListScreenRoot(
                         viewModel = accountListViewModel,
-                        onNavigate = { route -> navController.navigate(route) }
+                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } }
                     )
                 }
 
@@ -58,9 +60,21 @@ fun PortraitLayout(
                         listViewModel.load(calendarId)
                     }
 
+                    // Reset the list view-model once no list destination remains on the back stack,
+                    // i.e. this screen was popped — not merely navigated past (details still above
+                    // it) or kept around by a layout switch (the retained navController still lists
+                    // it). This keeps the landscape layout, which shows panes from view-model state,
+                    // consistent with what portrait's back stack actually holds.
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            if (navController.currentBackStack.value.none { it.destination.hasRoute<Route.IcalEntryList>() })
+                                listViewModel.reset()
+                        }
+                    }
+
                     ListScreenRoot(
                         listViewModel = listViewModel,
-                        onNavigate = { route -> navController.navigate(route) },
+                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
                         onNavigateUp = {
                             if (!navController.popBackStack())
                                 onCloseApp()
@@ -76,8 +90,25 @@ fun PortraitLayout(
                             detailsViewModel.load(icalEntryId)
                     }
 
+                    // Reset the (shared) details view-model once no details/add destination remains
+                    // on the back stack — i.e. this screen was popped, not navigated past (a subtask
+                    // still above it) or kept by a layout switch. Placed before DetailsScreenRoot so
+                    // it disposes after that screen's sync-on-dispose (effects dispose LIFO). Keeps
+                    // the landscape layout, which shows panes from view-model state, consistent.
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            if (navController.currentBackStack.value.none {
+                                    it.destination.hasRoute<Route.IcalEntryDetails>() || it.destination.hasRoute<Route.AddICalEntry>()
+                                })
+                                detailsViewModel.reset()
+                        }
+                    }
+
                     DetailsScreenRoot(
                         detailsViewModel = detailsViewModel,
+                        // No launchSingleTop here: opening a linked entry (subtask) from a detail
+                        // view should stack a new detail screen so Back returns to the parent,
+                        // rather than replacing it.
                         onNavigate = { route -> navController.navigate(route) },
                         onNavigateUp = {
                             // close the app if the list was skipped on opening
@@ -103,9 +134,23 @@ fun PortraitLayout(
                             detailsViewModel.prepareNew(initialDescription)
                     }
 
+                    // Reset the (shared) details view-model once no details/add destination remains
+                    // on the back stack — i.e. this screen was popped, not navigated past (a subtask
+                    // still above it) or kept by a layout switch. Placed before DetailsScreenRoot so
+                    // it disposes after that screen's sync-on-dispose (effects dispose LIFO). Keeps
+                    // the landscape layout, which shows panes from view-model state, consistent.
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            if (navController.currentBackStack.value.none {
+                                    it.destination.hasRoute<Route.IcalEntryDetails>() || it.destination.hasRoute<Route.AddICalEntry>()
+                                })
+                                detailsViewModel.reset()
+                        }
+                    }
+
                     DetailsScreenRoot(
                         detailsViewModel = detailsViewModel,
-                        onNavigate = { route -> navController.navigate(route) },
+                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
                         onNavigateUp = {
                             // close the app if the list was skipped on opening
                             if(!listViewModel.state.value.isInitialized)
