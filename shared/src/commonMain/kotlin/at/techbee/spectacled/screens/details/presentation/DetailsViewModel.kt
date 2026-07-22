@@ -179,7 +179,7 @@ class DetailsViewModel(
             }
             val copiedIcalEntry = IcalEntry(
                 calendarId = originalIcalEntry.calendarId,
-                summary = originalIcalEntry.summary + if (isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${
+                summary = (originalIcalEntry.summary?:"") + if (isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${
                     getString(
                         Res.string.entry_copy
                     )
