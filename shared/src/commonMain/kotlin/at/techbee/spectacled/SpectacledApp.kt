@@ -12,6 +12,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -168,19 +170,27 @@ fun SpectacledApp(
                         // BoxWithConstraints observes the window size and will trigger a recomposition
                         // whenever the orientation or size changes.
                         BoxWithConstraints {
-                            val isLandscape =
-                                (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
+                            val isLandscape = (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
 
                             Row(modifier = Modifier.fillMaxSize()) {
 
-                                if (isLandscape) {
+                                val listState by listViewModel.state.collectAsState()
+                                val detailsState by detailsViewModel.state.collectAsState()
+
+                                LaunchedEffect(detailsState.calendar) {
+                                    detailsState.calendar?.let {
+                                        if(listState.calendar.id != it.id)   // calendar was loaded, load also in list if different
+                                            listViewModel.load(it.id)
+                                    }
+                                }
+
+                                // show list for landscape mode only and only when initialized
+                                if (isLandscape && listState.isInitialized && listState.calendar.id == detailsState.calendar?.id) {
+
                                     ListScreenRoot(
                                         listViewModel = listViewModel,
                                         onNavigate = { route ->
-                                            try {
-                                                navController.navigate(route) { launchSingleTop = true }
-                                            } catch (_: IllegalStateException) {
-                                            }
+                                            try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { }
                                         },
                                         onNavigateUp = {
                                             if (!navController.popBackStack())
