@@ -11,7 +11,6 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
-import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
@@ -27,6 +26,7 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.presentation.components.PathData
 import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter
 import io.github.aakira.napier.Napier
@@ -137,49 +137,23 @@ class DetailsViewModel(
         }
     }
 
-    fun reset() {
-        _state.update { DetailsState() }
-    }
-
-
-    fun loadNew(calendarId: Long, initialDescription: String? = null) {
+    fun loadNew(calendarId: Long? = null, initialDescription: String? = null) {
 
         viewModelScope.launch {
+
+            val calendar = if(calendarId == null || calendarId == 0L) null else calendarRepository.getCalendarById(calendarId)
+
             val newIcalEntry = IcalEntry(
-                calendarId = calendarId,
+                calendarId = calendar?.id ?: 0L,   // if 0L user is forced to select a calendar
                 description = initialDescription,
                 dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
                 calendarComponent = spectacledVariant.mainCalendarComponent
             )
-            val calendar = calendarRepository.getCalendarById(calendarId) ?: return@launch
 
             _state.update { it.copy(
                 icalEntry = newIcalEntry,
                 originalIcalEntry = newIcalEntry,
                 calendar = calendar,
-                isLoading = false,
-                isInitialized = true,
-                showDeleteDialog = false,
-                navigateUp = false
-            ) }
-
-            observeIcalEntry(newIcalEntry.calendarId, newIcalEntry.uid)
-        }
-    }
-
-    fun prepareNew(initialDescription: String? = null) {
-
-        viewModelScope.launch {
-            val newIcalEntry = IcalEntry(
-                calendarId = 0L,
-                description = initialDescription,
-                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
-                calendarComponent = spectacledVariant.mainCalendarComponent
-            )
-
-            _state.update { it.copy(
-                icalEntry = newIcalEntry,
-                originalIcalEntry = newIcalEntry,
                 isLoading = false,
                 isInitialized = true,
                 showDeleteDialog = false,
@@ -205,7 +179,7 @@ class DetailsViewModel(
             }
             val copiedIcalEntry = IcalEntry(
                 calendarId = originalIcalEntry.calendarId,
-                summary = originalIcalEntry.summary + if (isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${
+                summary = (originalIcalEntry.summary?:"") + if (isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${
                     getString(
                         Res.string.entry_copy
                     )

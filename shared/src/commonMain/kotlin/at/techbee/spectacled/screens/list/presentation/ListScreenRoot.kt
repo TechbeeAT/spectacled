@@ -7,13 +7,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,7 +51,6 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
-import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
@@ -216,7 +216,7 @@ fun ListScreenRoot(
                 if (state.multiselectItems == null) {
                     if (state.calendar.canWriteContent()) {
                         ExtendedFloatingActionButton(
-                            onClick = { onNavigate(Route.AddICalEntry(state.calendar.id)) },
+                            onClick = { onNavigate(IcalEntryDetails(0L, state.calendar.id)) },
                             // Lift the FAB by the bottom safe-area inset so it clears the iOS home
                             // indicator (the content still fills to the edge, only the FAB is padded).
                             modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom)),
@@ -276,7 +276,7 @@ fun ListScreenRoot(
             },
             bottomBar = { },
             // Drop the bottom safe-area inset so the content fills to the screen edge and there
-            // is no empty strip (the "white gap") over the iOS home indicator. In landscape we
+            // is no empty strip (the "white gap") over the iOS home indicator. In landscape, we
             // additionally drop the horizontal insets so the content fills the sides; the top bar
             // keeps its own vertical insets in either case.
             contentWindowInsets = if (removeSafeAreaPaddingValues)
@@ -290,7 +290,7 @@ fun ListScreenRoot(
                 modifier = Modifier
                     .padding(paddingValues)
                     .consumeWindowInsets(paddingValues)
-                    .imeAwarePadding()
+                    .imePadding()
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter
             ) {
