@@ -3,9 +3,9 @@ package at.techbee.spectacled.notes
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.window.ComposeUIViewController
 
-// The compose code handles the keyboard with imePadding() itself; the default
-// FocusableAboveKeyboard would additionally lift the whole view and thereby
-// duplicate the keyboard compensation.
+// Keyboard avoidance is handled natively by SwiftUI (the hosting ComposeView keeps the
+// .keyboard safe area). DoNothing prevents Compose's default FocusableAboveKeyboard from
+// additionally lifting the whole view and compensating twice.
 fun MainViewController() = ComposeUIViewController(
     configure = { onFocusBehavior = OnFocusBehavior.DoNothing }
 ) { NotesApp() }

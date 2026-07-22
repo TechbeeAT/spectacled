@@ -104,10 +104,6 @@ fun SpectacledApp(
             try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { }
         }
 
-        // Force a clean keyboard dismissal on rotation so a stale IME inset does not leave a
-        // phantom bottom gap (iOS only; no-op elsewhere).
-        DismissKeyboardOnRotationEffect()
-
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
