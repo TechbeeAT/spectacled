@@ -2,6 +2,7 @@ package at.techbee.spectacled
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSSelectorFromString
@@ -10,6 +11,7 @@ import platform.UIKit.UIDevice
 import platform.UIKit.UIDeviceOrientation
 import platform.UIKit.UIDeviceOrientationDidChangeNotification
 
+@OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun DismissKeyboardOnRotationEffect() {
     DisposableEffect(Unit) {
