@@ -153,15 +153,11 @@ fun SpectacledApp(
 
                     composable<Route.IcalEntryDetails> { args ->
                         val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
-
-                        val copyFromId = args.toRoute<Route.IcalEntryDetails>().newIcalEntryCopyFromId
                         val calendarId = args.toRoute<Route.IcalEntryDetails>().newIcalEntryCalendarId
                         val initialDescription = args.toRoute<Route.IcalEntryDetails>().newIcalEntryInitialDescription
 
-                        LaunchedEffect(icalEntryId, copyFromId, calendarId, initialDescription) {
-                            if (copyFromId != null)
-                                detailsViewModel.loadCopy(copyFromId)
-                            else if (initialDescription != null || icalEntryId == 0L)
+                        LaunchedEffect(icalEntryId, calendarId, initialDescription) {
+                            if (initialDescription != null || icalEntryId == 0L)
                                 detailsViewModel.loadNew(calendarId = calendarId, initialDescription = initialDescription)
                             else if(detailsViewModel.state.value.icalEntry.id != icalEntryId)
                                 detailsViewModel.load(icalEntryId)
