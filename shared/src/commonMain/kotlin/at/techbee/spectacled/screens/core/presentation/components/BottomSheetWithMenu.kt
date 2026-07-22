@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetDefaults
@@ -25,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,9 +86,9 @@ fun BottomSheetWithMenu(
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            // imePadding keeps text fields in sheets visible above the keyboard on iOS,
-            // where no window resizing or view lifting happens (OnFocusBehavior.DoNothing)
-            modifier = modifier.imePadding()
+            // Keeps text fields in sheets visible above the keyboard. On iOS this is a no-op
+            // because SwiftUI resizes the view for the keyboard natively (see imeAwarePadding).
+            modifier = modifier.imeAwarePadding()
         ) {
 
             headline?.let {
