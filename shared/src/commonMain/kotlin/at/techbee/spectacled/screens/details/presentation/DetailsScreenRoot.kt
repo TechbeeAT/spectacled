@@ -117,6 +117,10 @@ fun DetailsScreenRoot(
     val detailsState by detailsViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Hide the FAB while a text field is focused: with SwiftUI keyboard resizing (and no bottom
+    // inset on iOS) the FAB would otherwise sit right above the keyboard and cover the field.
+    var isEditorFocused by remember { mutableStateOf(false) }
+
     val filePicker = rememberFilePicker { pickedFile ->
         pickedFile?.let {
             detailsViewModel.onAction(DetailsAction.OnAddAttachment(it.name, it.bytes, it.mimeType))
@@ -321,7 +325,7 @@ fun DetailsScreenRoot(
                     }
                 }
 
-                AnimatedVisibility(detailsState.allowEditing() && !detailsState.isLoading) {
+                AnimatedVisibility(detailsState.allowEditing() && !detailsState.isLoading && !isEditorFocused) {
                     ExtendedFloatingActionButton(
                         onClick = {},
                         // Lift the FAB by the bottom safe-area inset so it clears the iOS home
@@ -543,7 +547,8 @@ fun DetailsScreenRoot(
                 DetailsScreen(
                     state = detailsState,
                     onAction = { action -> detailsViewModel.onAction(action) },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    onEditorFocusChanged = { isEditorFocused = it }
                 )
 
                 CustomBottomSnackbarHost(

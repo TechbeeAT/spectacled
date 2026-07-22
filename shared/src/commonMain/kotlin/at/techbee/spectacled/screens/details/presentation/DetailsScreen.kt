@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -80,10 +81,16 @@ import spectacled.shared.generated.resources.summary
 fun DetailsScreen(
     state: DetailsState,
     onAction: (DetailsAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditorFocusChanged: (Boolean) -> Unit = {}
 ) {
     var summaryIsFocused by rememberSaveable { mutableStateOf(false) }
     var descriptionIsFocused by rememberSaveable { mutableStateOf(false) }
+
+    // Report whether a text field is being edited so the caller can hide the FAB, which would
+    // otherwise sit right above the keyboard and cover the field (SwiftUI resizes the view on iOS).
+    val isEditorFocused = summaryIsFocused || descriptionIsFocused
+    LaunchedEffect(isEditorFocused) { onEditorFocusChanged(isEditorFocused) }
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
