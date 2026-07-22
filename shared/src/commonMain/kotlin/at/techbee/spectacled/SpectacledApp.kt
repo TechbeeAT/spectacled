@@ -159,10 +159,8 @@ fun SpectacledApp(
                         LaunchedEffect(icalEntryId, copyFromId, calendarId, initialDescription) {
                             if (copyFromId != null)
                                 detailsViewModel.loadCopy(copyFromId)
-                            else if (calendarId != 0L)
-                                detailsViewModel.loadNew(calendarId, initialDescription)
                             else if (initialDescription != null || icalEntryId == 0L)
-                                detailsViewModel.prepareNew(initialDescription)
+                                detailsViewModel.loadNew(calendarId = calendarId, initialDescription = initialDescription)
                             else if(detailsViewModel.state.value.icalEntry.id != icalEntryId)
                                 detailsViewModel.load(icalEntryId)
                         }

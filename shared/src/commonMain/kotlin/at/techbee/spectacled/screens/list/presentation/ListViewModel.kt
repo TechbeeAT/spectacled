@@ -86,10 +86,6 @@ class ListViewModel(
         }
     }
 
-    fun reset() {
-        _state.update { ListState() }
-    }
-
     private suspend fun observeCalendar(calendarId: Long) {
         calendarRepository.getAllCalendarsFlow()
             .collect { calendars ->
