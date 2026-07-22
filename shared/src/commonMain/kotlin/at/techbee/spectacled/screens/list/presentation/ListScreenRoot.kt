@@ -7,14 +7,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,6 +50,7 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
+import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
@@ -290,7 +290,7 @@ fun ListScreenRoot(
                 modifier = Modifier
                     .padding(paddingValues)
                     .consumeWindowInsets(paddingValues)
-                    .imePadding()
+                    .imeAwarePadding()
                     .fillMaxSize(),
                 contentAlignment = Alignment.BottomCenter
             ) {
