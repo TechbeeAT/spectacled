@@ -7,7 +7,6 @@ sealed interface Route {
     @Serializable data object HomeGraph : Route
 
     @Serializable data class IcalEntryList(val calendarId: Long) : Route
-    @Serializable data class IcalEntryDetails(val icalEntryId: Long) : Route
-    @Serializable data class AddICalEntry(val calendarId: Long, val copyFromId: Long? = null, val initialDescription: String? = null) : Route
+    @Serializable data class IcalEntryDetails(val icalEntryId: Long, val newIcalEntryCalendarId: Long = 0L, val newIcalEntryCopyFromId: Long? = null, val newIcalEntryInitialDescription: String? = null) : Route
     @Serializable data object AccountsList : Route
 }
