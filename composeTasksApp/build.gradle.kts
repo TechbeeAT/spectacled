@@ -152,19 +152,6 @@ compose.desktop {
             macOS {
                 dockName = "spectacled Tasks"
                 iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_tasks_icns.icns"))
-                bundleID = "at.techbee.spectacled.tasks"
-
-                // Sign the .app with the "Developer ID Application" certificate only when a
-                // signing identity is provided (CI release builds on macOS). Local and
-                // Linux/Windows builds keep working unsigned with no Apple setup required.
-                // Notarization + stapling of the resulting .dmg is done in the release
-                // workflow (create-release.yml) via `xcrun notarytool` / `stapler`.
-                System.getenv("MACOS_SIGN_IDENTITY")?.takeIf { it.isNotBlank() }?.let { signIdentity ->
-                    signing {
-                        sign.set(true)
-                        identity.set(signIdentity)
-                    }
-                }
             }
 
         }

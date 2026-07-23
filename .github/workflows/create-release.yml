@@ -81,50 +81,9 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6
 
-      # --- macOS only: import the "Developer ID Application" certificate so the .app
-      #     bundles get signed during packageDmg (see composeXApp/build.gradle.kts).
-      - name: Import macOS signing certificate
-        if: matrix.os == 'macos-latest'
-        env:
-          CERT_P12_BASE64: ${{ secrets.macos_signing_certificate_p12_base64 }}
-          CERT_PASSWORD: ${{ secrets.macos_signing_certificate_password }}
-        run: |
-          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
-          KEYCHAIN_PW="$(uuidgen)"
-          echo -n "$CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security create-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
-          security import "$RUNNER_TEMP/cert.p12" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
-          security list-keychain -d user -s "$KEYCHAIN" "$(security default-keychain -d user | tr -d ' "')"
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PW" "$KEYCHAIN" >/dev/null
-
       - name: Build ${{ matrix.format }} installers (Journals, Notes, Tasks)
         shell: bash
-        env:
-          # Empty on Linux/Windows, so the Gradle signing block stays disabled there.
-          MACOS_SIGN_IDENTITY: ${{ matrix.os == 'macos-latest' && secrets.macos_signing_identity || '' }}
         run: ./gradlew composeJournalsApp:${{ matrix.task }} composeNotesApp:${{ matrix.task }} composeTasksApp:${{ matrix.task }}
-
-      # --- macOS only: notarize the signed .dmg files and staple the ticket so
-      #     Gatekeeper accepts them offline. Reuses the App Store Connect API key.
-      - name: Notarize & staple macOS installers
-        if: matrix.os == 'macos-latest'
-        env:
-          ASC_KEY_ID: ${{ secrets.asc_api_key_id }}
-          ASC_ISSUER_ID: ${{ secrets.asc_api_key_issuer_id }}
-        run: |
-          echo -n "${{ secrets.asc_api_key_p8_base64 }}" | base64 --decode > "$RUNNER_TEMP/asc_key.p8"
-          for app in composeJournalsApp composeNotesApp composeTasksApp; do
-            for file in "$app"/build/compose/binaries/main/dmg/*.dmg; do
-              xcrun notarytool submit "$file" \
-                --key "$RUNNER_TEMP/asc_key.p8" \
-                --key-id "$ASC_KEY_ID" \
-                --issuer "$ASC_ISSUER_ID" \
-                --wait
-              xcrun stapler staple "$file"
-            done
-          done
 
       - name: Collect & rename installers
         # Version-less, stable names so a website can always link to
