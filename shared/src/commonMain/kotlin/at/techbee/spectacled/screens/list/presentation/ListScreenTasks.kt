@@ -69,7 +69,7 @@ fun ListScreenTasks(
         TaskListItem(
             icalEntry = icalEntry,
             isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
-            isReadOnly = state.calendar.canWriteContent(),
+            isReadOnly = !state.calendar.canWriteContent(),
             onClick = {
                 if (state.multiselectItems == null)
                     onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
