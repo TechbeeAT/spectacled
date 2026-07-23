@@ -391,16 +391,18 @@ fun DetailsScreen(
                             },
                             onFilterCategory = {},
                             dragHandle = {
-                                IconButton(
-                                    onClick = {},
-                                    modifier = with(this) {
-                                        Modifier.draggableHandle()
+                                if(state.allowEditing()) {
+                                    IconButton(
+                                        onClick = {},
+                                        modifier = with(this) {
+                                            Modifier.draggableHandle()
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.DragIndicator,
+                                            contentDescription = stringResource(Res.string.drag_handle)
+                                        )
                                     }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.DragIndicator,
-                                        contentDescription = stringResource(Res.string.drag_handle)
-                                    )
                                 }
                             }
                         )
