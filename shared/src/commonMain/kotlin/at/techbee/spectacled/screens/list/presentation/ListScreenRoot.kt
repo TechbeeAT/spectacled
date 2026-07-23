@@ -216,7 +216,7 @@ fun ListScreenRoot(
                 if (state.multiselectItems == null) {
                     if (state.calendar.canWriteContent()) {
                         ExtendedFloatingActionButton(
-                            onClick = { onNavigate(Route.AddICalEntry(state.calendar.id)) },
+                            onClick = { onNavigate(IcalEntryDetails(0L, state.calendar.id)) },
                             // Lift the FAB by the bottom safe-area inset so it clears the iOS home
                             // indicator (the content still fills to the edge, only the FAB is padded).
                             modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom)),
@@ -276,7 +276,7 @@ fun ListScreenRoot(
             },
             bottomBar = { },
             // Drop the bottom safe-area inset so the content fills to the screen edge and there
-            // is no empty strip (the "white gap") over the iOS home indicator. In landscape we
+            // is no empty strip (the "white gap") over the iOS home indicator. In landscape, we
             // additionally drop the horizontal insets so the content fills the sides; the top bar
             // keeps its own vertical insets in either case.
             contentWindowInsets = if (removeSafeAreaPaddingValues)

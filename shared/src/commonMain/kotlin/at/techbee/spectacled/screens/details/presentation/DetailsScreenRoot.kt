@@ -68,10 +68,10 @@ import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
-import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.core.rememberFilePicker
 import at.techbee.spectacled.screens.core.rememberImagePicker
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
@@ -272,7 +272,7 @@ fun DetailsScreenRoot(
                 sheetState = rememberModalBottomSheetState(confirmValueChange = { it != SheetValue.Hidden }),
                 principals = detailsState.allPrincipals,
                 homeCollections = detailsState.allHomeCollections,
-                calendars = detailsState.allCalendars,
+                calendars = detailsState.allCalendars.filter { it.canWriteContent() },
                 selectedCalendarId = if(detailsState.icalEntry.calendarId == 0L) null else detailsState.icalEntry.calendarId,
                 onCalendarIdSelected = { detailsViewModel.onAction(DetailsAction.OnNewCalendarIdSelected(it)) },
                 onDismiss = { }

@@ -65,12 +65,13 @@ import spectacled.shared.generated.resources.attachment_sync_state_synchronized
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.drawing
 import spectacled.shared.generated.resources.file_size_kb
-import spectacled.shared.generated.resources.unknown
 import spectacled.shared.generated.resources.ic_cloud_error
+import spectacled.shared.generated.resources.unknown
 
 @Composable
 fun AttachmentCard(
     attachment: Attachment,
+    allowEditing: Boolean,
     onAction: (DetailsAction) -> Unit,
     isDownloading: Boolean = false,
     fileManager: FileManager = koinInject<FileManager>(),
@@ -175,12 +176,14 @@ fun AttachmentCard(
                     }
                 }
 
-                IconButton(onClick = { onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) }) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = stringResource(Res.string.delete),
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                if(allowEditing) {
+                    IconButton(onClick = { onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = stringResource(Res.string.delete),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
 
@@ -229,6 +232,7 @@ private fun AttachmentCard_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
+        allowEditing = false,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -303,6 +307,7 @@ private fun AttachmentCard_Drawing_Preview() {
             mimeType = MIMETYPE_SVG,
             size = 125000L
         ),
+        allowEditing = true,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -330,6 +335,7 @@ private fun AttachmentCard_SyncState_SYNCHRONIZED_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
+        allowEditing = true,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -356,6 +362,7 @@ private fun AttachmentCard_SyncState_PENDING_DOWNLOAD_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
+        allowEditing = false,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -383,6 +390,7 @@ private fun AttachmentCard_SyncState_FAILED_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
+        allowEditing = true,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"

@@ -1,24 +1,37 @@
 package at.techbee.spectacled
 
 
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import at.techbee.spectacled.screens.Route
+import at.techbee.spectacled.screens.account.presentation.AccountListScreenRoot
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.koin.sharedModule
+import at.techbee.spectacled.screens.details.presentation.DetailsScreenRoot
 import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
+import at.techbee.spectacled.screens.list.presentation.ListScreenRoot
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
@@ -73,82 +86,138 @@ fun SpectacledApp(
         //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
         val navController = rememberNavController()
 
-
-        fun followRoute(route: Route) {
-            when (route) {
-                Route.AccountsList, Route.HomeGraph -> {
-                    detailsViewModel.reset()
-                    listViewModel.reset()
-                }
-                is Route.AddICalEntry -> {
-                    if (route.copyFromId != null)
-                        detailsViewModel.loadCopy(route.copyFromId)
-                    else if (route.calendarId != 0L)
-                        detailsViewModel.loadNew(route.calendarId, route.initialDescription)
-                    else
-                        detailsViewModel.prepareNew(route.initialDescription)
-                }
-                is Route.IcalEntryDetails -> {
-                    detailsViewModel.load(route.icalEntryId)
-                }
-                is Route.IcalEntryList -> {
-                    listViewModel.load(route.calendarId)
-                }
-            }
-
-            // Only navigates when the navController is actually attached (portrait mode).
-            // launchSingleTop keeps navigation idempotent: overlapping effects (the
-            // last-used-calendar effect and the landscape->portrait re-attach below) or a
-            // re-delivered deep link must not stack a second identical destination, which would
-            // break the back button.
-            try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { }
-        }
-
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
 
-            // BoxWithConstraints observes the window size and will trigger a recomposition
-            // whenever the orientation or size changes.
-            BoxWithConstraints {
-                val isLandscape = (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
+            NavHost(
+                navController = navController,
+                startDestination = Route.HomeGraph
+            ) {
+                navigation<Route.HomeGraph>(Route.AccountsList) {
 
-                if (isLandscape) {
-
-                    LandscapeLayout(
-                        accountListViewModel = accountListViewModel,
-                        listViewModel = listViewModel,
-                        detailsViewModel = detailsViewModel,
-                        onNavigate = { route -> followRoute(route) },
-                        onNavigateUp = {
-                            if(detailsViewModel.state.value.isInitialized)
-                                detailsViewModel.reset()
-                            else if (listViewModel.state.value.isInitialized)
-                                listViewModel.reset()
-                        }
-                    )
-                } else {
-                    LaunchedEffect(Unit) {
-                        // Re-attach the portrait nav stack to an already-loaded session (e.g. after
-                        // a landscape->portrait switch). Guard against calendar.id == 0L: load()
-                        // flips isInitialized to true synchronously while calendar is still the
-                        // default (id 0) until its async DB read completes, so navigating in that
-                        // window would open the empty placeholder calendar.
-                        if (listViewModel.state.value.isInitialized && listViewModel.state.value.calendar.id != 0L)
-                            followRoute(Route.IcalEntryList(listViewModel.state.value.calendar.id))
-                        if(detailsViewModel.state.value.isInitialized)
-                            followRoute(Route.IcalEntryDetails(detailsViewModel.state.value.icalEntry.id))
+                    composable<Route.AccountsList> {
+                        AccountListScreenRoot(
+                            viewModel = accountListViewModel,
+                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } }
+                        )
                     }
 
-                    PortraitLayout(
-                        navController = navController,
-                        accountListViewModel = accountListViewModel,
-                        listViewModel = listViewModel,
-                        detailsViewModel = detailsViewModel,
-                        startDestination = Route.AccountsList,
-                        onCloseApp = onCloseApp
-                    )
+                    composable<Route.IcalEntryList>(
+                        enterTransition = { slideInHorizontally { fullWidth -> fullWidth } },
+                        exitTransition = { slideOutHorizontally { fullWidth -> -fullWidth } },
+                        popEnterTransition = { slideInHorizontally { fullWidth -> -fullWidth } },
+                        popExitTransition = { slideOutHorizontally { fullWidth -> fullWidth } }
+                    ) { args ->
+
+                        val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
+
+                        LaunchedEffect(calendarId) {
+                            listViewModel.load(calendarId)
+                        }
+
+                        // BoxWithConstraints observes the window size and will trigger a recomposition
+                        // whenever the orientation or size changes.
+                        BoxWithConstraints {
+                            val isLandscape = (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
+
+                            Row(modifier = Modifier.fillMaxSize()) {
+
+                                if(isLandscape) {
+                                    AccountListScreenRoot(
+                                        viewModel = accountListViewModel,
+                                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
+                                        removeSafeAreaPaddingValues = isLandscape,
+                                        modifier = Modifier.weight(0.4f)
+                                    )
+
+                                    VerticalDivider()
+                                }
+
+
+                                ListScreenRoot(
+                                    listViewModel = listViewModel,
+                                    onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
+                                    onNavigateUp = {
+                                        if (!navController.popBackStack())
+                                            onCloseApp()
+                                    },
+                                    removeSafeAreaPaddingValues = isLandscape,
+                                    modifier = Modifier.weight(if(isLandscape) 0.6f else 1.0f)
+                                )
+                            }
+
+                        }
+                    }
+
+                    composable<Route.IcalEntryDetails> { args ->
+                        val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
+                        val calendarId = args.toRoute<Route.IcalEntryDetails>().newIcalEntryCalendarId
+                        val initialDescription = args.toRoute<Route.IcalEntryDetails>().newIcalEntryInitialDescription
+
+                        LaunchedEffect(icalEntryId, calendarId, initialDescription) {
+                            if (initialDescription != null || icalEntryId == 0L)
+                                detailsViewModel.loadNew(calendarId = calendarId, initialDescription = initialDescription)
+                            else if(detailsViewModel.state.value.icalEntry.id != icalEntryId)
+                                detailsViewModel.load(icalEntryId)
+                        }
+
+                        // BoxWithConstraints observes the window size and will trigger a recomposition
+                        // whenever the orientation or size changes.
+                        BoxWithConstraints {
+                            val isLandscape = (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
+
+                            Row(modifier = Modifier.fillMaxSize()) {
+
+                                val listState by listViewModel.state.collectAsState()
+                                val detailsState by detailsViewModel.state.collectAsState()
+
+                                LaunchedEffect(detailsState.calendar) {
+                                    detailsState.calendar?.let {
+                                        if(listState.calendar.id != it.id)   // calendar was loaded, load also in list if different
+                                            listViewModel.load(it.id)
+                                    }
+                                }
+
+                                // show list for landscape mode only and only when initialized
+                                if (isLandscape && listState.isInitialized && listState.calendar.id == detailsState.calendar?.id) {
+
+                                    ListScreenRoot(
+                                        listViewModel = listViewModel,
+                                        onNavigate = { route ->
+                                            try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { }
+                                        },
+                                        onNavigateUp = {
+                                            if (!navController.popBackStack())
+                                                onCloseApp()
+                                        },
+                                        removeSafeAreaPaddingValues = isLandscape,
+                                        modifier = Modifier.weight(0.4f)
+                                    )
+
+                                    VerticalDivider()
+                                }
+
+                                DetailsScreenRoot(
+                                    detailsViewModel = detailsViewModel,
+                                    // No launchSingleTop here: opening a linked entry (subtask) from a detail
+                                    // view should stack a new detail screen so Back returns to the parent,
+                                    // rather than replacing it.
+                                    onNavigate = { route -> navController.navigate(route) },
+                                    onNavigateUp = {
+                                        // close the app if the list was skipped on opening
+                                        if (!listViewModel.state.value.isInitialized)
+                                            onCloseApp()
+                                        else if (!navController.popBackStack())
+                                            onCloseApp()
+                                    },
+                                    removeSafeAreaPaddingValues = isLandscape,
+                                    modifier = Modifier.weight(if (isLandscape) 0.6f else 1.0f)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -166,7 +235,7 @@ fun SpectacledApp(
                     // (account removed/unsubscribed, or dropped by a sync) since it was last
                     // used, in which case we must not open the list view of a phantom calendar.
                     if (calendarRepository.getCalendarById(calendarId) != null)
-                        followRoute(Route.IcalEntryList(calendarId))
+                        navController.navigate(Route.IcalEntryList(calendarId))
                     else
                         userAppPreferencesStore.lastUsedCalendarId = null
                 }
@@ -180,9 +249,10 @@ fun SpectacledApp(
             val newRoute = if (!deepLinkData.isEmpty()) {
                 if (deepLinkData.initialIcalEntryId != null) {
                     if (deepLinkData.initialIcalEntryId == 0L) {
-                        Route.AddICalEntry(
-                            calendarId = deepLinkData.initialCalendarId ?: 0L,
-                            initialDescription = deepLinkData.initialIcalEntryDescription
+                        Route.IcalEntryDetails(
+                            icalEntryId = 0L,
+                            newIcalEntryCalendarId = deepLinkData.initialCalendarId ?: 0L,
+                            newIcalEntryInitialDescription = deepLinkData.initialIcalEntryDescription
                         )
                     } else {
                         Route.IcalEntryDetails(deepLinkData.initialIcalEntryId)
@@ -193,7 +263,7 @@ fun SpectacledApp(
             } else null
 
             newRoute?.let {
-                followRoute(it)
+                navController.navigate(it)
                 DeepLinkHandler.consume()
             }
         }

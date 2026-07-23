@@ -305,7 +305,7 @@ fun IcalEntryListTopBar(
                     if(spectacledVariant == SpectacledVariant.NOTES) {
                         TextButton(
                             onClick = { onAction(ListAction.OnTogglePinEntry(!allSelectedPinned)) },
-                            enabled = state.multiselectItems?.isNotEmpty() == true
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent()
                         ) {
                             if (allSelectedPinned)
                                 Icon(
@@ -341,7 +341,7 @@ fun IcalEntryListTopBar(
                                     text = stringResource(Res.string.update_color)
                                 )
                             },
-                            enabled = state.multiselectItems?.isNotEmpty() == true,
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
                             onClick = { onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(true)) },
                             leadingIcon = {
                                 Icon(
@@ -355,7 +355,7 @@ fun IcalEntryListTopBar(
                             text = {
                                 Text(text = stringResource(Res.string.update_category))
                             },
-                            enabled = state.multiselectItems?.isNotEmpty() == true,
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
                             onClick = { onAction(ListAction.OnShowUpdateCategoryOfSelectedBottomSheet(true)) },
                             leadingIcon = {
                                 Icon(
@@ -373,7 +373,7 @@ fun IcalEntryListTopBar(
                                     text = stringResource(Res.string.delete_selected)
                                 )
                             },
-                            enabled = state.multiselectItems?.isNotEmpty() == true,
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
                             onClick = { onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))  },
                             leadingIcon = {
                                 Icon(

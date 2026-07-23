@@ -93,13 +93,14 @@ fun JournalsListJournals(
 
             TaskListItem(
                 icalEntry = subtask,
+                isSelected = state.multiselectItems?.contains(subtask.id) == true,
+                allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState(),
                 onClick = {
                     if (state.multiselectItems == null)
                         onAction(ListAction.OnIcalEntryClicked(subtask.id))
                     else
                         onAction(ListAction.OnToggleMultiselectItem(subtask.id))
                 },
-                isSelected = state.multiselectItems?.contains(subtask.id) == true,
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                 onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },

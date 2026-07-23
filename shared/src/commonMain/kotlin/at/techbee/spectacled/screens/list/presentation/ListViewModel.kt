@@ -86,10 +86,6 @@ class ListViewModel(
         }
     }
 
-    fun reset() {
-        _state.update { ListState() }
-    }
-
     private suspend fun observeCalendar(calendarId: Long) {
         calendarRepository.getAllCalendarsFlow()
             .collect { calendars ->
@@ -216,9 +212,16 @@ class ListViewModel(
     }
 
     private fun onUpdateCategoryOfSelectedItems(addCategory: String?, removeCategory: String?) {
+
+        if(!state.value.calendar.canWriteContent())
+            return
+
         viewModelScope.launch {
             _state.value.multiselectItems?.forEach { id ->
                 _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
+                    if(icalEntry.syncState.isDeletedState())
+                        return@forEach
+
                     var newCategories = icalEntry.categories
                     if (addCategory?.isNotBlank() == true && !newCategories.contains(addCategory)) {
                         newCategories = newCategories + addCategory
@@ -252,6 +255,10 @@ class ListViewModel(
     }
 
     private fun onDeleteSelectedItems() {
+
+        if(!state.value.calendar.canWriteContent())
+            return
+
         viewModelScope.launch {
             _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(it) }
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
@@ -262,9 +269,16 @@ class ListViewModel(
 
 
     private fun onUpdateColorOfSelectedItems(color: Color?) {
+
+        if(!state.value.calendar.canWriteContent())
+            return
+
         viewModelScope.launch {
             _state.value.multiselectItems?.forEach { id ->
                 _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
+
+                    if(icalEntry.syncState.isDeletedState())
+                        return@forEach
 
                     icalEntryRepository.updateColor(
                         id = icalEntry.id,
@@ -279,9 +293,15 @@ class ListViewModel(
 
     private fun onUpdateProgress(icalEntryId: Long) {
 
+        if(!state.value.calendar.canWriteContent())
+            return
+
         viewModelScope.launch {
 
             val icalEntry = icalEntryRepository.getIcalEntryById(icalEntryId) ?: return@launch
+            if(icalEntry.syncState.isDeletedState())
+                return@launch
+
             val newPercent = if(icalEntry.percentComplete in 0L .. 99L) 100L else 0L
             val updatedEntry = icalEntry.withProgressUpdated(newPercent)
 
@@ -321,6 +341,9 @@ class ListViewModel(
 
     private fun onUpdateOrderNo(fromIndex: Int, toIndex: Int) {
 
+        if(!state.value.calendar.canWriteContent())
+            return
+
         if(fromIndex == toIndex)
             return
 
@@ -330,6 +353,10 @@ class ListViewModel(
     }
 
     private fun onPersistOrderNo() {
+
+        if(!state.value.calendar.canWriteContent())
+            return
+
         viewModelScope.launch {
             icalEntryRepository.updateOrderNo(dragAndDropList.map { it.id })
         }

@@ -201,7 +201,9 @@ fun DetailsScreen(
                             icon = Icons.AutoMirrored.Outlined.Label,
                             iconContentDescription = stringResource(Res.string.category),
                             text = category,
-                            onClick = { onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) }
+                            onClick = {
+                                if(state.allowEditing())
+                                    onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) }
                         )
                     }
                 }
@@ -265,6 +267,7 @@ fun DetailsScreen(
                     val entryTriState = state.icalEntry.getProgressTriState()
                     TriStateCheckbox(
                         state = entryTriState,
+                        enabled = state.allowEditing(),
                         onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 0 else 100)) }
                     )
                 }
@@ -328,6 +331,7 @@ fun DetailsScreen(
 
                     UrlCard(
                         url = state.icalEntry.url ?: Url(""),
+                        allowEditing = state.allowEditing(),
                         onClick = onAction,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -342,6 +346,7 @@ fun DetailsScreen(
                     state.icalEntry.attachments.forEach { attachment ->
                         AttachmentCard(
                             attachment = attachment,
+                            allowEditing = state.allowEditing(),
                             onAction = onAction,
                             isDownloading = state.downloadingAttachmentUids.contains(attachment.uid)
                         )
@@ -371,8 +376,9 @@ fun DetailsScreen(
                 key(subtask.id) {
                     ReorderableItem {
                         TaskListItem(
-                            subtask,
-                            isDragging,
+                            icalEntry = subtask,
+                            isSelected = isDragging,
+                            allowEditing = state.allowEditing(),
                             onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                             onLongClick = {},
                             onToggleProgress = {
@@ -385,16 +391,18 @@ fun DetailsScreen(
                             },
                             onFilterCategory = {},
                             dragHandle = {
-                                IconButton(
-                                    onClick = {},
-                                    modifier = with(this) {
-                                        Modifier.draggableHandle()
+                                if(state.allowEditing()) {
+                                    IconButton(
+                                        onClick = {},
+                                        modifier = with(this) {
+                                            Modifier.draggableHandle()
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.DragIndicator,
+                                            contentDescription = stringResource(Res.string.drag_handle)
+                                        )
                                     }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.DragIndicator,
-                                        contentDescription = stringResource(Res.string.drag_handle)
-                                    )
                                 }
                             }
                         )
