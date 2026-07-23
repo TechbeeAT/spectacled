@@ -224,7 +224,7 @@ fun IcalEntryListTopBar(
                                             if (state.listSortedBy.name == sortedByOption.name && state.listSortedBy != ListSortedBy.DRAGANDDROP)
                                                 onAction(ListAction.OnSortedByChanged(sortedByOption, !state.listSortedByAscending))
                                             else
-                                                onAction(ListAction.OnSortedByChanged(sortedByOption, true))
+                                                onAction(ListAction.OnSortedByChanged(sortedByOption, sortedByOption.defaultAsc))
                                         },
                                         trailingIcon = {
                                             if (state.listSortedBy.name == sortedByOption.name && state.listSortedByAscending)
