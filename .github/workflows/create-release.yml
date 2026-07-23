@@ -41,11 +41,13 @@ jobs:
           ANDROID_KEY_PASSWORD_TASKS: ${{ secrets.android_key_password_tasks }}
 
       - name: Collect & rename APKs
+        # Version-less, stable names so a website can always link to
+        # https://github.com/<owner>/<repo>/releases/latest/download/spectacled-<app>.apk
         run: |
           mkdir -p dist
-          cp androidJournalsApp/build/outputs/apk/release/*.apk dist/spectacled-journals-${{ github.ref_name }}.apk
-          cp androidNotesApp/build/outputs/apk/release/*.apk    dist/spectacled-notes-${{ github.ref_name }}.apk
-          cp androidTasksApp/build/outputs/apk/release/*.apk     dist/spectacled-tasks-${{ github.ref_name }}.apk
+          cp androidJournalsApp/build/outputs/apk/release/*.apk dist/spectacled-journals.apk
+          cp androidNotesApp/build/outputs/apk/release/*.apk    dist/spectacled-notes.apk
+          cp androidTasksApp/build/outputs/apk/release/*.apk     dist/spectacled-tasks.apk
 
       - uses: actions/upload-artifact@v7
         with:
@@ -83,11 +85,16 @@ jobs:
         shell: bash
         run: ./gradlew composeJournalsApp:${{ matrix.task }} composeNotesApp:${{ matrix.task }} composeTasksApp:${{ matrix.task }}
 
-      - name: Collect installers
+      - name: Collect & rename installers
+        # Version-less, stable names so a website can always link to
+        # https://github.com/<owner>/<repo>/releases/latest/download/spectacled-<app>.<format>
+        # Each compose module writes exactly one installer to its own output dir.
         shell: bash
         run: |
           mkdir -p dist
-          cp compose*App/build/compose/binaries/main/${{ matrix.format }}/* dist/
+          cp composeJournalsApp/build/compose/binaries/main/${{ matrix.format }}/* dist/spectacled-journals.${{ matrix.format }}
+          cp composeNotesApp/build/compose/binaries/main/${{ matrix.format }}/*    dist/spectacled-notes.${{ matrix.format }}
+          cp composeTasksApp/build/compose/binaries/main/${{ matrix.format }}/*     dist/spectacled-tasks.${{ matrix.format }}
 
       - uses: actions/upload-artifact@v7
         with:
