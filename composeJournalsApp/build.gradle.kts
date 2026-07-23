@@ -156,3 +156,39 @@ compose.desktop {
         }
     }
 }
+
+// --- iOS app versioning ---------------------------------------------------
+// Single source of truth for the version lives in gradle/libs.versions.toml, the
+// same values Android reads. This task writes them into the iOS xcconfig so the
+// iOS app version stays in lockstep:
+//   MARKETING_VERSION       <- appVersionString  (-> CFBundleShortVersionString)
+//   CURRENT_PROJECT_VERSION <- appBuildNumber     (-> CFBundleVersion)
+// The generated file is #included by iosApp/iosJournalsApp/Configuration/Config.xcconfig.
+// It's rewritten only when the values change, so normal builds don't dirty git.
+val generateIosVersionConfig by tasks.registering {
+    val versionName = libs.versions.appVersionString.get()
+    val buildNumber = libs.versions.appBuildNumber.get()
+    val xcconfig = rootProject.file("iosApp/iosJournalsApp/Configuration/Version.xcconfig")
+    inputs.property("versionName", versionName)
+    inputs.property("buildNumber", buildNumber)
+    outputs.file(xcconfig)
+    doLast {
+        val content = buildString {
+            appendLine("// Generated from gradle/libs.versions.toml - do not edit by hand.")
+            appendLine("// Bump appVersionString / appBuildNumber there instead, then rebuild")
+            appendLine("// (or run ./gradlew :composeJournalsApp:generateIosVersionConfig).")
+            appendLine("MARKETING_VERSION = $versionName")
+            appendLine("CURRENT_PROJECT_VERSION = $buildNumber")
+        }
+        if (!xcconfig.exists() || xcconfig.readText() != content) {
+            xcconfig.parentFile.mkdirs()
+            xcconfig.writeText(content)
+        }
+    }
+}
+
+// Xcode's "Compile Kotlin Framework" build phase runs embedAndSignAppleFrameworkForXcode,
+// so hooking in here keeps Version.xcconfig fresh on every iOS build.
+tasks.matching { it.name == "embedAndSignAppleFrameworkForXcode" }.configureEach {
+    dependsOn(generateIosVersionConfig)
+}

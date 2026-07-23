@@ -12,3 +12,15 @@ plugins {
     alias(libs.plugins.ktor) apply false
     alias(libs.plugins.aboutLibraries) apply false
 }
+
+// Regenerate all three iOS Version.xcconfig files from gradle/libs.versions.toml.
+// Run this after bumping appVersionString / appBuildNumber, then commit the result.
+tasks.register("updateIosVersions") {
+    group = "versioning"
+    description = "Regenerate iosApp/*/Configuration/Version.xcconfig from libs.versions.toml"
+    dependsOn(
+        ":composeJournalsApp:generateIosVersionConfig",
+        ":composeNotesApp:generateIosVersionConfig",
+        ":composeTasksApp:generateIosVersionConfig",
+    )
+}
