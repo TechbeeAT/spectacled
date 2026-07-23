@@ -139,6 +139,10 @@ class AccountListViewModel(
 
 
     private fun deleteCalendar(principal: Principal, calendar: Calendar) {
+
+        if(state.value.homeCollections.find { homeCollection -> homeCollection.id == calendar.homeCollectionId }?.canUnbind() != true)
+            return
+
         _state.update { it.copy(processingState = ProcessingState.Processing) }
         viewModelScope.launch(ioDispatcher) {
 
@@ -334,6 +338,10 @@ class AccountListViewModel(
     }
 
     private fun createOrUpdateCalendar(principal: Principal, homeCollection: HomeCollection, calendar: Calendar) {
+
+        if(!homeCollection.canBind())
+            return
+
         Napier.d("Adding calendar")
         _state.update { it.copy(processingState = ProcessingState.Processing) }
 

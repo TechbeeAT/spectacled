@@ -344,6 +344,10 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateSummary(newSummary: String) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -357,6 +361,10 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDescription(newDescription: String) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -369,6 +377,10 @@ class DetailsViewModel(
     }
 
     private fun onPinIcalEntry(pin: Boolean) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         if(pin)
             onUpdateCategories(IcalEntry.PINNED_CATEGORY, null)
         else
@@ -376,6 +388,10 @@ class DetailsViewModel(
     }
 
     private fun onUpdateCategories(addCategory: String?, removeCategory: String?) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -395,6 +411,10 @@ class DetailsViewModel(
     }
 
     private fun onUpdateStatus(status: Status?) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -421,6 +441,10 @@ class DetailsViewModel(
 
 
     private fun onUpdateColor(newColor: Color?) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -433,6 +457,10 @@ class DetailsViewModel(
     }
 
     private fun onUpdateUrl(newUrl: Url?) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -446,6 +474,9 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDtStart(newDtStart: IcsDateTime?) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
 
         if(_state.value.icalEntry.isJournal() && newDtStart == null)   // for safety only, setting date to null for journals would convert it to a note, not allowed.
             return
@@ -474,6 +505,9 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDue(newDue: IcsDateTime?) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
 
         _state.update {
             // make sure dtstart and due have the same format (all day or both with time)
@@ -509,6 +543,10 @@ class DetailsViewModel(
     }
 
     private fun onRestoreEntry() {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         if(_state.value.icalEntry.syncState == SyncState.LOCAL_DELETED)
             saveIcalEntry(SyncState.LOCAL_MODIFIED)
         else
@@ -520,6 +558,10 @@ class DetailsViewModel(
     }
 
     private fun saveIcalEntry(syncState: SyncState, navigateUp: Boolean = false) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         val entryToSave = _state.value.icalEntry.copy(syncState = syncState)
 
         _state.update {
@@ -614,6 +656,9 @@ class DetailsViewModel(
 
     private fun insertSubtask(summary: String) {
 
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         val subtask = IcalEntry.newTask().copy(
             summary = summary,
             parentUid = _state.value.icalEntry.uid,
@@ -630,12 +675,19 @@ class DetailsViewModel(
     }
 
     private fun onUpdateTaskProgress(percent: Long) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         _state.update {
             it.copy(icalEntry = it.icalEntry.withProgressUpdated(percent))
         }
     }
 
     private fun onUpdateSubtaskProgress(percent: Long, subtaskIcalEntryId: Long) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
 
         val subtask = _state.value.subtasks.find { it.id == subtaskIcalEntryId } ?: return
 
@@ -652,12 +704,20 @@ class DetailsViewModel(
     }
 
     private fun onPersistOrderNo(sortedList: List<Long>) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         viewModelScope.launch {
             icalEntryRepository.updateOrderNo(sortedList)
         }
     }
 
     private fun onProcessWithAI() {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         if(state.value.claudeUserApiKey.isNullOrEmpty()) {
             _state.update {
                 it.copy(
@@ -714,6 +774,10 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         // Writes the attachment bytes to disk — keep the file I/O off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
             val attachmentUid = Uuid.random().toString()
@@ -780,6 +844,10 @@ class DetailsViewModel(
     }
 
     private fun onDeleteAttachment(attachmentUid: String) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         // Deletes the attachment file from disk — keep the file I/O off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
             val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid }
@@ -800,6 +868,10 @@ class DetailsViewModel(
     }
 
     private fun onUpdateDrawing(replaceAttachmentUid: String?, paths: List<PathData>) {
+
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         val svg = PathDataSvgConverter.toSvg(paths)
         onAddAttachment(
             fileName = "drawing_" + Uuid.random().toString().take(8) + ".svg",

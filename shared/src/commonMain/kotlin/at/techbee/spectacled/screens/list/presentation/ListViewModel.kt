@@ -212,6 +212,10 @@ class ListViewModel(
     }
 
     private fun onUpdateCategoryOfSelectedItems(addCategory: String?, removeCategory: String?) {
+
+        if(!state.value.calendar.canWriteContent())
+            return
+
         viewModelScope.launch {
             _state.value.multiselectItems?.forEach { id ->
                 _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
@@ -248,6 +252,10 @@ class ListViewModel(
     }
 
     private fun onDeleteSelectedItems() {
+
+        if(!state.value.calendar.canWriteContent())
+            return
+
         viewModelScope.launch {
             _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(it) }
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
@@ -258,6 +266,10 @@ class ListViewModel(
 
 
     private fun onUpdateColorOfSelectedItems(color: Color?) {
+
+        if(!state.value.calendar.canWriteContent())
+            return
+
         viewModelScope.launch {
             _state.value.multiselectItems?.forEach { id ->
                 _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
@@ -274,6 +286,9 @@ class ListViewModel(
     }
 
     private fun onUpdateProgress(icalEntryId: Long) {
+
+        if(!state.value.calendar.canWriteContent())
+            return
 
         viewModelScope.launch {
 
@@ -317,6 +332,9 @@ class ListViewModel(
 
     private fun onUpdateOrderNo(fromIndex: Int, toIndex: Int) {
 
+        if(!state.value.calendar.canWriteContent())
+            return
+
         if(fromIndex == toIndex)
             return
 
@@ -326,6 +344,10 @@ class ListViewModel(
     }
 
     private fun onPersistOrderNo() {
+
+        if(!state.value.calendar.canWriteContent())
+            return
+
         viewModelScope.launch {
             icalEntryRepository.updateOrderNo(dragAndDropList.map { it.id })
         }
