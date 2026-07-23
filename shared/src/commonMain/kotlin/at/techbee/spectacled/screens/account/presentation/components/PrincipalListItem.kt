@@ -100,15 +100,18 @@ fun PrincipalListItem(
                         onDismissRequest = { iCalCollectionMenuExpanded = false }
                     ) {
 
+                        val homeCollection = homeCollections.firstOrNull()
+
                         DropdownMenuItem(
                             text = { Text(stringResource(Res.string.create_folder)) },
+                            enabled = homeCollection?.canBind() == true,
                             onClick = {
                                 iCalCollectionMenuExpanded = false
 
                                 onAction(AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet(
                                     principal = principal,
-                                    homeCollection = homeCollections.first(),
-                                    calendar = Calendar.getNewCalendar(homeCollections.first())
+                                    homeCollection = homeCollection!!,
+                                    calendar = Calendar.getNewCalendar(homeCollection)
                                 ))
                             },
                             leadingIcon = { Icon(Icons.Outlined.CreateNewFolder, null) }

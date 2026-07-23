@@ -54,6 +54,7 @@ import kotlin.time.ExperimentalTime
 fun TaskListItem(
     icalEntry: IcalEntry,
     isSelected: Boolean,
+    isReadOnly: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleProgress: () -> Unit,
@@ -73,6 +74,7 @@ fun TaskListItem(
             leadingIcon = { dragHandle() },
             trailingIcon = {
                 TriStateCheckbox(
+                    enabled = !isReadOnly,
                     state = icalEntry.getProgressTriState(),
                     onClick = {
                         onToggleProgress()
@@ -189,6 +191,7 @@ private fun TaskListItem_first_Preview() {
         TaskListItem(
             icalEntry = IcalEntry.getSampleIcalEntry(),
             isSelected = false,
+            isReadOnly = false,
             onClick = {},
             onLongClick = {},
             onFilterCategory = {},
@@ -208,6 +211,7 @@ private fun TaskListItem_colored_Preview() {
             TaskListItem(
                 icalEntry = IcalEntry.getSampleIcalEntry(),
                 isSelected = false,
+                isReadOnly = false,
                 onClick = {},
                 onLongClick = {},
                 onFilterCategory = {},
@@ -226,6 +230,7 @@ private fun TaskListItem_drag_Preview() {
         TaskListItem(
             icalEntry = IcalEntry.getSampleIcalEntry(),
             isSelected = false,
+            isReadOnly = false,
             onClick = {},
             onLongClick = {},
             onFilterCategory = {},
@@ -249,6 +254,7 @@ private fun TaskListItem_drag_short_Preview() {
         TaskListItem(
             icalEntry = IcalEntry(calendarComponent = CalendarComponent.VTODO, summary = "short summary"),
             isSelected = false,
+            isReadOnly = true,
             onClick = {},
             onLongClick = {},
             onFilterCategory = {},

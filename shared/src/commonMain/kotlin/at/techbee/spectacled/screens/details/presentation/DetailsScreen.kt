@@ -265,6 +265,7 @@ fun DetailsScreen(
                     val entryTriState = state.icalEntry.getProgressTriState()
                     TriStateCheckbox(
                         state = entryTriState,
+                        enabled = state.allowEditing(),
                         onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 0 else 100)) }
                     )
                 }
@@ -328,6 +329,7 @@ fun DetailsScreen(
 
                     UrlCard(
                         url = state.icalEntry.url ?: Url(""),
+                        isReadOnly = state.calendar?.canWriteContent() != true,
                         onClick = onAction,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -342,6 +344,7 @@ fun DetailsScreen(
                     state.icalEntry.attachments.forEach { attachment ->
                         AttachmentCard(
                             attachment = attachment,
+                            isReadOnly = state.calendar?.canWriteContent() != true,
                             onAction = onAction,
                             isDownloading = state.downloadingAttachmentUids.contains(attachment.uid)
                         )
@@ -371,8 +374,9 @@ fun DetailsScreen(
                 key(subtask.id) {
                     ReorderableItem {
                         TaskListItem(
-                            subtask,
-                            isDragging,
+                            icalEntry = subtask,
+                            isSelected = isDragging,
+                            isReadOnly = state.calendar?.canWriteContent() != true,
                             onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                             onLongClick = {},
                             onToggleProgress = {

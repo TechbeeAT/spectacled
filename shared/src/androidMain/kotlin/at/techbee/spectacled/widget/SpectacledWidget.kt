@@ -174,6 +174,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
                                 IcalEntryItem(
                                     entry = entry,
+                                    isReadOnly = !calendar.canWriteContent(),
                                     modifier = GlanceModifier.clickable(
                                         onClick = actionStartActivity(
                                             getLaunchIntent(context, entry.calendarId, entry.id)
@@ -185,6 +186,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                                     IcalEntryItem(
                                         entry = subEntry,
                                         showSubtaskIcon = true,
+                                        isReadOnly = !calendar.canWriteContent(),
                                         modifier = GlanceModifier
                                             .clickable(
                                                 onClick = actionStartActivity(
@@ -226,6 +228,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     @Composable
     private fun IcalEntryItem(
         entry: IcalEntry,
+        isReadOnly: Boolean,
         showSubtaskIcon: Boolean = false,
         modifier: GlanceModifier = GlanceModifier
     ) {
@@ -271,15 +274,16 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
             }
 
             if(entry.isTask()) {
-                CheckBox(
-                    checked = entry.percentComplete == 100L,
-                    onCheckedChange = actionRunCallback<ToggleTaskAction>(
-                        actionParametersOf(
-                            ToggleTaskAction.EntryIdKey to entry.id,
-                            ToggleTaskAction.IsCheckedKey to (entry.percentComplete != 100L)
+                if(!isReadOnly)
+                    CheckBox(
+                        checked = entry.percentComplete == 100L,
+                        onCheckedChange = actionRunCallback<ToggleTaskAction>(
+                            actionParametersOf(
+                                ToggleTaskAction.EntryIdKey to entry.id,
+                                ToggleTaskAction.IsCheckedKey to (entry.percentComplete != 100L)
+                            )
                         )
                     )
-                )
             }
         }
     }

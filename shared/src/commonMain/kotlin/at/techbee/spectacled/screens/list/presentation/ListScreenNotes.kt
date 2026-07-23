@@ -108,13 +108,14 @@ fun ListScreenNotes(
 
                 TaskListItem(
                     icalEntry = subtask,
+                    isSelected = state.multiselectItems?.contains(subtask.id) == true || isDragging,
+                    isReadOnly = state.calendar.canWriteContent(),
                     onClick = {
                         if (state.multiselectItems == null)
                             onAction(ListAction.OnIcalEntryClicked(subtask.id))
                         else
                             onAction(ListAction.OnToggleMultiselectItem(subtask.id))
                     },
-                    isSelected = state.multiselectItems?.contains(subtask.id) == true || isDragging,
                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                     onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                     onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
@@ -146,7 +147,7 @@ fun ListScreenNotes(
                 ReorderableItem(
                     state = reorderableLazyListState,
                     key = icalEntry.uid,
-                    enabled = true
+                    enabled = state.calendar.canWriteContent()
                 ) { isDragging ->
 
                     LaunchedEffect(isDragging) {
