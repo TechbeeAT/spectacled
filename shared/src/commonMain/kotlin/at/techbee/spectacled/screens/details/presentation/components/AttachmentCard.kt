@@ -71,7 +71,7 @@ import spectacled.shared.generated.resources.unknown
 @Composable
 fun AttachmentCard(
     attachment: Attachment,
-    isReadOnly: Boolean,
+    allowEditing: Boolean,
     onAction: (DetailsAction) -> Unit,
     isDownloading: Boolean = false,
     fileManager: FileManager = koinInject<FileManager>(),
@@ -176,7 +176,7 @@ fun AttachmentCard(
                     }
                 }
 
-                if(!isReadOnly) {
+                if(allowEditing) {
                     IconButton(onClick = { onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) }) {
                         Icon(
                             imageVector = Icons.Outlined.Delete,
@@ -232,7 +232,7 @@ private fun AttachmentCard_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
-        isReadOnly = false,
+        allowEditing = false,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -307,7 +307,7 @@ private fun AttachmentCard_Drawing_Preview() {
             mimeType = MIMETYPE_SVG,
             size = 125000L
         ),
-        isReadOnly = false,
+        allowEditing = true,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -335,7 +335,7 @@ private fun AttachmentCard_SyncState_SYNCHRONIZED_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
-        isReadOnly = false,
+        allowEditing = true,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -362,7 +362,7 @@ private fun AttachmentCard_SyncState_PENDING_DOWNLOAD_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
-        isReadOnly = true,
+        allowEditing = false,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -390,7 +390,7 @@ private fun AttachmentCard_SyncState_FAILED_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
-        isReadOnly = false,
+        allowEditing = true,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"

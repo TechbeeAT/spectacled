@@ -174,7 +174,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
                                 IcalEntryItem(
                                     entry = entry,
-                                    isReadOnly = !calendar.canWriteContent(),
+                                    allowEditing = calendar.canWriteContent(),
                                     modifier = GlanceModifier.clickable(
                                         onClick = actionStartActivity(
                                             getLaunchIntent(context, entry.calendarId, entry.id)
@@ -186,7 +186,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                                     IcalEntryItem(
                                         entry = subEntry,
                                         showSubtaskIcon = true,
-                                        isReadOnly = !calendar.canWriteContent(),
+                                        allowEditing = calendar.canWriteContent(),
                                         modifier = GlanceModifier
                                             .clickable(
                                                 onClick = actionStartActivity(
@@ -228,7 +228,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     @Composable
     private fun IcalEntryItem(
         entry: IcalEntry,
-        isReadOnly: Boolean,
+        allowEditing: Boolean,
         showSubtaskIcon: Boolean = false,
         modifier: GlanceModifier = GlanceModifier
     ) {
@@ -274,7 +274,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
             }
 
             if(entry.isTask()) {
-                if(!isReadOnly)
+                if(allowEditing)
                     CheckBox(
                         checked = entry.percentComplete == 100L,
                         onCheckedChange = actionRunCallback<ToggleTaskAction>(

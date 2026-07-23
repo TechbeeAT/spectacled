@@ -32,7 +32,7 @@ import spectacled.shared.generated.resources.edit
 @Composable
 fun UrlCard(
     url: Url,
-    isReadOnly: Boolean,
+    allowEditing: Boolean,
     onClick: (DetailsAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -68,7 +68,7 @@ fun UrlCard(
                 modifier = Modifier.weight(1f)
             )
 
-            if(!isReadOnly) {
+            if(allowEditing) {
                 IconButton(
                     onClick = {
                         onClick(DetailsAction.OnShowEditUrlBottomSheet(true))
@@ -88,7 +88,7 @@ private fun UrlCard_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         UrlCard(
             url = Url("https://spectacled.techbee.at/folder"),
-            isReadOnly = false,
+            allowEditing = true,
             onClick = {},
             modifier = Modifier.padding(8.dp)
         )
@@ -101,7 +101,7 @@ private fun UrlCard_readonly_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         UrlCard(
             url = Url("https://spectacled.techbee.at/folder"),
-            isReadOnly = true,
+            allowEditing = false,
             onClick = {},
             modifier = Modifier.padding(8.dp)
         )

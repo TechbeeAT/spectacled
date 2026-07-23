@@ -201,7 +201,9 @@ fun DetailsScreen(
                             icon = Icons.AutoMirrored.Outlined.Label,
                             iconContentDescription = stringResource(Res.string.category),
                             text = category,
-                            onClick = { onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) }
+                            onClick = {
+                                if(state.allowEditing())
+                                    onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) }
                         )
                     }
                 }
@@ -329,7 +331,7 @@ fun DetailsScreen(
 
                     UrlCard(
                         url = state.icalEntry.url ?: Url(""),
-                        isReadOnly = state.calendar?.canWriteContent() != true,
+                        allowEditing = state.allowEditing(),
                         onClick = onAction,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -344,7 +346,7 @@ fun DetailsScreen(
                     state.icalEntry.attachments.forEach { attachment ->
                         AttachmentCard(
                             attachment = attachment,
-                            isReadOnly = state.calendar?.canWriteContent() != true,
+                            allowEditing = state.allowEditing(),
                             onAction = onAction,
                             isDownloading = state.downloadingAttachmentUids.contains(attachment.uid)
                         )
@@ -376,7 +378,7 @@ fun DetailsScreen(
                         TaskListItem(
                             icalEntry = subtask,
                             isSelected = isDragging,
-                            isReadOnly = state.calendar?.canWriteContent() != true,
+                            allowEditing = state.allowEditing(),
                             onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                             onLongClick = {},
                             onToggleProgress = {

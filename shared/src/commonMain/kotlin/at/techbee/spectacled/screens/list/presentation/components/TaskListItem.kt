@@ -54,7 +54,7 @@ import kotlin.time.ExperimentalTime
 fun TaskListItem(
     icalEntry: IcalEntry,
     isSelected: Boolean,
-    isReadOnly: Boolean,
+    allowEditing: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleProgress: () -> Unit,
@@ -74,7 +74,7 @@ fun TaskListItem(
             leadingIcon = { dragHandle() },
             trailingIcon = {
                 TriStateCheckbox(
-                    enabled = !isReadOnly,
+                    enabled = allowEditing,
                     state = icalEntry.getProgressTriState(),
                     onClick = {
                         onToggleProgress()
@@ -191,7 +191,7 @@ private fun TaskListItem_first_Preview() {
         TaskListItem(
             icalEntry = IcalEntry.getSampleIcalEntry(),
             isSelected = false,
-            isReadOnly = false,
+            allowEditing = true,
             onClick = {},
             onLongClick = {},
             onFilterCategory = {},
@@ -211,7 +211,7 @@ private fun TaskListItem_colored_Preview() {
             TaskListItem(
                 icalEntry = IcalEntry.getSampleIcalEntry(),
                 isSelected = false,
-                isReadOnly = false,
+                allowEditing = true,
                 onClick = {},
                 onLongClick = {},
                 onFilterCategory = {},
@@ -230,7 +230,7 @@ private fun TaskListItem_drag_Preview() {
         TaskListItem(
             icalEntry = IcalEntry.getSampleIcalEntry(),
             isSelected = false,
-            isReadOnly = false,
+            allowEditing = true,
             onClick = {},
             onLongClick = {},
             onFilterCategory = {},
@@ -254,7 +254,7 @@ private fun TaskListItem_drag_short_Preview() {
         TaskListItem(
             icalEntry = IcalEntry(calendarComponent = CalendarComponent.VTODO, summary = "short summary"),
             isSelected = false,
-            isReadOnly = true,
+            allowEditing = false,
             onClick = {},
             onLongClick = {},
             onFilterCategory = {},
