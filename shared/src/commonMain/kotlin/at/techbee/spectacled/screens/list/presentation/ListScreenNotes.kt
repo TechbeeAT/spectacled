@@ -109,7 +109,7 @@ fun ListScreenNotes(
                 TaskListItem(
                     icalEntry = subtask,
                     isSelected = state.multiselectItems?.contains(subtask.id) == true || isDragging,
-                    allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState(),
+                    allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState(),
                     onClick = {
                         if (state.multiselectItems == null)
                             onAction(ListAction.OnIcalEntryClicked(subtask.id))

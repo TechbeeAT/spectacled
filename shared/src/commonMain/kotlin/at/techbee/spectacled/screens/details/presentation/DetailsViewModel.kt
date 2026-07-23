@@ -345,7 +345,7 @@ class DetailsViewModel(
     @OptIn(ExperimentalTime::class)
     private fun onUpdateSummary(newSummary: String) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         _state.update {
@@ -362,7 +362,7 @@ class DetailsViewModel(
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDescription(newDescription: String) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         _state.update {
@@ -378,7 +378,7 @@ class DetailsViewModel(
 
     private fun onPinIcalEntry(pin: Boolean) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         if(pin)
@@ -389,7 +389,7 @@ class DetailsViewModel(
 
     private fun onUpdateCategories(addCategory: String?, removeCategory: String?) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         _state.update {
@@ -412,7 +412,7 @@ class DetailsViewModel(
 
     private fun onUpdateStatus(status: Status?) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         _state.update {
@@ -442,7 +442,7 @@ class DetailsViewModel(
 
     private fun onUpdateColor(newColor: Color?) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         _state.update {
@@ -458,7 +458,7 @@ class DetailsViewModel(
 
     private fun onUpdateUrl(newUrl: Url?) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         _state.update {
@@ -475,7 +475,7 @@ class DetailsViewModel(
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDtStart(newDtStart: IcsDateTime?) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         if(_state.value.icalEntry.isJournal() && newDtStart == null)   // for safety only, setting date to null for journals would convert it to a note, not allowed.
@@ -506,7 +506,7 @@ class DetailsViewModel(
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDue(newDue: IcsDateTime?) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         _state.update {
@@ -544,6 +544,8 @@ class DetailsViewModel(
 
     private fun onRestoreEntry() {
 
+        // Restore acts on a deleted entry, so gate on write access only (not allowEditing,
+        // which excludes deleted entries).
         if(state.value.calendar?.canWriteContent() != true)
             return
 
@@ -559,6 +561,8 @@ class DetailsViewModel(
 
     private fun saveIcalEntry(syncState: SyncState, navigateUp: Boolean = false) {
 
+        // Persists delete/restore/conflict-resolution transitions too, so gate on write access
+        // only (not allowEditing, which would block saving a deleted entry).
         if(state.value.calendar?.canWriteContent() != true)
             return
 
@@ -656,7 +660,7 @@ class DetailsViewModel(
 
     private fun insertSubtask(summary: String) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         val subtask = IcalEntry.newTask().copy(
@@ -676,7 +680,7 @@ class DetailsViewModel(
 
     private fun onUpdateTaskProgress(percent: Long) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         _state.update {
@@ -686,7 +690,7 @@ class DetailsViewModel(
 
     private fun onUpdateSubtaskProgress(percent: Long, subtaskIcalEntryId: Long) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         val subtask = _state.value.subtasks.find { it.id == subtaskIcalEntryId } ?: return
@@ -705,7 +709,7 @@ class DetailsViewModel(
 
     private fun onPersistOrderNo(sortedList: List<Long>) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         viewModelScope.launch {
@@ -715,7 +719,7 @@ class DetailsViewModel(
 
     private fun onProcessWithAI() {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         if(state.value.claudeUserApiKey.isNullOrEmpty()) {
@@ -775,7 +779,7 @@ class DetailsViewModel(
     @OptIn(ExperimentalTime::class)
     private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         // Writes the attachment bytes to disk — keep the file I/O off the Main dispatcher.
@@ -845,7 +849,7 @@ class DetailsViewModel(
 
     private fun onDeleteAttachment(attachmentUid: String) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         // Deletes the attachment file from disk — keep the file I/O off the Main dispatcher.
@@ -869,7 +873,7 @@ class DetailsViewModel(
 
     private fun onUpdateDrawing(replaceAttachmentUid: String?, paths: List<PathData>) {
 
-        if(state.value.calendar?.canWriteContent() != true)
+        if(!state.value.allowEditing())
             return
 
         val svg = PathDataSvgConverter.toSvg(paths)
