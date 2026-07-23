@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextObfuscationMode
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -13,7 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
@@ -28,8 +31,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,8 +49,8 @@ import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.show_error_details
 import spectacled.shared.generated.resources.show_hide_password
-import spectacled.shared.generated.resources.update_password_button
 import spectacled.shared.generated.resources.update_password
+import spectacled.shared.generated.resources.update_password_button
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +62,7 @@ fun UpdatePrincipalPasswordBottomSheet(
     onDismiss: () -> Unit,
 ) {
 
-    var password by rememberSaveable { mutableStateOf("") }
+    val passwordState = rememberTextFieldState()
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
 
@@ -84,9 +87,9 @@ fun UpdatePrincipalPasswordBottomSheet(
         menuActionRight = {
             TextButton(
                 onClick = {
-                    onAction(AccountListAction.OnUpdatePrincipalPassword(principal, password))
+                    onAction(AccountListAction.OnUpdatePrincipalPassword(principal, passwordState.text.toString()))
                 },
-                enabled = password.isNotBlank() && processingState !is ProcessingState.Processing
+                enabled = passwordState.text.isNotBlank() && processingState !is ProcessingState.Processing
             ) {
                 Text(stringResource(Res.string.update_password_button))
             }
@@ -137,14 +140,12 @@ fun UpdatePrincipalPasswordBottomSheet(
                 }
             }
 
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
+            OutlinedSecureTextField(
+                state = passwordState,
                 //placeholder = { Text("******") },
                 //supportingText = { Text("Optional") },
                 label = { Text(stringResource(Res.string.password)) },
-                singleLine = true,
-                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                textObfuscationMode = if (isPasswordVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
                 trailingIcon = {
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                         Crossfade(isPasswordVisible) { visible ->
@@ -154,37 +155,14 @@ fun UpdatePrincipalPasswordBottomSheet(
                             ) else Icon(Icons.Outlined.VisibilityOff, contentDescription = stringResource(Res.string.show_hide_password))
                         }
                     }
-                }
-            )
-
-            /*
-        Button(
-            onClick = {
-                onAction(CalendarListAction.OnAddPrincipal(server, username, password, true))
-            },
-            enabled = server.isNotBlank() && username.isNotBlank() && password.isNotBlank() && processingState !is ProcessingState.Processing
-        ) {
-            Text("Add account (dav4jvm)")
-        }
- */
-
-            /*
-            Button(
-                onClick = {
-                    onAction(CalendarListAction.OnUpdatePrincipalPassword(principal, password))
                 },
-                enabled = password.isNotBlank() && processingState !is ProcessingState.Processing,
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text("Update password")
-            }
-
-            AnimatedVisibility(processingState is ProcessingState.Processing) {
-                CircularProgressIndicator(
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
-            */
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Password,
+                    autoCorrectEnabled = false
+                    //imeAction = ImeAction.Done
+                ),
+            )
         }
     }
 }

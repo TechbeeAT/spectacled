@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
@@ -55,6 +56,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -469,6 +472,12 @@ fun AddAccountScreen(
                         }
                     }
                 },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Uri,
+                    autoCorrectEnabled = false
+                    //imeAction = ImeAction.Done
+                ),
                 modifier = Modifier.width(400.dp)
             )
 
@@ -478,6 +487,12 @@ fun AddAccountScreen(
                 placeholder = { Text(stringResource(Res.string.username)) },
                 label = { Text(stringResource(Res.string.username)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Email,
+                    autoCorrectEnabled = false
+                    //imeAction = ImeAction.Done
+                ),
                 modifier = Modifier.width(400.dp)
             )
 
@@ -498,6 +513,12 @@ fun AddAccountScreen(
                         }
                     }
                 },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Password,
+                    autoCorrectEnabled = false
+                    //imeAction = ImeAction.Done
+                ),
                 modifier = Modifier.width(400.dp)
             )
         }
