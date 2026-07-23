@@ -2,11 +2,11 @@ name: Create and upload app bundles to Google Play
 on:
   push:
     tags:
-      - 'v*alpha*'
+      - 'v*'           # alpha, beta and final releases all upload to Google Play
   workflow_dispatch:
 jobs:
   build:
-    name: Create alpha
+    name: Upload app bundles to Google Play
     permissions:
       contents: write
     runs-on: ubuntu-latest
