@@ -188,6 +188,10 @@
     <string name="view_grid">Grid</string>
     <string name="drag_handle">Drag handle</string>
 
+    <string name="format_bold">Bold</string>
+    <string name="format_italic">Italic</string>
+    <string name="format_underline">Underline</string>
+
     <string name="theme">Theme</string>
     <string name="theme_system">Default (System)</string>
     <string name="theme_light">Light</string>
