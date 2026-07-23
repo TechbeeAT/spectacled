@@ -186,7 +186,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                                     IcalEntryItem(
                                         entry = subEntry,
                                         showSubtaskIcon = true,
-                                        allowEditing = calendar.canWriteContent() && !entry.syncState.isDeletedState(),
+                                        allowEditing = calendar.canWriteContent() && !subEntry.syncState.isDeletedState(),
                                         modifier = GlanceModifier
                                             .clickable(
                                                 onClick = actionStartActivity(
