@@ -1,12 +1,16 @@
 package at.techbee.spectacled.screens.details.presentation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -17,6 +21,9 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.filled.FormatBold
+import androidx.compose.material.icons.filled.FormatItalic
+import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.Icon
@@ -24,6 +31,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +44,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
@@ -50,6 +62,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -57,7 +71,9 @@ import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
+import at.techbee.spectacled.screens.core.presentation.MarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
+import at.techbee.spectacled.screens.core.presentation.applyMarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
 import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
@@ -74,6 +90,9 @@ import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.drag_handle
+import spectacled.shared.generated.resources.format_bold
+import spectacled.shared.generated.resources.format_italic
+import spectacled.shared.generated.resources.format_underline
 import spectacled.shared.generated.resources.summary
 
 
@@ -99,6 +118,28 @@ fun DetailsScreen(
 
     var summaryLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     var descriptionLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    // The editors are driven by TextFieldValue (not a plain String) so we know the cursor/selection,
+    // which the formatting bar needs. The domain state stays a String: onValueChange still emits the
+    // plain text via onAction. We hold the value locally and only re-seed it from the domain state
+    // when the incoming text actually differs (external loads, AI processing, copy) — never on our
+    // own keystrokes — so the caret is not reset mid-typing.
+    var summaryValue by remember { mutableStateOf(TextFieldValue(state.icalEntry.summary ?: "")) }
+    LaunchedEffect(state.icalEntry.summary) {
+        val incoming = state.icalEntry.summary ?: ""
+        if (incoming != summaryValue.text) summaryValue = TextFieldValue(incoming, TextRange(incoming.length))
+    }
+    var descriptionValue by remember { mutableStateOf(TextFieldValue(state.icalEntry.description ?: "")) }
+    LaunchedEffect(state.icalEntry.description) {
+        val incoming = state.icalEntry.description ?: ""
+        if (incoming != descriptionValue.text) descriptionValue = TextFieldValue(incoming, TextRange(incoming.length))
+    }
+
+    // Which editor a formatting-bar tap should act on: the one that was last focused.
+    val summaryFocusRequester = remember { FocusRequester() }
+    val descriptionFocusRequester = remember { FocusRequester() }
+    var lastFocusedField by remember { mutableStateOf<EditorField?>(null) }
+
     // removes the keyboard when user scrolls to the top
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
@@ -115,9 +156,11 @@ fun DetailsScreen(
     }
 
 
-    SelectionContainer {
+    Box(modifier = modifier) {
+      SelectionContainer {
         Column(
-            modifier = modifier
+            modifier = Modifier
+                .fillMaxSize()
                 .nestedScroll(nestedScrollConnection)
                 .verticalScroll(scrollState)
         ) {
@@ -216,14 +259,12 @@ fun DetailsScreen(
             ) {
 
                 BasicTextField(
-                    value = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) stringResource(Res.string.summary) else state.icalEntry.summary
-                        ?: "",
+                    value = summaryValue,
                     onValueChange = {
-                        onAction(DetailsAction.OnUpdateSummary(it))
+                        summaryValue = it
+                        onAction(DetailsAction.OnUpdateSummary(it.text))
                     },
-                    textStyle = MaterialTheme.typography.headlineMedium.copy(
-                        color = if (!summaryIsFocused && state.icalEntry.summary.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                    ),
+                    textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current),
                     enabled = state.allowEditing(),
                     onTextLayout = { summaryLayoutResult = it },
                     visualTransformation = MarkdownVisualTransformation(
@@ -231,8 +272,24 @@ fun DetailsScreen(
                         linkColor = MaterialTheme.colorScheme.primary
                     ),
                     cursorBrush = SolidColor(LocalContentColor.current),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (summaryValue.text.isEmpty()) {
+                                Text(
+                                    text = stringResource(Res.string.summary),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = LocalContentColor.current.copy(alpha = 0.5f)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    },
                     modifier = Modifier
-                        .onFocusChanged { summaryIsFocused = it.isFocused }
+                        .focusRequester(summaryFocusRequester)
+                        .onFocusChanged {
+                            summaryIsFocused = it.isFocused
+                            if (it.isFocused) lastFocusedField = EditorField.SUMMARY
+                        }
                         .weight(1f)
                         .pointerInput(uriHandler) {
                             awaitPointerEventScope {
@@ -274,14 +331,12 @@ fun DetailsScreen(
             }
 
             BasicTextField(
-                value = if (!descriptionIsFocused && state.icalEntry.description.isNullOrEmpty()) stringResource(Res.string.description) else state.icalEntry.description
-                    ?: "",
+                value = descriptionValue,
                 onValueChange = {
-                    onAction(DetailsAction.OnUpdateDescription(it))
+                    descriptionValue = it
+                    onAction(DetailsAction.OnUpdateDescription(it.text))
                 },
-                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    color = if (!descriptionIsFocused && state.icalEntry.description.isNullOrEmpty()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                ),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current),
                 enabled = state.allowEditing(),
                 onTextLayout = { descriptionLayoutResult = it },
                 visualTransformation = MarkdownVisualTransformation(
@@ -289,11 +344,25 @@ fun DetailsScreen(
                     linkColor = MaterialTheme.colorScheme.primary
                 ),
                 cursorBrush = SolidColor(LocalContentColor.current),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (descriptionValue.text.isEmpty()) {
+                            Text(
+                                text = stringResource(Res.string.description),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = LocalContentColor.current.copy(alpha = 0.5f)
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 200.dp)
+                    .focusRequester(descriptionFocusRequester)
                     .onFocusChanged {
                         descriptionIsFocused = it.isFocused
+                        if (it.isFocused) lastFocusedField = EditorField.DESCRIPTION
                     }
                     .pointerInput(uriHandler) {
                         awaitPointerEventScope {
@@ -411,6 +480,79 @@ fun DetailsScreen(
             }
 
             Spacer(modifier = Modifier.height(112.dp))  // scroll until all is above fab
+        }
+      }
+
+        // Formatting toolbar anchored to the bottom of the (IME-inset) content area, i.e. just above
+        // the software keyboard. Shown only while an editor is focused; a tap applies the format to
+        // whichever editor was focused last and hands focus straight back so the keyboard/selection stay.
+        AnimatedVisibility(
+            visible = isEditorFocused && state.allowEditing(),
+            enter = slideInVertically { it },
+            exit = slideOutVertically { it },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            FormattingBar(
+                onFormat = { format ->
+                    when (lastFocusedField) {
+                        EditorField.SUMMARY -> {
+                            summaryValue = summaryValue.applyMarkdownFormat(format)
+                            onAction(DetailsAction.OnUpdateSummary(summaryValue.text))
+                            summaryFocusRequester.requestFocus()
+                        }
+                        EditorField.DESCRIPTION -> {
+                            descriptionValue = descriptionValue.applyMarkdownFormat(format)
+                            onAction(DetailsAction.OnUpdateDescription(descriptionValue.text))
+                            descriptionFocusRequester.requestFocus()
+                        }
+                        null -> {}
+                    }
+                }
+            )
+        }
+    }
+}
+
+/** The two rich-text editors on the details screen; used to route formatting-bar taps. */
+private enum class EditorField { SUMMARY, DESCRIPTION }
+
+/**
+ * Slim formatting bar (bold / italic / underline) meant to sit just above the software keyboard.
+ * The buttons are made non-focusable so tapping them does not steal focus from the editor and hide
+ * the keyboard.
+ */
+@Composable
+private fun FormattingBar(
+    onFormat: (MarkdownFormat) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        tonalElevation = 3.dp,
+        shadowElevation = 6.dp,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 4.dp)
+        ) {
+            IconButton(
+                onClick = { onFormat(MarkdownFormat.BOLD) },
+                modifier = Modifier.focusProperties { canFocus = false }
+            ) {
+                Icon(Icons.Default.FormatBold, contentDescription = stringResource(Res.string.format_bold))
+            }
+            IconButton(
+                onClick = { onFormat(MarkdownFormat.ITALIC) },
+                modifier = Modifier.focusProperties { canFocus = false }
+            ) {
+                Icon(Icons.Default.FormatItalic, contentDescription = stringResource(Res.string.format_italic))
+            }
+            IconButton(
+                onClick = { onFormat(MarkdownFormat.UNDERLINE) },
+                modifier = Modifier.focusProperties { canFocus = false }
+            ) {
+                Icon(Icons.Default.FormatUnderlined, contentDescription = stringResource(Res.string.format_underline))
+            }
         }
     }
 }
