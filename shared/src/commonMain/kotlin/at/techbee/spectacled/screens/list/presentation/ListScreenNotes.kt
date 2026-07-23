@@ -109,7 +109,7 @@ fun ListScreenNotes(
                 TaskListItem(
                     icalEntry = subtask,
                     isSelected = state.multiselectItems?.contains(subtask.id) == true || isDragging,
-                    allowEditing = state.calendar.canWriteContent(),
+                    allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState(),
                     onClick = {
                         if (state.multiselectItems == null)
                             onAction(ListAction.OnIcalEntryClicked(subtask.id))
@@ -147,7 +147,7 @@ fun ListScreenNotes(
                 ReorderableItem(
                     state = reorderableLazyListState,
                     key = icalEntry.uid,
-                    enabled = state.calendar.canWriteContent()
+                    enabled = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState(),
                 ) { isDragging ->
 
                     LaunchedEffect(isDragging) {

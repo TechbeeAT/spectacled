@@ -219,6 +219,9 @@ class ListViewModel(
         viewModelScope.launch {
             _state.value.multiselectItems?.forEach { id ->
                 _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
+                    if(icalEntry.syncState.isDeletedState())
+                        return@forEach
+
                     var newCategories = icalEntry.categories
                     if (addCategory?.isNotBlank() == true && !newCategories.contains(addCategory)) {
                         newCategories = newCategories + addCategory
@@ -274,6 +277,9 @@ class ListViewModel(
             _state.value.multiselectItems?.forEach { id ->
                 _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
 
+                    if(icalEntry.syncState.isDeletedState())
+                        return@forEach
+
                     icalEntryRepository.updateColor(
                         id = icalEntry.id,
                         color = if(color == Color.Unspecified) null else color,
@@ -293,6 +299,9 @@ class ListViewModel(
         viewModelScope.launch {
 
             val icalEntry = icalEntryRepository.getIcalEntryById(icalEntryId) ?: return@launch
+            if(icalEntry.syncState.isDeletedState())
+                return@launch
+
             val newPercent = if(icalEntry.percentComplete in 0L .. 99L) 100L else 0L
             val updatedEntry = icalEntry.withProgressUpdated(newPercent)
 
