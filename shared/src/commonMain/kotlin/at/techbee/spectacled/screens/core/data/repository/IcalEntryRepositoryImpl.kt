@@ -264,19 +264,25 @@ class IcalEntryRepositoryImpl(
         }
     }
 
-    override suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long) = withContext(ioDispatcher) {
+    override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = withContext(ioDispatcher) {
 
-        // Collect every requested entry together with its full subtask subtree, de-duplicated by id.
         // Children reference the parent by uid, and we keep uids on move, so relocating the whole
         // tree preserves the RELATED-TO parent/child links inside the target collection.
-        val entriesToMove = LinkedHashMap<Long, IcalEntry>()
+        val acc = LinkedHashMap<Long, IcalEntry>()
         icalEntryIds.forEach { id ->
-            getIcalEntryById(id)?.let { collectWithSubtasks(it, entriesToMove) }
+            getIcalEntryById(id)?.let { collectWithSubtasks(it, acc) }
         }
+        acc.values.toList()
+    }
+
+    override suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long) = withContext(ioDispatcher) {
+
+        // Re-read fresh so any attachments downloaded just before the move are picked up.
+        val entriesToMove = getIcalEntriesWithSubtasks(icalEntryIds)
 
         // 1. Re-create each entry in the target calendar. Same uid keeps its identity; clearing
         //    href/etag makes the sync engine PUT it as a new resource into the target collection.
-        entriesToMove.values.forEach { entry ->
+        entriesToMove.forEach { entry ->
             insertOrUpdateIcalEntry(
                 entry.copy(
                     id = 0L,
@@ -291,7 +297,7 @@ class IcalEntryRepositoryImpl(
 
         // 2. Mark the originals deleted. The sync engine DELETEs them from the source collection;
         //    we only mark locally and let it reconcile the ordering with the server.
-        markAsDeleted(entriesToMove.keys.toList())
+        markAsDeleted(entriesToMove.map { it.id })
     }
 
     // Depth-first collection of an entry and all of its (transitive) subtasks. The visited-set keyed
@@ -307,9 +313,10 @@ class IcalEntryRepositoryImpl(
         }
     }
 
-    // Prepares an attachment to travel with a moved entry. A local copy can simply be re-uploaded
-    // into the target collection; an attachment that only lives on the server keeps its existing
-    // reference so the file stays accessible (it physically remains in the source collection).
+    // Prepares an attachment to travel with a moved entry. A local copy is re-uploaded into the
+    // target collection - callers pre-download server-only attachments so they take this path. If
+    // one still has no local copy (e.g. the pre-download failed), we keep its existing reference so
+    // the file stays accessible; it then physically remains in the source collection.
     private fun Attachment.remappedForMove(): Attachment =
         if (localPath != null)
             copy(id = 0L, icalEntryId = 0L, remoteUrl = null, syncState = AttachmentSyncState.LOCAL_MODIFIED)

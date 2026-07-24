@@ -30,6 +30,13 @@ interface IcalEntryRepository {
     suspend fun markAsDeleted(ids: List<Long>)
 
     /**
+     * Returns the given entries together with all of their (transitive) subtasks, de-duplicated,
+     * each with its attachments loaded. Used by the move flow both to pre-process attachments and
+     * to relocate the whole subtree.
+     */
+    suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry>
+
+    /**
      * Moves the given entries (and, recursively, their subtasks) to [targetCalendarId].
      *
      * CalDAV has no reliable cross-collection move, so each entry is re-created in the target
