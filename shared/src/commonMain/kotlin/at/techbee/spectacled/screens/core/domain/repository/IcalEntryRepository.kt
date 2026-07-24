@@ -28,6 +28,15 @@ interface IcalEntryRepository {
     
     suspend fun insertOrUpdateIcalEntry(icalEntry: IcalEntry): IcalEntry
     suspend fun markAsDeleted(ids: List<Long>)
+
+    /**
+     * Moves the given entries (and, recursively, their subtasks) to [targetCalendarId].
+     *
+     * CalDAV has no reliable cross-collection move, so each entry is re-created in the target
+     * collection (keeping its uid, hence its identity and parent/child links) and the original is
+     * marked deleted. Both sides are only marked locally - the sync engine reconciles the server.
+     */
+    suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long)
     suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState)
     suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>)
     suspend fun updateColor(id: Long, color: Color?, lastModified: IcsDateTime?, syncState: SyncState)

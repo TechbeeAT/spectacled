@@ -242,8 +242,8 @@ fun DetailsScreenRoot(
                 principals = detailsState.allPrincipals,
                 homeCollections = detailsState.allHomeCollections,
                 calendars = detailsState.allCalendars.filter { it.canWriteContent() },
-                onConfirm = { newCalendarId, keepCopy ->
-                    detailsViewModel.onAction(DetailsAction.OnMove(newCalendarId, keepCopy))
+                onConfirm = { newCalendarId ->
+                    detailsViewModel.onAction(DetailsAction.OnMove(newCalendarId))
                 },
                 onDismiss = {
                     detailsViewModel.onAction(DetailsAction.OnShowMoveDialog(false))

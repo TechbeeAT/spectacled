@@ -282,7 +282,7 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateDescription -> onUpdateDescription(action.description)
             is DetailsAction.OnUpdateSummary -> onUpdateSummary(action.summary)
             DetailsAction.OnDelete -> saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
-            is DetailsAction.OnMove -> { onMove(action.newCalendarId, action.keepCopy) }
+            is DetailsAction.OnMove -> { onMove(action.newCalendarId) }
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
             is DetailsAction.OnShowDeleteDialog -> { _state.update { it.copy(showDeleteDialog = action.show) } }
             is DetailsAction.OnShowMoveDialog -> { _state.update { it.copy(showMoveDialog = action.show) } }
@@ -885,7 +885,22 @@ class DetailsViewModel(
         replaceAttachmentUid?.let { onDeleteAttachment(it) }
     }
 
-    private fun onMove(newCalendarId: Long, keepCopy: Boolean) {
-        TODO("Not implemented")
+    private fun onMove(newCalendarId: Long) {
+
+        // Moving deletes the entry from the source collection, so it needs write access there.
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
+        val entryId = _state.value.icalEntry.id
+        val sourceCalendarId = _state.value.icalEntry.calendarId
+
+        _state.update { it.copy(showMoveDialog = false, navigateUp = true) }
+
+        // DB work + sync trigger - keep it off the Main dispatcher.
+        viewModelScope.launch(ioDispatcher) {
+            icalEntryRepository.moveIcalEntriesToCalendar(listOf(entryId), newCalendarId)
+            platformSyncTrigger.requestImmediate(listOf(sourceCalendarId, newCalendarId))
+            platformSyncTrigger.triggerWidgetUpdate()
+        }
     }
 }
