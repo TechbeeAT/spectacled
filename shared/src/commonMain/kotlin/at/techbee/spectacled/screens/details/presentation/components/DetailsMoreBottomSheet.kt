@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Email
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -39,9 +41,9 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.copied_to_clipboard
 import spectacled.shared.generated.resources.ai_extract_claude
 import spectacled.shared.generated.resources.ai_extract_no_api_key
+import spectacled.shared.generated.resources.copied_to_clipboard
 import spectacled.shared.generated.resources.copy_to_clipboard
 import spectacled.shared.generated.resources.create_copy
 import spectacled.shared.generated.resources.created
@@ -49,6 +51,7 @@ import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.ic_cognition
 import spectacled.shared.generated.resources.last_modified
+import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.send_as_email
 import spectacled.shared.generated.resources.share
 
@@ -82,6 +85,21 @@ fun DetailsMoreBottomSheet(
         //val copyCreated = stringResource(Res.string.copy_created)
 
         Column {
+
+            DropdownMenuItem(
+                leadingIcon = { Icon(Icons.AutoMirrored.Outlined.DriveFileMove, stringResource(Res.string.delete)) },
+                text = { Text(text = stringResource(Res.string.move)) },
+                onClick = {
+                    onAction(DetailsAction.OnShowMoveDialog(true))
+                    onAction(DetailsAction.OnShowMoreBottomSheet(false))
+                },
+                colors = MenuDefaults.itemColors().copy(
+                    textColor = MaterialTheme.colorScheme.primary,
+                    leadingIconColor = MaterialTheme.colorScheme.primary
+                ),
+                enabled = canWriteContent
+            )
+
             DropdownMenuItem(
                 leadingIcon = { Icon(Icons.Outlined.Delete, stringResource(Res.string.delete)) },
                 text = { Text(text = stringResource(Res.string.delete)) },
@@ -95,6 +113,8 @@ fun DetailsMoreBottomSheet(
                 ),
                 enabled = canWriteContent
             )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             DropdownMenuItem(
                 leadingIcon = {

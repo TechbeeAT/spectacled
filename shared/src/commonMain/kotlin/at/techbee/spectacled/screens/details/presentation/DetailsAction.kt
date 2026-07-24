@@ -31,6 +31,7 @@ sealed interface DetailsAction {
 
     data class OnShowMoreBottomSheet(val show: Boolean): DetailsAction
     data class OnShowDeleteDialog(val show: Boolean): DetailsAction
+    data class OnShowMoveDialog(val show: Boolean): DetailsAction
     data class OnShowColorSelectorBottomSheet(val show: Boolean): DetailsAction
     data class OnShowCategorySelectorBottomSheet(val show: Boolean): DetailsAction
     data class OnShowJournalStatusPickerBottomSheet(val show: Boolean): DetailsAction
@@ -46,6 +47,7 @@ sealed interface DetailsAction {
     object OnProcessWithAI: DetailsAction
 
     object OnDelete: DetailsAction
+    data class OnMove(val newCalendarId: Long, val keepCopy: Boolean): DetailsAction
     object OnCreateCopy: DetailsAction
     object OnDispose: DetailsAction
     object OnRestoreEntry: DetailsAction

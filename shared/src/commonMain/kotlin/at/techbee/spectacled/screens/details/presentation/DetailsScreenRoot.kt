@@ -82,6 +82,7 @@ import at.techbee.spectacled.screens.details.presentation.components.DetailsTopB
 import at.techbee.spectacled.screens.details.presentation.components.DrawingCanvasBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.EditUrlBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.MoveIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
@@ -230,7 +231,22 @@ fun DetailsScreenRoot(
                     detailsViewModel.onAction(DetailsAction.OnDelete)
                 },
                 onDismiss = {
-                    detailsViewModel.showDeleteDialog(false)
+                    detailsViewModel.onAction(DetailsAction.OnShowDeleteDialog(false))
+                }
+            )
+        }
+
+        if (detailsState.showMoveDialog) {
+            MoveIcalEntryDialog(
+                icalEntry = detailsState.icalEntry,
+                principals = detailsState.allPrincipals,
+                homeCollections = detailsState.allHomeCollections,
+                calendars = detailsState.allCalendars.filter { it.canWriteContent() },
+                onConfirm = { newCalendarId, keepCopy ->
+                    detailsViewModel.onAction(DetailsAction.OnMove(newCalendarId, keepCopy))
+                },
+                onDismiss = {
+                    detailsViewModel.onAction(DetailsAction.OnShowMoveDialog(false))
                 }
             )
         }

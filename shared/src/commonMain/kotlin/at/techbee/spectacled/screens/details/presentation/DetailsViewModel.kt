@@ -282,8 +282,10 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateDescription -> onUpdateDescription(action.description)
             is DetailsAction.OnUpdateSummary -> onUpdateSummary(action.summary)
             DetailsAction.OnDelete -> saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
+            is DetailsAction.OnMove -> { onMove(action.newCalendarId, action.keepCopy) }
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
             is DetailsAction.OnShowDeleteDialog -> { _state.update { it.copy(showDeleteDialog = action.show) } }
+            is DetailsAction.OnShowMoveDialog -> { _state.update { it.copy(showMoveDialog = action.show) } }
             is DetailsAction.OnShowMoreBottomSheet -> { _state.update { it.copy(showMoreBottomSheet = action.show) } }
             is DetailsAction.OnShowCategorySelectorBottomSheet -> { _state.update { it.copy(showCategorySelectorBottomSheet = action.show) } }
             is DetailsAction.OnShowColorSelectorBottomSheet -> { _state.update { it.copy(showColorSelectorBottomSheet = action.show) } }
@@ -553,10 +555,6 @@ class DetailsViewModel(
             saveIcalEntry(SyncState.LOCAL_MODIFIED)
         else
             loadCopy(_state.value.icalEntry.id, true)
-    }
-
-    fun showDeleteDialog(showDialog: Boolean) {
-        _state.update { it.copy(showDeleteDialog = showDialog) }
     }
 
     private fun saveIcalEntry(syncState: SyncState, navigateUp: Boolean = false) {
@@ -885,5 +883,9 @@ class DetailsViewModel(
         )
 
         replaceAttachmentUid?.let { onDeleteAttachment(it) }
+    }
+
+    private fun onMove(newCalendarId: Long, keepCopy: Boolean) {
+        TODO("Not implemented")
     }
 }

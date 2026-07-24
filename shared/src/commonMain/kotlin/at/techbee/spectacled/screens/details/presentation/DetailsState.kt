@@ -24,6 +24,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val allPrincipals: List<Principal> = emptyList(),
 
     val showDeleteDialog: Boolean = false,
+    val showMoveDialog: Boolean = false,
     val showMoreBottomSheet: Boolean = false,
     val showColorSelectorBottomSheet: Boolean = false,
     val showCategorySelectorBottomSheet: Boolean = false,

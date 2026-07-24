@@ -111,6 +111,7 @@
     <string name="create_category">Create "%1$s"</string>
     <string name="search_add_category">Search/add category</string>
     <string name="delete">Delete</string>
+    <string name="move">Move</string>
     <string name="remove">Remove</string>
     <string name="sync_disabled">Sync disabled</string>
     <string name="sync_enabled">Sync enabled</string>
@@ -169,6 +170,11 @@
         <item quantity="one">Are you sure you want to delete the selected entry?</item>
         <item quantity="other">Are you sure you want to delete the selected %1$d entries?</item>
     </plurals>
+    <string name="move_entry_x">Move entry "%1$s"?</string>
+    <string name="move_entry_warning">This creates a copy of this entry in the new calendar and deletes the current one.</string>
+    <string name="move_entry_copy_warning">This creates a copy of this entry in the new calendar and keeps the current one.</string>
+
+
     <string name="pin">Pin</string>
     <string name="unpin">Unpin</string>
     <string name="pinned">Pinned</string>
