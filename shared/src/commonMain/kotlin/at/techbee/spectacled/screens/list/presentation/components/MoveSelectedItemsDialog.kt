@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -88,17 +89,39 @@ fun MoveSelectedItemsDialog(
 
 @Preview
 @Composable
-private fun MoveSelectedItemsDialog_Preview() {
+private fun MoveSelectedItemsDialog_Multiple_Preview() {
 
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
-        MoveSelectedItemsDialog(
-            itemCount = 3,
-            sourceCalendarId = 0L,
-            calendars = listOf(Calendar.getCalendarForPreview()),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-            principals = listOf(Principal.getPrincipalForPreview()),
-            onConfirm = { },
-            onDismiss = {}
-        )
+        Scaffold {
+            MoveSelectedItemsDialog(
+                itemCount = 3,
+                sourceCalendarId = 0L,
+                calendars = listOf(Calendar.getCalendarForPreview()),
+                homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                principals = listOf(Principal.getPrincipalForPreview()),
+                onConfirm = { },
+                onDismiss = {}
+            )
+        }
+    }
+}
+
+
+@Preview
+@Composable
+private fun MoveSelectedItemsDialog_Single_Preview() {
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            MoveSelectedItemsDialog(
+                itemCount = 1,
+                sourceCalendarId = 0L,
+                calendars = listOf(Calendar.getCalendarForPreview()),
+                homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                principals = listOf(Principal.getPrincipalForPreview()),
+                onConfirm = { },
+                onDismiss = {}
+            )
+        }
     }
 }
