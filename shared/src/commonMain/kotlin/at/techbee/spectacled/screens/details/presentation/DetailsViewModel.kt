@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.PlatformFileLauncher
 import at.techbee.spectacled.screens.core.PlatformFileManager
 import at.techbee.spectacled.screens.core.PlatformShareManager
@@ -74,6 +75,7 @@ class DetailsViewModel(
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
+    private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -282,7 +284,7 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateDescription -> onUpdateDescription(action.description)
             is DetailsAction.OnUpdateSummary -> onUpdateSummary(action.summary)
             DetailsAction.OnDelete -> saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
-            is DetailsAction.OnMove -> { onMove(action.newCalendarId, action.keepCopy) }
+            is DetailsAction.OnMove -> { onMove(action.newCalendarId) }
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
             is DetailsAction.OnShowDeleteDialog -> { _state.update { it.copy(showDeleteDialog = action.show) } }
             is DetailsAction.OnShowMoveDialog -> { _state.update { it.copy(showMoveDialog = action.show) } }
@@ -885,7 +887,22 @@ class DetailsViewModel(
         replaceAttachmentUid?.let { onDeleteAttachment(it) }
     }
 
-    private fun onMove(newCalendarId: Long, keepCopy: Boolean) {
-        TODO("Not implemented")
+    private fun onMove(newCalendarId: Long) {
+
+        // Moving deletes the entry from the source collection, so it needs write access there.
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
+        val entryId = _state.value.icalEntry.id
+
+        _state.update { it.copy(showMoveDialog = false, isLoading = true) }
+
+        // Attachment download + DB work + sync trigger - keep it off the Main dispatcher.
+        // We navigate up only once the move is persisted, so popping the screen (which cancels
+        // viewModelScope) can't interrupt it mid-way.
+        viewModelScope.launch(ioDispatcher) {
+            moveIcalEntriesUseCase.move(listOf(entryId), newCalendarId)
+            _state.update { it.copy(isLoading = false, navigateUp = true) }
+        }
     }
 }

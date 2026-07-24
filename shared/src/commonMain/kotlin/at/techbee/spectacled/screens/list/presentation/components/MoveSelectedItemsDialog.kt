@@ -1,4 +1,4 @@
-package at.techbee.spectacled.screens.details.presentation.components
+package at.techbee.spectacled.screens.list.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,26 +16,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
-import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelector
 import at.techbee.spectacled.theme.AppTheme
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.move
-import spectacled.shared.generated.resources.move_entry_warning
-import spectacled.shared.generated.resources.move_entry_x
+import spectacled.shared.generated.resources.move_selected
+import spectacled.shared.generated.resources.move_selected_warning
 
 @Composable
-fun MoveIcalEntryDialog(
-    icalEntry: IcalEntry,
+fun MoveSelectedItemsDialog(
+    itemCount: Int,
+    sourceCalendarId: Long,
     principals: List<Principal>,
     homeCollections: List<HomeCollection>,
     calendars: List<Calendar>,
@@ -43,14 +43,14 @@ fun MoveIcalEntryDialog(
     onDismiss: () -> Unit
 ) {
 
-    var selectedCalendarId by remember { mutableStateOf(icalEntry.calendarId) }
+    var selectedCalendarId by remember { mutableStateOf(sourceCalendarId) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
             TextButton(
                 onClick = { onConfirm(selectedCalendarId) },
-                enabled = icalEntry.calendarId != selectedCalendarId
+                enabled = sourceCalendarId != selectedCalendarId
             ) {
                 Text(stringResource(Res.string.move))
             }
@@ -64,11 +64,7 @@ fun MoveIcalEntryDialog(
         },
         icon = { Icon(Icons.AutoMirrored.Outlined.DriveFileMove, null) },
         title = {
-            Text(
-                text = stringResource(Res.string.move_entry_x, icalEntry.summary ?: icalEntry.description ?: ""),
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
+            Text(stringResource(Res.string.move_selected))
         },
         text = {
             Column(
@@ -85,7 +81,7 @@ fun MoveIcalEntryDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text(stringResource(Res.string.move_entry_warning))
+                Text(pluralStringResource(Res.plurals.move_selected_warning, itemCount, itemCount))
             }
         }
     )
@@ -93,12 +89,33 @@ fun MoveIcalEntryDialog(
 
 @Preview
 @Composable
-private fun MoveIcalEntryDialog_Preview() {
+private fun MoveSelectedItemsDialog_Multiple_Preview() {
 
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
-            MoveIcalEntryDialog(
-                icalEntry = IcalEntry.getSampleIcalEntry(),
+            MoveSelectedItemsDialog(
+                itemCount = 3,
+                sourceCalendarId = 0L,
+                calendars = listOf(Calendar.getCalendarForPreview()),
+                homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                principals = listOf(Principal.getPrincipalForPreview()),
+                onConfirm = { },
+                onDismiss = {}
+            )
+        }
+    }
+}
+
+
+@Preview
+@Composable
+private fun MoveSelectedItemsDialog_Single_Preview() {
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            MoveSelectedItemsDialog(
+                itemCount = 1,
+                sourceCalendarId = 0L,
                 calendars = listOf(Calendar.getCalendarForPreview()),
                 homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
                 principals = listOf(Principal.getPrincipalForPreview()),

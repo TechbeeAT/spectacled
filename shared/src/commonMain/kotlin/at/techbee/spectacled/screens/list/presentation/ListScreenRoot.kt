@@ -7,13 +7,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +55,7 @@ import at.techbee.spectacled.screens.details.presentation.components.CategorySel
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
+import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import kotlinx.coroutines.delay
 import kotlinx.datetime.TimeZone
@@ -141,7 +142,19 @@ fun ListScreenRoot(
             )
         }
 
-        if (state.showUpdateColorOfSelectedBottomSheet) {
+        if (state.showMoveSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
+            MoveSelectedItemsDialog(
+                itemCount = state.multiselectItems?.size ?: 0,
+                sourceCalendarId = state.calendar.id,
+                principals = state.allPrincipals,
+                homeCollections = state.allHomeCollections,
+                calendars = state.allCalendars.filter { it.canWriteContent() },
+                onConfirm = { targetCalendarId -> listViewModel.onAction(ListAction.OnMoveSelectedItems(targetCalendarId)) },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowMoveSelectedItemsDialog(false)) }
+            )
+        }
+
+        if (state.showUpdateColorOfSelectedBottomSheet && state.multiselectItems?.isNotEmpty() == true) {
             BottomSheetWithMenu(
                 onDismiss = { listViewModel.onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(false)) },
                 menuActionRight = {
@@ -168,7 +181,7 @@ fun ListScreenRoot(
             }
         }
 
-        if (state.showUpdateCategoryOfSelectedBottomSheet) {
+        if (state.showUpdateCategoryOfSelectedBottomSheet && state.multiselectItems?.isNotEmpty() == true) {
             CategorySelectionBottomSheet(
                 allCategories = state.allCategories.filter { it != IcalEntry.PINNED_CATEGORY },
                 selectedCategories = state.multiselectItems?.let { selectedIds ->

@@ -47,7 +47,7 @@ sealed interface DetailsAction {
     object OnProcessWithAI: DetailsAction
 
     object OnDelete: DetailsAction
-    data class OnMove(val newCalendarId: Long, val keepCopy: Boolean): DetailsAction
+    data class OnMove(val newCalendarId: Long): DetailsAction
     object OnCreateCopy: DetailsAction
     object OnDispose: DetailsAction
     object OnRestoreEntry: DetailsAction

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.ArrowCircleDown
@@ -69,6 +70,7 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_selection
 import spectacled.shared.generated.resources.date_selector
 import spectacled.shared.generated.resources.delete_selected
+import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.folders
 import spectacled.shared.generated.resources.ic_gotodate
 import spectacled.shared.generated.resources.ic_pin
@@ -366,6 +368,20 @@ fun IcalEntryListTopBar(
                         )
 
                         HorizontalDivider(modifier = Modifier.padding(8.dp))
+
+                        DropdownMenuItem(
+                            text = {
+                                Text(text = stringResource(Res.string.move))
+                            },
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
+                            onClick = { onAction(ListAction.OnShowMoveSelectedItemsDialog(true)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.DriveFileMove,
+                                    contentDescription = stringResource(Res.string.move)
+                                )
+                            }
+                        )
 
                         DropdownMenuItem(
                             text = {

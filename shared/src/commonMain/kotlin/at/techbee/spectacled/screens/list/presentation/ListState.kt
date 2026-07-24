@@ -6,6 +6,7 @@ import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.formatLocalized
@@ -45,6 +46,11 @@ data class ListState(
     val allColors: List<Color> = emptyList(),
     val allCategories: List<String> = emptyList(),
 
+    // Loaded once for the move-to-calendar target selector.
+    val allPrincipals: List<Principal> = emptyList(),
+    val allHomeCollections: List<HomeCollection> = emptyList(),
+    val allCalendars: List<Calendar> = emptyList(),
+
     val listFilterCriteria: ListFilterCriteria = ListFilterCriteria(),
     val listSortedBy: ListSortedBy = ListSortedBy.CREATED,
     val listSortedByAscending: Boolean = true,
@@ -57,6 +63,7 @@ data class ListState(
     val multiselectItems: List<Long>? = null,
 
     val showDeleteSelectedItemsDialog: Boolean = false,
+    val showMoveSelectedItemsDialog: Boolean = false,
     val showUpdateColorOfSelectedBottomSheet: Boolean = false,
     val showUpdateCategoryOfSelectedBottomSheet: Boolean = false,
     val showDateSelectorBottomSheet: Boolean = false,

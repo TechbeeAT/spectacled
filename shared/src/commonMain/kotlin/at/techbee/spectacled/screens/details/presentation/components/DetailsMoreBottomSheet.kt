@@ -87,7 +87,7 @@ fun DetailsMoreBottomSheet(
         Column {
 
             DropdownMenuItem(
-                leadingIcon = { Icon(Icons.AutoMirrored.Outlined.DriveFileMove, stringResource(Res.string.delete)) },
+                leadingIcon = { Icon(Icons.AutoMirrored.Outlined.DriveFileMove, stringResource(Res.string.move)) },
                 text = { Text(text = stringResource(Res.string.move)) },
                 onClick = {
                     onAction(DetailsAction.OnShowMoveDialog(true))

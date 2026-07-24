@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
@@ -30,6 +31,7 @@ class ListViewModel(
     private val credentialStore: PlatformCredentialStore,
     private val syncTrigger: PlatformSyncTrigger,
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
+    private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
     val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -83,7 +85,17 @@ class ListViewModel(
             launch { observeIcalentries(calendarId) }
             launch { observeColors() }
             launch { observeCategories() }
+            launch { loadAllCollections() }
         }
+    }
+
+    // Collections available as move-to targets. Loaded once; the list stays scoped to one calendar.
+    private suspend fun loadAllCollections() {
+        _state.update { it.copy(
+            allPrincipals = calendarRepository.getAllPrincipals(),
+            allHomeCollections = calendarRepository.getAllHomeCollections(),
+            allCalendars = calendarRepository.getAllCalendars()
+        ) }
     }
 
     private suspend fun observeCalendar(calendarId: Long) {
@@ -171,6 +183,8 @@ class ListViewModel(
             ListAction.OnClearMultiselectItems -> { _state.update { it.copy(multiselectItems = null) } }
             is ListAction.OnShowDeleteSelectedItemsDialog -> { _state.update { it.copy(showDeleteSelectedItemsDialog = action.showDialog) }}
             ListAction.OnDeleteSelectedItems -> onDeleteSelectedItems()
+            is ListAction.OnShowMoveSelectedItemsDialog -> { _state.update { it.copy(showMoveSelectedItemsDialog = action.showDialog) }}
+            is ListAction.OnMoveSelectedItems -> onMoveSelectedItems(action.targetCalendarId)
             is ListAction.OnUpdateOrderNo -> onUpdateOrderNo(action.fromIndex, action.toIndex)
             ListAction.OnPersistOrderNo -> onPersistOrderNo()
             is ListAction.OnToggleListGroupExpanded -> onToggleListGroupExpanded(action.listGroup)
@@ -264,6 +278,21 @@ class ListViewModel(
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
             _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false) }
+        }
+    }
+
+    private fun onMoveSelectedItems(targetCalendarId: Long) {
+
+        // Moving deletes the entries from the current (source) collection, so it needs write access.
+        if(!state.value.calendar.canWriteContent())
+            return
+
+        val ids = _state.value.multiselectItems ?: return
+
+        // Off the Main dispatcher: the use case may download attachments before the local move.
+        viewModelScope.launch(ioDispatcher) {
+            moveIcalEntriesUseCase.move(ids, targetCalendarId)
+            _state.update { it.copy(multiselectItems = null, showMoveSelectedItemsDialog = false) }
         }
     }
 
