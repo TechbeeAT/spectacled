@@ -264,17 +264,6 @@ class IcalEntryRepositoryImpl(
         }
     }
 
-    override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = withContext(ioDispatcher) {
-
-        // Children reference the parent by uid, and we keep uids on move, so relocating the whole
-        // tree preserves the RELATED-TO parent/child links inside the target collection.
-        val acc = LinkedHashMap<Long, IcalEntry>()
-        icalEntryIds.forEach { id ->
-            getIcalEntryById(id)?.let { collectWithSubtasks(it, acc) }
-        }
-        acc.values.toList()
-    }
-
     override suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long) = withContext(ioDispatcher) {
 
         // Re-read fresh so any attachments downloaded just before the move are picked up.
@@ -300,6 +289,17 @@ class IcalEntryRepositoryImpl(
         markAsDeleted(entriesToMove.map { it.id })
     }
 
+    override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = withContext(ioDispatcher) {
+
+        // Children reference the parent by uid, and we keep uids on move, so relocating the whole
+        // tree preserves the RELATED-TO parent/child links inside the target collection.
+        val acc = LinkedHashMap<Long, IcalEntry>()
+        icalEntryIds.forEach { id ->
+            getIcalEntryById(id)?.let { collectWithSubtasks(it, acc) }
+        }
+        acc.values.toList()
+    }
+
     // Depth-first collection of an entry and all of its (transitive) subtasks. The visited-set keyed
     // on id guards against cycles in malformed data and against a shared child being visited twice.
     private suspend fun collectWithSubtasks(entry: IcalEntry, acc: LinkedHashMap<Long, IcalEntry>) {
@@ -312,6 +312,7 @@ class IcalEntryRepositoryImpl(
             collectWithSubtasks(childDto.toDomain(attachments), acc)
         }
     }
+
 
     // Prepares an attachment to travel with a moved entry. A local copy is re-uploaded into the
     // target collection - callers pre-download server-only attachments so they take this path. If

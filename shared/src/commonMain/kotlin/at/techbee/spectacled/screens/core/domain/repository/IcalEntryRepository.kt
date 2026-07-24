@@ -44,6 +44,7 @@ interface IcalEntryRepository {
      * marked deleted. Both sides are only marked locally - the sync engine reconciles the server.
      */
     suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long)
+
     suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState)
     suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>)
     suspend fun updateColor(id: Long, color: Color?, lastModified: IcsDateTime?, syncState: SyncState)

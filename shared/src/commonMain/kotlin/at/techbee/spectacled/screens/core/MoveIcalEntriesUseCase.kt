@@ -35,9 +35,7 @@ class MoveIcalEntriesUseCase(
             return
 
         val entries = icalEntryRepository.getIcalEntriesWithSubtasks(icalEntryIds)
-
         ensureAttachmentsDownloaded(entries)
-
         icalEntryRepository.moveIcalEntriesToCalendar(icalEntryIds, targetCalendarId)
 
         val affectedCalendarIds = (entries.map { it.calendarId } + targetCalendarId).distinct()
@@ -55,7 +53,7 @@ class MoveIcalEntriesUseCase(
         entries.forEach { entry ->
             entry.attachments.forEach { attachment ->
                 val remoteUrl = attachment.remoteUrl
-                if(attachment.localPath != null || remoteUrl == null || remoteUrl.isBlank())
+                if(attachment.localPath != null || remoteUrl.isNullOrBlank())
                     return@forEach
 
                 try {
