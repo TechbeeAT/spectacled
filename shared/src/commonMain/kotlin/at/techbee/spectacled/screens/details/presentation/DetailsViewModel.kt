@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.PlatformFileLauncher
 import at.techbee.spectacled.screens.core.PlatformFileManager
 import at.techbee.spectacled.screens.core.PlatformShareManager
@@ -11,7 +12,6 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
-import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
@@ -75,6 +75,7 @@ class DetailsViewModel(
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
+    private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -893,7 +894,6 @@ class DetailsViewModel(
             return
 
         val entryId = _state.value.icalEntry.id
-        val sourceCalendarId = _state.value.icalEntry.calendarId
 
         _state.update { it.copy(showMoveDialog = false, isLoading = true) }
 
@@ -901,49 +901,8 @@ class DetailsViewModel(
         // We navigate up only once the move is persisted, so popping the screen (which cancels
         // viewModelScope) can't interrupt it mid-way.
         viewModelScope.launch(ioDispatcher) {
-            val entriesToMove = icalEntryRepository.getIcalEntriesWithSubtasks(listOf(entryId))
-
-            // Ensure every attachment has a local copy first, so attachments that only live on the
-            // server get physically re-uploaded into the target collection rather than leaving a
-            // dangling reference to the source collection.
-            ensureAttachmentsDownloaded(entriesToMove)
-
-            icalEntryRepository.moveIcalEntriesToCalendar(listOf(entryId), newCalendarId)
-            platformSyncTrigger.requestImmediate(listOf(sourceCalendarId, newCalendarId))
-            platformSyncTrigger.triggerWidgetUpdate()
-
+            moveIcalEntriesUseCase.move(listOf(entryId), newCalendarId)
             _state.update { it.copy(isLoading = false, navigateUp = true) }
-        }
-    }
-
-    // Best-effort: downloads any server-only attachment (no local copy) of the given entries and
-    // persists its local path. A failure leaves the attachment as remote-only, in which case the
-    // move keeps its existing server reference instead of losing it.
-    private suspend fun ensureAttachmentsDownloaded(entries: List<IcalEntry>) {
-
-        val credentialsByCalendar = mutableMapOf<Long, Credentials?>()
-
-        entries.forEach { entry ->
-            entry.attachments.forEach { attachment ->
-                val remoteUrl = attachment.remoteUrl
-                if(attachment.localPath != null || remoteUrl == null || remoteUrl.isBlank())
-                    return@forEach
-
-                try {
-                    val credentials = credentialsByCalendar.getOrPut(entry.calendarId) {
-                        calendarRepository.getPrincipalUrlForCalendarId(entry.calendarId)
-                            ?.let { credentialStore.load(Url(it)) }
-                    } ?: return@forEach
-
-                    val bytes = webDavIcalEntryDataSource.downloadFile(Url(remoteUrl), credentials) ?: return@forEach
-                    val localPath = fileManager.saveAttachment("${attachment.uid}_${attachment.fileName ?: "file"}", bytes)
-                    icalEntryRepository.insertOrUpdateAttachment(
-                        attachment.copy(localPath = localPath, syncState = AttachmentSyncState.SYNCED)
-                    )
-                } catch (e: Exception) {
-                    Napier.d("Move pre-download failed for attachment ${attachment.uid}: ${e.message}")
-                }
-            }
         }
     }
 }

@@ -53,6 +53,7 @@ import at.techbee.spectacled.screens.core.presentation.components.DatePickerBott
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
+import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
@@ -138,6 +139,18 @@ fun ListScreenRoot(
                 multiselectItems = state.multiselectItems?: emptyList(),
                 onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
                 onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
+            )
+        }
+
+        if (state.showMoveSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
+            MoveSelectedItemsDialog(
+                itemCount = state.multiselectItems?.size ?: 0,
+                sourceCalendarId = state.calendar.id,
+                principals = state.allPrincipals,
+                homeCollections = state.allHomeCollections,
+                calendars = state.allCalendars.filter { it.canWriteContent() },
+                onConfirm = { targetCalendarId -> listViewModel.onAction(ListAction.OnMoveSelectedItems(targetCalendarId)) },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowMoveSelectedItemsDialog(false)) }
             )
         }
 
