@@ -246,6 +246,7 @@
     <string name="insufficient_access_rights_create_folder">Insufficient access rights to create a new folder/calendar.</string>
 
     <string name="selected_calendar">Selected calendar</string>
+    <string name="select_calendar">Select calendar</string>
     <string name="no_account_name">No account name</string>
     <string name="unnamed_calendar">Unnamed calendar</string>
     <string name="unknown">Unknown</string>
