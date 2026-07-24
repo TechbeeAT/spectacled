@@ -107,8 +107,8 @@ This project uses the **Gradle Wrapper** and the **Foojay toolchain resolver**. 
  ┣ 📂 iosTasksApp/             ← iOS Xcode project for Tasks
  ┣ 📄 spectacled.xcworkspace   ← Xcode workspace combining all three iOS apps
  ┃
- ┣ 📂 server/                  ← Ktor backend scaffold — currently unused template
- ┃                                boilerplate, not required to build or run any app
+ ┣ 📂 server/                  ← Ktor CORS proxy for the Web build (see server/README.md).
+ ┃                                Only the browser needs it; native apps talk CalDAV directly.
  ┃
  ┗ 📂 gradle/
     ┗ 📄 libs.versions.toml    ← ★ All dependency versions live here
@@ -177,6 +177,14 @@ Each command below works for any of the three apps — just swap `composeJournal
 
 Requires a recent browser (Chrome 119+, Firefox 120+, Safari 18.2+).
 
+> **⚠️ The Web build needs the CORS proxy.** Browsers block cross-origin WebDAV requests, so the
+> web app routes CalDAV traffic through the small Ktor proxy in [`server/`](server/README.md), which
+> adds the required CORS headers (native apps talk to CalDAV directly and don't need it). Run it
+> locally with `./gradlew :server:run` and point **Settings → Proxy server** at
+> `http://localhost:8088`. For hosting, **self-host your own** instance (a shared proxy can see your
+> credentials in transit) — see [`server/README.md`](server/README.md) for Docker/Fly.io setup and
+> the trust caveats.
+
 ### 🍎 iOS
 
 Requires macOS + Xcode 16+.
@@ -199,6 +207,8 @@ DEVELOPMENT_TEAM=YOUR_APPLE_TEAM_ID
 | Command                      | What it does                                                   |
 |------------------------------|----------------------------------------------------------------|
 | `./gradlew :shared:allTests` | Run the shared module's test suite                             |
+| `./gradlew :server:run`      | Run the Web CORS proxy locally on `http://localhost:8088`       |
+| `./gradlew :server:test`     | Run the proxy's test suite                                     |
 | `./gradlew clean`            | Delete all build outputs                                       |
 | `./gradlew --stop`           | Stop all Gradle daemons (useful after a bad incremental build) |
 

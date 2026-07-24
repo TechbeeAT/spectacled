@@ -1,0 +1,37 @@
+# Fly.io deployment for the Spectacled CalDAV CORS proxy.
+#
+# This is a TEMPLATE — copy it and set your own values before deploying:
+#   1. Change `app` to a unique name (`fly apps create <name>`).
+#   2. Set PROXY_ALLOWED_ORIGINS to the origin(s) that serve your web build.
+#   3. Optionally lock PROXY_ALLOWED_TARGET_HOSTS to the CalDAV host(s) you trust
+#      (strongly recommended for a shared/demo instance).
+# Then: `fly deploy`
+#
+# See server/README.md for the full self-hosting guide and the trust caveats.
+
+app = "spectacled-proxy"
+primary_region = "fra"
+
+[build]
+  dockerfile = "server/Dockerfile"
+
+[env]
+  # The app reads PORT; keep this in sync with internal_port below.
+  PORT = "8080"
+  # Only allow https CalDAV targets (default). Set to "false" only for local testing.
+  PROXY_REQUIRE_HTTPS_TARGET = "true"
+  # REQUIRED for a public instance: the web origin(s) allowed to use this proxy.
+  PROXY_ALLOWED_ORIGINS = "https://spectacled.techbee.at"
+  # Recommended for a demo instance: restrict which CalDAV hosts may be reached.
+  # PROXY_ALLOWED_TARGET_HOSTS = "example-caldav.org"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

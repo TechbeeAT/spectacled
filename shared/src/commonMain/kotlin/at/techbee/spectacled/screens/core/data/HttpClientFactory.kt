@@ -19,17 +19,26 @@ import kotlinx.serialization.json.Json
 
 object HttpClientFactory {
 
+    /** Proxy the web (WASM) build falls back to when the user hasn't configured one. */
+    const val DEFAULT_WEB_PROXY_URL = "http://localhost:8088"
+
+    /** The proxy URL to use on the current platform when no user setting is present. */
+    fun defaultProxyUrl(): String? =
+        if (getPlatform().platform == Platforms.WASM) DEFAULT_WEB_PROXY_URL else null
+
     fun create(
         engine: HttpClientEngine,
         jsonContentNegotiation: Boolean = true,
-        proxyUrl: String? = if(getPlatform().platform == Platforms.WASM) "http://localhost:8088" else null
+        // Resolved per request so the in-app "Proxy server" setting takes effect without an app restart.
+        proxyUrlProvider: () -> String? = { defaultProxyUrl() }
     ): HttpClient {
         return HttpClient(engine) {
             followRedirects = false
 
-            if (proxyUrl != null) {
-                install("ProxyInterceptor") {
-                    requestPipeline.intercept(HttpRequestPipeline.Transform) {
+            install("ProxyInterceptor") {
+                requestPipeline.intercept(HttpRequestPipeline.Transform) {
+                    val proxyUrl = proxyUrlProvider()?.takeIf { it.isNotBlank() }
+                    if (proxyUrl != null) {
                         val originalUrl = context.url.buildString()
                         // Only proxy external requests, not the proxy itself
                         if (originalUrl.startsWith("http") && !originalUrl.startsWith(proxyUrl)) {
