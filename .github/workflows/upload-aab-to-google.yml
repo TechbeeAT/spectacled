@@ -29,38 +29,18 @@ jobs:
           keytool -list \
             -keystore "$GITHUB_WORKSPACE/keystore.jks" \
             -storepass "${{ secrets.android_keystore_password }}"
-    
-      - name: Build spectacled Journals app bundle release (AAB) for Gplay
-        run: ./gradlew androidJournalsApp:bundleRelease
+
+      - name: Build spectacled release app bundles (AAB) for Gplay
+        run: ./gradlew androidJournalsApp:bundleRelease androidNotesApp:bundleRelease androidTasksApp:bundleRelease
         env:
           ANDROID_KEYSTORE: ${{ github.workspace }}/keystore.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
           ANDROID_KEY_ALIAS_JOURNALS: ${{ secrets.android_key_alias_journals }}
           ANDROID_KEY_PASSWORD_JOURNALS: ${{ secrets.android_key_password_journals }}
-          #ANTHROPIC_API_KEY: ${{secrets.anthropic_api_key }}
-          #CROWDIN_API_KEY: ${{ secrets.crowdin_api_key }}
-          #GOOGLE_GEO_API_KEY: ${{ secrets.google_geo_api_key }}
-          #GH_CONTRIBUTORS_API_KEY: ${{ secrets.gh_contributors_api_key }}
-
-      - name: Build spectacled Notes app bundle release (AAB) for Gplay
-        run: ./gradlew androidNotesApp:bundleRelease
-        env:
-          ANDROID_KEYSTORE: ${{ github.workspace }}/keystore.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
           ANDROID_KEY_ALIAS_NOTES: ${{ secrets.android_key_alias_notes }}
           ANDROID_KEY_PASSWORD_NOTES: ${{ secrets.android_key_password_notes }}
-          #ANTHROPIC_API_KEY: ${{secrets.anthropic_api_key }}
-
-
-      - name: Build spectacled Tasks app bundle release (AAB) for Gplay
-        run: ./gradlew androidTasksApp:bundleRelease
-        env:
-          ANDROID_KEYSTORE: ${{ github.workspace }}/keystore.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
           ANDROID_KEY_ALIAS_TASKS: ${{ secrets.android_key_alias_tasks }}
           ANDROID_KEY_PASSWORD_TASKS: ${{ secrets.android_key_password_tasks }}
-          #ANTHROPIC_API_KEY: ${{secrets.anthropic_api_key }}
-
 
       - name: Upload spectacled Journals to Google Play
         uses: r0adkll/upload-google-play@v1
