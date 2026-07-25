@@ -857,7 +857,13 @@ class DetailsViewModel(
             val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid }
             if (attachment != null) {
                 attachment.localPath?.let { fileManager.deleteAttachment(it) }
-                
+
+                // If it was already on the server, queue its blob for deletion; re-saving the entry
+                // only drops the ATTACH reference, it never removes the uploaded file.
+                attachment.remoteUrl?.takeIf { it.isNotBlank() }?.let { remoteUrl ->
+                    icalEntryRepository.enqueueRemoteFileDeletions(_state.value.icalEntry.calendarId, listOf(remoteUrl))
+                }
+
                 _state.update {
                     it.copy(
                         icalEntry = it.icalEntry.copy(

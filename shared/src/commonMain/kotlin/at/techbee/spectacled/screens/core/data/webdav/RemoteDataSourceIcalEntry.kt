@@ -333,3 +333,14 @@ suspend fun downloadFileMultiplatform(
     }
     return if (response.status.isSuccess()) response.body<ByteArray>() else null    // TODO: respond with an actual HttpStatusCode
 }
+
+suspend fun deleteFileMultiplatform(
+    client: HttpClient,
+    targetUrl: Url,
+    credentials: Credentials?
+): HttpStatusCode {
+    val response = client.delete(targetUrl) {
+        credentials?.let { basicAuth(it.username, it.password) }
+    }
+    return response.status
+}
