@@ -94,7 +94,7 @@ fun JournalsListJournals(
             TaskListItem(
                 icalEntry = subtask,
                 isSelected = state.multiselectItems?.contains(subtask.id) == true,
-                allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState(),
+                allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState() && !subtask.isRecurring(),
                 onClick = {
                     if (state.multiselectItems == null)
                         onAction(ListAction.OnIcalEntryClicked(subtask.id))

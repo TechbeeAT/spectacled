@@ -330,6 +330,9 @@ class ListViewModel(
             val icalEntry = icalEntryRepository.getIcalEntryById(icalEntryId) ?: return@launch
             if(icalEntry.syncState.isDeletedState())
                 return@launch
+            // Recurring entries are read-only (this app has no recurrence support).
+            if(icalEntry.isRecurring())
+                return@launch
 
             val newPercent = if(icalEntry.percentComplete in 0L .. 99L) 100L else 0L
             val updatedEntry = icalEntry.withProgressUpdated(newPercent)

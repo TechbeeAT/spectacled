@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.domain
 
 import androidx.compose.ui.state.ToggleableState
+import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -32,6 +33,43 @@ class IcalEntryTest {
     fun subtaskRequiresParentUid() {
         assertFalse(IcalEntry.newTask().isSubtask())
         assertTrue(IcalEntry.newTask().copy(parentUid = "parent").isSubtask())
+    }
+
+    @Test
+    fun isRecurringDetectsRecurrenceProperties() {
+        assertFalse(IcalEntry.newJournal().isRecurring())
+        // An unrelated extra property must not count as recurrence.
+        assertFalse(
+            IcalEntry.newJournal().copy(
+                extraProperties = listOf(RawIcsProperty(name = "X-FOO", unfoldedLine = "X-FOO:bar"))
+            ).isRecurring()
+        )
+
+        assertTrue(
+            IcalEntry.newJournal().copy(
+                extraProperties = listOf(RawIcsProperty(name = "RRULE", unfoldedLine = "RRULE:FREQ=DAILY"))
+            ).isRecurring()
+        )
+        assertTrue(
+            IcalEntry.newTask().copy(
+                extraProperties = listOf(RawIcsProperty(name = "RDATE", unfoldedLine = "RDATE:20260101T100000Z"))
+            ).isRecurring()
+        )
+        assertTrue(
+            IcalEntry.newJournal().copy(
+                extraProperties = listOf(RawIcsProperty(name = "RECURRENCE-ID", unfoldedLine = "RECURRENCE-ID:20260101"))
+            ).isRecurring()
+        )
+    }
+
+    @Test
+    fun isRecurringMatchesPropertyNamesCaseInsensitively() {
+        // RFC 5545 property names are case-insensitive, so a lower-case producer still counts.
+        assertTrue(
+            IcalEntry.newJournal().copy(
+                extraProperties = listOf(RawIcsProperty(name = "rrule", unfoldedLine = "rrule:FREQ=WEEKLY"))
+            ).isRecurring()
+        )
     }
 
     @Test

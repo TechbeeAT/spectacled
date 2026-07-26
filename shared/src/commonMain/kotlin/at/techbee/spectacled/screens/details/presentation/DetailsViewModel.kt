@@ -694,6 +694,9 @@ class DetailsViewModel(
             return
 
         val subtask = _state.value.subtasks.find { it.id == subtaskIcalEntryId } ?: return
+        // A recurring subtask is read-only even if its parent isn't (no recurrence support).
+        if(subtask.isRecurring())
+            return
 
         val updatedSubtask = subtask.withProgressUpdated(percent)
         viewModelScope.launch {

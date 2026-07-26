@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material.icons.outlined.DragIndicator
+import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,6 +69,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -94,6 +96,8 @@ import spectacled.shared.generated.resources.drag_handle
 import spectacled.shared.generated.resources.format_bold
 import spectacled.shared.generated.resources.format_italic
 import spectacled.shared.generated.resources.format_underline
+import spectacled.shared.generated.resources.recurring_entry_read_only_message
+import spectacled.shared.generated.resources.recurring_entry_read_only_title
 import spectacled.shared.generated.resources.summary
 
 
@@ -165,6 +169,10 @@ fun DetailsScreen(
                 .nestedScroll(nestedScrollConnection)
                 .verticalScroll(scrollState)
         ) {
+
+            AnimatedVisibility(state.icalEntry.isRecurring()) {
+                RecurringReadOnlyBanner(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+            }
 
             if (state.icalEntry.isTask() || state.icalEntry.isJournal()) {
                 FlowRow(
@@ -448,7 +456,7 @@ fun DetailsScreen(
                         TaskListItem(
                             icalEntry = subtask,
                             isSelected = isDragging,
-                            allowEditing = state.allowEditing(),
+                            allowEditing = state.allowEditing() && !subtask.isRecurring(),
                             onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                             onLongClick = {},
                             onToggleProgress = {
@@ -514,6 +522,42 @@ fun DetailsScreen(
     }
 }
 
+/**
+ * A read-only notice shown at the top of the details screen for entries that belong to a
+ * recurring series. The app has no recurrence support, so these entries can't be edited; this
+ * banner tells the user why the editing controls are disabled.
+ */
+@Composable
+private fun RecurringReadOnlyBanner(modifier: Modifier = Modifier) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.EventRepeat,
+                contentDescription = null
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = stringResource(Res.string.recurring_entry_read_only_title),
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    text = stringResource(Res.string.recurring_entry_read_only_message),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
 /** The two rich-text editors on the details screen; used to route formatting-bar taps. */
 private enum class EditorField { SUMMARY, DESCRIPTION }
 
@@ -570,6 +614,21 @@ private fun ListScreen_Preview() {
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
         ),
         onAction = {}
+    )
+}
+
+@Preview
+@Composable
+private fun ListScreen_recurring_readonly_Preview() {
+    DetailsScreen(
+        state = DetailsState(
+            icalEntry = IcalEntry.getSampleJournal().copy(
+                extraProperties = listOf(RawIcsProperty(name = "RRULE", unfoldedLine = "RRULE:FREQ=WEEKLY"))
+            ),
+            originalIcalEntry = IcalEntry.getSampleIcalEntry()
+        ),
+        onAction = {},
+        modifier = Modifier.fillMaxHeight()
     )
 }
 
