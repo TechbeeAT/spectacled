@@ -22,6 +22,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.recurring_entry_read_only_snackbar
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -198,7 +201,8 @@ class ListViewModel(
                 }
             }
             is ListAction.OnUpdateColorOfSelected -> { onUpdateColorOfSelectedItems(action.color) }
-            ListAction.OnSelectAllMultiselectItems -> { _state.update { it.copy(multiselectItems = it.displayMap.flatMap { map -> map.value }.map { icalEntry -> icalEntry.id }) } }
+            // Recurring entries are read-only, so "select all" skips them - they can never enter a selection.
+            ListAction.OnSelectAllMultiselectItems -> { _state.update { it.copy(multiselectItems = it.displayMap.flatMap { map -> map.value }.filterNot { icalEntry -> icalEntry.isRecurring() }.map { icalEntry -> icalEntry.id }) } }
             is ListAction.OnDraggingIcalEntry -> { _state.update { it.copy(draggingIcalEntryId = action.icalEntryId) } }
             is ListAction.OnShowUpdateCategoryOfSelectedBottomSheet -> {
                 _state.update {
@@ -233,7 +237,7 @@ class ListViewModel(
         viewModelScope.launch {
             _state.value.multiselectItems?.forEach { id ->
                 _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
-                    if(icalEntry.syncState.isDeletedState())
+                    if(icalEntry.syncState.isDeletedState() || icalEntry.isRecurring())
                         return@forEach
 
                     var newCategories = icalEntry.categories
@@ -274,7 +278,8 @@ class ListViewModel(
             return
 
         viewModelScope.launch {
-            _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(it) }
+            // Recurring entries are read-only, so exclude them even if a selection somehow contains one.
+            _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(withoutRecurringEntries(it)) }
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
             _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false) }
@@ -287,7 +292,8 @@ class ListViewModel(
         if(!state.value.calendar.canWriteContent())
             return
 
-        val ids = _state.value.multiselectItems ?: return
+        // Recurring entries are read-only, so exclude them even if a selection somehow contains one.
+        val ids = _state.value.multiselectItems?.let { withoutRecurringEntries(it) } ?: return
 
         // Off the Main dispatcher: the use case may download attachments before the local move.
         viewModelScope.launch(ioDispatcher) {
@@ -306,7 +312,7 @@ class ListViewModel(
             _state.value.multiselectItems?.forEach { id ->
                 _state.value.icalEntries.find { it.id == id }?.let { icalEntry ->
 
-                    if(icalEntry.syncState.isDeletedState())
+                    if(icalEntry.syncState.isDeletedState() || icalEntry.isRecurring())
                         return@forEach
 
                     icalEntryRepository.updateColor(
@@ -330,6 +336,9 @@ class ListViewModel(
             val icalEntry = icalEntryRepository.getIcalEntryById(icalEntryId) ?: return@launch
             if(icalEntry.syncState.isDeletedState())
                 return@launch
+            // Recurring entries are read-only (this app has no recurrence support).
+            if(icalEntry.isRecurring())
+                return@launch
 
             val newPercent = if(icalEntry.percentComplete in 0L .. 99L) 100L else 0L
             val updatedEntry = icalEntry.withProgressUpdated(newPercent)
@@ -345,6 +354,10 @@ class ListViewModel(
         }
     }
 
+    /** Drops the ids of any recurring (read-only) entries from [ids]; recurrence isn't supported. */
+    private fun withoutRecurringEntries(ids: List<Long>): List<Long> =
+        ids.filterNot { id -> _state.value.icalEntries.find { it.id == id }?.isRecurring() == true }
+
     private fun toggleMultiselectItem(icalEntryId: Long?) {
 
         if(icalEntryId == null && _state.value.multiselectItems == null) {
@@ -355,8 +368,20 @@ class ListViewModel(
             return
         }
 
+        val alreadySelected = _state.value.multiselectItems?.contains(icalEntryId) == true
+
+        // Recurring entries are read-only (this app has no recurrence support), so they can't be
+        // added to a selection - bulk delete/move/color/category would otherwise modify them.
+        // Deselecting an already-selected entry is always allowed.
+        if(!alreadySelected && _state.value.icalEntries.find { it.id == icalEntryId }?.isRecurring() == true) {
+            viewModelScope.launch {
+                _state.update { it.copy(snackbarText = getString(Res.string.recurring_entry_read_only_snackbar)) }
+            }
+            return
+        }
+
         val newMultiselectList = _state.value.multiselectItems?.let { currentMultiselectItems ->
-            if(_state.value.multiselectItems?.contains(icalEntryId) == true)
+            if(alreadySelected)
                 currentMultiselectItems.minus(icalEntryId!!)
             else
                 currentMultiselectItems.plus(icalEntryId!!)

@@ -45,7 +45,11 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val claudeUserApiKey: String? = null
 ) {
 
-    fun allowEditing() = calendar?.canWriteContent() == true && !icalEntry.syncState.isDeletedState()
+    // Recurring entries are read-only: this app has no recurrence support, so editing one would
+    // silently reinterpret or drop its RRULE/RDATE/RECURRENCE-ID and corrupt the series.
+    fun allowEditing() = calendar?.canWriteContent() == true
+            && !icalEntry.syncState.isDeletedState()
+            && !icalEntry.isRecurring()
 
     fun allowRestore() = calendar?.canWriteContent() == true && icalEntry.syncState.isDeletedState()
 

@@ -174,7 +174,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
                                 IcalEntryItem(
                                     entry = entry,
-                                    allowEditing = calendar.canWriteContent() && !entry.syncState.isDeletedState(),
+                                    allowEditing = calendar.canWriteContent() && !entry.syncState.isDeletedState() && !entry.isRecurring(),
                                     modifier = GlanceModifier.clickable(
                                         onClick = actionStartActivity(
                                             getLaunchIntent(context, entry.calendarId, entry.id)
@@ -186,7 +186,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                                     IcalEntryItem(
                                         entry = subEntry,
                                         showSubtaskIcon = true,
-                                        allowEditing = calendar.canWriteContent() && !subEntry.syncState.isDeletedState(),
+                                        allowEditing = calendar.canWriteContent() && !subEntry.syncState.isDeletedState() && !subEntry.isRecurring(),
                                         modifier = GlanceModifier
                                             .clickable(
                                                 onClick = actionStartActivity(
@@ -327,6 +327,11 @@ class ToggleTaskAction : ActionCallback, KoinComponent {
 
         val entryId = parameters[EntryIdKey] ?: return
         val isChecked = parameters[IsCheckedKey] ?: return
+
+        // Recurring entries are read-only (this app has no recurrence support), so ignore the
+        // toggle even if a stale widget still shows an enabled checkbox for one.
+        if (icalEntryRepository.getIcalEntryById(entryId)?.isRecurring() == true)
+            return
 
         val newPercent = if (isChecked) 100L else 0L
         val newStatus = if (isChecked) Status.COMPLETED else Status.NEEDS_ACTION
