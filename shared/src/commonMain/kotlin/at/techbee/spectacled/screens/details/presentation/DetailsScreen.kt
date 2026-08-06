@@ -65,6 +65,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -536,7 +537,7 @@ private fun RecurringReadOnlyBanner(modifier: Modifier = Modifier) {
         modifier = modifier
     ) {
         Row(
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(12.dp)
         ) {
@@ -547,7 +548,8 @@ private fun RecurringReadOnlyBanner(modifier: Modifier = Modifier) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = stringResource(Res.string.recurring_entry_read_only_title),
-                    style = MaterialTheme.typography.titleSmall
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = stringResource(Res.string.recurring_entry_read_only_message),
