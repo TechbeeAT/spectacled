@@ -85,6 +85,15 @@ data class IcalEntry(
 
         const val PINNED_CATEGORY = "\uD83D\uDCCC"
 
+        /**
+         * iCalendar properties that make an entry part of a recurring series. This app has no
+         * concept of recurrence (see README / IcalEntryIcsSerializer), so entries carrying any
+         * of these are treated as read-only: they are preserved untouched via [extraProperties],
+         * but editing them would silently reinterpret or drop the recurrence and corrupt the
+         * series. Names are matched case-insensitively (RFC 5545 \u00A73.1: property names are).
+         */
+        private val RECURRENCE_PROPERTY_NAMES = setOf("RRULE", "RDATE", "RECURRENCE-ID")
+
         private val sampleParagraphs = listOf(
             "Lorem *ipsum* dolor sit _amet_, consectetur adipiscing elit. *_Nulla_* id libero felis. Vestibulum tristique suscipit elit, et pharetra leo posuere non. Suspendisse purus lacus, pretium et porttitor a, consequat at sapien. Integer dictum sagittis lacus, sed semper massa euismod non. Pellentesque viverra nunc id felis ullamcorper, at viverra nisl consequat. Quisque et fermentum elit, tincidunt molestie nulla. Proin leo neque, luctus ac nisi convallis, ultricies tempor felis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nulla facilisi. Phasellus sit amet diam elementum, ultrices lorem sed, blandit lacus.",
             "Quisque egestas rhoncus quam nec ornare. Donec vitae pharetra quam, ut tincidunt tellus. Pellentesque at lectus eget libero ullamcorper tristique. Maecenas ornare nisi ante, vel volutpat elit sagittis et. Nulla ac arcu dui. Nam accumsan nunc dui, non posuere magna imperdiet congue. Nunc non feugiat ante, a tempus augue. In quis porttitor mi. Integer arcu mauris, suscipit in risus non, vestibulum aliquam nibh. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Cras urna neque, aliquet sed consectetur sit amet, porta eu mauris. Proin et enim mollis, egestas metus nec, accumsan augue. Vivamus sed justo non leo accumsan ultrices. Maecenas condimentum neque ac justo viverra, non tincidunt nisl consequat." ,
@@ -132,6 +141,14 @@ data class IcalEntry(
     fun isJournal() = calendarComponent == CalendarComponent.VJOURNAL && dtStart != null
     fun isTask() = calendarComponent == CalendarComponent.VTODO
     fun isSubtask() = parentUid != null
+
+    /**
+     * Whether this entry belongs to a recurring series (carries an RRULE, RDATE, or
+     * RECURRENCE-ID). This app doesn't support recurrence, so such entries are shown read-only
+     * to avoid corrupting the series - the recurrence properties themselves are round-tripped
+     * unchanged through [extraProperties].
+     */
+    fun isRecurring() = extraProperties.any { it.name.uppercase() in RECURRENCE_PROPERTY_NAMES }
 
     fun isPinned() = categories.any { category -> category == PINNED_CATEGORY}
 

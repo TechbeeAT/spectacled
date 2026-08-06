@@ -52,6 +52,9 @@
     <string name="no_summary_description">No summary/description</string>
     <string name="categories">Categories</string>
     <string name="read_only">Read only</string>
+    <string name="recurring_entry_read_only_title">Recurring entry</string>
+    <string name="recurring_entry_read_only_message">This entry is part of a recurring series, which isn't supported. It's shown read-only so its recurrence isn't accidentally changed.</string>
+    <string name="recurring_entry_read_only_snackbar">Recurring entries are read-only and can't be selected.</string>
     <string name="sync_problem">Sync problem</string>
     <string name="sync_conflict_detected">Sync conflict detected</string>
     <string name="refresh">Refresh</string>
