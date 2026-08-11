@@ -264,4 +264,8 @@
     <string name="file_size_kb">%1$d KB</string>
     <string name="percent_complete">%1$d %%</string>
 
+    <string name="ai_create_entries">Create with AI</string>
+    <string name="ai_paste_text_placeholder">Paste text — notes, journals or tasks with subtasks…</string>
+    <string name="create">Create</string>
+
 </resources>

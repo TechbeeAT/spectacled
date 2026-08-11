@@ -1,5 +1,7 @@
 package at.techbee.spectacled.screens.core.data.claude
 
+import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
+import at.techbee.spectacled.screens.core.data.ai.AiDerivedEntryListDto
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
@@ -11,12 +13,15 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 
 private const val ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
+
+private val aiJson = Json { ignoreUnknownKeys = true }
 
 sealed class ClaudeRemoteResponseResult {
     data class Success(val icalEntry: IcalEntry) : ClaudeRemoteResponseResult()
@@ -90,6 +95,98 @@ class KtorRemoteClaudeDataSource(
         } catch (e: Exception) {
             Napier.e("AI metadata request failed", e)
             return ClaudeRemoteResponseResult.Failed(
+                message = "Fetching AI response failed",
+                details = e.message
+            )
+        }
+    }
+
+    /**
+     * Derives a list of entries (each a note, journal or task) with subtasks from free [rawText].
+     * Returns the parsed, transport-agnostic DTOs; mapping to [IcalEntry] + persistence is the
+     * caller's job (it owns the calendar id and the per-generation batch category).
+     *
+     * Reliability note: this uses the same "ask for JSON, then parse" approach as [applyAiMetadata]
+     * for consistency with the existing integration. It can be upgraded to guaranteed-valid JSON by
+     * switching to a structured-outputs-capable model (e.g. claude-sonnet-5) and adding
+     * `output_config.format` with a JSON schema whose `type` field is an enum of
+     * ["note","journal","task"] - the parsing below stays the same.
+     */
+    suspend fun deriveEntries(rawText: String): AiDeriveEntriesResult {
+
+        val prompt = """
+            You are a structured data extractor. The user gives you free text describing things to
+            remember and things to do. Split it into a list of entries and return ONLY valid JSON,
+            no markdown, no explanation.
+
+            Each entry has a "type" which MUST be one of: "note", "journal", "task".
+            - "note": a piece of information or thought with no particular date.
+            - "journal": a dated reflection or log entry (something that happened at a point in time).
+            - "task": something actionable, optionally with a start and/or due date.
+
+            Group related actionable items under a single parent task with subtasks - for example a
+            parent "Friday todos" with subtasks "clean car", "water plants". Subtasks are always
+            actionable tasks. Do NOT invent recurrence; a repeating chore list is just a parent with
+            subtasks.
+
+            Return JSON of exactly this shape:
+            {
+              "entries": [
+                {
+                  "type": "note | journal | task",
+                  "summary": "A short one-line title for the entry",
+                  "description": "The full cleaned-up text of the entry, or null",
+                  "dtstart": "RFC-5545 compliant date or datetime if mentioned, otherwise null (journal/task only)",
+                  "due": "RFC-5545 compliant date or datetime if mentioned, otherwise null (task only)",
+                  "categories": ["list", "of", "topic", "tags"],
+                  "subtasks": [
+                    {
+                      "summary": "A short one-line title for the subtask",
+                      "description": "Details of the subtask, or null",
+                      "dtstart": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
+                      "due": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
+                      "categories": ["tags"]
+                    }
+                  ]
+                }
+              ]
+            }
+
+            Within one entry, make sure dtstart and due use the same format (both date or both
+            datetime). Use an empty array for "subtasks" when there are none.
+
+            Now is ${formatIcsDateTime(IcsDateTime.now())!!.first}
+
+            Raw text:
+            $rawText
+        """.trimIndent()
+
+        return try {
+            val response = client.post(ANTHROPIC_BASE_URL) {
+                contentType(ContentType.Application.Json)
+                header("x-api-key", claudeUserApiKey)
+                header("anthropic-version", "2023-06-01")
+                setBody(buildJsonObject {
+                    put("model", "claude-sonnet-4-6")
+                    put("max_tokens", 4096)
+                    putJsonArray("messages") {
+                        addJsonObject {
+                            put("role", "user")
+                            put("content", prompt)
+                        }
+                    }
+                })
+            }.body<ClaudeResponseDto>()
+
+            val text = response.content.firstOrNull { it.type == "text" }?.text
+                ?: return AiDeriveEntriesResult.Failed("AI response contained no text")
+
+            val parsed = aiJson.decodeFromString<AiDerivedEntryListDto>(text)
+            AiDeriveEntriesResult.Success(parsed.entries)
+
+        } catch (e: Exception) {
+            Napier.e("AI derive-entries request failed", e)
+            AiDeriveEntriesResult.Failed(
                 message = "Fetching AI response failed",
                 details = e.message
             )
