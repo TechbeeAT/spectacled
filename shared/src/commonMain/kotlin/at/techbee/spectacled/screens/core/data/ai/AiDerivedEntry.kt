@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.data.ai
 
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
@@ -8,32 +9,24 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Transport-agnostic DTOs for AI-derived entries. Named generically (not Claude-specific) on
- * purpose so future AI calls can reuse them; the concrete API request lives in the Claude data
- * source ([at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource]).
+ * Transport-agnostic DTO for AI-derived entries. Named generically (not Claude-specific) on purpose
+ * so future AI calls can reuse it; the concrete API request lives in the Claude data source
+ * ([at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource]).
  *
- * A parent [AiDerivedEntryDto] becomes an [IcalEntry] whose kind is chosen by [AiDerivedEntryDto.type]
- * (note / journal / task). Subtasks are always tasks (VTODO) linked to their parent via
- * `parentUid` + `relType = "PARENT"` - the same model the rest of the app uses.
+ * The DTO is recursive - a subtask is just another [AiDerivedEntryDto] - which mirrors the app's own
+ * arbitrary-depth `parentUid` model. There is deliberately no "type" field: the kind of the
+ * top-level entry (note / journal / task) is decided by the list the user is on
+ * ([SpectacledVariant]), exactly like the per-variant "add" FAB. Every descendant is always a task
+ * (VTODO), regardless of the top-level kind.
  */
 @Serializable
-data class AiDerivedSubtaskDto(
+data class AiDerivedEntryDto(
     @SerialName("summary") val summary: String? = null,
     @SerialName("description") val description: String? = null,
     @SerialName("dtstart") val dtstart: String? = null,
     @SerialName("due") val due: String? = null,
     @SerialName("categories") val categories: List<String>? = null,
-)
-
-@Serializable
-data class AiDerivedEntryDto(
-    @SerialName("type") val type: String? = null,   // "note" | "journal" | "task"
-    @SerialName("summary") val summary: String? = null,
-    @SerialName("description") val description: String? = null,
-    @SerialName("dtstart") val dtstart: String? = null,     // journal / task
-    @SerialName("due") val due: String? = null,             // task
-    @SerialName("categories") val categories: List<String>? = null,
-    @SerialName("subtasks") val subtasks: List<AiDerivedSubtaskDto>? = null,
+    @SerialName("subtasks") val subtasks: List<AiDerivedEntryDto>? = null,
 )
 
 @Serializable
@@ -59,20 +52,31 @@ fun newAiBatchCategory(): String {
 }
 
 /**
- * Maps a parent DTO to an [IcalEntry]. The `type` discriminator is what guarantees a parent is
- * always a note, journal or task - anything else is rejected (returns null so the caller skips it),
- * so no unexpected calendar component is ever persisted.
- *
- * [batchCategory] is appended to the entry's categories (see [newAiBatchCategory]).
+ * Flattens a derived entry (and its whole subtask subtree) into a parent-first list of [IcalEntry].
+ * The top-level entry's kind is taken from [variant] (so the "parent is a note/journal/task"
+ * guarantee is structural); every descendant is a task (VTODO) linked to its immediate parent via
+ * `parentUid` + `relType = "PARENT"`. Insert the returned list in order.
  */
-fun AiDerivedEntryDto.toParentIcalEntry(calendarId: Long, batchCategory: String): IcalEntry? {
-    val base = when (type?.trim()?.lowercase()) {
-        "note" -> IcalEntry.newNote()
-        "journal" -> IcalEntry.newJournal()
-        "task" -> IcalEntry.newTask()
-        else -> return null
+fun AiDerivedEntryDto.toIcalEntries(
+    calendarId: Long,
+    batchCategory: String,
+    variant: SpectacledVariant,
+): List<IcalEntry> {
+    val base = when (variant) {
+        SpectacledVariant.NOTES -> IcalEntry.newNote()
+        SpectacledVariant.JOURNALS -> IcalEntry.newJournal()
+        SpectacledVariant.TASKS -> IcalEntry.newTask()
     }
-    return base.copy(
+    return flatten(base, parentUid = null, calendarId = calendarId, batchCategory = batchCategory)
+}
+
+private fun AiDerivedEntryDto.flatten(
+    base: IcalEntry,
+    parentUid: String?,
+    calendarId: Long,
+    batchCategory: String,
+): List<IcalEntry> {
+    val entry = base.copy(
         calendarId = calendarId,
         summary = summary,
         description = description,
@@ -81,18 +85,17 @@ fun AiDerivedEntryDto.toParentIcalEntry(calendarId: Long, batchCategory: String)
         dtStart = if (base.isNote()) null else parseIcsDateTime(dtstart) ?: base.dtStart,
         due = if (base.isTask()) parseIcsDateTime(due) else null,
         categories = (categories ?: emptyList()) + batchCategory,
+        parentUid = parentUid,
+        relType = if (parentUid != null) "PARENT" else null,
     )
-}
 
-/** Maps a subtask DTO to a VTODO [IcalEntry] linked to [parent]. */
-fun AiDerivedSubtaskDto.toSubtaskIcalEntry(parent: IcalEntry, batchCategory: String): IcalEntry =
-    IcalEntry.newTask().copy(
-        calendarId = parent.calendarId,
-        parentUid = parent.uid,
-        relType = "PARENT",
-        summary = summary,
-        description = description,
-        dtStart = parseIcsDateTime(dtstart),
-        due = parseIcsDateTime(due),
-        categories = (categories ?: emptyList()) + batchCategory,
-    )
+    // Skip a content-less node (and its subtree) so we never persist empty or orphaned entries.
+    if (entry.summary.isNullOrBlank() && entry.description.isNullOrBlank())
+        return emptyList()
+
+    // Descendants are always tasks (VTODO), regardless of the top-level kind.
+    val children = subtasks.orEmpty()
+        .flatMap { it.flatten(IcalEntry.newTask(), entry.uid, calendarId, batchCategory) }
+
+    return listOf(entry) + children
+}

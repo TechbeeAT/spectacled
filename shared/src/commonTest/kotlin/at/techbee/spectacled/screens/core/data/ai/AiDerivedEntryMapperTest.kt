@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.data.ai
 
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,35 +14,34 @@ class AiDerivedEntryMapperTest {
     private val calendarId = 42L
 
     @Test
-    fun note_mapsToJournalComponentWithoutDates() {
-        val note = AiDerivedEntryDto(
-            type = "note",
+    fun notesVariant_topLevelIsNoteWithoutDates() {
+        val entries = AiDerivedEntryDto(
             summary = "A thought",
             description = "Some free-floating idea",
             due = "20260814",           // must be ignored for notes
             categories = listOf("ideas"),
-        ).toParentIcalEntry(calendarId, batchCategory)
+        ).toIcalEntries(calendarId, batchCategory, SpectacledVariant.NOTES)
 
-        assertNotNull(note)
+        assertEquals(1, entries.size)
+        val note = entries.single()
         assertEquals(CalendarComponent.VJOURNAL, note.calendarComponent)
         assertTrue(note.isNote())
         assertNull(note.dtStart)
         assertNull(note.due)
+        assertNull(note.parentUid)
         assertEquals(calendarId, note.calendarId)
         assertTrue(note.categories.contains("ideas"))
         assertTrue(note.categories.contains(batchCategory))
     }
 
     @Test
-    fun journal_isAlwaysDated() {
+    fun journalsVariant_topLevelIsAlwaysDated() {
         // No dtstart supplied -> falls back to newJournal()'s default "now", so it stays a journal.
         val journal = AiDerivedEntryDto(
-            type = "journal",
             summary = "Today",
             description = "What happened today",
-        ).toParentIcalEntry(calendarId, batchCategory)
+        ).toIcalEntries(calendarId, batchCategory, SpectacledVariant.JOURNALS).single()
 
-        assertNotNull(journal)
         assertEquals(CalendarComponent.VJOURNAL, journal.calendarComponent)
         assertTrue(journal.isJournal())
         assertNotNull(journal.dtStart)
@@ -49,14 +49,12 @@ class AiDerivedEntryMapperTest {
     }
 
     @Test
-    fun task_mapsToTodoWithDueAndNoParent() {
+    fun tasksVariant_topLevelIsTodoWithDueAndNoParent() {
         val task = AiDerivedEntryDto(
-            type = "task",
             summary = "Pay bills",
             due = "20260814",
-        ).toParentIcalEntry(calendarId, batchCategory)
+        ).toIcalEntries(calendarId, batchCategory, SpectacledVariant.TASKS).single()
 
-        assertNotNull(task)
         assertEquals(CalendarComponent.VTODO, task.calendarComponent)
         assertTrue(task.isTask())
         assertNull(task.parentUid)          // a parent is not itself a subtask
@@ -65,72 +63,83 @@ class AiDerivedEntryMapperTest {
     }
 
     @Test
-    fun unknownType_isRejected() {
-        assertNull(
-            AiDerivedEntryDto(type = "event", summary = "Meeting")
-                .toParentIcalEntry(calendarId, batchCategory)
-        )
-        assertNull(
-            AiDerivedEntryDto(type = null, summary = "No type")
-                .toParentIcalEntry(calendarId, batchCategory)
+    fun contentlessEntry_isSkipped() {
+        assertTrue(
+            AiDerivedEntryDto(summary = "   ", description = null)
+                .toIcalEntries(calendarId, batchCategory, SpectacledVariant.TASKS)
+                .isEmpty()
         )
     }
 
     @Test
-    fun type_isCaseAndWhitespaceInsensitive() {
-        val task = AiDerivedEntryDto(type = "  Task ", summary = "Trim me")
-            .toParentIcalEntry(calendarId, batchCategory)
-        assertNotNull(task)
-        assertTrue(task.isTask())
+    fun descendantsAreTasks_linkedToImmediateParent_atAnyDepth() {
+        // Even in the NOTES variant the top-level is a note, but every descendant is a task (VTODO).
+        val entries = AiDerivedEntryDto(
+            summary = "Friday todos",
+            subtasks = listOf(
+                AiDerivedEntryDto(
+                    summary = "Clean car",
+                    dtstart = "20260814",
+                    due = "20260814",
+                    categories = listOf("home"),
+                    subtasks = listOf(
+                        AiDerivedEntryDto(summary = "Buy sponge"),   // sub-subtask
+                    ),
+                ),
+                AiDerivedEntryDto(summary = "Water plants"),
+            ),
+        ).toIcalEntries(calendarId, batchCategory, SpectacledVariant.NOTES)
+
+        // parent + 2 subtasks + 1 sub-subtask, parent-first order
+        assertEquals(4, entries.size)
+
+        val parent = entries[0]
+        assertTrue(parent.isNote())
+        assertNull(parent.parentUid)
+
+        val cleanCar = entries[1]
+        assertEquals(CalendarComponent.VTODO, cleanCar.calendarComponent)
+        assertEquals(parent.uid, cleanCar.parentUid)
+        assertEquals("PARENT", cleanCar.relType)
+        assertNotNull(cleanCar.dtStart)
+        assertNotNull(cleanCar.due)
+        assertTrue(cleanCar.categories.contains("home"))
+
+        val buySponge = entries[2]
+        assertEquals(CalendarComponent.VTODO, buySponge.calendarComponent)
+        assertEquals(cleanCar.uid, buySponge.parentUid)   // linked to its immediate parent, not the root
+        assertEquals("PARENT", buySponge.relType)
+
+        val waterPlants = entries[3]
+        assertEquals(CalendarComponent.VTODO, waterPlants.calendarComponent)
+        assertEquals(parent.uid, waterPlants.parentUid)
+
+        // batch category on every node
+        assertTrue(entries.all { it.categories.contains(batchCategory) })
     }
 
     @Test
-    fun subtask_isTodoLinkedToParentWithDates() {
-        val parent = AiDerivedEntryDto(type = "task", summary = "Friday todos")
-            .toParentIcalEntry(calendarId, batchCategory)
-        assertNotNull(parent)
-
-        val subtask = AiDerivedSubtaskDto(
-            summary = "Water plants",
-            dtstart = "20260814",
-            due = "20260814",
-            categories = listOf("home"),
-        ).toSubtaskIcalEntry(parent, batchCategory)
-
-        assertEquals(CalendarComponent.VTODO, subtask.calendarComponent)
-        assertEquals(parent.uid, subtask.parentUid)
-        assertEquals("PARENT", subtask.relType)
-        assertEquals(parent.calendarId, subtask.calendarId)
-        assertTrue(subtask.isSubtask())
-        assertNotNull(subtask.dtStart)
-        assertNotNull(subtask.due)
-        assertTrue(subtask.categories.contains("home"))
-        assertTrue(subtask.categories.contains(batchCategory))
-    }
-
-    @Test
-    fun listDeserializes_fromClaudeStyleJson() {
+    fun listDeserializes_fromRecursiveJson() {
         val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
         val payload = """
             {
               "entries": [
                 {
-                  "type": "task",
                   "summary": "Friday todos",
                   "subtasks": [
-                    { "summary": "Clean car" },
+                    { "summary": "Clean car", "subtasks": [ { "summary": "Buy sponge" } ] },
                     { "summary": "Water plants" }
                   ]
                 },
-                { "type": "note", "summary": "Remember the milk" }
+                { "summary": "Remember the milk" }
               ]
             }
         """.trimIndent()
 
         val parsed = json.decodeFromString<AiDerivedEntryListDto>(payload)
         assertEquals(2, parsed.entries.size)
-        assertEquals("task", parsed.entries[0].type)
         assertEquals(2, parsed.entries[0].subtasks?.size)
-        assertEquals("note", parsed.entries[1].type)
+        assertEquals("Buy sponge", parsed.entries[0].subtasks?.get(0)?.subtasks?.get(0)?.summary)
+        assertNull(parsed.entries[1].subtasks)
     }
 }

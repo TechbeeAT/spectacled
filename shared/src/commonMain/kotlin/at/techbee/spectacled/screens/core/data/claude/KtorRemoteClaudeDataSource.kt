@@ -102,42 +102,40 @@ class KtorRemoteClaudeDataSource(
     }
 
     /**
-     * Derives a list of entries (each a note, journal or task) with subtasks from free [rawText].
-     * Returns the parsed, transport-agnostic DTOs; mapping to [IcalEntry] + persistence is the
-     * caller's job (it owns the calendar id and the per-generation batch category).
+     * Derives a list of entries with subtasks from free [rawText]. Returns the parsed,
+     * transport-agnostic DTOs; mapping to [IcalEntry] + persistence is the caller's job (it owns the
+     * calendar id, the per-generation batch category, and the kind of the top-level entries).
+     *
+     * [entryKindHint] is a short phrase describing what the top-level entries are for the current
+     * list (e.g. "task", "note", "journal entry") - the caller derives it from the list variant, so
+     * the model never has to choose a type. Subtasks are always actionable tasks.
      *
      * Reliability note: this uses the same "ask for JSON, then parse" approach as [applyAiMetadata]
-     * for consistency with the existing integration. It can be upgraded to guaranteed-valid JSON by
-     * switching to a structured-outputs-capable model (e.g. claude-sonnet-5) and adding
-     * `output_config.format` with a JSON schema whose `type` field is an enum of
-     * ["note","journal","task"] - the parsing below stays the same.
+     * for consistency with the existing integration. Because the shape is recursive it cannot use
+     * structured outputs (their JSON schemas can't be recursive); keep this prompt-based path if you
+     * want nested subtasks.
      */
-    suspend fun deriveEntries(rawText: String): AiDeriveEntriesResult {
+    suspend fun deriveEntries(rawText: String, entryKindHint: String): AiDeriveEntriesResult {
 
         val prompt = """
             You are a structured data extractor. The user gives you free text describing things to
             remember and things to do. Split it into a list of entries and return ONLY valid JSON,
             no markdown, no explanation.
 
-            Each entry has a "type" which MUST be one of: "note", "journal", "task".
-            - "note": a piece of information or thought with no particular date.
-            - "journal": a dated reflection or log entry (something that happened at a point in time).
-            - "task": something actionable, optionally with a start and/or due date.
+            Each top-level entry is a $entryKindHint. Group closely related actionable items under a
+            single parent as subtasks - for example a parent "Friday todos" with subtasks "clean car",
+            "water plants". Keep nesting shallow (ideally one level of subtasks). Do NOT invent
+            recurrence; a repeating chore list is just a parent with subtasks.
 
-            Group related actionable items under a single parent task with subtasks - for example a
-            parent "Friday todos" with subtasks "clean car", "water plants". Subtasks are always
-            actionable tasks. Do NOT invent recurrence; a repeating chore list is just a parent with
-            subtasks.
-
-            Return JSON of exactly this shape:
+            Return JSON of exactly this shape (an entry and a subtask have the same shape; subtasks
+            may themselves have subtasks):
             {
               "entries": [
                 {
-                  "type": "note | journal | task",
                   "summary": "A short one-line title for the entry",
                   "description": "The full cleaned-up text of the entry, or null",
-                  "dtstart": "RFC-5545 compliant date or datetime if mentioned, otherwise null (journal/task only)",
-                  "due": "RFC-5545 compliant date or datetime if mentioned, otherwise null (task only)",
+                  "dtstart": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
+                  "due": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
                   "categories": ["list", "of", "topic", "tags"],
                   "subtasks": [
                     {
@@ -145,7 +143,8 @@ class KtorRemoteClaudeDataSource(
                       "description": "Details of the subtask, or null",
                       "dtstart": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
                       "due": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
-                      "categories": ["tags"]
+                      "categories": ["tags"],
+                      "subtasks": []
                     }
                   ]
                 }

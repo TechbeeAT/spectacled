@@ -11,8 +11,7 @@ import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
 import at.techbee.spectacled.screens.core.data.ai.newAiBatchCategory
-import at.techbee.spectacled.screens.core.data.ai.toParentIcalEntry
-import at.techbee.spectacled.screens.core.data.ai.toSubtaskIcalEntry
+import at.techbee.spectacled.screens.core.data.ai.toIcalEntries
 import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -266,10 +265,16 @@ class ListViewModel(
 
         val calendarId = state.value.calendar.id
         val batchCategory = newAiBatchCategory()
+        // The top-level entry kind is decided by which list we're on, not by the AI.
+        val entryKindHint = when(spectacledVariant) {
+            SpectacledVariant.NOTES -> "note"
+            SpectacledVariant.JOURNALS -> "journal entry"
+            SpectacledVariant.TASKS -> "task"
+        }
 
         // Claude API network call + inserts - keep off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
-            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text)) {
+            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text, entryKindHint)) {
                 is AiDeriveEntriesResult.Failed -> {
                     _state.update { it.copy(
                         isDerivingEntries = false,
@@ -277,33 +282,22 @@ class ListViewModel(
                     ) }
                 }
                 is AiDeriveEntriesResult.Success -> {
-                    var createdCount = 0
-                    result.entries.forEach { entryDto ->
-                        // Skip parents that aren't note/journal/task, or that carry no content at all.
-                        val parent = entryDto.toParentIcalEntry(calendarId, batchCategory) ?: return@forEach
-                        if(parent.summary.isNullOrBlank() && parent.description.isNullOrBlank())
-                            return@forEach
-
-                        val savedParent = icalEntryRepository.insertOrUpdateIcalEntry(parent)
-                        createdCount++
-
-                        entryDto.subtasks.orEmpty().forEach { subtaskDto ->
-                            if(subtaskDto.summary.isNullOrBlank() && subtaskDto.description.isNullOrBlank())
-                                return@forEach
-                            icalEntryRepository.insertOrUpdateIcalEntry(
-                                subtaskDto.toSubtaskIcalEntry(savedParent, batchCategory)
-                            )
-                            createdCount++
-                        }
+                    // Flatten each derived entry (top-level = this list's kind, descendants = tasks)
+                    // into a parent-first list, then insert in order.
+                    val toInsert = result.entries.flatMap {
+                        it.toIcalEntries(calendarId, batchCategory, spectacledVariant)
                     }
+                    toInsert.forEach { icalEntryRepository.insertOrUpdateIcalEntry(it) }
 
-                    syncTrigger.requestImmediate(listOf(calendarId))
-                    syncTrigger.triggerWidgetUpdate()
+                    if(toInsert.isNotEmpty()) {
+                        syncTrigger.requestImmediate(listOf(calendarId))
+                        syncTrigger.triggerWidgetUpdate()
+                    }
 
                     _state.update { it.copy(
                         isDerivingEntries = false,
-                        showDeriveEntriesBottomSheet = createdCount == 0,   // keep open if nothing was created
-                        snackbarText = if(createdCount == 0) "No entries could be created from the text." else null
+                        showDeriveEntriesBottomSheet = toInsert.isEmpty(),   // keep open if nothing was created
+                        snackbarText = if(toInsert.isEmpty()) "No entries could be created from the text." else null
                     ) }
                 }
             }
