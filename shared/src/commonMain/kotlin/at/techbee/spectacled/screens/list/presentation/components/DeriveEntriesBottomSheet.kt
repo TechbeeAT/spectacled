@@ -2,14 +2,12 @@ package at.techbee.spectacled.screens.list.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -65,7 +63,7 @@ fun DeriveEntriesBottomSheet(
     BottomSheetWithMenu(
         onDismiss = { if (!isLoading) onDismiss() },
         headline = stringResource(Res.string.ai_create_entries),
-        menuActionRight = {
+        menuActionLeft = {
             TextButton(
                 onClick = { onDismiss() },
                 enabled = !isLoading
@@ -73,11 +71,30 @@ fun DeriveEntriesBottomSheet(
                 Text(stringResource(Res.string.cancel))
             }
         },
+        menuActionRight = {
+            TextButton(
+                onClick = { if (text.isNotBlank()) onCreate(text) },
+                enabled = text.isNotBlank() && !isLoading,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AutoAwesome,
+                        contentDescription = null,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(stringResource(Res.string.create))
+                }
+
+            }
+        },
+        showLoadingIndicator = isLoading
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth().padding(8.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
 
             TextField(
@@ -91,27 +108,6 @@ fun DeriveEntriesBottomSheet(
                     .heightIn(min = 140.dp)
                     .focusRequester(focusRequester)
             )
-
-            Button(
-                onClick = { if (text.isNotBlank()) onCreate(text) },
-                enabled = text.isNotBlank() && !isLoading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(18.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Outlined.AutoAwesome,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                    Text(stringResource(Res.string.create))
-                }
-            }
         }
     }
 }
@@ -124,7 +120,8 @@ private fun DeriveEntriesBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         Scaffold {
             DeriveEntriesBottomSheet(
-                isLoading = false,
+                isLoading = false
+                ,
                 onCreate = { },
                 onDismiss = { }
             )
