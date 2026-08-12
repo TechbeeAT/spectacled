@@ -114,12 +114,10 @@ fun DeriveEntriesBottomSheet(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.End),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = stringResource(Res.string.ai_create_subtasks),
-                    modifier = Modifier.weight(1f)
-                )
+                Text(text = stringResource(Res.string.ai_create_subtasks))
                 Switch(
                     checked = createSubtasks,
                     onCheckedChange = { createSubtasks = it },
