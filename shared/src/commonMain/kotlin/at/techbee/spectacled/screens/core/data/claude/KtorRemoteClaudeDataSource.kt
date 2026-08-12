@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.data.claude
 
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
 import at.techbee.spectacled.screens.core.data.ai.AiDerivedEntryListDto
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -106,26 +107,29 @@ class KtorRemoteClaudeDataSource(
      * transport-agnostic DTOs; mapping to [IcalEntry] + persistence is the caller's job (it owns the
      * calendar id, the per-generation batch category, and the kind of the top-level entries).
      *
-     * [entryKindHint] is a short phrase describing what the top-level entries are for the current
-     * list (e.g. "task", "note", "journal entry") - the caller derives it from the list variant, so
-     * the model never has to choose a type. Subtasks are always actionable tasks.
+     * [variant] tells the model what the top-level entries are for the current list (its lowercase
+     * enum name - "notes" / "journals" / "tasks"), so the model never has to choose a type.
+     * Subtasks are always actionable tasks.
      *
      * Reliability note: this uses the same "ask for JSON, then parse" approach as [applyAiMetadata]
      * for consistency with the existing integration. Because the shape is recursive it cannot use
      * structured outputs (their JSON schemas can't be recursive); keep this prompt-based path if you
      * want nested subtasks.
      */
-    suspend fun deriveEntries(rawText: String, entryKindHint: String): AiDeriveEntriesResult {
+    suspend fun deriveEntries(rawText: String, variant: SpectacledVariant): AiDeriveEntriesResult {
+
+        val variantName = variant.name.lowercase()   // "notes" | "journals" | "tasks"
 
         val prompt = """
             You are a structured data extractor. The user gives you free text describing things to
             remember and things to do. Split it into a list of entries and return ONLY valid JSON,
             no markdown, no explanation.
 
-            Each top-level entry is a $entryKindHint. Group closely related actionable items under a
-            single parent as subtasks - for example a parent "Friday todos" with subtasks "clean car",
-            "water plants". Keep nesting shallow (ideally one level of subtasks). Do NOT invent
-            recurrence; a repeating chore list is just a parent with subtasks.
+            Each top-level entry will be saved as one of the user's $variantName. Group closely
+            related actionable items under a single parent as subtasks - for example a parent
+            "Friday todos" with subtasks "clean car", "water plants". Keep nesting shallow (ideally
+            one level of subtasks). Do NOT invent recurrence; a repeating chore list is just a parent
+            with subtasks.
 
             Return JSON of exactly this shape (an entry and a subtask have the same shape; subtasks
             may themselves have subtasks):

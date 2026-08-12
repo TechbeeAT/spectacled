@@ -265,16 +265,11 @@ class ListViewModel(
 
         val calendarId = state.value.calendar.id
         val batchCategory = newAiBatchCategory()
-        // The top-level entry kind is decided by which list we're on, not by the AI.
-        val entryKindHint = when(spectacledVariant) {
-            SpectacledVariant.NOTES -> "note"
-            SpectacledVariant.JOURNALS -> "journal entry"
-            SpectacledVariant.TASKS -> "task"
-        }
 
-        // Claude API network call + inserts - keep off the Main dispatcher.
+        // Claude API network call + inserts - keep off the Main dispatcher. The top-level entry kind
+        // is decided by which list we're on (spectacledVariant), not by the AI.
         viewModelScope.launch(ioDispatcher) {
-            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text, entryKindHint)) {
+            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text, spectacledVariant)) {
                 is AiDeriveEntriesResult.Failed -> {
                     _state.update { it.copy(
                         isDerivingEntries = false,
