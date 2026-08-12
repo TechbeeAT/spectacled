@@ -119,6 +119,23 @@ class AiDerivedEntryMapperTest {
     }
 
     @Test
+    fun includeSubtasksFalse_dropsAllSubtasks() {
+        val entries = AiDerivedEntryDto(
+            summary = "Friday todos",
+            subtasks = listOf(
+                AiDerivedEntryDto(summary = "Clean car"),
+                AiDerivedEntryDto(summary = "Water plants"),
+            ),
+        ).toIcalEntries(calendarId, batchCategory, SpectacledVariant.TASKS, includeSubtasks = false)
+
+        assertEquals(1, entries.size)
+        val parent = entries.single()
+        assertTrue(parent.isTask())
+        assertNull(parent.parentUid)
+        assertTrue(parent.categories.contains(batchCategory))
+    }
+
+    @Test
     fun listDeserializes_fromRecursiveJson() {
         val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
         val payload = """

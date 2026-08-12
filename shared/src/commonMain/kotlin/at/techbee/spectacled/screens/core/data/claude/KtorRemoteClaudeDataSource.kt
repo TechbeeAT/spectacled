@@ -109,27 +109,39 @@ class KtorRemoteClaudeDataSource(
      *
      * [variant] tells the model what the top-level entries are for the current list (its lowercase
      * enum name - "notes" / "journals" / "tasks"), so the model never has to choose a type.
-     * Subtasks are always actionable tasks.
+     * [createSubtasks] mirrors the user's toggle: when false the model is asked for a flat list.
+     * (The mapper enforces this regardless, so this is only a token/quality hint.)
      *
      * Reliability note: this uses the same "ask for JSON, then parse" approach as [applyAiMetadata]
      * for consistency with the existing integration. Because the shape is recursive it cannot use
      * structured outputs (their JSON schemas can't be recursive); keep this prompt-based path if you
      * want nested subtasks.
      */
-    suspend fun deriveEntries(rawText: String, variant: SpectacledVariant): AiDeriveEntriesResult {
+    suspend fun deriveEntries(
+        rawText: String,
+        variant: SpectacledVariant,
+        createSubtasks: Boolean,
+    ): AiDeriveEntriesResult {
 
         val variantName = variant.name.lowercase()   // "notes" | "journals" | "tasks"
+
+        val subtaskGuidance = if (createSubtasks) {
+            """
+            Group closely related actionable items under a single parent as subtasks - for example a
+            parent "Friday todos" with subtasks "clean car", "water plants". Keep nesting shallow
+            (ideally one level of subtasks). Do NOT invent recurrence; a repeating chore list is just
+            a parent with subtasks.
+            """.trimIndent()
+        } else {
+            "Do NOT create subtasks; return a flat list of top-level entries only, each with an empty \"subtasks\" array."
+        }
 
         val prompt = """
             You are a structured data extractor. The user gives you free text describing things to
             remember and things to do. Split it into a list of entries and return ONLY valid JSON,
             no markdown, no explanation.
 
-            Each top-level entry will be saved as one of the user's $variantName. Group closely
-            related actionable items under a single parent as subtasks - for example a parent
-            "Friday todos" with subtasks "clean car", "water plants". Keep nesting shallow (ideally
-            one level of subtasks). Do NOT invent recurrence; a repeating chore list is just a parent
-            with subtasks.
+            Each top-level entry will be saved as one of the user's $variantName. $subtaskGuidance
 
             Return JSON of exactly this shape (an entry and a subtask have the same shape; subtasks
             may themselves have subtasks):

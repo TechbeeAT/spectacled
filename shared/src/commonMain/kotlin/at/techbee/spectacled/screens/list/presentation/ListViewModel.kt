@@ -229,7 +229,7 @@ class ListViewModel(
             }
             is ListAction.OnShowDateSelectorBottomSheet -> { _state.update { it.copy(showDateSelectorBottomSheet = action.show) } }
             is ListAction.OnShowDeriveEntriesBottomSheet -> { _state.update { it.copy(showDeriveEntriesBottomSheet = action.show) } }
-            is ListAction.OnDeriveEntriesFromText -> deriveEntriesFromText(action.text)
+            is ListAction.OnDeriveEntriesFromText -> deriveEntriesFromText(action.text, action.createSubtasks)
             is ListAction.OnUpdateCategoryOfSelected -> { onUpdateCategoryOfSelectedItems(action.addCategory, action.removeCategory) }
             is ListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
             is ListAction.OnGoToSelectedDate -> { onGoToDate(action.selectedDate) }
@@ -244,7 +244,7 @@ class ListViewModel(
      * created as VTODO children linked via parentUid. Every created entry is tagged with a single
      * per-generation batch category so the user can filter/delete/regenerate the batch.
      */
-    private fun deriveEntriesFromText(text: String) {
+    private fun deriveEntriesFromText(text: String, createSubtasks: Boolean) {
 
         if(!state.value.calendar.canWriteContent())
             return
@@ -269,7 +269,7 @@ class ListViewModel(
         // Claude API network call + inserts - keep off the Main dispatcher. The top-level entry kind
         // is decided by which list we're on (spectacledVariant), not by the AI.
         viewModelScope.launch(ioDispatcher) {
-            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text, spectacledVariant)) {
+            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text, spectacledVariant, createSubtasks)) {
                 is AiDeriveEntriesResult.Failed -> {
                     _state.update { it.copy(
                         isDerivingEntries = false,
@@ -280,7 +280,7 @@ class ListViewModel(
                     // Flatten each derived entry (top-level = this list's kind, descendants = tasks)
                     // into a parent-first list, then insert in order.
                     val toInsert = result.entries.flatMap {
-                        it.toIcalEntries(calendarId, batchCategory, spectacledVariant)
+                        it.toIcalEntries(calendarId, batchCategory, spectacledVariant, includeSubtasks = createSubtasks)
                     }
                     toInsert.forEach { icalEntryRepository.insertOrUpdateIcalEntry(it) }
 

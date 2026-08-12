@@ -12,6 +12,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -35,6 +36,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.ai_create_entries
+import spectacled.shared.generated.resources.ai_create_subtasks
 import spectacled.shared.generated.resources.ai_paste_text_placeholder
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.create
@@ -48,11 +50,12 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun DeriveEntriesBottomSheet(
     isLoading: Boolean,
-    onCreate: (String) -> Unit,
+    onCreate: (String, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
 
     var text by rememberSaveable { mutableStateOf("") }
+    var createSubtasks by rememberSaveable { mutableStateOf(true) }
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -73,7 +76,7 @@ fun DeriveEntriesBottomSheet(
         },
         menuActionRight = {
             TextButton(
-                onClick = { if (text.isNotBlank()) onCreate(text) },
+                onClick = { if (text.isNotBlank()) onCreate(text, createSubtasks) },
                 enabled = text.isNotBlank() && !isLoading,
             ) {
                 Row(
@@ -108,6 +111,21 @@ fun DeriveEntriesBottomSheet(
                     .heightIn(min = 140.dp)
                     .focusRequester(focusRequester)
             )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(Res.string.ai_create_subtasks),
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    checked = createSubtasks,
+                    onCheckedChange = { createSubtasks = it },
+                    enabled = !isLoading
+                )
+            }
         }
     }
 }
@@ -120,9 +138,8 @@ private fun DeriveEntriesBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         Scaffold {
             DeriveEntriesBottomSheet(
-                isLoading = false
-                ,
-                onCreate = { },
+                isLoading = false,
+                onCreate = { _, _ -> },
                 onDismiss = { }
             )
         }

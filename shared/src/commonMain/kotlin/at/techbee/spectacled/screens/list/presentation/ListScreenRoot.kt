@@ -204,7 +204,7 @@ fun ListScreenRoot(
         if (state.showDeriveEntriesBottomSheet) {
             DeriveEntriesBottomSheet(
                 isLoading = state.isDerivingEntries,
-                onCreate = { text -> listViewModel.onAction(ListAction.OnDeriveEntriesFromText(text)) },
+                onCreate = { text, createSubtasks -> listViewModel.onAction(ListAction.OnDeriveEntriesFromText(text, createSubtasks)) },
                 onDismiss = { listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(false)) }
             )
         }

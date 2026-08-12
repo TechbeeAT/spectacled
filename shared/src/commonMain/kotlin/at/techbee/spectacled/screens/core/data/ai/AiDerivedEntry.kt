@@ -52,22 +52,25 @@ fun newAiBatchCategory(): String {
 }
 
 /**
- * Flattens a derived entry (and its whole subtask subtree) into a parent-first list of [IcalEntry].
- * The top-level entry's kind is taken from [variant] (so the "parent is a note/journal/task"
- * guarantee is structural); every descendant is a task (VTODO) linked to its immediate parent via
- * `parentUid` + `relType = "PARENT"`. Insert the returned list in order.
+ * Flattens a derived entry (and, when [includeSubtasks] is true, its whole subtask subtree) into a
+ * parent-first list of [IcalEntry]. The top-level entry's kind is taken from [variant] (so the
+ * "parent is a note/journal/task" guarantee is structural); every descendant is a task (VTODO)
+ * linked to its immediate parent via `parentUid` + `relType = "PARENT"`. Insert the returned list in
+ * order. With [includeSubtasks] false, only the top-level entry is produced, whatever the model
+ * returned.
  */
 fun AiDerivedEntryDto.toIcalEntries(
     calendarId: Long,
     batchCategory: String,
     variant: SpectacledVariant,
+    includeSubtasks: Boolean = true,
 ): List<IcalEntry> {
     val base = when (variant) {
         SpectacledVariant.NOTES -> IcalEntry.newNote()
         SpectacledVariant.JOURNALS -> IcalEntry.newJournal()
         SpectacledVariant.TASKS -> IcalEntry.newTask()
     }
-    return flatten(base, parentUid = null, calendarId = calendarId, batchCategory = batchCategory)
+    return flatten(base, parentUid = null, calendarId = calendarId, batchCategory = batchCategory, includeSubtasks = includeSubtasks)
 }
 
 private fun AiDerivedEntryDto.flatten(
@@ -75,6 +78,7 @@ private fun AiDerivedEntryDto.flatten(
     parentUid: String?,
     calendarId: Long,
     batchCategory: String,
+    includeSubtasks: Boolean,
 ): List<IcalEntry> {
     val entry = base.copy(
         calendarId = calendarId,
@@ -93,9 +97,12 @@ private fun AiDerivedEntryDto.flatten(
     if (entry.summary.isNullOrBlank() && entry.description.isNullOrBlank())
         return emptyList()
 
-    // Descendants are always tasks (VTODO), regardless of the top-level kind.
-    val children = subtasks.orEmpty()
-        .flatMap { it.flatten(IcalEntry.newTask(), entry.uid, calendarId, batchCategory) }
+    // Descendants are always tasks (VTODO), regardless of the top-level kind. Skipped entirely when
+    // the user turned subtask creation off.
+    val children = if (includeSubtasks)
+        subtasks.orEmpty().flatMap { it.flatten(IcalEntry.newTask(), entry.uid, calendarId, batchCategory, true) }
+    else
+        emptyList()
 
     return listOf(entry) + children
 }
