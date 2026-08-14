@@ -158,6 +158,17 @@ fun DetailsScreenRoot(
             }
         }
 
+        LaunchedEffect(detailsState.launchPickerAction) {
+            when (detailsState.launchPickerAction) {
+                AttachmentPickerAction.FILE -> filePicker.pickFile()
+                AttachmentPickerAction.PHOTO -> imagePicker.takePhoto()
+                AttachmentPickerAction.GALLERY -> imagePicker.pickImage()
+                null -> {}
+            }
+            if (detailsState.launchPickerAction != null)
+                detailsViewModel.onAction(DetailsAction.OnLaunchPicker(null))
+        }
+
         DisposableEffect(Unit) {
             onDispose {
                 detailsViewModel.onAction(DetailsAction.OnDispose)
@@ -418,7 +429,7 @@ fun DetailsScreenRoot(
                                         leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
                                         enabled = detailsState.isAttachmentSupportEnabled(),
                                         onClick = {
-                                            filePicker.pickFile() /* Result handled in rememberFilePicker callback */
+                                            detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.FILE))
                                             addMoreExpanded = false
                                         },
                                     )
@@ -433,7 +444,7 @@ fun DetailsScreenRoot(
                                             leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
                                             enabled = detailsState.isAttachmentSupportEnabled(),
                                             onClick = {
-                                                imagePicker.takePhoto()
+                                                detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.PHOTO))
                                                 addMoreExpanded = false
                                             },
                                         )
@@ -445,7 +456,7 @@ fun DetailsScreenRoot(
                                             leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
                                             enabled = detailsState.isAttachmentSupportEnabled(),
                                             onClick = {
-                                                imagePicker.pickImage()
+                                                detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.GALLERY))
                                                 addMoreExpanded = false
                                             },
                                         )

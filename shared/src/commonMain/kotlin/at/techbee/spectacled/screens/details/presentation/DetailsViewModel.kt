@@ -139,7 +139,11 @@ class DetailsViewModel(
         }
     }
 
-    fun loadNew(calendarId: Long? = null, initialDescription: String? = null) {
+    fun loadNew(
+        calendarId: Long? = null,
+        initialDescription: String? = null,
+        initialAction: DetailsInitialAction? = null
+        ) {
 
         viewModelScope.launch {
 
@@ -158,13 +162,20 @@ class DetailsViewModel(
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
-                showSheetOrDialog = null,
+                showDrawingCanvasBottomSheet = if(initialAction == DetailsInitialAction.ADD_DRAWING) DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null) else DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
+                launchPickerAction = when (initialAction) {
+                    DetailsInitialAction.ADD_ATTACHMENT -> AttachmentPickerAction.FILE
+                    DetailsInitialAction.ADD_PHOTO -> AttachmentPickerAction.PHOTO
+                    DetailsInitialAction.ADD_FROM_GALLERY -> AttachmentPickerAction.GALLERY
+                    else -> null
+                },
                 navigateUp = false
             ) }
 
             observeIcalEntry(newIcalEntry.calendarId, newIcalEntry.uid)
         }
     }
+
 
     @OptIn(ExperimentalUuidApi::class)
     fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
@@ -288,6 +299,7 @@ class DetailsViewModel(
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
             is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
             is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
+            is DetailsAction.OnLaunchPicker -> { _state.update { it.copy(launchPickerAction = action.pickerAction) } }
             DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {

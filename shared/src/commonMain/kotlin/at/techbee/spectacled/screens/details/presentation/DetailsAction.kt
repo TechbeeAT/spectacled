@@ -29,21 +29,9 @@ sealed interface DetailsAction {
 
     data class OnSyncConflictUpdateUserDecision(val syncState: SyncState): DetailsAction
 
-    /*
-    data class OnShowMoreBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowDeleteDialog(val show: Boolean): DetailsAction
-    data class OnShowMoveDialog(val show: Boolean): DetailsAction
-    data class OnShowColorSelectorBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowCategorySelectorBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowJournalStatusPickerBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowTaskStatusProgressPickerBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowAddSubtaskBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowEditUrlBottomSheet(val show: Boolean): DetailsAction
-
-     */
-
     data class OnShowSheetOrDialog(val sheetOrDialog: DetailsSheetOrDialog?): DetailsAction
     data class OnShowDrawingCanvasBottomSheet(val show: Boolean, val replaceAttachmentUid: String?, val initialPaths: List<PathData>?): DetailsAction
+    data class OnLaunchPicker(val pickerAction: AttachmentPickerAction?): DetailsAction
 
     data class OnPersistOrderNo(val list: List<Long>): DetailsAction
 

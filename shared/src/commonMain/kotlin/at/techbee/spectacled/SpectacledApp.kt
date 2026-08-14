@@ -109,9 +109,9 @@ fun SpectacledApp(
                         exitTransition = { slideOutHorizontally { fullWidth -> -fullWidth } },
                         popEnterTransition = { slideInHorizontally { fullWidth -> -fullWidth } },
                         popExitTransition = { slideOutHorizontally { fullWidth -> fullWidth } }
-                    ) { args ->
+                    ) { navBackStackEntry ->
 
-                        val calendarId = args.toRoute<Route.IcalEntryList>().calendarId
+                        val calendarId = navBackStackEntry.toRoute<Route.IcalEntryList>().calendarId
 
                         LaunchedEffect(calendarId) {
                             listViewModel.load(calendarId)
@@ -151,14 +151,18 @@ fun SpectacledApp(
                         }
                     }
 
-                    composable<Route.IcalEntryDetails> { args ->
-                        val icalEntryId = args.toRoute<Route.IcalEntryDetails>().icalEntryId
-                        val calendarId = args.toRoute<Route.IcalEntryDetails>().newIcalEntryCalendarId
-                        val initialDescription = args.toRoute<Route.IcalEntryDetails>().newIcalEntryInitialDescription
+                    composable<Route.IcalEntryDetails> { navBackStackEntry ->
 
-                        LaunchedEffect(icalEntryId, calendarId, initialDescription) {
+                        val args = navBackStackEntry.toRoute<Route.IcalEntryDetails>()
+
+                        val icalEntryId = args.icalEntryId
+                        val calendarId = args.newIcalEntryCalendarId
+                        val initialDescription = args.newIcalEntryInitialDescription
+                        val initialAction = args.initialAction
+
+                        LaunchedEffect(icalEntryId, calendarId, initialDescription, initialAction) {
                             if (initialDescription != null || icalEntryId == 0L)
-                                detailsViewModel.loadNew(calendarId = calendarId, initialDescription = initialDescription)
+                                detailsViewModel.loadNew(calendarId = calendarId, initialDescription = initialDescription, initialAction = initialAction)
                             else if(detailsViewModel.state.value.icalEntry.id != icalEntryId)
                                 detailsViewModel.load(icalEntryId)
                         }
