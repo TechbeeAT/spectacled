@@ -332,7 +332,7 @@ class DetailsViewModel(
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
             is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentUid) }
             is DetailsAction.OnDeleteAttachment -> { onDeleteAttachment(action.attachmentUid) }
-            is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths) }
+            is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
         }
     }
 
@@ -878,12 +878,12 @@ class DetailsViewModel(
         }
     }
 
-    private fun onUpdateDrawing(replaceAttachmentUid: String?, paths: List<PathData>) {
+    private fun onUpdateDrawing(replaceAttachmentUid: String?, paths: List<PathData>, width: Float, height: Float) {
 
         if(!state.value.allowEditing())
             return
 
-        val svg = PathDataSvgConverter.toSvg(paths)
+        val svg = PathDataSvgConverter.toSvg(paths, width, height)
         onAddAttachment(
             fileName = "drawing_" + Uuid.random().toString().take(8) + ".svg",
             bytes = svg.toByteArray(),

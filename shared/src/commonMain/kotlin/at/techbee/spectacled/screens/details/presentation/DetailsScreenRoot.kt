@@ -259,8 +259,8 @@ fun DetailsScreenRoot(
             DrawingCanvasBottomSheet(
                 replaceAttachmentUid = detailsState.showDrawingCanvasBottomSheet.replaceAttachmentUid,
                 initialPathData = detailsState.showDrawingCanvasBottomSheet.initialPaths,
-                onDrawingUpdated = { attachmentUid, paths ->
-                    detailsViewModel.onAction(DetailsAction.OnUpdateDrawing(attachmentUid, paths))
+                onDrawingUpdated = { attachmentUid, paths, width, height ->
+                    detailsViewModel.onAction(DetailsAction.OnUpdateDrawing(attachmentUid, paths, width, height))
                 },
                 onDismiss = {
                     detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null))
