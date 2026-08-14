@@ -23,7 +23,7 @@ sealed interface DetailsAction {
     data class OnAddAttachment(val fileName: String, val bytes: ByteArray, val mimeType: String?): DetailsAction
     data class OnOpenAttachment(val attachmentUid: String): DetailsAction
     data class OnDeleteAttachment(val attachmentUid: String): DetailsAction
-    data class OnUpdateDrawing(val replaceAttachmentUid: String?, val paths: List<PathData>): DetailsAction
+    data class OnUpdateDrawing(val replaceAttachmentUid: String?, val paths: List<PathData>, val width: Float, val height: Float): DetailsAction
 
     data class OnNewCalendarIdSelected(val calendarId: Long): DetailsAction
 
