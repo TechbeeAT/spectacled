@@ -36,7 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -79,12 +82,16 @@ fun AttachmentCard(
 ) {
 
     var drawingPaths by remember { mutableStateOf<List<PathData>?>(null) }
+    var drawingSize by remember { mutableStateOf<Size?>(null) }
     var imagePreview by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(attachment) {
         if (attachment.isSVG() && attachment.localPath != null && fileManager.exists(attachment.localPath)) {
             val fileContent = fileManager.readAttachment(attachment.localPath).decodeToString()
-            PathDataSvgConverter.fromSvg(fileContent)?.let { drawingPaths = it }
+            PathDataSvgConverter.fromSvg(fileContent)?.let {
+                drawingPaths = it.paths
+                drawingSize = Size(it.width, it.height)
+            }
         } else if(attachment.isImage()) {
             if (attachment.localPath != null && fileManager.exists(attachment.localPath)) {
                 imagePreview = attachment.localPath
@@ -195,13 +202,18 @@ fun AttachmentCard(
                         .height(600.dp)
                         .background(Color.White)
                 ) {
-                    drawingPaths?.fastForEach { pathData ->
-                        drawPath(
-                            path = pathData.paths,
-                            color = pathData.color,
-                            thickness = pathData.thickness,
-                            smoothness = 3
-                        )
+                    if (drawingSize != null && drawingSize!!.width > 0) {
+                        val scale = size.width / drawingSize!!.width
+                        scale(scale, pivot = Offset.Zero) {
+                            drawingPaths?.fastForEach { pathData ->
+                                drawPath(
+                                    path = pathData.paths,
+                                    color = pathData.color,
+                                    thickness = pathData.thickness,
+                                    smoothness = 3
+                                )
+                            }
+                        }
                     }
                 }
             }

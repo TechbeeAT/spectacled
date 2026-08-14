@@ -45,7 +45,13 @@ class IcalEntryRepositoryImpl(
     override fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>> {
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).asFlow()
-                .map { query -> query.awaitAsList().map { it.toDomain() } }
+                .map { query ->
+                    val icalEntryDtos = query.awaitAsList()
+                    val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
+                    icalEntryDtos.map { icalEntryDto ->
+                        icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList())
+                    }
+                }
         }.flowOn(ioDispatcher)
     }
 
@@ -105,7 +111,9 @@ class IcalEntryRepositoryImpl(
     }
 
     override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = withContext(ioDispatcher) {
-        getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
+        val icalEntryDtos = getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList()
+        val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
+        icalEntryDtos.map { it.toDomain(attachmentsByEntryId[it.id] ?: emptyList()) }
     }
 
     override suspend fun getDeletedDeltaHrefs(
@@ -148,7 +156,13 @@ class IcalEntryRepositoryImpl(
     override fun getSubtasksByParentUid(calendarId: Long, parentUid: String): Flow<List<IcalEntry>> {
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getSubtasksByParentUid(calendarId, parentUid).asFlow()
-                .map { query -> query.awaitAsList().map { it.toDomain() } }
+                .map { query ->
+                    val icalEntryDtos = query.awaitAsList()
+                    val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
+                    icalEntryDtos.map { icalEntryDto ->
+                        icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList())
+                    }
+                }
         }.flowOn(ioDispatcher)
     }
 
