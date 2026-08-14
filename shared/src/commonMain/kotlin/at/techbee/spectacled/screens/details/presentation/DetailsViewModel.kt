@@ -162,9 +162,19 @@ class DetailsViewModel(
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
-                showSheetOrDialog = initialAction?.toSheetOrDialog(),
+                showSheetOrDialog = when (initialAction) {
+                    DetailsInitialAction.COLOR_SELECTOR -> DetailsSheetOrDialog.COLOR_SELECTOR
+                    DetailsInitialAction.CATEGORY_SELECTOR -> DetailsSheetOrDialog.CATEGORY_SELECTOR
+                    DetailsInitialAction.ADD_SUBTASKS -> DetailsSheetOrDialog.ADD_SUBTASKS
+                    else -> null
+                },
                 showDrawingCanvasBottomSheet = if(initialAction == DetailsInitialAction.ADD_DRAWING) DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null) else DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
-                launchPickerAction = initialAction?.toPickerAction(),
+                launchPickerAction = when (initialAction) {
+                    DetailsInitialAction.ADD_ATTACHMENT -> AttachmentPickerAction.FILE
+                    DetailsInitialAction.ADD_PHOTO -> AttachmentPickerAction.PHOTO
+                    DetailsInitialAction.ADD_FROM_GALLERY -> AttachmentPickerAction.GALLERY
+                    else -> null
+                },
                 navigateUp = false
             ) }
 
@@ -172,28 +182,6 @@ class DetailsViewModel(
         }
     }
 
-    // Sheets/dialogs the screen renders declaratively from showSheetOrDialog. ADD_DRAWING and the
-    // picker actions are handled by their own state fields (see loadNew), so they map to null here.
-    private fun DetailsInitialAction.toSheetOrDialog(): DetailsSheetOrDialog? = when (this) {
-        DetailsInitialAction.COLOR_SELECTOR -> DetailsSheetOrDialog.COLOR_SELECTOR
-        DetailsInitialAction.CATEGORY_SELECTOR -> DetailsSheetOrDialog.CATEGORY_SELECTOR
-        DetailsInitialAction.JOURNAL_STATUS_PICKER -> DetailsSheetOrDialog.JOURNAL_STATUS_PICKER
-        DetailsInitialAction.TASK_STATUS_PICKER -> DetailsSheetOrDialog.TASK_STATUS_PICKER
-        DetailsInitialAction.ADD_SUBTASKS -> DetailsSheetOrDialog.ADD_SUBTASKS
-        DetailsInitialAction.EDIT_URL -> DetailsSheetOrDialog.EDIT_URL
-        DetailsInitialAction.ADD_DRAWING,
-        DetailsInitialAction.ADD_ATTACHMENT,
-        DetailsInitialAction.ADD_PHOTO,
-        DetailsInitialAction.ADD_FROM_GALLERY -> null
-    }
-
-    // Platform pickers the screen launches imperatively; other actions map to null.
-    private fun DetailsInitialAction.toPickerAction(): AttachmentPickerAction? = when (this) {
-        DetailsInitialAction.ADD_ATTACHMENT -> AttachmentPickerAction.FILE
-        DetailsInitialAction.ADD_PHOTO -> AttachmentPickerAction.PHOTO
-        DetailsInitialAction.ADD_FROM_GALLERY -> AttachmentPickerAction.GALLERY
-        else -> null
-    }
 
     @OptIn(ExperimentalUuidApi::class)
     fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
@@ -317,7 +305,7 @@ class DetailsViewModel(
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
             is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
             is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
-            is DetailsAction.OnPickerLaunched -> { _state.update { it.copy(launchPickerAction = null) } }
+            is DetailsAction.OnLaunchPicker -> { _state.update { it.copy(launchPickerAction = action.pickerAction) } }
             DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {

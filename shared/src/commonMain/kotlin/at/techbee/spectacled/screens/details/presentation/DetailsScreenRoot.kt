@@ -158,9 +158,6 @@ fun DetailsScreenRoot(
             }
         }
 
-        // The platform pickers live in this composition (rememberFilePicker/rememberImagePicker) and
-        // can only be launched from here. When the ViewModel requests one (e.g. handed over from the
-        // list FAB via the route), launch it once and clear the flag so it does not re-fire.
         LaunchedEffect(detailsState.launchPickerAction) {
             when (detailsState.launchPickerAction) {
                 AttachmentPickerAction.FILE -> filePicker.pickFile()
@@ -169,7 +166,7 @@ fun DetailsScreenRoot(
                 null -> {}
             }
             if (detailsState.launchPickerAction != null)
-                detailsViewModel.onAction(DetailsAction.OnPickerLaunched)
+                detailsViewModel.onAction(DetailsAction.OnLaunchPicker(null))
         }
 
         DisposableEffect(Unit) {
@@ -432,7 +429,7 @@ fun DetailsScreenRoot(
                                         leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
                                         enabled = detailsState.isAttachmentSupportEnabled(),
                                         onClick = {
-                                            filePicker.pickFile() /* Result handled in rememberFilePicker callback */
+                                            detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.FILE))
                                             addMoreExpanded = false
                                         },
                                     )
@@ -447,7 +444,7 @@ fun DetailsScreenRoot(
                                             leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
                                             enabled = detailsState.isAttachmentSupportEnabled(),
                                             onClick = {
-                                                imagePicker.takePhoto()
+                                                detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.PHOTO))
                                                 addMoreExpanded = false
                                             },
                                         )
@@ -459,7 +456,7 @@ fun DetailsScreenRoot(
                                             leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
                                             enabled = detailsState.isAttachmentSupportEnabled(),
                                             onClick = {
-                                                imagePicker.pickImage()
+                                                detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.GALLERY))
                                                 addMoreExpanded = false
                                             },
                                         )

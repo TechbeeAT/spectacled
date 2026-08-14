@@ -23,27 +23,10 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val allHomeCollections: List<HomeCollection> = emptyList(),
     val allPrincipals: List<Principal> = emptyList(),
 
-    /*
-    val showDeleteDialog: Boolean = false,
-    val showMoveDialog: Boolean = false,
-    val showMoreBottomSheet: Boolean = false,
-    val showColorSelectorBottomSheet: Boolean = false,
-    val showCategorySelectorBottomSheet: Boolean = false,
-    val showJournalStatusPickerBottomSheet: Boolean = false,
-    val showTaskStatusProgressPickerBottomSheet: Boolean = false,
-    val showAddSubtaskBottomSheet: Boolean = false,
-    val showEditUrlBottomSheet: Boolean = false,
-
-     */
-
     val showSheetOrDialog: DetailsSheetOrDialog? = null,
     val showDrawingCanvasBottomSheet: DetailsAction.OnShowDrawingCanvasBottomSheet = DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
 
-    // One-shot signal to the screen to launch a platform picker. The pickers are created via
-    // rememberFilePicker/rememberImagePicker inside the composition and cannot be launched from
-    // the ViewModel, so this flag is observed by a LaunchedEffect in the screen and cleared again
-    // via OnPickerLaunched (same idiom as navigateUp/navigateToIcalEntryId).
-    val launchPickerAction: AttachmentPickerAction? = null,
+    val launchPickerAction: AttachmentPickerAction? = null,      // One-shot signal to the screen to launch a platform picker.
 
     val isLoading: Boolean = true,
     val isInitialized: Boolean = false,
@@ -71,13 +54,9 @@ enum class DetailsSheetOrDialog {
     DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL
 }
 
-// Action to perform right after the details screen opens, handed over via the route (e.g. from the
-// list FAB). Kept separate from DetailsSheetOrDialog because these are not all declaratively
-// rendered sheets: ADD_DRAWING opens a dedicated bottom sheet and the ADD_ATTACHMENT/ADD_PHOTO/
-// ADD_FROM_GALLERY values launch platform pickers imperatively from the screen. loadNew() maps
-// each value to the appropriate mechanism.
+// Action to perform right after the details screen opens
 enum class DetailsInitialAction {
-    COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, ADD_DRAWING, ADD_ATTACHMENT, ADD_PHOTO, ADD_FROM_GALLERY
+    COLOR_SELECTOR, CATEGORY_SELECTOR, ADD_SUBTASKS, ADD_DRAWING, ADD_ATTACHMENT, ADD_PHOTO, ADD_FROM_GALLERY
 }
 
 // The three platform pickers the screen can launch on behalf of the ViewModel.
