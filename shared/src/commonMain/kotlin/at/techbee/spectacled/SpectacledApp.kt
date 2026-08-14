@@ -158,11 +158,11 @@ fun SpectacledApp(
                         val icalEntryId = args.icalEntryId
                         val calendarId = args.newIcalEntryCalendarId
                         val initialDescription = args.newIcalEntryInitialDescription
-                        val initialSheetOrDialog = args.initialSheetOrDialog
+                        val initialAction = args.initialAction
 
-                        LaunchedEffect(icalEntryId, calendarId, initialDescription) {
+                        LaunchedEffect(icalEntryId, calendarId, initialDescription, initialAction) {
                             if (initialDescription != null || icalEntryId == 0L)
-                                detailsViewModel.loadNew(calendarId = calendarId, initialDescription = initialDescription, initialSheetOrDialog = initialSheetOrDialog)
+                                detailsViewModel.loadNew(calendarId = calendarId, initialDescription = initialDescription, initialAction = initialAction)
                             else if(detailsViewModel.state.value.icalEntry.id != icalEntryId)
                                 detailsViewModel.load(icalEntryId)
                         }

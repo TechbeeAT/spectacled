@@ -67,6 +67,7 @@ import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorE
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
+import at.techbee.spectacled.screens.details.presentation.DetailsInitialAction
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesBottomSheet
@@ -335,7 +336,7 @@ fun ListScreenRoot(
                                             leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
                                             //enabled = detailsState.isAttachmentSupportEnabled(),
                                             onClick = {
-                                                // TODO filePicker.pickFile() /* Result handled in rememberFilePicker callback */
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_ATTACHMENT))
                                                 fabMoreExpanded = false
                                             },
                                         )
@@ -350,7 +351,7 @@ fun ListScreenRoot(
                                                 leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
                                                 //enabled = detailsState.isAttachmentSupportEnabled(),
                                                 onClick = {
-                                                    //imagePicker.takePhoto()
+                                                    onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_PHOTO))
                                                     fabMoreExpanded = false
                                                 },
                                             )
@@ -362,7 +363,7 @@ fun ListScreenRoot(
                                                 leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
                                                 //enabled = detailsState.isAttachmentSupportEnabled(),
                                                 onClick = {
-                                                    // TODO: imagePicker.pickImage()
+                                                    onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_FROM_GALLERY))
                                                     fabMoreExpanded = false
                                                 },
                                             )
@@ -372,8 +373,7 @@ fun ListScreenRoot(
                                             text = { Text(stringResource(Res.string.add_drawing)) },
                                             leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
                                             onClick = {
-
-                                                // TODO detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_DRAWING))
                                                 fabMoreExpanded = false
                                             },
                                         )
