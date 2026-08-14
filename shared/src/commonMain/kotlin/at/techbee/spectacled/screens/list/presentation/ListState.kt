@@ -68,6 +68,11 @@ data class ListState(
     val showUpdateCategoryOfSelectedBottomSheet: Boolean = false,
     val showDateSelectorBottomSheet: Boolean = false,
 
+    // AI "derive entries from text" feature
+    val claudeApiKeyPresent: Boolean = false,
+    val showDeriveEntriesBottomSheet: Boolean = false,
+    val isDerivingEntries: Boolean = false,
+
     val draggingIcalEntryId: Long? = null,
     val scrollToDate: IcsDateTime? = null,
 

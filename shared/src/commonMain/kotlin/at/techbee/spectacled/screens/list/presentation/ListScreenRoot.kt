@@ -53,6 +53,7 @@ import at.techbee.spectacled.screens.core.presentation.components.DatePickerBott
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
+import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
 import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
@@ -197,6 +198,15 @@ fun ListScreenRoot(
                 onCategoryAdded = { listViewModel.onAction(ListAction.OnUpdateCategoryOfSelected(it, null)) },
                 onCategoryRemoved = { listViewModel.onAction(ListAction.OnUpdateCategoryOfSelected(null, it)) },
                 onDismiss = { listViewModel.onAction(ListAction.OnShowUpdateCategoryOfSelectedBottomSheet(false)) }
+            )
+        }
+
+        if (state.showDeriveEntriesBottomSheet) {
+            DeriveEntriesBottomSheet(
+                isLoading = state.isDerivingEntries,
+                allowSubtasks = state.calendar.isTasksSupported(),
+                onCreate = { text, createSubtasks -> listViewModel.onAction(ListAction.OnDeriveEntriesFromText(text, createSubtasks)) },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(false)) }
             )
         }
 

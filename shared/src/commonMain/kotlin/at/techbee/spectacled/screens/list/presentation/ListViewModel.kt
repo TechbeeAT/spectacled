@@ -9,6 +9,11 @@ import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.ai.AI_BATCH_CATEGORY_PREFIX
+import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
+import at.techbee.spectacled.screens.core.data.ai.newAiBatchCategory
+import at.techbee.spectacled.screens.core.data.ai.toIcalEntries
+import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -17,6 +22,7 @@ import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +41,7 @@ class ListViewModel(
     private val syncTrigger: PlatformSyncTrigger,
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
     private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
+    private val client: HttpClient,
     val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -88,8 +95,16 @@ class ListViewModel(
             launch { observeIcalentries(calendarId) }
             launch { observeColors() }
             launch { observeCategories() }
+            launch { observeClaudeApiKey() }
             launch { loadAllCollections() }
         }
+    }
+
+    private suspend fun observeClaudeApiKey() {
+        userAppPreferencesStore.getClaudeUserApiKeyAsFlow()
+            .collect { apiKey ->
+                _state.update { it.copy(claudeApiKeyPresent = !apiKey.isNullOrEmpty()) }
+            }
     }
 
     // Collections available as move-to targets. Loaded once; the list stays scoped to one calendar.
@@ -214,6 +229,8 @@ class ListViewModel(
                 }
             }
             is ListAction.OnShowDateSelectorBottomSheet -> { _state.update { it.copy(showDateSelectorBottomSheet = action.show) } }
+            is ListAction.OnShowDeriveEntriesBottomSheet -> { _state.update { it.copy(showDeriveEntriesBottomSheet = action.show) } }
+            is ListAction.OnDeriveEntriesFromText -> deriveEntriesFromText(action.text, action.createSubtasks)
             is ListAction.OnUpdateCategoryOfSelected -> { onUpdateCategoryOfSelectedItems(action.addCategory, action.removeCategory) }
             is ListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
             is ListAction.OnGoToSelectedDate -> { onGoToDate(action.selectedDate) }
@@ -221,6 +238,71 @@ class ListViewModel(
         }
     }
 
+
+    /**
+     * Sends [text] to the AI, then creates the derived entries. Each derived parent becomes a note,
+     * journal or task (the DTO -> IcalEntry mapper rejects anything else), and its subtasks are
+     * created as VTODO children linked via parentUid. Every created entry is tagged with a single
+     * per-generation batch category so the user can filter/delete/regenerate the batch.
+     */
+    private fun deriveEntriesFromText(text: String, createSubtasks: Boolean) {
+
+        if(!state.value.calendar.canWriteContent())
+            return
+
+        if(text.isBlank())
+            return
+
+        val apiKey = userAppPreferencesStore.claudeUserApiKey
+        if(apiKey.isNullOrEmpty()) {
+            _state.update { it.copy(
+                showDeriveEntriesBottomSheet = false,
+                snackbarText = "API key not provided. Please update the API key in the settings."
+            ) }
+            return
+        }
+
+        _state.update { it.copy(isDerivingEntries = true) }
+
+        val calendarId = state.value.calendar.id
+        val batchCategory = newAiBatchCategory()
+        // Existing topical categories, so the AI prefers reusing them over near-duplicates. Exclude
+        // the pinned marker and per-generation AI batch tags - they aren't topics.
+        val existingCategories = state.value.allCategories
+            .filter { it != IcalEntry.PINNED_CATEGORY && !it.startsWith(AI_BATCH_CATEGORY_PREFIX) }
+
+        // Claude API network call + inserts - keep off the Main dispatcher. The top-level entry kind
+        // is decided by which list we're on (spectacledVariant), not by the AI.
+        viewModelScope.launch(ioDispatcher) {
+            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text, spectacledVariant, createSubtasks, existingCategories)) {
+                is AiDeriveEntriesResult.Failed -> {
+                    _state.update { it.copy(
+                        isDerivingEntries = false,
+                        snackbarText = result.message + if(!result.details.isNullOrBlank()) " (${result.details})" else ""
+                    ) }
+                }
+                is AiDeriveEntriesResult.Success -> {
+                    // Flatten each derived entry (top-level = this list's kind, descendants = tasks)
+                    // into a parent-first list, then insert in order.
+                    val toInsert = result.entries.flatMap {
+                        it.toIcalEntries(calendarId, batchCategory, spectacledVariant, includeSubtasks = createSubtasks)
+                    }
+                    toInsert.forEach { icalEntryRepository.insertOrUpdateIcalEntry(it) }
+
+                    if(toInsert.isNotEmpty()) {
+                        syncTrigger.requestImmediate(listOf(calendarId))
+                        syncTrigger.triggerWidgetUpdate()
+                    }
+
+                    _state.update { it.copy(
+                        isDerivingEntries = false,
+                        showDeriveEntriesBottomSheet = toInsert.isEmpty(),   // keep open if nothing was created
+                        snackbarText = if(toInsert.isEmpty()) "No entries could be created from the text." else null
+                    ) }
+                }
+            }
+        }
+    }
 
     private fun onUpdatePinOfSelectedItems(pin: Boolean) {
         if(pin)
