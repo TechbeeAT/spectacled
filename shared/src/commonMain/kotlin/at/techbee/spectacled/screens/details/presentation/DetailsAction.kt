@@ -45,6 +45,10 @@ sealed interface DetailsAction {
     data class OnShowSheetOrDialog(val sheetOrDialog: DetailsSheetOrDialog?): DetailsAction
     data class OnShowDrawingCanvasBottomSheet(val show: Boolean, val replaceAttachmentUid: String?, val initialPaths: List<PathData>?): DetailsAction
 
+    // Emitted by the screen once it has launched the requested platform picker, to clear the
+    // one-shot launchPickerAction flag so it does not re-fire on recomposition.
+    object OnPickerLaunched: DetailsAction
+
     data class OnPersistOrderNo(val list: List<Long>): DetailsAction
 
     data class OnNavigateToIcalEntryId(val id: Long?): DetailsAction

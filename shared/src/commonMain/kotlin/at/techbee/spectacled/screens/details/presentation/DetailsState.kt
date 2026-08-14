@@ -39,6 +39,12 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val showSheetOrDialog: DetailsSheetOrDialog? = null,
     val showDrawingCanvasBottomSheet: DetailsAction.OnShowDrawingCanvasBottomSheet = DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
 
+    // One-shot signal to the screen to launch a platform picker. The pickers are created via
+    // rememberFilePicker/rememberImagePicker inside the composition and cannot be launched from
+    // the ViewModel, so this flag is observed by a LaunchedEffect in the screen and cleared again
+    // via OnPickerLaunched (same idiom as navigateUp/navigateToIcalEntryId).
+    val launchPickerAction: AttachmentPickerAction? = null,
+
     val isLoading: Boolean = true,
     val isInitialized: Boolean = false,
     val downloadingAttachmentUids: Set<String> = emptySet(),
@@ -62,13 +68,20 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
 }
 
 enum class DetailsSheetOrDialog {
-    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, ADD_DRAWING
+    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL
 }
 
-/*
+// Action to perform right after the details screen opens, handed over via the route (e.g. from the
+// list FAB). Kept separate from DetailsSheetOrDialog because these are not all declaratively
+// rendered sheets: ADD_DRAWING opens a dedicated bottom sheet and the ADD_ATTACHMENT/ADD_PHOTO/
+// ADD_FROM_GALLERY values launch platform pickers imperatively from the screen. loadNew() maps
+// each value to the appropriate mechanism.
 enum class DetailsInitialAction {
-    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, ADD_DRAWING, ADD_ATTACHMENT, ADD_FROM_GALLERY, ADD_PHOTO
+    COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, ADD_DRAWING, ADD_ATTACHMENT, ADD_PHOTO, ADD_FROM_GALLERY
 }
 
- */
+// The three platform pickers the screen can launch on behalf of the ViewModel.
+enum class AttachmentPickerAction {
+    FILE, PHOTO, GALLERY
+}
 

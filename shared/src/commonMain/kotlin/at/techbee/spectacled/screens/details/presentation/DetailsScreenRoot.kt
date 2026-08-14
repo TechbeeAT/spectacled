@@ -158,6 +158,20 @@ fun DetailsScreenRoot(
             }
         }
 
+        // The platform pickers live in this composition (rememberFilePicker/rememberImagePicker) and
+        // can only be launched from here. When the ViewModel requests one (e.g. handed over from the
+        // list FAB via the route), launch it once and clear the flag so it does not re-fire.
+        LaunchedEffect(detailsState.launchPickerAction) {
+            when (detailsState.launchPickerAction) {
+                AttachmentPickerAction.FILE -> filePicker.pickFile()
+                AttachmentPickerAction.PHOTO -> imagePicker.takePhoto()
+                AttachmentPickerAction.GALLERY -> imagePicker.pickImage()
+                null -> {}
+            }
+            if (detailsState.launchPickerAction != null)
+                detailsViewModel.onAction(DetailsAction.OnPickerLaunched)
+        }
+
         DisposableEffect(Unit) {
             onDispose {
                 detailsViewModel.onAction(DetailsAction.OnDispose)
@@ -241,7 +255,6 @@ fun DetailsScreenRoot(
                     onUrlEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateUrl(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
-            DetailsSheetOrDialog.ADD_DRAWING -> { /* handled in screen and view model as a dedicated state */ }
             null -> {}
         }
 
