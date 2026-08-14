@@ -524,7 +524,6 @@ fun DetailsScreenRoot(
                                 modifier = Modifier
                                     .height(24.dp)
                                     .padding(horizontal = 4.dp),
-                                thickness = 2.dp,
                                 color = IconButtonDefaults.iconButtonColors().contentColor
                             )
 

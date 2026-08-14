@@ -17,7 +17,6 @@ import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.outlined.ArrowCircleUp
-import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.Close
@@ -68,16 +67,15 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.ai_create_entries
 import spectacled.shared.generated.resources.clear_selection
 import spectacled.shared.generated.resources.date_selector
 import spectacled.shared.generated.resources.delete_selected
-import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.folders
 import spectacled.shared.generated.resources.ic_gotodate
 import spectacled.shared.generated.resources.ic_pin
 import spectacled.shared.generated.resources.ic_unpin
 import spectacled.shared.generated.resources.more
+import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.pin
 import spectacled.shared.generated.resources.refresh
 import spectacled.shared.generated.resources.search
@@ -201,19 +199,6 @@ fun IcalEntryListTopBar(
                             imageVector = if (state.isSearchBarExpanded) Icons.Outlined.SearchOff else Icons.Outlined.Search,
                             contentDescription = stringResource(Res.string.search)
                         )
-                    }
-
-                    // AI "create entries from text" - only when an Anthropic key is set and the
-                    // collection is writable.
-                    if (state.claudeApiKeyPresent && calendar.canWriteContent()) {
-                        TextButton(
-                            onClick = { onAction(ListAction.OnShowDeriveEntriesBottomSheet(true)) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
-                                contentDescription = stringResource(Res.string.ai_create_entries)
-                            )
-                        }
                     }
 
                     // No sorting option for Journals
