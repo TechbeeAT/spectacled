@@ -119,6 +119,37 @@ class AiDerivedEntryMapperTest {
     }
 
     @Test
+    fun url_isParsedOnParentAndSubtask_blankBecomesNull() {
+        val entries = AiDerivedEntryDto(
+            summary = "Read this",
+            url = "https://example.com/article",
+            subtasks = listOf(
+                AiDerivedEntryDto(summary = "Reference", url = "https://example.org/ref"),
+                AiDerivedEntryDto(summary = "No link", url = "   "),   // blank -> null
+            ),
+        ).toIcalEntries(calendarId, batchCategory, SpectacledVariant.TASKS)
+
+        val parent = entries[0]
+        assertNotNull(parent.url)
+        assertTrue(parent.url.toString().contains("example.com"))
+
+        val withLink = entries[1]
+        assertNotNull(withLink.url)
+        assertTrue(withLink.url.toString().contains("example.org"))
+
+        val noLink = entries[2]
+        assertNull(noLink.url)
+    }
+
+    @Test
+    fun url_absent_isNull() {
+        val note = AiDerivedEntryDto(summary = "No url here")
+            .toIcalEntries(calendarId, batchCategory, SpectacledVariant.NOTES)
+            .single()
+        assertNull(note.url)
+    }
+
+    @Test
     fun includeSubtasksFalse_dropsAllSubtasks() {
         val entries = AiDerivedEntryDto(
             summary = "Friday todos",

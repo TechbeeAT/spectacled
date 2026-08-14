@@ -152,6 +152,7 @@ class KtorRemoteClaudeDataSource(
                   "description": "The full cleaned-up text of the entry, or null",
                   "dtstart": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
                   "due": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
+                  "url": "An http/https URL if one is mentioned, otherwise null",
                   "categories": ["list", "of", "topic", "tags"],
                   "subtasks": [
                     {
@@ -159,6 +160,7 @@ class KtorRemoteClaudeDataSource(
                       "description": "Details of the subtask, or null",
                       "dtstart": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
                       "due": "RFC-5545 compliant date or datetime if mentioned, otherwise null",
+                      "url": "An http/https URL if one is mentioned, otherwise null",
                       "categories": ["tags"],
                       "subtasks": []
                     }

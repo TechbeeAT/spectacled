@@ -5,6 +5,7 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcsDateTime
+import io.ktor.http.Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -25,6 +26,7 @@ data class AiDerivedEntryDto(
     @SerialName("description") val description: String? = null,
     @SerialName("dtstart") val dtstart: String? = null,
     @SerialName("due") val due: String? = null,
+    @SerialName("url") val url: String? = null,
     @SerialName("categories") val categories: List<String>? = null,
     @SerialName("subtasks") val subtasks: List<AiDerivedEntryDto>? = null,
 )
@@ -88,6 +90,8 @@ private fun AiDerivedEntryDto.flatten(
         // default "now"); only tasks carry a due date.
         dtStart = if (base.isNote()) null else parseIcsDateTime(dtstart) ?: base.dtStart,
         due = if (base.isTask()) parseIcsDateTime(due) else null,
+        // AI output is untrusted; ktor Url(String) can throw on malformed input, so parse defensively.
+        url = url?.takeIf { it.isNotBlank() }?.let { runCatching { Url(it) }.getOrNull() },
         categories = (categories ?: emptyList()) + batchCategory,
         parentUid = parentUid,
         relType = if (parentUid != null) "PARENT" else null,
