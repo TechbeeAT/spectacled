@@ -50,6 +50,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun DeriveEntriesBottomSheet(
     isLoading: Boolean,
+    allowSubtasks: Boolean,
     onCreate: (String, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -119,9 +120,9 @@ fun DeriveEntriesBottomSheet(
             ) {
                 Text(text = stringResource(Res.string.ai_create_subtasks))
                 Switch(
-                    checked = createSubtasks,
+                    checked = createSubtasks && allowSubtasks,
                     onCheckedChange = { createSubtasks = it },
-                    enabled = !isLoading
+                    enabled = !isLoading && allowSubtasks
                 )
             }
         }
@@ -129,7 +130,6 @@ fun DeriveEntriesBottomSheet(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun DeriveEntriesBottomSheet_Preview() {
@@ -137,9 +137,26 @@ private fun DeriveEntriesBottomSheet_Preview() {
         Scaffold {
             DeriveEntriesBottomSheet(
                 isLoading = false,
+                allowSubtasks = true,
                 onCreate = { _, _ -> },
                 onDismiss = { }
             )
         }
     }
 }
+
+@Preview
+@Composable
+private fun DeriveEntriesBottomSheet_noSubtasks_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        Scaffold {
+            DeriveEntriesBottomSheet(
+                isLoading = false,
+                allowSubtasks = false,
+                onCreate = { _, _ -> },
+                onDismiss = { }
+            )
+        }
+    }
+}
+
