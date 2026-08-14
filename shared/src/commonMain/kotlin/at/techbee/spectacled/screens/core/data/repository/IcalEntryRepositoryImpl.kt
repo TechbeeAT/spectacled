@@ -31,6 +31,10 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
+// Keep well below SQLite's default SQLITE_MAX_VARIABLE_NUMBER (999 on older builds) so an
+// `IN (?, ?, …)` expansion of entry ids never overflows the per-statement parameter limit.
+private const val ATTACHMENT_QUERY_CHUNK_SIZE = 500
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class IcalEntryRepositoryImpl(
     private val databaseDriverFactory: DatabaseDriverFactory
@@ -91,7 +95,12 @@ class IcalEntryRepositoryImpl(
         if (entryIds.isEmpty()) return emptyMap()
 
         val db = getDatabase()
-        return db.attachment_dtoQueries.getAttachmentsForEntries(entryIds).awaitAsList()
+        // `getAttachmentsForEntries` uses `IN ?`, which binds one host parameter per id.
+        // SQLite caps the number of parameters per statement (SQLITE_MAX_VARIABLE_NUMBER,
+        // as low as 999 on older builds), so chunk to stay safely under the limit for
+        // calendars with many entries.
+        return entryIds.chunked(ATTACHMENT_QUERY_CHUNK_SIZE)
+            .flatMap { chunk -> db.attachment_dtoQueries.getAttachmentsForEntries(chunk).awaitAsList() }
             .map { it.toDomain() }
             .groupBy { it.icalEntryId }
     }

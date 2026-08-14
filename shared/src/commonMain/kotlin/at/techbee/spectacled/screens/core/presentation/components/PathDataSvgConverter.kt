@@ -4,9 +4,6 @@ package at.techbee.spectacled.screens.core.presentation.components
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter.encodeMetadata
-import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter.fromSvg
-import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter.toSvg
 import kotlin.math.max
 import kotlin.math.round
 

@@ -29,4 +29,7 @@ data class Attachment(
     fun isSVG() = mimeType == MIMETYPE_SVG
 
     fun isImage() = mimeType?.startsWith("image/") == true
+
+    /** Whether a visual preview can be rendered for this attachment (image or drawing). */
+    fun isPreviewable() = isImage() || isSVG()
 }

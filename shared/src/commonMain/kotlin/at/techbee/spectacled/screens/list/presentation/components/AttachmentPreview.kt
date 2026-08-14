@@ -9,29 +9,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
-import at.techbee.spectacled.screens.core.presentation.components.PathData
-import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter
-import at.techbee.spectacled.screens.core.presentation.components.drawPath
+import at.techbee.spectacled.screens.core.presentation.components.drawScaledPaths
+import at.techbee.spectacled.screens.core.presentation.components.rememberAttachmentPreviewState
 import coil3.compose.AsyncImage
 import io.ktor.utils.io.core.toByteArray
 import org.koin.compose.koinInject
@@ -43,62 +33,35 @@ fun AttachmentPreview(
     modifier: Modifier = Modifier
 ) {
 
-    var drawingPaths by remember { mutableStateOf<List<PathData>?>(null) }
-    var drawingSize by remember { mutableStateOf<Size?>(null) }
-    var imagePreview by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(attachment) {
-        if (attachment.isSVG() && attachment.localPath != null && fileManager.exists(attachment.localPath)) {
-            val fileContent = fileManager.readAttachment(attachment.localPath).decodeToString()
-            PathDataSvgConverter.fromSvg(fileContent)?.let {
-                drawingPaths = it.paths
-                drawingSize = Size(it.width, it.height)
-            }
-        } else if (attachment.isImage()) {
-            if (attachment.localPath != null && fileManager.exists(attachment.localPath)) {
-                imagePreview = attachment.localPath
-            }
-        }
-    }
+    val preview = rememberAttachmentPreviewState(attachment, fileManager)
+    val drawingSize = preview.drawingSize
 
     Box(
         modifier = modifier,
         contentAlignment = Alignment.TopStart
     ) {
 
-        AnimatedVisibility(drawingPaths?.isNotEmpty() == true) {
+        AnimatedVisibility(preview.drawingPaths?.isNotEmpty() == true) {
             Canvas(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .clipToBounds()
                     .background(Color.White)
                     .then(
-                        if (drawingSize != null && drawingSize!!.width > 0 && drawingSize!!.height > 0) {
-                            Modifier.aspectRatio(drawingSize!!.width / drawingSize!!.height)
+                        if (drawingSize != null && drawingSize.width > 0 && drawingSize.height > 0) {
+                            Modifier.aspectRatio(drawingSize.width / drawingSize.height)
                         } else {
                             Modifier.matchParentSize()
                         }
                     )
             ) {
-                if (drawingSize != null && drawingSize!!.width > 0) {
-                    val scale = size.width / drawingSize!!.width
-                    scale(scale, pivot = Offset.Zero) {
-                        drawingPaths?.fastForEach { pathData ->
-                            drawPath(
-                                path = pathData.paths,
-                                color = pathData.color,
-                                thickness = pathData.thickness,
-                                smoothness = 3
-                            )
-                        }
-                    }
-                }
+                drawScaledPaths(preview.drawingPaths, drawingSize)
             }
         }
 
-        AnimatedVisibility(imagePreview != null) {
+        AnimatedVisibility(preview.imagePath != null) {
             AsyncImage(
-                model = imagePreview,
+                model = preview.imagePath,
                 contentDescription = null,
                 modifier = Modifier
                     .padding(8.dp)
