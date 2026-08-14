@@ -241,6 +241,7 @@ fun DetailsScreenRoot(
                     onUrlEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateUrl(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
+            DetailsSheetOrDialog.ADD_DRAWING -> { /* handled in screen and view model as a dedicated state */ }
             null -> {}
         }
 

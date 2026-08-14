@@ -139,7 +139,11 @@ class DetailsViewModel(
         }
     }
 
-    fun loadNew(calendarId: Long? = null, initialDescription: String? = null) {
+    fun loadNew(
+        calendarId: Long? = null,
+        initialDescription: String? = null,
+        initialSheetOrDialog: DetailsSheetOrDialog? = null
+        ) {
 
         viewModelScope.launch {
 
@@ -158,7 +162,8 @@ class DetailsViewModel(
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
-                showSheetOrDialog = null,
+                showSheetOrDialog = initialSheetOrDialog,
+                showDrawingCanvasBottomSheet = if(initialSheetOrDialog == DetailsSheetOrDialog.ADD_DRAWING) DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null) else DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
                 navigateUp = false
             ) }
 
