@@ -56,7 +56,7 @@ enum class DetailsSheetOrDialog {
 
 // Action to perform right after the details screen opens
 enum class DetailsInitialAction {
-    COLOR_SELECTOR, CATEGORY_SELECTOR, ADD_SUBTASKS, ADD_DRAWING, ADD_ATTACHMENT, ADD_PHOTO, ADD_FROM_GALLERY
+    ADD_DRAWING, ADD_ATTACHMENT, ADD_PHOTO, ADD_FROM_GALLERY
 }
 
 // The three platform pickers the screen can launch on behalf of the ViewModel.

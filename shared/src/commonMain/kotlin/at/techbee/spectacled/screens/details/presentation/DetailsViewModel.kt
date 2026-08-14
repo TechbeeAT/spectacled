@@ -162,12 +162,6 @@ class DetailsViewModel(
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
-                showSheetOrDialog = when (initialAction) {
-                    DetailsInitialAction.COLOR_SELECTOR -> DetailsSheetOrDialog.COLOR_SELECTOR
-                    DetailsInitialAction.CATEGORY_SELECTOR -> DetailsSheetOrDialog.CATEGORY_SELECTOR
-                    DetailsInitialAction.ADD_SUBTASKS -> DetailsSheetOrDialog.ADD_SUBTASKS
-                    else -> null
-                },
                 showDrawingCanvasBottomSheet = if(initialAction == DetailsInitialAction.ADD_DRAWING) DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null) else DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
                 launchPickerAction = when (initialAction) {
                     DetailsInitialAction.ADD_ATTACHMENT -> AttachmentPickerAction.FILE
