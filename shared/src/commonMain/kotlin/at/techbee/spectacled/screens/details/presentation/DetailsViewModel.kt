@@ -158,7 +158,7 @@ class DetailsViewModel(
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
-                showDeleteDialog = false,
+                showSheetOrDialog = null,
                 navigateUp = false
             ) }
 
@@ -286,13 +286,7 @@ class DetailsViewModel(
             DetailsAction.OnDelete -> saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
             is DetailsAction.OnMove -> { onMove(action.newCalendarId) }
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
-            is DetailsAction.OnShowDeleteDialog -> { _state.update { it.copy(showDeleteDialog = action.show) } }
-            is DetailsAction.OnShowMoveDialog -> { _state.update { it.copy(showMoveDialog = action.show) } }
-            is DetailsAction.OnShowMoreBottomSheet -> { _state.update { it.copy(showMoreBottomSheet = action.show) } }
-            is DetailsAction.OnShowCategorySelectorBottomSheet -> { _state.update { it.copy(showCategorySelectorBottomSheet = action.show) } }
-            is DetailsAction.OnShowColorSelectorBottomSheet -> { _state.update { it.copy(showColorSelectorBottomSheet = action.show) } }
-            is DetailsAction.OnShowAddSubtaskBottomSheet -> { _state.update { it.copy(showAddSubtaskBottomSheet = action.show) } }
-            is DetailsAction.OnShowEditUrlBottomSheet -> { _state.update { it.copy(showEditUrlBottomSheet = action.show) } }
+            is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
             is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
             DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
@@ -311,8 +305,6 @@ class DetailsViewModel(
             }
             DetailsAction.OnDispose -> onDispose()
             DetailsAction.OnRestoreEntry -> onRestoreEntry()
-            is DetailsAction.OnShowJournalStatusPickerBottomSheet -> { _state.update { it.copy(showJournalStatusPickerBottomSheet = action.show) } }
-            is DetailsAction.OnShowTaskStatusProgressPickerBottomSheet -> { _state.update { it.copy(showTaskStatusProgressPickerBottomSheet = action.show) } }
             is DetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
             is DetailsAction.OnUpdateDue -> { onUpdateDue(action.icsDateTime) }
             DetailsAction.OnShare -> onShare()
@@ -333,7 +325,7 @@ class DetailsViewModel(
     }
 
     private fun onShare() {
-        _state.update { it.copy(showMoreBottomSheet = false) }
+        _state.update { it.copy(showSheetOrDialog = null) }
         viewModelScope.launch {
             val categoryLabel = getString(Res.string.category)
             shareManager.share(
@@ -571,7 +563,7 @@ class DetailsViewModel(
         _state.update {
             it.copy(
                 icalEntry = entryToSave,
-                showDeleteDialog = false,
+                showSheetOrDialog = if(navigateUp) null else _state.value.showSheetOrDialog,
                 navigateUp = navigateUp
             )
         }
@@ -898,14 +890,14 @@ class DetailsViewModel(
 
         val entryId = _state.value.icalEntry.id
 
-        _state.update { it.copy(showMoveDialog = false, isLoading = true) }
+        _state.update { it.copy(isLoading = true) }
 
         // Attachment download + DB work + sync trigger - keep it off the Main dispatcher.
         // We navigate up only once the move is persisted, so popping the screen (which cancels
         // viewModelScope) can't interrupt it mid-way.
         viewModelScope.launch(ioDispatcher) {
             moveIcalEntriesUseCase.move(listOf(entryId), newCalendarId)
-            _state.update { it.copy(isLoading = false, navigateUp = true) }
+            _state.update { it.copy(showSheetOrDialog = null, isLoading = false, navigateUp = true) }
         }
     }
 }

@@ -256,7 +256,7 @@ fun DetailsScreen(
                             text = category,
                             onClick = {
                                 if(state.allowEditing())
-                                    onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) }
+                                    onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.CATEGORY_SELECTOR)) }
                         )
                     }
                 }

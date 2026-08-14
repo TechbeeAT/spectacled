@@ -21,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
+import at.techbee.spectacled.screens.details.presentation.DetailsSheetOrDialog
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.Napier
 import io.ktor.http.Url
@@ -71,7 +72,7 @@ fun UrlCard(
             if(allowEditing) {
                 IconButton(
                     onClick = {
-                        onClick(DetailsAction.OnShowEditUrlBottomSheet(true))
+                        onClick(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.EDIT_URL))
                     }
                 ) {
                     Icon(Icons.Outlined.Edit, stringResource(Res.string.edit))

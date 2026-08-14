@@ -164,110 +164,84 @@ fun DetailsScreenRoot(
             }
         }
 
-        if (detailsState.showCategorySelectorBottomSheet) {
-            CategorySelectionBottomSheet(
-                allCategories = detailsState.allCategories.filter { it != IcalEntry.PINNED_CATEGORY },
-                selectedCategories = detailsState.icalEntry.categories.filter { it != IcalEntry.PINNED_CATEGORY },
-                onCategoryAdded = { detailsViewModel.onAction(DetailsAction.OnUpdateCategories(it, null)) },
-                onCategoryRemoved = { detailsViewModel.onAction(DetailsAction.OnUpdateCategories(null, it)) },
-                onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowCategorySelectorBottomSheet(false)) }
-            )
-        }
-
-        if (detailsState.showColorSelectorBottomSheet) {
-            BottomSheetWithMenu(
-                onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(false)) },
-                menuActionRight = {
-                    TextButton(
-                        onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(false)) },
-                    ) {
-                        Text(stringResource(Res.string.done))
-                    }
-                },
-            ) {
-                ColorSelectorElement(
-                    recentColors = detailsState.allColors,
-                    preselectedColor = detailsState.icalEntry.color,
-                    onColorChanged = { detailsViewModel.onAction(DetailsAction.OnUpdateColor(it)) },
-                    skipPartialSelection = true,
-                    modifier = Modifier.fillMaxWidth()
+        when(detailsState.showSheetOrDialog) {
+            DetailsSheetOrDialog.DELETE ->
+                DeleteIcalEntryDialog(
+                    icalEntry = detailsState.icalEntry,
+                    onConfirm = { detailsViewModel.onAction(DetailsAction.OnDelete) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
-            }
-        }
-
-        if (detailsState.showMoreBottomSheet) {
-            DetailsMoreBottomSheet(
-                onAction = { action -> detailsViewModel.onAction(action) },
-                icalEntry = detailsState.icalEntry,
-                canWriteContent = detailsState.allowEditing(),
-                claudeUserApiKeyProvided = !detailsState.claudeUserApiKey.isNullOrEmpty()
-            )
-        }
-
-        if (detailsState.showJournalStatusPickerBottomSheet) {
-            JournalStatusPickerBottomSheet(
-                status = detailsState.icalEntry.status,
-                sheetState = rememberModalBottomSheetState(),
-                onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
-                onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(false)) }
-            )
-        }
-
-        if (detailsState.showTaskStatusProgressPickerBottomSheet) {
-            TaskStatusProgressPickerBottomSheet(
-                status = detailsState.icalEntry.status,
-                percentComplete = detailsState.icalEntry.percentComplete,
-                sheetState = rememberModalBottomSheetState(),
-                onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
-                onProgressUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateProgress(it)) },
-                onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(false)) }
-            )
-        }
-
-        if (detailsState.showDeleteDialog) {
-            DeleteIcalEntryDialog(
-                icalEntry = detailsState.icalEntry,
-                onConfirm = {
-                    detailsViewModel.onAction(DetailsAction.OnDelete)
-                },
-                onDismiss = {
-                    detailsViewModel.onAction(DetailsAction.OnShowDeleteDialog(false))
+            DetailsSheetOrDialog.MOVE ->
+                MoveIcalEntryDialog(
+                    icalEntry = detailsState.icalEntry,
+                    principals = detailsState.allPrincipals,
+                    homeCollections = detailsState.allHomeCollections,
+                    calendars = detailsState.allCalendars.filter { it.canWriteContent() },
+                    onConfirm = { newCalendarId -> detailsViewModel.onAction(DetailsAction.OnMove(newCalendarId)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            DetailsSheetOrDialog.MORE ->
+                DetailsMoreBottomSheet(
+                    onAction = { action -> detailsViewModel.onAction(action) },
+                    icalEntry = detailsState.icalEntry,
+                    canWriteContent = detailsState.allowEditing(),
+                    claudeUserApiKeyProvided = !detailsState.claudeUserApiKey.isNullOrEmpty()
+                )
+            DetailsSheetOrDialog.COLOR_SELECTOR ->
+                BottomSheetWithMenu(
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) },
+                    menuActionRight = {
+                        TextButton(
+                            onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) },
+                        ) {
+                            Text(stringResource(Res.string.done))
+                        }
+                    },
+                ) {
+                    ColorSelectorElement(
+                        recentColors = detailsState.allColors,
+                        preselectedColor = detailsState.icalEntry.color,
+                        onColorChanged = { detailsViewModel.onAction(DetailsAction.OnUpdateColor(it)) },
+                        skipPartialSelection = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
-            )
-        }
-
-        if (detailsState.showMoveDialog) {
-            MoveIcalEntryDialog(
-                icalEntry = detailsState.icalEntry,
-                principals = detailsState.allPrincipals,
-                homeCollections = detailsState.allHomeCollections,
-                calendars = detailsState.allCalendars.filter { it.canWriteContent() },
-                onConfirm = { newCalendarId ->
-                    detailsViewModel.onAction(DetailsAction.OnMove(newCalendarId))
-                },
-                onDismiss = {
-                    detailsViewModel.onAction(DetailsAction.OnShowMoveDialog(false))
-                }
-            )
-        }
-
-        if (detailsState.showAddSubtaskBottomSheet) {
-            AddSubtaskBottomSheet(
-                onSubtaskAdded = { detailsViewModel.onAction(DetailsAction.OnAddSubtask(it)) },
-                onDismiss = {
-                    detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(false))
-                }
-            )
-        }
-
-        if (detailsState.showEditUrlBottomSheet) {
-            EditUrlBottomSheet(
-                initialUrl = detailsState.icalEntry.url,
-                onUrlEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateUrl(it)) },
-                onDismiss = {
-                    detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(false))
-                }
-            )
+            DetailsSheetOrDialog.CATEGORY_SELECTOR ->
+                CategorySelectionBottomSheet(
+                    allCategories = detailsState.allCategories.filter { it != IcalEntry.PINNED_CATEGORY },
+                    selectedCategories = detailsState.icalEntry.categories.filter { it != IcalEntry.PINNED_CATEGORY },
+                    onCategoryAdded = { detailsViewModel.onAction(DetailsAction.OnUpdateCategories(it, null)) },
+                    onCategoryRemoved = { detailsViewModel.onAction(DetailsAction.OnUpdateCategories(null, it)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            DetailsSheetOrDialog.JOURNAL_STATUS_PICKER ->
+                JournalStatusPickerBottomSheet(
+                    status = detailsState.icalEntry.status,
+                    sheetState = rememberModalBottomSheetState(),
+                    onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            DetailsSheetOrDialog.TASK_STATUS_PICKER ->
+                TaskStatusProgressPickerBottomSheet(
+                    status = detailsState.icalEntry.status,
+                    percentComplete = detailsState.icalEntry.percentComplete,
+                    sheetState = rememberModalBottomSheetState(),
+                    onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
+                    onProgressUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateProgress(it)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            DetailsSheetOrDialog.ADD_SUBTASKS ->
+                AddSubtaskBottomSheet(
+                    onSubtaskAdded = { detailsViewModel.onAction(DetailsAction.OnAddSubtask(it)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            DetailsSheetOrDialog.EDIT_URL ->
+                EditUrlBottomSheet(
+                    initialUrl = detailsState.icalEntry.url,
+                    onUrlEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateUrl(it)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            null -> {}
         }
 
         if (detailsState.showDrawingCanvasBottomSheet.show) {
@@ -355,7 +329,7 @@ fun DetailsScreenRoot(
                         ) {
 
                             IconButton(
-                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowColorSelectorBottomSheet(true)) },
+                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COLOR_SELECTOR)) },
                                 enabled = detailsState.allowEditing() && !detailsState.isLoading
                             ) {
                                 Icon(
@@ -365,7 +339,7 @@ fun DetailsScreenRoot(
                             }
 
                             IconButton(
-                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) },
+                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.CATEGORY_SELECTOR)) },
                                 enabled = detailsState.allowEditing() && !detailsState.isLoading
                             ) {
                                 Icon(
@@ -377,7 +351,7 @@ fun DetailsScreenRoot(
                             if (detailsState.icalEntry.isJournal()) {
 
                                 IconButton(
-                                    onClick = { detailsViewModel.onAction(DetailsAction.OnShowJournalStatusPickerBottomSheet(!detailsState.showJournalStatusPickerBottomSheet)) },
+                                    onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.JOURNAL_STATUS_PICKER)) },
                                     enabled = detailsState.allowEditing() && !detailsState.isLoading
                                 ) {
                                     Icon(
@@ -395,7 +369,7 @@ fun DetailsScreenRoot(
                             if (detailsState.icalEntry.isTask()) {
 
                                 IconButton(
-                                    onClick = { detailsViewModel.onAction(DetailsAction.OnShowTaskStatusProgressPickerBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet)) },
+                                    onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.TASK_STATUS_PICKER)) },
                                     enabled = detailsState.allowEditing() && !detailsState.isLoading
                                 ) {
 
@@ -491,7 +465,7 @@ fun DetailsScreenRoot(
                                         leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
                                         enabled = detailsState.icalEntry.url == null,
                                         onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowEditUrlBottomSheet(!detailsState.showEditUrlBottomSheet))
+                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.EDIT_URL))
                                             addMoreExpanded = false
                                         },
                                     )
@@ -510,7 +484,7 @@ fun DetailsScreenRoot(
                                         },
                                         leadingIcon = { Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask)) },
                                         onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowAddSubtaskBottomSheet(!detailsState.showTaskStatusProgressPickerBottomSheet))
+                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.ADD_SUBTASKS))
                                             addMoreExpanded = false
                                         },
                                         enabled = detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
@@ -528,7 +502,7 @@ fun DetailsScreenRoot(
                             )
 
                             IconButton(
-                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowMoreBottomSheet(true)) }
+                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.MORE)) }
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.MoreVert,

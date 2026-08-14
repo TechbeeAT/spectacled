@@ -23,6 +23,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val allHomeCollections: List<HomeCollection> = emptyList(),
     val allPrincipals: List<Principal> = emptyList(),
 
+    /*
     val showDeleteDialog: Boolean = false,
     val showMoveDialog: Boolean = false,
     val showMoreBottomSheet: Boolean = false,
@@ -32,6 +33,10 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val showTaskStatusProgressPickerBottomSheet: Boolean = false,
     val showAddSubtaskBottomSheet: Boolean = false,
     val showEditUrlBottomSheet: Boolean = false,
+
+     */
+
+    val showSheetOrDialog: DetailsSheetOrDialog? = null,
     val showDrawingCanvasBottomSheet: DetailsAction.OnShowDrawingCanvasBottomSheet = DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
 
     val isLoading: Boolean = true,
@@ -54,4 +59,8 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     fun allowRestore() = calendar?.canWriteContent() == true && icalEntry.syncState.isDeletedState()
 
     fun isAttachmentSupportEnabled() = calendar?.isAttachmentSyncSupported() == true
+}
+
+enum class DetailsSheetOrDialog {
+    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL
 }

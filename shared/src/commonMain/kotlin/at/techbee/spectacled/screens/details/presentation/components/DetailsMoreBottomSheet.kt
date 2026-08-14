@@ -36,6 +36,7 @@ import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
+import at.techbee.spectacled.screens.details.presentation.DetailsSheetOrDialog
 import at.techbee.spectacled.theme.AppTheme
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
@@ -71,10 +72,10 @@ fun DetailsMoreBottomSheet(
 
 
     BottomSheetWithMenu(
-        onDismiss = { onAction(DetailsAction.OnShowMoreBottomSheet(false)) },
+        onDismiss = { onAction(DetailsAction.OnShowSheetOrDialog(null)) },
         menuActionRight = {
             TextButton(
-                onClick = { onAction(DetailsAction.OnShowMoreBottomSheet(false)) },
+                onClick = { onAction(DetailsAction.OnShowSheetOrDialog(null)) },
             ) {
                 Text(stringResource(Res.string.done))
             }
@@ -90,8 +91,7 @@ fun DetailsMoreBottomSheet(
                 leadingIcon = { Icon(Icons.AutoMirrored.Outlined.DriveFileMove, stringResource(Res.string.move)) },
                 text = { Text(text = stringResource(Res.string.move)) },
                 onClick = {
-                    onAction(DetailsAction.OnShowMoveDialog(true))
-                    onAction(DetailsAction.OnShowMoreBottomSheet(false))
+                    onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.MOVE))
                 },
                 colors = MenuDefaults.itemColors().copy(
                     textColor = MaterialTheme.colorScheme.primary,
@@ -104,8 +104,7 @@ fun DetailsMoreBottomSheet(
                 leadingIcon = { Icon(Icons.Outlined.Delete, stringResource(Res.string.delete)) },
                 text = { Text(text = stringResource(Res.string.delete)) },
                 onClick = {
-                    onAction(DetailsAction.OnShowDeleteDialog(true))
-                    onAction(DetailsAction.OnShowMoreBottomSheet(false))
+                    onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.DELETE))
                 },
                 colors = MenuDefaults.itemColors().copy(
                     textColor = MaterialTheme.colorScheme.primary,
@@ -149,13 +148,8 @@ fun DetailsMoreBottomSheet(
                 leadingIcon = { Icon(Icons.Outlined.FileCopy, stringResource(Res.string.create_copy)) },
                 text = { Text(text = stringResource(Res.string.create_copy)) },
                 onClick = {
-                    onAction(DetailsAction.OnShowMoreBottomSheet(false))
+                    onAction(DetailsAction.OnShowSheetOrDialog(null))
                     onAction(DetailsAction.OnCreateCopy)
-                    //TODO: Make sure also new notes can be copied (id should not be 0L!)
-                    //TODO: Make sure note is saved before navigating
-                    //TODO: Navigate!
-                    //onNavigate(Route.AddNote(detailsState.note.calendarId, detailsState.note.id))
-                    //noteDetailsViewModel.onAction(NoteDetailsAction.OnUpdateSnackbar(copyCreated))
                 },
                 colors = MenuDefaults.itemColors().copy(
                     textColor = MaterialTheme.colorScheme.primary,
@@ -169,7 +163,7 @@ fun DetailsMoreBottomSheet(
                 text = { Text(text = stringResource(Res.string.copy_to_clipboard)) },
                 onClick = {
                     scope.launch {
-                        onAction(DetailsAction.OnShowMoreBottomSheet(false))
+                        onAction(DetailsAction.OnShowSheetOrDialog(null))
                         clipboard.setText(shareText)
                     }
                     onAction(DetailsAction.OnUpdateSnackbar(copiedToClipboardText))
