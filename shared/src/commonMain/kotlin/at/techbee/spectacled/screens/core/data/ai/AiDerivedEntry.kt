@@ -42,6 +42,9 @@ sealed class AiDeriveEntriesResult {
     data class Failed(val message: String, val details: String? = null) : AiDeriveEntriesResult()
 }
 
+/** Prefix shared by every per-generation AI batch category (see [newAiBatchCategory]). */
+const val AI_BATCH_CATEGORY_PREFIX = "🤖 AI"
+
 /**
  * A per-generation category applied to every entry (parent and subtasks) created from one AI run,
  * so the user can filter, delete and regenerate a batch. Human-readable timestamp plus a short
@@ -50,7 +53,7 @@ sealed class AiDeriveEntriesResult {
 fun newAiBatchCategory(): String {
     val timestamp = formatIcsDateTime(IcsDateTime.now())?.first ?: IcsDateTime.now().toString()
     val suffix = IcalEntry.getRandomUUID().take(4)
-    return "🤖 AI $timestamp #$suffix"
+    return "$AI_BATCH_CATEGORY_PREFIX $timestamp #$suffix"
 }
 
 /**

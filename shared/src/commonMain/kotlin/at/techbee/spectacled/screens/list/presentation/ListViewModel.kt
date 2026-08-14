@@ -9,6 +9,7 @@ import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.ai.AI_BATCH_CATEGORY_PREFIX
 import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
 import at.techbee.spectacled.screens.core.data.ai.newAiBatchCategory
 import at.techbee.spectacled.screens.core.data.ai.toIcalEntries
@@ -265,11 +266,15 @@ class ListViewModel(
 
         val calendarId = state.value.calendar.id
         val batchCategory = newAiBatchCategory()
+        // Existing topical categories, so the AI prefers reusing them over near-duplicates. Exclude
+        // the pinned marker and per-generation AI batch tags - they aren't topics.
+        val existingCategories = state.value.allCategories
+            .filter { it != IcalEntry.PINNED_CATEGORY && !it.startsWith(AI_BATCH_CATEGORY_PREFIX) }
 
         // Claude API network call + inserts - keep off the Main dispatcher. The top-level entry kind
         // is decided by which list we're on (spectacledVariant), not by the AI.
         viewModelScope.launch(ioDispatcher) {
-            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text, spectacledVariant, createSubtasks)) {
+            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text, spectacledVariant, createSubtasks, existingCategories)) {
                 is AiDeriveEntriesResult.Failed -> {
                     _state.update { it.copy(
                         isDerivingEntries = false,

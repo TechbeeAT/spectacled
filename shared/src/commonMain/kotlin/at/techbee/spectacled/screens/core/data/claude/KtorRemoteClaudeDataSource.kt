@@ -111,6 +111,8 @@ class KtorRemoteClaudeDataSource(
      * enum name - "notes" / "journals" / "tasks"), so the model never has to choose a type.
      * [createSubtasks] mirrors the user's toggle: when false the model is asked for a flat list.
      * (The mapper enforces this regardless, so this is only a token/quality hint.)
+     * [existingCategories] are the categories already used in the system; the model is asked to
+     * prefer reusing them over inventing near-duplicates.
      *
      * Reliability note: this uses the same "ask for JSON, then parse" approach as [applyAiMetadata]
      * for consistency with the existing integration. Because the shape is recursive it cannot use
@@ -121,6 +123,7 @@ class KtorRemoteClaudeDataSource(
         rawText: String,
         variant: SpectacledVariant,
         createSubtasks: Boolean,
+        existingCategories: List<String> = emptyList(),
     ): AiDeriveEntriesResult {
 
         val variantName = variant.name.lowercase()   // "notes" | "journals" | "tasks"
@@ -134,6 +137,17 @@ class KtorRemoteClaudeDataSource(
             """.trimIndent()
         } else {
             "Do NOT create subtasks; return a flat list of top-level entries only, each with an empty \"subtasks\" array."
+        }
+
+        val categoryGuidance = if (existingCategories.isNotEmpty()) {
+            """
+
+            The user already uses these categories: ${existingCategories.joinToString(", ")}.
+            Prefer reusing an existing category verbatim (same spelling and casing) when it fits the
+            topic; only create a new category when none of the existing ones apply.
+            """.trimIndent()
+        } else {
+            ""
         }
 
         val prompt = """
@@ -171,6 +185,7 @@ class KtorRemoteClaudeDataSource(
 
             Within one entry, make sure dtstart and due use the same format (both date or both
             datetime). Use an empty array for "subtasks" when there are none.
+            $categoryGuidance
 
             Now is ${formatIcsDateTime(IcsDateTime.now())!!.first}
 

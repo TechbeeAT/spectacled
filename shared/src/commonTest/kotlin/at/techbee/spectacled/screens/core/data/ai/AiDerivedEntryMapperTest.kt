@@ -167,6 +167,11 @@ class AiDerivedEntryMapperTest {
     }
 
     @Test
+    fun batchCategory_startsWithSharedPrefix() {
+        assertTrue(newAiBatchCategory().startsWith(AI_BATCH_CATEGORY_PREFIX))
+    }
+
+    @Test
     fun listDeserializes_fromRecursiveJson() {
         val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
         val payload = """
