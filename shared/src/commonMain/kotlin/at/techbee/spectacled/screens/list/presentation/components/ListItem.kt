@@ -188,7 +188,7 @@ fun ListItem(
                                 }
                             }
 
-                            icalEntry.attachments.forEach {
+                            icalEntry.attachments.filter { it.isSVG() || it.isImage() }.forEach {
                                 AttachmentPreview(
                                     attachment = it,
                                     modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp).padding(8.dp)

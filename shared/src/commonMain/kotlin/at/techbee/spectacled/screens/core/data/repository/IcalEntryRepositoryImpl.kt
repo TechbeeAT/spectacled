@@ -91,7 +91,8 @@ class IcalEntryRepositoryImpl(
         if (entryIds.isEmpty()) return emptyMap()
 
         val db = getDatabase()
-        return db.attachment_dtoQueries.getAttachmentsForEntries(entryIds).awaitAsList()
+        return entryIds.chunked(500)   // chunk to make sure SQL limits for IN (...) aren't reached.
+            .flatMap { chunk -> db.attachment_dtoQueries.getAttachmentsForEntries(chunk).awaitAsList() }
             .map { it.toDomain() }
             .groupBy { it.icalEntryId }
     }
