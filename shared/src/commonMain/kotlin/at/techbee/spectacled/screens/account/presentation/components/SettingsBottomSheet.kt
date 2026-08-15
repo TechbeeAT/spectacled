@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -152,7 +153,7 @@ fun SettingsBottomSheet(
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
         ) {
 
             Text(
@@ -191,7 +192,7 @@ fun SettingsBottomSheet(
                 },
                 leadingIcon = { Icon(Icons.Outlined.FormatPaint, null) },
                 trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
-                modifier = Modifier.widthIn(min = 350.dp)
+                modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
             )
 
             if(getPlatform().platform == Platforms.ANDROID) {
@@ -212,7 +213,7 @@ fun SettingsBottomSheet(
                             onCheckedChange = { userAppPreferencesStore.themeDynamicColorsEnabled = it }
                         )
                     },
-                    modifier = Modifier.widthIn(min = 350.dp)
+                    modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
                 )
             }
 
@@ -247,7 +248,7 @@ fun SettingsBottomSheet(
                     },
                     leadingIcon = { Icon(Icons.Outlined.ColorLens, null) },
                     trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
-                    modifier = Modifier.widthIn(min = 350.dp)
+                    modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
                 )
             }
 
@@ -269,7 +270,7 @@ fun SettingsBottomSheet(
                             onCheckedChange = { userAppPreferencesStore.themeAmoled = it }
                         )
                     },
-                    modifier = Modifier.widthIn(min = 350.dp)
+                    modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
                 )
             }
 
@@ -303,7 +304,7 @@ fun SettingsBottomSheet(
                 },
                 leadingIcon = { Icon(Icons.Outlined.FontDownload, null) },
                 trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
-                modifier = Modifier.widthIn(min = 350.dp)
+                modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
             )
 
             Text(
@@ -340,11 +341,11 @@ fun SettingsBottomSheet(
                 },
                 leadingIcon = { Icon(Icons.Outlined.AutoAwesome, null) },
                 trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
-                modifier = Modifier.widthIn(min = 350.dp)
+                modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
             )
 
             AnimatedVisibility(aiProvider == AiProvider.CLAUDE) {
-                Column {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     AssistChip(
                         onClick = { claudeModelDropdownExpanded = true },
                         label = {
@@ -377,7 +378,7 @@ fun SettingsBottomSheet(
                             tint = MaterialTheme.colorScheme.primary
                         ) },
                         trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
-                        modifier = Modifier.widthIn(min = 350.dp)
+                        modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
                     )
 
                 OutlinedSecureTextField(
@@ -416,13 +417,12 @@ fun SettingsBottomSheet(
 
                         }
                     },
-                    modifier = Modifier.widthIn(min = 350.dp)
-                )
-                }
+                    modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
+                ) }
             }
 
             AnimatedVisibility(aiProvider == AiProvider.OPENAI_COMPATIBLE) {
-                Column {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = openAiBaseUrl ?: "",
                         onValueChange = { userAppPreferencesStore.openAiBaseUrl = it.ifBlank { null } },
@@ -433,7 +433,7 @@ fun SettingsBottomSheet(
                             tint = MaterialTheme.colorScheme.primary
                         ) },
                         placeholder = { Text("http://localhost:11434") },
-                        modifier = Modifier.widthIn(min = 350.dp)
+                        modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
                     )
 
                     OutlinedTextField(
@@ -446,7 +446,7 @@ fun SettingsBottomSheet(
                             tint = MaterialTheme.colorScheme.primary
                         ) },
                         placeholder = { Text("llama3.2") },
-                        modifier = Modifier.widthIn(min = 350.dp)
+                        modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
                     )
 
                     OutlinedSecureTextField(
@@ -472,7 +472,7 @@ fun SettingsBottomSheet(
                             }
                         },
                         supportingText = { Text(stringResource(Res.string.openai_info)) },
-                        modifier = Modifier.widthIn(min = 350.dp)
+                        modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
                     )
                 }
             }
@@ -523,7 +523,7 @@ fun SettingsBottomSheet(
                             }
                         }
                     },
-                    modifier = Modifier.widthIn(min = 350.dp)
+                    modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
                 )
             }
         }
