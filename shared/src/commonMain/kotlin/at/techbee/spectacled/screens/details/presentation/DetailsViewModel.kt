@@ -860,7 +860,7 @@ class DetailsViewModel(
             mimeType = guessMimeTypeFromFileName(fileName),
             size = null,
             isInline = false,
-            syncState = AttachmentSyncState.LOCAL_MODIFIED
+            syncState = AttachmentSyncState.PENDING_DOWNLOAD
         )
 
         _state.update {
