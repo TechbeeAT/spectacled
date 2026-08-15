@@ -51,7 +51,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
 }
 
 enum class DetailsSheetOrDialog {
-    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL
+    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, ADD_ATTACHMENT_URL
 }
 
 // Action to perform right after the details screen opens

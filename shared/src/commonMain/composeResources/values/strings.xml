@@ -137,6 +137,9 @@
     <string name="subtasks_not_supported_in_collection">Not supported in this collection</string>
     <string name="url">URL</string>
     <string name="add_url">Add URL</string>
+    <string name="add">Add</string>
+    <string name="link_file_by_url">Link file by URL</string>
+    <string name="link_file_by_url_hint">The file stays on its server — Spectacled only stores the link and downloads it when opened.</string>
     <string name="add_attachment">Add attachment</string>
     <string name="attachment">Attachment</string>
     <string name="attachment_not_supported_by_server">Not supported by server</string>

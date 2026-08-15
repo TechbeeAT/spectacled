@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.AddTask
 import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.Gesture
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PhotoCamera
@@ -75,6 +76,7 @@ import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.core.rememberFilePicker
 import at.techbee.spectacled.screens.core.rememberImagePicker
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.AddUrlAttachmentBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
@@ -95,6 +97,7 @@ import spectacled.shared.generated.resources.add_from_gallery
 import spectacled.shared.generated.resources.add_photo
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_url
+import spectacled.shared.generated.resources.link_file_by_url
 import spectacled.shared.generated.resources.attachment_not_supported_by_server
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
@@ -250,6 +253,11 @@ fun DetailsScreenRoot(
                 EditUrlBottomSheet(
                     initialUrl = detailsState.icalEntry.url,
                     onUrlEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateUrl(it)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            DetailsSheetOrDialog.ADD_ATTACHMENT_URL ->
+                AddUrlAttachmentBottomSheet(
+                    onUrlConfirmed = { detailsViewModel.onAction(DetailsAction.OnAddUrlAttachment(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
             null -> {}
@@ -467,6 +475,17 @@ fun DetailsScreenRoot(
                                         leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
                                         onClick = {
                                             detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
+                                            addMoreExpanded = false
+                                        },
+                                    )
+
+                                    // Linked (remote-URL) attachment: pure text in the iCalendar object,
+                                    // so it works on any server and is NOT gated by managed-attachment support.
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.link_file_by_url)) },
+                                        leadingIcon = { Icon(Icons.Outlined.Link, stringResource(Res.string.link_file_by_url)) },
+                                        onClick = {
+                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.ADD_ATTACHMENT_URL))
                                             addMoreExpanded = false
                                         },
                                     )

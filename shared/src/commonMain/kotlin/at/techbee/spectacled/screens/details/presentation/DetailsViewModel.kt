@@ -334,6 +334,7 @@ class DetailsViewModel(
             DetailsAction.OnProcessWithAI -> { onProcessWithAI() }
             is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
+            is DetailsAction.OnAddUrlAttachment -> { onAddUrlAttachment(action.url) }
             is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentUid) }
             is DetailsAction.OnDeleteAttachment -> { onDeleteAttachment(action.attachmentUid) }
             is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
@@ -840,6 +841,57 @@ class DetailsViewModel(
             }
         }
     }
+
+    // Adds a linked (remote-URL) attachment: only the pointer is stored, the bytes stay on their
+    // server. Serialized as ATTACH:<url>, it works on any CalDAV server. The URL is not fetched here
+    // — download happens lazily in onOpenAttachment — so there is no size guard and no disk I/O.
+    @OptIn(ExperimentalTime::class)
+    private fun onAddUrlAttachment(url: Url) {
+
+        if(!state.value.allowEditing())
+            return
+
+        val fileName = deriveFileNameFromUrl(url)
+        val newAttachment = Attachment(
+            icalEntryId = _state.value.icalEntry.id,
+            remoteUrl = url.toString(),
+            fileName = fileName,
+            mimeType = guessMimeTypeFromFileName(fileName),
+            size = null,
+            isInline = false,
+            syncState = AttachmentSyncState.LOCAL_MODIFIED
+        )
+
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    attachments = it.icalEntry.attachments + newAttachment,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                )
+            )
+        }
+    }
+
+    // Last non-blank path segment of the URL, e.g. ".../docs/report.pdf" -> "report.pdf".
+    // Falls back to the host when the path carries no usable file name.
+    private fun deriveFileNameFromUrl(url: Url): String {
+        val path = url.encodedPath.substringBefore('?').substringBefore('#')
+        return path.trimEnd('/').substringAfterLast('/').ifBlank { url.host }
+    }
+
+    private fun guessMimeTypeFromFileName(fileName: String): String? =
+        when (fileName.substringAfterLast('.', "").lowercase()) {
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            "bmp" -> "image/bmp"
+            "svg" -> MIMETYPE_SVG
+            "pdf" -> "application/pdf"
+            "txt" -> "text/plain"
+            else -> null
+        }
 
     private fun onOpenAttachment(attachmentUid: String) {
         val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid } ?: return
