@@ -20,7 +20,9 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
+import at.techbee.spectacled.screens.core.domain.INLINE_ATTACHMENT_WARN_BYTES
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.MAX_INLINE_ATTACHMENT_BYTES
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -50,6 +52,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.attachment_large_warning
+import spectacled.shared.generated.resources.attachment_too_large
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.entry_copy
@@ -169,6 +173,7 @@ class DetailsViewModel(
                     DetailsInitialAction.ADD_FROM_GALLERY -> AttachmentPickerAction.GALLERY
                     else -> null
                 },
+                showSheetOrDialog = if(initialAction == DetailsInitialAction.ADD_ATTACHMENT_URL) DetailsSheetOrDialog.ADD_ATTACHMENT_URL else null,
                 navigateUp = false
             ) }
 
@@ -330,6 +335,7 @@ class DetailsViewModel(
             DetailsAction.OnProcessWithAI -> { onProcessWithAI() }
             is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
+            is DetailsAction.OnAddUrlAttachment -> { onAddUrlAttachment(action.url) }
             is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentUid) }
             is DetailsAction.OnDeleteAttachment -> { onDeleteAttachment(action.attachmentUid) }
             is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
@@ -783,11 +789,28 @@ class DetailsViewModel(
         loadNew(calendarId, state.value.icalEntry.description)
     }
 
+    // Attachments default to inline: the bytes are embedded (BASE64) in the iCalendar object, so
+    // they sync to any CalDAV server without needing server-side attachment support. Because the
+    // whole object is re-uploaded on every edit — and servers cap object size — oversized files are
+    // guarded against (see MAX_INLINE_ATTACHMENT_BYTES / INLINE_ATTACHMENT_WARN_BYTES).
     @OptIn(ExperimentalTime::class)
-    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
+    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = true) {
 
         if(!state.value.allowEditing())
             return
+
+        // Reject files too large to safely embed inline, before touching the disk.
+        if (isInline && bytes.size > MAX_INLINE_ATTACHMENT_BYTES) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(snackbarText = getString(
+                        Res.string.attachment_too_large,
+                        (MAX_INLINE_ATTACHMENT_BYTES / (1024 * 1024)).toInt()
+                    ))
+                }
+            }
+            return
+        }
 
         // Writes the attachment bytes to disk — keep the file I/O off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
@@ -804,17 +827,72 @@ class DetailsViewModel(
                 syncState = AttachmentSyncState.LOCAL_MODIFIED
             )
 
+            val largeWarning = if (isInline && bytes.size > INLINE_ATTACHMENT_WARN_BYTES)
+                getString(Res.string.attachment_large_warning) else null
+
             _state.update {
                 it.copy(
                     icalEntry = it.icalEntry.copy(
                         attachments = it.icalEntry.attachments + newAttachment,
                         lastModified = IcsDateTime.now(),
                         syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
-                    )
+                    ),
+                    snackbarText = largeWarning ?: it.snackbarText
                 )
             }
         }
     }
+
+    // Adds a linked (remote-URL) attachment: only the pointer is stored, the bytes stay on their
+    // server. Serialized as ATTACH:<url>, it works on any CalDAV server. The URL is not fetched here
+    // — download happens lazily in onOpenAttachment — so there is no size guard and no disk I/O.
+    @OptIn(ExperimentalTime::class)
+    private fun onAddUrlAttachment(url: Url) {
+
+        if(!state.value.allowEditing())
+            return
+
+        val fileName = deriveFileNameFromUrl(url)
+        val newAttachment = Attachment(
+            icalEntryId = _state.value.icalEntry.id,
+            remoteUrl = url.toString(),
+            fileName = fileName,
+            mimeType = guessMimeTypeFromFileName(fileName),
+            size = null,
+            isInline = false,
+            syncState = AttachmentSyncState.PENDING_DOWNLOAD
+        )
+
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    attachments = it.icalEntry.attachments + newAttachment,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                )
+            )
+        }
+    }
+
+    // Last non-blank path segment of the URL, e.g. ".../docs/report.pdf" -> "report.pdf".
+    // Falls back to the host when the path carries no usable file name.
+    private fun deriveFileNameFromUrl(url: Url): String {
+        val path = url.encodedPath.substringBefore('?').substringBefore('#')
+        return path.trimEnd('/').substringAfterLast('/').ifBlank { url.host }
+    }
+
+    private fun guessMimeTypeFromFileName(fileName: String): String? =
+        when (fileName.substringAfterLast('.', "").lowercase()) {
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            "bmp" -> "image/bmp"
+            "svg" -> MIMETYPE_SVG
+            "pdf" -> "application/pdf"
+            "txt" -> "text/plain"
+            else -> null
+        }
 
     private fun onOpenAttachment(attachmentUid: String) {
         val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid } ?: return

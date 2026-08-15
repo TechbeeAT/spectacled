@@ -47,16 +47,15 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
 
     fun allowRestore() = calendar?.canWriteContent() == true && icalEntry.syncState.isDeletedState()
 
-    fun isAttachmentSupportEnabled() = calendar?.isAttachmentSyncSupported() == true
 }
 
 enum class DetailsSheetOrDialog {
-    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL
+    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, ADD_ATTACHMENT_URL
 }
 
 // Action to perform right after the details screen opens
 enum class DetailsInitialAction {
-    ADD_DRAWING, ADD_ATTACHMENT, ADD_PHOTO, ADD_FROM_GALLERY
+    ADD_DRAWING, ADD_ATTACHMENT, ADD_PHOTO, ADD_FROM_GALLERY, ADD_ATTACHMENT_URL
 }
 
 // The three platform pickers the screen can launch on behalf of the ViewModel.
