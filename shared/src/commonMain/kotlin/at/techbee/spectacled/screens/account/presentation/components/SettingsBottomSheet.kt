@@ -67,10 +67,10 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.advanced
+import spectacled.shared.generated.resources.ai_model
 import spectacled.shared.generated.resources.ai_provider
 import spectacled.shared.generated.resources.anthropic_api_key
 import spectacled.shared.generated.resources.anthropic_api_key_info
-import spectacled.shared.generated.resources.claude_model
 import spectacled.shared.generated.resources.close
 import spectacled.shared.generated.resources.get_an_api_key
 import spectacled.shared.generated.resources.ic_ai_model
@@ -80,7 +80,6 @@ import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.openai_api_key
 import spectacled.shared.generated.resources.openai_base_url
 import spectacled.shared.generated.resources.openai_info
-import spectacled.shared.generated.resources.openai_model
 import spectacled.shared.generated.resources.settings
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.theme
@@ -351,7 +350,7 @@ fun SettingsBottomSheet(
                         label = {
                             Column(modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp)) {
                                 Text(
-                                    text = stringResource(Res.string.claude_model),
+                                    text = stringResource(Res.string.ai_model),
                                     style = MaterialTheme.typography.labelSmall
                                 )
                                 Text(ClaudeModel.fromId(claudeModel).displayName)
@@ -440,7 +439,7 @@ fun SettingsBottomSheet(
                     OutlinedTextField(
                         value = openAiModel ?: "",
                         onValueChange = { userAppPreferencesStore.openAiModel = it.ifBlank { null } },
-                        label = { Text(stringResource(Res.string.openai_model)) },
+                        label = { Text(stringResource(Res.string.ai_model)) },
                         leadingIcon = { Icon(
                             painter = painterResource(Res.drawable.ic_ai_model),
                             contentDescription = null,

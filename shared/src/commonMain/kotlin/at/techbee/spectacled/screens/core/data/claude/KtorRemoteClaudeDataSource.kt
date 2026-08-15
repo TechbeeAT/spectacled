@@ -29,8 +29,8 @@ private const val ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
  */
 class KtorRemoteClaudeDataSource(
     val client: HttpClient,
-    val claudeUserApiKey: String,
     val model: String,
+    val claudeUserApiKey: String
 ) : AiDeriveEntriesDataSource {
 
     override suspend fun deriveEntries(

@@ -286,7 +286,7 @@ class ListViewModel(
                     ) }
                     return
                 }
-                KtorRemoteClaudeDataSource(client, apiKey, userAppPreferencesStore.claudeModel)
+                KtorRemoteClaudeDataSource(client, userAppPreferencesStore.claudeModel, apiKey)
             }
             AiProvider.OPENAI_COMPATIBLE -> {
                 val baseUrl = userAppPreferencesStore.openAiBaseUrl

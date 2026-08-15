@@ -251,9 +251,8 @@
     <string name="ai_provider_openai">Open-source model (custom endpoint)</string>
     <string name="ai_provider_none">None</string>
     <string name="ai_provider_not_configured">Configure your AI provider in the settings to use this feature.</string>
-    <string name="claude_model">Model</string>
+    <string name="ai_model">Model</string>
     <string name="openai_base_url">Server URL</string>
-    <string name="openai_model">Model</string>
     <string name="openai_api_key">API key (optional)</string>
     <string name="openai_info">Point this at a local or self-hosted server that speaks the OpenAI API (Ollama, LM Studio, llama.cpp, LocalAI).</string>
 
