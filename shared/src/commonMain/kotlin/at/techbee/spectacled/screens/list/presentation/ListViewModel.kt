@@ -10,7 +10,10 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ai.AI_BATCH_CATEGORY_PREFIX
+import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesDataSource
 import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
+import at.techbee.spectacled.screens.core.data.ai.AiProvider
+import at.techbee.spectacled.screens.core.data.ai.OpenAiCompatibleDataSource
 import at.techbee.spectacled.screens.core.data.ai.newAiBatchCategory
 import at.techbee.spectacled.screens.core.data.ai.toIcalEntries
 import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
@@ -253,13 +256,32 @@ class ListViewModel(
         if(text.isBlank())
             return
 
-        val apiKey = userAppPreferencesStore.claudeUserApiKey
-        if(apiKey.isNullOrEmpty()) {
-            _state.update { it.copy(
-                showDeriveEntriesBottomSheet = false,
-                snackbarText = "API key not provided. Please update the API key in the settings."
-            ) }
-            return
+        // Pick the configured AI backend. The details of each provider live in its data source;
+        // here we only resolve config and give a provider-appropriate hint when it's missing.
+        val dataSource: AiDeriveEntriesDataSource = when(userAppPreferencesStore.aiProvider) {
+            AiProvider.CLAUDE -> {
+                val apiKey = userAppPreferencesStore.claudeUserApiKey
+                if(apiKey.isNullOrEmpty()) {
+                    _state.update { it.copy(
+                        showDeriveEntriesBottomSheet = false,
+                        snackbarText = "API key not provided. Please update the API key in the settings."
+                    ) }
+                    return
+                }
+                KtorRemoteClaudeDataSource(client, apiKey)
+            }
+            AiProvider.OPENAI_COMPATIBLE -> {
+                val baseUrl = userAppPreferencesStore.openAiBaseUrl
+                val model = userAppPreferencesStore.openAiModel
+                if(baseUrl.isNullOrBlank() || model.isNullOrBlank()) {
+                    _state.update { it.copy(
+                        showDeriveEntriesBottomSheet = false,
+                        snackbarText = "AI endpoint not configured. Set the server URL and model in the settings."
+                    ) }
+                    return
+                }
+                OpenAiCompatibleDataSource(client, baseUrl, model, userAppPreferencesStore.openAiApiKey)
+            }
         }
 
         _state.update { it.copy(isDerivingEntries = true) }
@@ -274,7 +296,7 @@ class ListViewModel(
         // Claude API network call + inserts - keep off the Main dispatcher. The top-level entry kind
         // is decided by which list we're on (spectacledVariant), not by the AI.
         viewModelScope.launch(ioDispatcher) {
-            when(val result = KtorRemoteClaudeDataSource(client, apiKey).deriveEntries(text, spectacledVariant, createSubtasks, existingCategories)) {
+            when(val result = dataSource.deriveEntries(text, spectacledVariant, createSubtasks, existingCategories)) {
                 is AiDeriveEntriesResult.Failed -> {
                     _state.update { it.copy(
                         isDerivingEntries = false,

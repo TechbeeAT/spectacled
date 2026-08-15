@@ -246,6 +246,13 @@
     <string name="anthropic_api_key">Anthropic API key</string>
     <string name="anthropic_api_key_info">Used only for the "AI Extract" action, stored on this device only.</string>
     <string name="get_an_api_key">Get an API key</string>
+    <string name="ai_provider">AI provider</string>
+    <string name="ai_provider_claude">Claude (Anthropic)</string>
+    <string name="ai_provider_openai">Open-source model (custom endpoint)</string>
+    <string name="openai_base_url">Server URL</string>
+    <string name="openai_model">Model</string>
+    <string name="openai_api_key">API key (optional)</string>
+    <string name="openai_info">Point this at a local or self-hosted server that speaks the OpenAI API (Ollama, LM Studio, llama.cpp, LocalAI). On the web build the server must allow this app\'s origin (CORS), or reach it via the proxy above.</string>
     <string name="ai_extract_claude">AI Extract (Claude)</string>
     <string name="ai_extract_no_api_key">Add your Anthropic API key in Settings to use AI Extract.</string>
 

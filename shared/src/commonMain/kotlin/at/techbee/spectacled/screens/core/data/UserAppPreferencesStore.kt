@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.data
 
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.data.ai.AiProvider
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.ThemeFont
@@ -28,6 +29,11 @@ const val THEME_FONT = "theme_font"
 
 const val CLAUDE_USER_API_KEY = "claude_user_api_key"
 const val USER_PROXY_SERVER = "user_proxy_server"
+
+const val AI_PROVIDER = "ai_provider"
+const val OPENAI_BASE_URL = "openai_base_url"
+const val OPENAI_MODEL = "openai_model"
+const val OPENAI_API_KEY = "openai_api_key"
 
 interface UserAppPreferencesStore {
 
@@ -106,6 +112,30 @@ interface UserAppPreferencesStore {
         get() = this.load(USER_PROXY_SERVER)?.ifEmpty { null }
         set(value) = if(value == null) this.remove(USER_PROXY_SERVER) else this.save(USER_PROXY_SERVER, value)
     fun getUserProxyServerAsFlow(): Flow<String?> = this.loadAsFlow(USER_PROXY_SERVER)
+
+    /** Which backend fulfils the "derive entries from text" AI feature. Defaults to [AiProvider.CLAUDE]. */
+    var aiProvider: AiProvider
+        get() = AiProvider.fromString(this.load(AI_PROVIDER))
+        set(value) = this.save(AI_PROVIDER, value.name)
+    fun getAiProviderAsFlow(): Flow<AiProvider> = this.loadAsFlow(AI_PROVIDER).map { AiProvider.fromString(it) }
+
+    /** Root URL of a self-hosted OpenAI-compatible server (e.g. Ollama at http://localhost:11434). */
+    var openAiBaseUrl: String?
+        get() = this.load(OPENAI_BASE_URL)?.ifEmpty { null }
+        set(value) = if(value.isNullOrBlank()) this.remove(OPENAI_BASE_URL) else this.save(OPENAI_BASE_URL, value)
+    fun getOpenAiBaseUrlAsFlow(): Flow<String?> = this.loadAsFlow(OPENAI_BASE_URL)
+
+    /** Served model name for the OpenAI-compatible endpoint (e.g. "llama3.2"). */
+    var openAiModel: String?
+        get() = this.load(OPENAI_MODEL)?.ifEmpty { null }
+        set(value) = if(value.isNullOrBlank()) this.remove(OPENAI_MODEL) else this.save(OPENAI_MODEL, value)
+    fun getOpenAiModelAsFlow(): Flow<String?> = this.loadAsFlow(OPENAI_MODEL)
+
+    /** Optional bearer token for the OpenAI-compatible endpoint (Ollama needs none). Stored encrypted. */
+    var openAiApiKey: String?
+        get() = this.load(OPENAI_API_KEY)?.ifEmpty { null }
+        set(value) = if(value.isNullOrBlank()) this.remove(OPENAI_API_KEY) else this.saveEncrypted(OPENAI_API_KEY, value)
+    fun getOpenAiApiKeyAsFlow(): Flow<String?> = this.loadAsFlow(OPENAI_API_KEY)
 
 
     companion object {

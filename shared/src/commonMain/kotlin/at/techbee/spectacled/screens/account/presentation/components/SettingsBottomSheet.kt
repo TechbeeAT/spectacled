@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.ai.AiProvider
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
@@ -64,12 +65,19 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.advanced
+import spectacled.shared.generated.resources.ai_provider
+import spectacled.shared.generated.resources.ai_provider_claude
+import spectacled.shared.generated.resources.ai_provider_openai
 import spectacled.shared.generated.resources.anthropic_api_key
 import spectacled.shared.generated.resources.anthropic_api_key_info
 import spectacled.shared.generated.resources.close
 import spectacled.shared.generated.resources.get_an_api_key
 import spectacled.shared.generated.resources.ic_cognition
 import spectacled.shared.generated.resources.insecure_connection_warning
+import spectacled.shared.generated.resources.openai_api_key
+import spectacled.shared.generated.resources.openai_base_url
+import spectacled.shared.generated.resources.openai_info
+import spectacled.shared.generated.resources.openai_model
 import spectacled.shared.generated.resources.settings
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.theme
@@ -102,10 +110,21 @@ fun SettingsBottomSheet(
 
     //var advancedSectionExpanded by remember { mutableStateOf(false) }
 
+    var aiProviderDropdownExpanded by remember { mutableStateOf(false) }
+    val aiProvider by userAppPreferencesStore.getAiProviderAsFlow().collectAsState(userAppPreferencesStore.aiProvider)
+
     var isClaudeUserApiKeyVisible by remember { mutableStateOf(false) }
     val claudeUserApiKeyState = rememberTextFieldState(userAppPreferencesStore.claudeUserApiKey?:"")
     LaunchedEffect(claudeUserApiKeyState.text) {
         userAppPreferencesStore.claudeUserApiKey = claudeUserApiKeyState.text.toString()
+    }
+
+    val openAiBaseUrl by userAppPreferencesStore.getOpenAiBaseUrlAsFlow().collectAsState(userAppPreferencesStore.openAiBaseUrl)
+    val openAiModel by userAppPreferencesStore.getOpenAiModelAsFlow().collectAsState(userAppPreferencesStore.openAiModel)
+    var isOpenAiApiKeyVisible by remember { mutableStateOf(false) }
+    val openAiApiKeyState = rememberTextFieldState(userAppPreferencesStore.openAiApiKey?:"")
+    LaunchedEffect(openAiApiKeyState.text) {
+        userAppPreferencesStore.openAiApiKey = openAiApiKeyState.text.toString()
     }
 
     var userProxyServerDropdownExpanded by remember { mutableStateOf(false) }
@@ -288,6 +307,50 @@ fun SettingsBottomSheet(
                 modifier = Modifier.padding(top = 16.dp)
             )
 
+            AssistChip(
+                onClick = { aiProviderDropdownExpanded = true },
+                label = {
+                    Column(modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp)) {
+                        Text(
+                            text = stringResource(Res.string.ai_provider),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                        Text(
+                            when (aiProvider) {
+                                AiProvider.CLAUDE -> stringResource(Res.string.ai_provider_claude)
+                                AiProvider.OPENAI_COMPATIBLE -> stringResource(Res.string.ai_provider_openai)
+                            }
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = aiProviderDropdownExpanded,
+                        onDismissRequest = { aiProviderDropdownExpanded = false },
+                    ) {
+                        AiProvider.entries.forEach { provider ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        when (provider) {
+                                            AiProvider.CLAUDE -> stringResource(Res.string.ai_provider_claude)
+                                            AiProvider.OPENAI_COMPATIBLE -> stringResource(Res.string.ai_provider_openai)
+                                        }
+                                    )
+                                },
+                                onClick = {
+                                    userAppPreferencesStore.aiProvider = provider
+                                    aiProviderDropdownExpanded = false
+                                },
+                            )
+                        }
+                    }
+                },
+                leadingIcon = { Icon(painterResource(Res.drawable.ic_cognition), null) },
+                trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
+                modifier = Modifier.widthIn(min = 350.dp)
+            )
+
+            AnimatedVisibility(aiProvider == AiProvider.CLAUDE) {
             OutlinedSecureTextField(
                 state = claudeUserApiKeyState,
                 label = { Text(stringResource(Res.string.anthropic_api_key)) },
@@ -322,6 +385,49 @@ fun SettingsBottomSheet(
                 },
                 modifier = Modifier.widthIn(min = 350.dp)
             )
+            }
+
+            AnimatedVisibility(aiProvider == AiProvider.OPENAI_COMPATIBLE) {
+                Column {
+                    OutlinedTextField(
+                        value = openAiBaseUrl ?: "",
+                        onValueChange = { userAppPreferencesStore.openAiBaseUrl = it.ifBlank { null } },
+                        label = { Text(stringResource(Res.string.openai_base_url)) },
+                        placeholder = { Text("http://localhost:11434") },
+                        leadingIcon = { Icon(painterResource(Res.drawable.ic_cognition), null) },
+                        modifier = Modifier.widthIn(min = 350.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = openAiModel ?: "",
+                        onValueChange = { userAppPreferencesStore.openAiModel = it.ifBlank { null } },
+                        label = { Text(stringResource(Res.string.openai_model)) },
+                        placeholder = { Text("llama3.2") },
+                        modifier = Modifier.widthIn(min = 350.dp)
+                    )
+
+                    OutlinedSecureTextField(
+                        state = openAiApiKeyState,
+                        label = { Text(stringResource(Res.string.openai_api_key)) },
+                        textObfuscationMode = if (isOpenAiApiKeyVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
+                        trailingIcon = {
+                            IconButton(onClick = { isOpenAiApiKeyVisible = !isOpenAiApiKeyVisible }) {
+                                Crossfade(isOpenAiApiKeyVisible) { visible ->
+                                    if (visible) Icon(
+                                        Icons.Outlined.Visibility,
+                                        contentDescription = stringResource(Res.string.show_hide_password)
+                                    ) else Icon(
+                                        Icons.Outlined.VisibilityOff,
+                                        contentDescription = stringResource(Res.string.show_hide_password)
+                                    )
+                                }
+                            }
+                        },
+                        supportingText = { Text(stringResource(Res.string.openai_info)) },
+                        modifier = Modifier.widthIn(min = 350.dp)
+                    )
+                }
+            }
 
 
             if(getPlatform().platform == Platforms.WASM || LocalInspectionMode.current) {
