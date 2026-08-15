@@ -43,7 +43,16 @@ class OpenAiCompatibleDataSource(
     ): AiDeriveEntriesResult {
 
         val prompt = buildDeriveEntriesPrompt(rawText, variant, createSubtasks, existingCategories)
-        val endpoint = baseUrl.trimEnd('/') + "/v1/chat/completions"
+        // Default a scheme-less base URL to http:// - local model servers (Ollama, LM Studio, ...)
+        // serve plaintext HTTP, and without a scheme the request would otherwise be sent as https,
+        // failing the TLS handshake ("Unable to parse TLS packet header"). An explicit https:// is
+        // kept as-is for anyone fronting their server with TLS.
+        val normalizedBaseUrl = when {
+            baseUrl.startsWith("http://", ignoreCase = true) -> baseUrl
+            baseUrl.startsWith("https://", ignoreCase = true) -> baseUrl
+            else -> "http://$baseUrl"
+        }
+        val endpoint = normalizedBaseUrl.trimEnd('/') + "/v1/chat/completions"
 
         return try {
             val response = client.post(endpoint) {

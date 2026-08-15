@@ -5,6 +5,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
         android:name=".JournalsApplication"
+        android:usesCleartextTraffic="true"
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
