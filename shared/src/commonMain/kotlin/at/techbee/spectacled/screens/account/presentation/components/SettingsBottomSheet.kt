@@ -125,8 +125,14 @@ fun SettingsBottomSheet(
         userAppPreferencesStore.claudeUserApiKey = claudeUserApiKeyState.text.toString()
     }
 
-    val openAiBaseUrl by userAppPreferencesStore.getOpenAiBaseUrlAsFlow().collectAsState(userAppPreferencesStore.openAiBaseUrl)
-    val openAiModel by userAppPreferencesStore.getOpenAiModelAsFlow().collectAsState(userAppPreferencesStore.openAiModel)
+    val openAiBaseUrlState = rememberTextFieldState(userAppPreferencesStore.openAiBaseUrl ?: "")
+    LaunchedEffect(openAiBaseUrlState.text) {
+        userAppPreferencesStore.openAiBaseUrl = openAiBaseUrlState.text.toString()
+    }
+    val openAiModelState = rememberTextFieldState(userAppPreferencesStore.openAiModel ?: "")
+    LaunchedEffect(openAiModelState.text) {
+        userAppPreferencesStore.openAiModel = openAiModelState.text.toString()
+    }
     var isOpenAiApiKeyVisible by remember { mutableStateOf(false) }
     val openAiApiKeyState = rememberTextFieldState(userAppPreferencesStore.openAiApiKey?:"")
     LaunchedEffect(openAiApiKeyState.text) {
@@ -424,8 +430,7 @@ fun SettingsBottomSheet(
             AnimatedVisibility(aiProvider == AiProvider.OPENAI_COMPATIBLE) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
-                        value = openAiBaseUrl ?: "",
-                        onValueChange = { userAppPreferencesStore.openAiBaseUrl = it.ifBlank { null } },
+                        state = openAiBaseUrlState,
                         label = { Text(stringResource(Res.string.openai_base_url)) },
                         leadingIcon = { Icon(
                             painter = painterResource(Res.drawable.ic_ai_server),
@@ -437,8 +442,7 @@ fun SettingsBottomSheet(
                     )
 
                     OutlinedTextField(
-                        value = openAiModel ?: "",
-                        onValueChange = { userAppPreferencesStore.openAiModel = it.ifBlank { null } },
+                        state = openAiModelState,
                         label = { Text(stringResource(Res.string.ai_model)) },
                         leadingIcon = { Icon(
                             painter = painterResource(Res.drawable.ic_ai_model),
