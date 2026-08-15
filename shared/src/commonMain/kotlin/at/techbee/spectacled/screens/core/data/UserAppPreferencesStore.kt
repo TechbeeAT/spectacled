@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.data
 
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.ai.AiProvider
+import at.techbee.spectacled.screens.core.data.ai.ClaudeModel
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.ThemeFont
@@ -31,6 +32,7 @@ const val CLAUDE_USER_API_KEY = "claude_user_api_key"
 const val USER_PROXY_SERVER = "user_proxy_server"
 
 const val AI_PROVIDER = "ai_provider"
+const val CLAUDE_MODEL = "claude_model"
 const val OPENAI_BASE_URL = "openai_base_url"
 const val OPENAI_MODEL = "openai_model"
 const val OPENAI_API_KEY = "openai_api_key"
@@ -107,6 +109,12 @@ interface UserAppPreferencesStore {
         get() = this.load(CLAUDE_USER_API_KEY)?.ifEmpty { null }
         set(value) = if(value.isNullOrBlank()) this.remove(CLAUDE_USER_API_KEY) else this.saveEncrypted(CLAUDE_USER_API_KEY, value)
     fun getClaudeUserApiKeyAsFlow(): Flow<String?> = this.loadAsFlow(CLAUDE_USER_API_KEY)
+
+    /** Anthropic model id sent on Claude requests. Defaults to [ClaudeModel.DEFAULT]. */
+    var claudeModel: String
+        get() = this.load(CLAUDE_MODEL) ?: ClaudeModel.DEFAULT.id
+        set(value) = this.save(CLAUDE_MODEL, value)
+    fun getClaudeModelAsFlow(): Flow<String> = this.loadAsFlow(CLAUDE_MODEL).map { it ?: ClaudeModel.DEFAULT.id }
 
     var userProxyServer: String?
         get() = this.load(USER_PROXY_SERVER)?.ifEmpty { null }

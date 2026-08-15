@@ -56,6 +56,7 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ai.AiProvider
+import at.techbee.spectacled.screens.core.data.ai.ClaudeModel
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
@@ -69,6 +70,7 @@ import spectacled.shared.generated.resources.advanced
 import spectacled.shared.generated.resources.ai_provider
 import spectacled.shared.generated.resources.anthropic_api_key
 import spectacled.shared.generated.resources.anthropic_api_key_info
+import spectacled.shared.generated.resources.claude_model
 import spectacled.shared.generated.resources.close
 import spectacled.shared.generated.resources.get_an_api_key
 import spectacled.shared.generated.resources.ic_ai_model
@@ -113,6 +115,9 @@ fun SettingsBottomSheet(
 
     var aiProviderDropdownExpanded by remember { mutableStateOf(false) }
     val aiProvider by userAppPreferencesStore.getAiProviderAsFlow().collectAsState(userAppPreferencesStore.aiProvider)
+
+    var claudeModelDropdownExpanded by remember { mutableStateOf(false) }
+    val claudeModel by userAppPreferencesStore.getClaudeModelAsFlow().collectAsState(userAppPreferencesStore.claudeModel)
 
     var isClaudeUserApiKeyVisible by remember { mutableStateOf(false) }
     val claudeUserApiKeyState = rememberTextFieldState(userAppPreferencesStore.claudeUserApiKey?:"")
@@ -340,6 +345,42 @@ fun SettingsBottomSheet(
             )
 
             AnimatedVisibility(aiProvider == AiProvider.CLAUDE) {
+                Column {
+                    AssistChip(
+                        onClick = { claudeModelDropdownExpanded = true },
+                        label = {
+                            Column(modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp)) {
+                                Text(
+                                    text = stringResource(Res.string.claude_model),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                                Text(ClaudeModel.fromId(claudeModel).displayName)
+                            }
+
+                            DropdownMenu(
+                                expanded = claudeModelDropdownExpanded,
+                                onDismissRequest = { claudeModelDropdownExpanded = false },
+                            ) {
+                                ClaudeModel.entries.forEach { model ->
+                                    DropdownMenuItem(
+                                        text = { Text(model.displayName) },
+                                        onClick = {
+                                            userAppPreferencesStore.claudeModel = model.id
+                                            claudeModelDropdownExpanded = false
+                                        },
+                                    )
+                                }
+                            }
+                        },
+                        leadingIcon = { Icon(
+                            painter = painterResource(Res.drawable.ic_ai_model),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        ) },
+                        trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
+                        modifier = Modifier.widthIn(min = 350.dp)
+                    )
+
                 OutlinedSecureTextField(
                     state = claudeUserApiKeyState,
                     label = { Text(stringResource(Res.string.anthropic_api_key)) },
@@ -378,6 +419,7 @@ fun SettingsBottomSheet(
                     },
                     modifier = Modifier.widthIn(min = 350.dp)
                 )
+                }
             }
 
             AnimatedVisibility(aiProvider == AiProvider.OPENAI_COMPATIBLE) {

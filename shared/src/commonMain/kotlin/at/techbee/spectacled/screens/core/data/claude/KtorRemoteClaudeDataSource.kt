@@ -21,13 +21,16 @@ import kotlinx.serialization.json.putJsonArray
 private const val ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
 
 /**
- * Derives entries via the hosted Anthropic API using the user's own [claudeUserApiKey]. The prompt
- * and response parsing are shared with every other [AiDeriveEntriesDataSource] (see
- * [buildDeriveEntriesPrompt] / [parseDerivedEntries]); only the request transport is Claude-specific.
+ * Derives entries via the hosted Anthropic API using the user's own [claudeUserApiKey] and the
+ * selected [model] (an Anthropic model id - see
+ * [at.techbee.spectacled.screens.core.data.ai.ClaudeModel]). The prompt and response parsing are
+ * shared with every other [AiDeriveEntriesDataSource] (see [buildDeriveEntriesPrompt] /
+ * [parseDerivedEntries]); only the request transport is Claude-specific.
  */
 class KtorRemoteClaudeDataSource(
     val client: HttpClient,
-    val claudeUserApiKey: String
+    val claudeUserApiKey: String,
+    val model: String,
 ) : AiDeriveEntriesDataSource {
 
     override suspend fun deriveEntries(
@@ -45,7 +48,7 @@ class KtorRemoteClaudeDataSource(
                 header("x-api-key", claudeUserApiKey)
                 header("anthropic-version", "2023-06-01")
                 setBody(buildJsonObject {
-                    put("model", "claude-sonnet-4-6")
+                    put("model", model)
                     put("max_tokens", 4096)
                     putJsonArray("messages") {
                         addJsonObject {
