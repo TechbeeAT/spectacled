@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.DatasetLinked
 import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material.icons.outlined.Gesture
 import androidx.compose.material.icons.outlined.Image
@@ -86,6 +87,7 @@ import spectacled.shared.generated.resources.add_from_gallery
 import spectacled.shared.generated.resources.add_photo
 import spectacled.shared.generated.resources.ai_create_entries
 import spectacled.shared.generated.resources.done
+import spectacled.shared.generated.resources.link_file_by_url
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.read_only
 import kotlin.time.Duration.Companion.milliseconds
@@ -319,37 +321,27 @@ fun ListScreenRoot(
                                         )
 
                                         DropdownMenuItem(
-                                            text = {
-                                                Column {
-                                                    Text(stringResource(Res.string.add_attachment))
-                                                    /*
-                                                    if (!detailsState.isAttachmentSupportEnabled())
-                                                        Text(
-                                                            text = stringResource(Res.string.attachment_not_supported_by_server),
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.error
-                                                        )
-
-                                                     */
-                                                }
-                                            },
+                                            text = { Text(stringResource(Res.string.add_attachment)) },
                                             leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
-                                            //enabled = detailsState.isAttachmentSupportEnabled(),
                                             onClick = {
                                                 onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_ATTACHMENT))
                                                 fabMoreExpanded = false
                                             },
                                         )
 
-                                        if (getPlatform().platform in listOf(
-                                                Platforms.IOS,
-                                                Platforms.ANDROID
-                                            ) //&& detailsState.isAttachmentSupportEnabled()
-                                        ) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.link_file_by_url)) },
+                                            leadingIcon = { Icon(Icons.Outlined.DatasetLinked, stringResource(Res.string.link_file_by_url)) },
+                                            onClick = {
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_ATTACHMENT_URL))
+                                                fabMoreExpanded = false
+                                            },
+                                        )
+
+                                        if (getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID)) {
                                             DropdownMenuItem(
                                                 text = { Text(stringResource(Res.string.add_photo)) },
                                                 leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
-                                                //enabled = detailsState.isAttachmentSupportEnabled(),
                                                 onClick = {
                                                     onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_PHOTO))
                                                     fabMoreExpanded = false
@@ -357,17 +349,15 @@ fun ListScreenRoot(
                                             )
                                         }
 
-                                        //if (detailsState.isAttachmentSupportEnabled()) {
-                                            DropdownMenuItem(
-                                                text = { Text(stringResource(Res.string.add_from_gallery)) },
-                                                leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
-                                                //enabled = detailsState.isAttachmentSupportEnabled(),
-                                                onClick = {
-                                                    onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_FROM_GALLERY))
-                                                    fabMoreExpanded = false
-                                                },
-                                            )
-                                        //}
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.add_from_gallery)) },
+                                            leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
+                                            onClick = {
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_FROM_GALLERY))
+                                                fabMoreExpanded = false
+                                            },
+                                        )
+
 
                                         DropdownMenuItem(
                                             text = { Text(stringResource(Res.string.add_drawing)) },

@@ -173,6 +173,7 @@ class DetailsViewModel(
                     DetailsInitialAction.ADD_FROM_GALLERY -> AttachmentPickerAction.GALLERY
                     else -> null
                 },
+                showSheetOrDialog = if(initialAction == DetailsInitialAction.ADD_ATTACHMENT_URL) DetailsSheetOrDialog.ADD_ATTACHMENT_URL else null,
                 navigateUp = false
             ) }
 

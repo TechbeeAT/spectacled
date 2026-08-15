@@ -43,8 +43,8 @@ class CalendarTest {
 
     @Test
     fun attachmentSyncSupportedRequiresCollectionUrl() {
-        assertFalse(base.copy(attachmentCollectionUrl = null).isAttachmentSyncSupported())
-        assertTrue(base.copy(attachmentCollectionUrl = Url("https://example.com/attachments/")).isAttachmentSyncSupported())
+        assertFalse(base.copy(attachmentCollectionUrl = null).isManagedAttachmentSyncSupported())
+        assertTrue(base.copy(attachmentCollectionUrl = Url("https://example.com/attachments/")).isManagedAttachmentSyncSupported())
     }
 
     @Test

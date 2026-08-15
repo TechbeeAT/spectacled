@@ -22,9 +22,9 @@ import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.AddTask
 import androidx.compose.material.icons.outlined.Attachment
+import androidx.compose.material.icons.outlined.DatasetLinked
 import androidx.compose.material.icons.outlined.Gesture
 import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PhotoCamera
@@ -97,11 +97,10 @@ import spectacled.shared.generated.resources.add_from_gallery
 import spectacled.shared.generated.resources.add_photo
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_url
-import spectacled.shared.generated.resources.link_file_by_url
-import spectacled.shared.generated.resources.attachment_not_supported_by_server
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.done
+import spectacled.shared.generated.resources.link_file_by_url
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.restore
 import spectacled.shared.generated.resources.subtask
@@ -423,34 +422,27 @@ fun DetailsScreenRoot(
 
 
                                     DropdownMenuItem(
-                                        text = {
-                                            Column {
-                                                Text(stringResource(Res.string.add_attachment))
-                                                if (!detailsState.isAttachmentSupportEnabled())
-                                                    Text(
-                                                        text = stringResource(Res.string.attachment_not_supported_by_server),
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
-                                            }
-                                        },
+                                        text = { Text(stringResource(Res.string.add_attachment)) },
                                         leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
-                                        enabled = detailsState.isAttachmentSupportEnabled(),
                                         onClick = {
                                             detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.FILE))
                                             addMoreExpanded = false
                                         },
                                     )
 
-                                    if (getPlatform().platform in listOf(
-                                            Platforms.IOS,
-                                            Platforms.ANDROID
-                                        ) && detailsState.isAttachmentSupportEnabled()
-                                    ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.link_file_by_url)) },
+                                        leadingIcon = { Icon(Icons.Outlined.DatasetLinked, stringResource(Res.string.link_file_by_url)) },
+                                        onClick = {
+                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.ADD_ATTACHMENT_URL))
+                                            addMoreExpanded = false
+                                        },
+                                    )
+
+                                    if (getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID)) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(Res.string.add_photo)) },
                                             leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
-                                            enabled = detailsState.isAttachmentSupportEnabled(),
                                             onClick = {
                                                 detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.PHOTO))
                                                 addMoreExpanded = false
@@ -458,34 +450,20 @@ fun DetailsScreenRoot(
                                         )
                                     }
 
-                                    if (detailsState.isAttachmentSupportEnabled()) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_from_gallery)) },
-                                            leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
-                                            enabled = detailsState.isAttachmentSupportEnabled(),
-                                            onClick = {
-                                                detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.GALLERY))
-                                                addMoreExpanded = false
-                                            },
-                                        )
-                                    }
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.add_from_gallery)) },
+                                        leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
+                                        onClick = {
+                                            detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.GALLERY))
+                                            addMoreExpanded = false
+                                        },
+                                    )
 
                                     DropdownMenuItem(
                                         text = { Text(stringResource(Res.string.add_drawing)) },
                                         leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
                                         onClick = {
                                             detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    // Linked (remote-URL) attachment: pure text in the iCalendar object,
-                                    // so it works on any server and is NOT gated by managed-attachment support.
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.link_file_by_url)) },
-                                        leadingIcon = { Icon(Icons.Outlined.Link, stringResource(Res.string.link_file_by_url)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.ADD_ATTACHMENT_URL))
                                             addMoreExpanded = false
                                         },
                                     )
