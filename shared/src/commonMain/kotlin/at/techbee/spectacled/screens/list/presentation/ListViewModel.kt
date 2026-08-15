@@ -98,15 +98,33 @@ class ListViewModel(
             launch { observeIcalentries(calendarId) }
             launch { observeColors() }
             launch { observeCategories() }
+
+            launch { observeAiProvider() }
             launch { observeClaudeApiKey() }
+            launch { observeOpenAiBaseUrl() }
+
             launch { loadAllCollections() }
         }
+    }
+
+    private suspend fun observeAiProvider() {
+        userAppPreferencesStore.getAiProviderAsFlow()
+            .collect { aiProvider ->
+                _state.update { it.copy(aiProvider = aiProvider) }
+            }
     }
 
     private suspend fun observeClaudeApiKey() {
         userAppPreferencesStore.getClaudeUserApiKeyAsFlow()
             .collect { apiKey ->
                 _state.update { it.copy(claudeApiKeyPresent = !apiKey.isNullOrEmpty()) }
+            }
+    }
+
+    private suspend fun observeOpenAiBaseUrl() {
+        userAppPreferencesStore.getOpenAiBaseUrlAsFlow()
+            .collect { openAiBaseUrl ->
+                _state.update { it.copy(openAiBaseUrlPresent = !openAiBaseUrl.isNullOrEmpty()) }
             }
     }
 
@@ -281,6 +299,18 @@ class ListViewModel(
                     return
                 }
                 OpenAiCompatibleDataSource(client, baseUrl, model, userAppPreferencesStore.openAiApiKey)
+            }
+
+            AiProvider.NONE -> object: AiDeriveEntriesDataSource {
+                override suspend fun deriveEntries(
+                    rawText: String,
+                    variant: SpectacledVariant,
+                    createSubtasks: Boolean,
+                    existingCategories: List<String>
+                ) =  AiDeriveEntriesResult.Failed(
+                        message = "No AI provider selected.",
+                        details = "Please select an AI provider in the settings."
+                    )
             }
         }
 

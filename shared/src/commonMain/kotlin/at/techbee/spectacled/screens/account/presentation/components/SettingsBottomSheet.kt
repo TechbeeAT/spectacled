@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.Colorize
 import androidx.compose.material.icons.outlined.FontDownload
@@ -66,13 +67,13 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.advanced
 import spectacled.shared.generated.resources.ai_provider
-import spectacled.shared.generated.resources.ai_provider_claude
-import spectacled.shared.generated.resources.ai_provider_openai
 import spectacled.shared.generated.resources.anthropic_api_key
 import spectacled.shared.generated.resources.anthropic_api_key_info
 import spectacled.shared.generated.resources.close
 import spectacled.shared.generated.resources.get_an_api_key
-import spectacled.shared.generated.resources.ic_cognition
+import spectacled.shared.generated.resources.ic_ai_model
+import spectacled.shared.generated.resources.ic_ai_server
+import spectacled.shared.generated.resources.ic_passkey
 import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.openai_api_key
 import spectacled.shared.generated.resources.openai_base_url
@@ -315,12 +316,7 @@ fun SettingsBottomSheet(
                             text = stringResource(Res.string.ai_provider),
                             style = MaterialTheme.typography.labelSmall
                         )
-                        Text(
-                            when (aiProvider) {
-                                AiProvider.CLAUDE -> stringResource(Res.string.ai_provider_claude)
-                                AiProvider.OPENAI_COMPATIBLE -> stringResource(Res.string.ai_provider_openai)
-                            }
-                        )
+                        Text(stringResource(aiProvider.providerNameRes))
                     }
 
                     DropdownMenu(
@@ -329,14 +325,7 @@ fun SettingsBottomSheet(
                     ) {
                         AiProvider.entries.forEach { provider ->
                             DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        when (provider) {
-                                            AiProvider.CLAUDE -> stringResource(Res.string.ai_provider_claude)
-                                            AiProvider.OPENAI_COMPATIBLE -> stringResource(Res.string.ai_provider_openai)
-                                        }
-                                    )
-                                },
+                                text = { Text(stringResource(provider.providerNameRes)) },
                                 onClick = {
                                     userAppPreferencesStore.aiProvider = provider
                                     aiProviderDropdownExpanded = false
@@ -345,46 +334,50 @@ fun SettingsBottomSheet(
                         }
                     }
                 },
-                leadingIcon = { Icon(painterResource(Res.drawable.ic_cognition), null) },
+                leadingIcon = { Icon(Icons.Outlined.AutoAwesome, null) },
                 trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
                 modifier = Modifier.widthIn(min = 350.dp)
             )
 
             AnimatedVisibility(aiProvider == AiProvider.CLAUDE) {
-            OutlinedSecureTextField(
-                state = claudeUserApiKeyState,
-                label = { Text(stringResource(Res.string.anthropic_api_key)) },
-                textObfuscationMode = if (isClaudeUserApiKeyVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
-                leadingIcon = { Icon(painterResource(Res.drawable.ic_cognition), null) },
-                trailingIcon = {
-                    IconButton(onClick = { isClaudeUserApiKeyVisible = !isClaudeUserApiKeyVisible }) {
-                        Crossfade(isClaudeUserApiKeyVisible) { visible ->
-                            if (visible) Icon(
-                                Icons.Outlined.Visibility,
-                                contentDescription = stringResource(Res.string.show_hide_password)
-                            ) else Icon(
-                                Icons.Outlined.VisibilityOff,
-                                contentDescription = stringResource(Res.string.show_hide_password)
+                OutlinedSecureTextField(
+                    state = claudeUserApiKeyState,
+                    label = { Text(stringResource(Res.string.anthropic_api_key)) },
+                    textObfuscationMode = if (isClaudeUserApiKeyVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
+                    leadingIcon = { Icon(
+                        painter = painterResource(Res.drawable.ic_passkey),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    ) },
+                    trailingIcon = {
+                        IconButton(onClick = { isClaudeUserApiKeyVisible = !isClaudeUserApiKeyVisible }) {
+                            Crossfade(isClaudeUserApiKeyVisible) { visible ->
+                                if (visible) Icon(
+                                    Icons.Outlined.Visibility,
+                                    contentDescription = stringResource(Res.string.show_hide_password)
+                                ) else Icon(
+                                    Icons.Outlined.VisibilityOff,
+                                    contentDescription = stringResource(Res.string.show_hide_password)
+                                )
+                            }
+                        }
+                    },
+                    supportingText = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(Res.string.anthropic_api_key_info),
+                                modifier = Modifier.weight(1f)
                             )
-                        }
-                    }
-                },
-                supportingText = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = stringResource(Res.string.anthropic_api_key_info),
-                            modifier = Modifier.weight(1f)
-                        )
-                        TextButton(
-                            onClick = { uriHandler.openUri("https://console.anthropic.com/settings/keys") }   // TODO: Replace with affiliate-link?
-                        ) {
-                            Text(stringResource(Res.string.get_an_api_key))
-                        }
+                            TextButton(
+                                onClick = { uriHandler.openUri("https://console.anthropic.com/settings/keys") }   // TODO: Replace with affiliate-link?
+                            ) {
+                                Text(stringResource(Res.string.get_an_api_key))
+                            }
 
-                    }
-                },
-                modifier = Modifier.widthIn(min = 350.dp)
-            )
+                        }
+                    },
+                    modifier = Modifier.widthIn(min = 350.dp)
+                )
             }
 
             AnimatedVisibility(aiProvider == AiProvider.OPENAI_COMPATIBLE) {
@@ -393,8 +386,12 @@ fun SettingsBottomSheet(
                         value = openAiBaseUrl ?: "",
                         onValueChange = { userAppPreferencesStore.openAiBaseUrl = it.ifBlank { null } },
                         label = { Text(stringResource(Res.string.openai_base_url)) },
+                        leadingIcon = { Icon(
+                            painter = painterResource(Res.drawable.ic_ai_server),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        ) },
                         placeholder = { Text("http://localhost:11434") },
-                        leadingIcon = { Icon(painterResource(Res.drawable.ic_cognition), null) },
                         modifier = Modifier.widthIn(min = 350.dp)
                     )
 
@@ -402,6 +399,11 @@ fun SettingsBottomSheet(
                         value = openAiModel ?: "",
                         onValueChange = { userAppPreferencesStore.openAiModel = it.ifBlank { null } },
                         label = { Text(stringResource(Res.string.openai_model)) },
+                        leadingIcon = { Icon(
+                            painter = painterResource(Res.drawable.ic_ai_model),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        ) },
                         placeholder = { Text("llama3.2") },
                         modifier = Modifier.widthIn(min = 350.dp)
                     )
@@ -410,6 +412,11 @@ fun SettingsBottomSheet(
                         state = openAiApiKeyState,
                         label = { Text(stringResource(Res.string.openai_api_key)) },
                         textObfuscationMode = if (isOpenAiApiKeyVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
+                        leadingIcon = { Icon(
+                            painter = painterResource(Res.drawable.ic_passkey),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        ) },
                         trailingIcon = {
                             IconButton(onClick = { isOpenAiApiKeyVisible = !isOpenAiApiKeyVisible }) {
                                 Crossfade(isOpenAiApiKeyVisible) { visible ->
