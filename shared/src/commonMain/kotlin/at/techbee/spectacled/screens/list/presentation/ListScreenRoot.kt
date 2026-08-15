@@ -324,7 +324,7 @@ fun ListScreenRoot(
                                             text = { Text(stringResource(Res.string.add_attachment)) },
                                             leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
                                             onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_ATTACHMENT))
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_ATTACHMENT.name))
                                                 fabMoreExpanded = false
                                             },
                                         )
@@ -333,7 +333,7 @@ fun ListScreenRoot(
                                             text = { Text(stringResource(Res.string.link_file_by_url)) },
                                             leadingIcon = { Icon(Icons.Outlined.DatasetLinked, stringResource(Res.string.link_file_by_url)) },
                                             onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_ATTACHMENT_URL))
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_ATTACHMENT_URL.name))
                                                 fabMoreExpanded = false
                                             },
                                         )
@@ -343,7 +343,7 @@ fun ListScreenRoot(
                                                 text = { Text(stringResource(Res.string.add_photo)) },
                                                 leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
                                                 onClick = {
-                                                    onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_PHOTO))
+                                                    onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_PHOTO.name))
                                                     fabMoreExpanded = false
                                                 },
                                             )
@@ -353,7 +353,7 @@ fun ListScreenRoot(
                                             text = { Text(stringResource(Res.string.add_from_gallery)) },
                                             leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
                                             onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_FROM_GALLERY))
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_FROM_GALLERY.name))
                                                 fabMoreExpanded = false
                                             },
                                         )
@@ -363,7 +363,7 @@ fun ListScreenRoot(
                                             text = { Text(stringResource(Res.string.add_drawing)) },
                                             leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
                                             onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, initialAction = DetailsInitialAction.ADD_DRAWING))
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_DRAWING.name))
                                                 fabMoreExpanded = false
                                             },
                                         )

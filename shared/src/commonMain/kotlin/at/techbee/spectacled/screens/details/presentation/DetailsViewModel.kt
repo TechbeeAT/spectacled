@@ -146,7 +146,7 @@ class DetailsViewModel(
     fun loadNew(
         calendarId: Long? = null,
         initialDescription: String? = null,
-        initialAction: DetailsInitialAction? = null
+        detailsInitialAction: String? = null    // name of enum value of [DetailsInitialAction]
         ) {
 
         viewModelScope.launch {
@@ -166,14 +166,14 @@ class DetailsViewModel(
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
-                showDrawingCanvasBottomSheet = if(initialAction == DetailsInitialAction.ADD_DRAWING) DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null) else DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
-                launchPickerAction = when (initialAction) {
-                    DetailsInitialAction.ADD_ATTACHMENT -> AttachmentPickerAction.FILE
-                    DetailsInitialAction.ADD_PHOTO -> AttachmentPickerAction.PHOTO
-                    DetailsInitialAction.ADD_FROM_GALLERY -> AttachmentPickerAction.GALLERY
+                showDrawingCanvasBottomSheet = if(detailsInitialAction == DetailsInitialAction.ADD_DRAWING.name) DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null) else DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
+                launchPickerAction = when (detailsInitialAction) {
+                    DetailsInitialAction.ADD_ATTACHMENT.name -> AttachmentPickerAction.FILE
+                    DetailsInitialAction.ADD_PHOTO.name -> AttachmentPickerAction.PHOTO
+                    DetailsInitialAction.ADD_FROM_GALLERY.name -> AttachmentPickerAction.GALLERY
                     else -> null
                 },
-                showSheetOrDialog = if(initialAction == DetailsInitialAction.ADD_ATTACHMENT_URL) DetailsSheetOrDialog.ADD_ATTACHMENT_URL else null,
+                showSheetOrDialog = if(detailsInitialAction == DetailsInitialAction.ADD_ATTACHMENT_URL.name) DetailsSheetOrDialog.ADD_ATTACHMENT_URL else null,
                 navigateUp = false
             ) }
 
