@@ -14,8 +14,6 @@ import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
-import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
-import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Attachment
@@ -332,7 +330,6 @@ class DetailsViewModel(
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
             is DetailsAction.OnNavigateToIcalEntryId -> { _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
-            DetailsAction.OnProcessWithAI -> { onProcessWithAI() }
             is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
             is DetailsAction.OnAddUrlAttachment -> { onAddUrlAttachment(action.url) }
@@ -727,61 +724,6 @@ class DetailsViewModel(
 
         viewModelScope.launch {
             icalEntryRepository.updateOrderNo(sortedList)
-        }
-    }
-
-    private fun onProcessWithAI() {
-
-        if(!state.value.allowEditing())
-            return
-
-        if(state.value.claudeUserApiKey.isNullOrEmpty()) {
-            _state.update {
-                it.copy(
-                    isLoading = false,
-                    snackbarText = "API key not provided. Please update the API key in the settings."
-                )
-            }
-            return
-        }
-
-        _state.update { it.copy(isLoading = true) }
-
-        // Claude API network call — keep it off the Main dispatcher.
-        viewModelScope.launch(ioDispatcher) {
-
-            val remoteResult = KtorRemoteClaudeDataSource(client, state.value.claudeUserApiKey?:"").applyAiMetadata(_state.value.icalEntry)
-
-            when(remoteResult) {
-                is ClaudeRemoteResponseResult.Failed -> {
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            snackbarText = remoteResult.message + if(!remoteResult.details.isNullOrBlank()) "(${remoteResult.details})" else ""
-                        )
-                    }
-                }
-                is ClaudeRemoteResponseResult.Success -> {
-
-                    val processedEntry = remoteResult.icalEntry
-                    val currentEntry = _state.value.icalEntry
-
-                    _state.update {
-                        it.copy(
-                            icalEntry = currentEntry.copy(
-                                summary = currentEntry.summary ?: processedEntry.summary,
-                                //description = processedEntry.description,
-                                dtStart = if(currentEntry.dtStart == null && currentEntry.isTask()) processedEntry.dtStart else currentEntry.dtStart ,
-                                due = if(currentEntry.due == null && currentEntry.isTask()) processedEntry.due else currentEntry.due ,
-                                categories = currentEntry.categories.plus(processedEntry.categories).distinct(),
-                                lastModified = IcsDateTime.now(),
-                                syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
-                            ),
-                            isLoading = false
-                        )
-                    }
-                }
-            }
         }
     }
 

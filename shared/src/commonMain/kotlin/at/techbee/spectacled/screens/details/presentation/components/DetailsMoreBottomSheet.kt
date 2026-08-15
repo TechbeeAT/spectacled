@@ -39,18 +39,14 @@ import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import at.techbee.spectacled.screens.details.presentation.DetailsSheetOrDialog
 import at.techbee.spectacled.theme.AppTheme
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.ai_extract_claude
-import spectacled.shared.generated.resources.ai_extract_no_api_key
 import spectacled.shared.generated.resources.copied_to_clipboard
 import spectacled.shared.generated.resources.copy_to_clipboard
 import spectacled.shared.generated.resources.create_copy
 import spectacled.shared.generated.resources.created
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.done
-import spectacled.shared.generated.resources.ic_cognition
 import spectacled.shared.generated.resources.last_modified
 import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.send_as_email
@@ -168,35 +164,6 @@ fun DetailsMoreBottomSheet(
                     }
                     onAction(DetailsAction.OnUpdateSnackbar(copiedToClipboardText))
                 },
-                colors = MenuDefaults.itemColors().copy(
-                    textColor = MaterialTheme.colorScheme.primary,
-                    leadingIconColor = MaterialTheme.colorScheme.primary
-                )
-            )
-
-            DropdownMenuItem(
-                leadingIcon = {
-                    Icon(
-                        painterResource(Res.drawable.ic_cognition),
-                        stringResource(Res.string.ai_extract_claude)
-                    )
-                },
-                text = {
-                    Column {
-                        Text(stringResource(Res.string.ai_extract_claude))
-                        if(!claudeUserApiKeyProvided)
-                            Text(
-                                text = stringResource(Res.string.ai_extract_no_api_key),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error
-                                )
-                    }
-
-                       },
-                onClick = {
-                    onAction(DetailsAction.OnProcessWithAI)
-                },
-                enabled = canWriteContent && claudeUserApiKeyProvided,
                 colors = MenuDefaults.itemColors().copy(
                     textColor = MaterialTheme.colorScheme.primary,
                     leadingIconColor = MaterialTheme.colorScheme.primary

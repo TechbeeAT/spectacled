@@ -34,74 +34,6 @@ class KtorRemoteClaudeDataSource(
     val claudeUserApiKey: String
 ) {
 
-    suspend fun applyAiMetadata(icalEntry: IcalEntry): ClaudeRemoteResponseResult {
-
-        val dtStartPromptPart = if (icalEntry.isJournal()) {
-            """
-                "dtstart": "The date or datetime of the journal entry RFC-5545 compliant if mentioned, otherwise null", 
-                """
-        } else if (icalEntry.isTask()) {
-            """
-                "dtstart": "The start date or start datetime of the task entry RFC-5545 compliant if mentioned, otherwise null. Make sure that the dtstart and due date/datetime have the same format, date or datetime.", 
-                """
-        } else
-            ""
-
-        val duePromptPart = if (icalEntry.isTask()) {
-            """
-                "due": "The due date or datetime of the task entry RFC-5545 compliant if mentioned, otherwise null. Make sure that the dtstart and due date/datetime have the same format, date or datetime.", 
-                """
-        } else
-            ""
-
-        val prompt = """
-        You are a structured data extractor. The user will give you a free-text journal entry.
-        Extract the following fields and return ONLY valid JSON, no markdown, no explanation:
-        
-        {
-          "summary": "A short one-line title for the entry",
-          "description": "The full cleaned-up text of the entry",
-          $dtStartPromptPart
-          $duePromptPart
-          "location": "Physical location if mentioned, otherwise null",
-          "categories": ["list", "of", "topic", "tags"]
-        }
-        
-        Now is ${formatIcsDateTime(IcsDateTime.now())!!.first}
-                
-        Raw text:
-        ${icalEntry.summary}
-        ${icalEntry.description}
-    """.trimIndent()
-
-        try {
-            val response = client.post(ANTHROPIC_BASE_URL) {
-                contentType(ContentType.Application.Json)
-                header("x-api-key", claudeUserApiKey)
-                header("anthropic-version", "2023-06-01")
-                setBody(buildJsonObject {
-                    put("model", "claude-sonnet-4-6")
-                    put("max_tokens", 1000)
-                    putJsonArray("messages") {
-                        addJsonObject {
-                            put("role", "user")
-                            put("content", prompt)
-                        }
-                    }
-                })
-            }.body<ClaudeResponseDto>()
-
-            return ClaudeRemoteResponseResult.Success(response.applyClaudeResponse(icalEntry))
-
-        } catch (e: Exception) {
-            Napier.e("AI metadata request failed", e)
-            return ClaudeRemoteResponseResult.Failed(
-                message = "Fetching AI response failed",
-                details = e.message
-            )
-        }
-    }
-
     /**
      * Derives a list of entries with subtasks from free [rawText]. Returns the parsed,
      * transport-agnostic DTOs; mapping to [IcalEntry] + persistence is the caller's job (it owns the
@@ -114,8 +46,7 @@ class KtorRemoteClaudeDataSource(
      * [existingCategories] are the categories already used in the system; the model is asked to
      * prefer reusing them over inventing near-duplicates.
      *
-     * Reliability note: this uses the same "ask for JSON, then parse" approach as [applyAiMetadata]
-     * for consistency with the existing integration. Because the shape is recursive it cannot use
+     * Reliability note: Because the shape is recursive it cannot use
      * structured outputs (their JSON schemas can't be recursive); keep this prompt-based path if you
      * want nested subtasks.
      */
