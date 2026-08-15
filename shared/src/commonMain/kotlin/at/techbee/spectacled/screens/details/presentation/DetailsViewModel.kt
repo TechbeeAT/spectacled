@@ -20,7 +20,9 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
+import at.techbee.spectacled.screens.core.domain.INLINE_ATTACHMENT_WARN_BYTES
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.MAX_INLINE_ATTACHMENT_BYTES
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -50,6 +52,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.attachment_large_warning
+import spectacled.shared.generated.resources.attachment_too_large
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.entry_copy
@@ -783,11 +787,28 @@ class DetailsViewModel(
         loadNew(calendarId, state.value.icalEntry.description)
     }
 
+    // Attachments default to inline: the bytes are embedded (BASE64) in the iCalendar object, so
+    // they sync to any CalDAV server without needing server-side attachment support. Because the
+    // whole object is re-uploaded on every edit — and servers cap object size — oversized files are
+    // guarded against (see MAX_INLINE_ATTACHMENT_BYTES / INLINE_ATTACHMENT_WARN_BYTES).
     @OptIn(ExperimentalTime::class)
-    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
+    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = true) {
 
         if(!state.value.allowEditing())
             return
+
+        // Reject files too large to safely embed inline, before touching the disk.
+        if (isInline && bytes.size > MAX_INLINE_ATTACHMENT_BYTES) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(snackbarText = getString(
+                        Res.string.attachment_too_large,
+                        (MAX_INLINE_ATTACHMENT_BYTES / (1024 * 1024)).toInt()
+                    ))
+                }
+            }
+            return
+        }
 
         // Writes the attachment bytes to disk — keep the file I/O off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
@@ -804,13 +825,17 @@ class DetailsViewModel(
                 syncState = AttachmentSyncState.LOCAL_MODIFIED
             )
 
+            val largeWarning = if (isInline && bytes.size > INLINE_ATTACHMENT_WARN_BYTES)
+                getString(Res.string.attachment_large_warning) else null
+
             _state.update {
                 it.copy(
                     icalEntry = it.icalEntry.copy(
                         attachments = it.icalEntry.attachments + newAttachment,
                         lastModified = IcsDateTime.now(),
                         syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
-                    )
+                    ),
+                    snackbarText = largeWarning ?: it.snackbarText
                 )
             }
         }
