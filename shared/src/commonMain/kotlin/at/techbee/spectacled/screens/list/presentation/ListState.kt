@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.Credentials
+import at.techbee.spectacled.screens.core.data.ai.AiProvider
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
@@ -68,8 +69,9 @@ data class ListState(
     val showUpdateCategoryOfSelectedBottomSheet: Boolean = false,
     val showDateSelectorBottomSheet: Boolean = false,
 
-    // AI "derive entries from text" feature
+    val aiProvider: AiProvider = AiProvider.NONE,
     val claudeApiKeyPresent: Boolean = false,
+    val openAiBaseUrlPresent: Boolean = false,
     val showDeriveEntriesBottomSheet: Boolean = false,
     val isDerivingEntries: Boolean = false,
 
@@ -89,6 +91,10 @@ data class ListState(
 
     val isSearchBarExpanded: Boolean
         get() = listFilterCriteria.anyFilterActive()
+
+    val isAiProviderConfigured: Boolean
+        get() = (aiProvider == AiProvider.CLAUDE && claudeApiKeyPresent)
+                || (aiProvider == AiProvider.OPENAI_COMPATIBLE && openAiBaseUrlPresent)
 
     fun recompute(): ListState {
         val baseList = getBaseList(icalEntries)

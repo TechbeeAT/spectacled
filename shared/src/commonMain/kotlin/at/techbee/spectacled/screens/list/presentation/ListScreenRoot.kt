@@ -55,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.Route
@@ -86,6 +87,7 @@ import spectacled.shared.generated.resources.add_drawing
 import spectacled.shared.generated.resources.add_from_gallery
 import spectacled.shared.generated.resources.add_photo
 import spectacled.shared.generated.resources.ai_create_entries
+import spectacled.shared.generated.resources.ai_provider_not_configured
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.link_file_by_url
 import spectacled.shared.generated.resources.more
@@ -311,9 +313,19 @@ fun ListScreenRoot(
                                         // AI "create entries from text" - only when an Anthropic key is set and the
                                         // collection is writable.
                                         DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.ai_create_entries)) },
+                                            text = {
+                                                Column {
+                                                    Text(stringResource(Res.string.ai_create_entries))
+                                                    if (!state.isAiProviderConfigured)
+                                                        Text(
+                                                            text = stringResource(Res.string.ai_provider_not_configured),
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontStyle = FontStyle.Italic
+                                                        )
+                                                }
+                                            },
                                             leadingIcon = { Icon(Icons.Outlined.AutoAwesome, stringResource(Res.string.ai_create_entries)) },
-                                            enabled = state.claudeApiKeyPresent,
+                                            enabled = state.isAiProviderConfigured,
                                             onClick = {
                                                 listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(true))
                                                 fabMoreExpanded = false
