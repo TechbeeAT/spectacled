@@ -160,7 +160,7 @@ class ListViewModel(
 
                 dragAndDropList.apply {
                     clear()
-                    addAll(_state.value.displayMap.flatMap { it.value })
+                    addAll(_state.value.displayedEntries)
                     sortBy { icalEntry -> icalEntry.orderNo }
                 }
             }
@@ -238,7 +238,7 @@ class ListViewModel(
             }
             is ListAction.OnUpdateColorOfSelected -> { onUpdateColorOfSelectedItems(action.color) }
             // Recurring entries are read-only, so "select all" skips them - they can never enter a selection.
-            ListAction.OnSelectAllMultiselectItems -> { _state.update { it.copy(multiselectItems = it.displayMap.flatMap { map -> map.value }.filterNot { icalEntry -> icalEntry.isRecurring() }.map { icalEntry -> icalEntry.id }) } }
+            ListAction.OnSelectAllMultiselectItems -> { _state.update { it.copy(multiselectItems = it.displayedEntries.filterNot { icalEntry -> icalEntry.isRecurring() }.map { icalEntry -> icalEntry.id }) } }
             is ListAction.OnDraggingIcalEntry -> { _state.update { it.copy(draggingIcalEntryId = action.icalEntryId) } }
             is ListAction.OnShowUpdateCategoryOfSelectedBottomSheet -> {
                 _state.update {
