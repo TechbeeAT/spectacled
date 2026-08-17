@@ -280,10 +280,12 @@ data class ListState(
             .groupBy { ListGrouping.getGrouping(groups, dateSelector(it)) }
             .mapNotNull { (grouping, groupEntries) ->
                 // null grouping is routed to the no-criteria section, so it never reaches here.
-                val g = grouping ?: return@mapNotNull null
+                if (grouping == null)
+                    return@mapNotNull null
+
                 ListSection(
-                    key = g.name,
-                    header = g.stringRes?.let { ListSectionHeader.Res(it, g.stringResParam) },
+                    key = grouping.name,
+                    header = grouping.stringRes?.let { ListSectionHeader.Res(it, grouping.stringResParam) },
                     entries = groupEntries,
                     kind = ListSection.Kind.GROUPED
                 )

@@ -12,7 +12,7 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListSectio
 
 /**
  * [LazyVerticalStaggeredGrid] counterpart of [listSections] for the notes list. Headers span the
- * full line and collapse via [ListGroupHeader]; the trashbin section is dimmed. Only the per-entry
+ * full line and collapse via [ListSectionHeader]; the trashbin section is dimmed. Only the per-entry
  * content differs between screens, so it is supplied via [itemContent].
  *
  * @param itemContent renders one entry; receives its section and its index within that section so
@@ -31,7 +31,7 @@ fun LazyStaggeredGridScope.listSections(
 
         section.header?.let { header ->
             item(span = StaggeredGridItemSpan.FullLine, key = "header_${section.key}") {
-                ListGroupHeader(
+                ListSectionHeader(
                     appPreferencesTag = section.key,
                     headerText = header.resolveText(),
                     isCollapsed = collapsed,

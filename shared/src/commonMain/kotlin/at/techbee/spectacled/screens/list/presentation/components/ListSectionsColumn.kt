@@ -15,7 +15,7 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListSectio
 /**
  * Renders the shared list skeleton (headers, collapse handling, trashbin dimming) for a [LazyColumn]
  * from a pre-built [sections] list. Journals month headers ([ListSectionHeader.Month]) render as
- * sticky [MonthHeader]s; every other header renders as a collapsible [ListGroupHeader]. Only the
+ * sticky [MonthHeader]s; every other header renders as a collapsible [ListSectionHeader]. Only the
  * per-entry content differs between screens, so it is supplied via [itemContent].
  *
  * @param itemContent renders one entry; receives its section and its index within that section so
@@ -38,7 +38,7 @@ fun LazyListScope.listSections(
             }
             null -> {} // header-less section (e.g. sorted by summary)
             else -> item(key = "header_${section.key}") {
-                ListGroupHeader(
+                ListSectionHeader(
                     appPreferencesTag = section.key,
                     headerText = header.resolveText(),
                     isCollapsed = collapsed,

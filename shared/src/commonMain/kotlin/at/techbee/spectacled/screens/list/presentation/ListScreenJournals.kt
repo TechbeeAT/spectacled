@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun JournalsListJournals(
+fun ListScreenJournals(
     state: ListState,
     onAction: (ListAction) -> Unit,
     modifier: Modifier = Modifier
@@ -194,7 +194,7 @@ fun JournalsListJournals(
 
 @Preview
 @Composable
-private fun JournalsListJournals_Preview() {
+private fun ListScreenJournals_Preview() {
 
     var state = ListState()
     state = state.copy(
@@ -203,7 +203,7 @@ private fun JournalsListJournals_Preview() {
         icalEntries = listOf(IcalEntry.getSampleJournal(), IcalEntry.getSampleJournal())
     )
 
-    JournalsListJournals(
+    ListScreenJournals(
         state = state,
         onAction = {}
     )
@@ -211,7 +211,7 @@ private fun JournalsListJournals_Preview() {
 
 @Preview
 @Composable
-private fun JournalsListJournals_Search_Preview() {
+private fun ListScreenJournals_Search_Preview() {
 
     var state = ListState()
     state = state.copy(
@@ -219,7 +219,7 @@ private fun JournalsListJournals_Search_Preview() {
         icalEntries = listOf(IcalEntry.getSampleIcalEntry(), IcalEntry.getSampleIcalEntry())
     )
 
-    JournalsListJournals(
+    ListScreenJournals(
         state = state,
         onAction = {}
     )
@@ -227,9 +227,9 @@ private fun JournalsListJournals_Search_Preview() {
 
 @Preview
 @Composable
-private fun JournalsListJournals_empty_Preview() {
+private fun ListScreenJournals_empty_Preview() {
 
-    JournalsListJournals(
+    ListScreenJournals(
         state = ListState(),
         onAction = {}
     )
