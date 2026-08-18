@@ -122,20 +122,18 @@ data class ListState(
         val filteredList = getFilteredList(baseList)
         val sortedList = getSortedList(filteredList)
 
-        val trashbinList = getSortedList(icalEntries.filter { it.syncState.isDeletedState() })
-
         return this.copy(
-            sections = buildSections(sortedList, trashbinList),
+            sections = buildSections(sortedList),
             subtasks = getSubtasksLogic(icalEntries)
         )
     }
 
 
-    private fun getBaseList(icalEntries: List<IcalEntry>, trashbin: Boolean = false) =
+    private fun getBaseList(icalEntries: List<IcalEntry>) =
         icalEntries
             .filter { when(spectacledVariant) {
-                SpectacledVariant.JOURNALS, SpectacledVariant.NOTES -> (it.isJournal() || it.isNote()) && it.syncState.isDeletedState() == trashbin
-                SpectacledVariant.TASKS -> it.isTask() && it.syncState.isDeletedState() == trashbin && it.parentUid == null
+                SpectacledVariant.JOURNALS, SpectacledVariant.NOTES -> (it.isJournal() || it.isNote())
+                SpectacledVariant.TASKS -> it.isTask() && it.parentUid == null
         } }
 
     private fun getSubtasksLogic(icalEntries: List<IcalEntry>) =
@@ -208,12 +206,11 @@ data class ListState(
     /**
      * Assembles the ordered section list every list screen renders from:
      * pinned -> grouped-by-selection -> no-criteria -> trashbin.
-     *
-     * @param entries  the already filtered + sorted, non-deleted base list
-     * @param trashbin the sorted, locally-deleted entries
+     * @param entries  the already filtered + sorted
      */
-    private fun buildSections(entries: List<IcalEntry>, trashbin: List<IcalEntry>): List<ListSection> {
-        val (pinned, rest) = entries.partition { it.isPinned() }
+    private fun buildSections(entries: List<IcalEntry>): List<ListSection> {
+        val (trashbin, notTrashbin) = entries.partition { it.syncState.isDeletedState() }
+        val (pinned, rest) = notTrashbin.partition { it.isPinned() }
         val (noCriteria, grouped) = rest.partition { it.isNoCriteria() }
 
         return buildList {
@@ -233,7 +230,8 @@ data class ListState(
                     key = LIST_COLLAPSED_GROUP_NO_CRITERIA,
                     header = ListSectionHeader.Res(noCriteriaHeaderRes()),
                     entries = noCriteria,
-                    kind = ListSection.Kind.NO_CRITERIA
+                    kind = ListSection.Kind.NO_CRITERIA,
+                    dimmed = true
                 )
             )
 
@@ -258,10 +256,10 @@ data class ListState(
             return monthSections(entries)
 
         return when (listSortedBy) {
-            ListSortedBy.CREATED -> bucketSections(entries, ListGrouping.createdGroups) { it.created }
-            ListSortedBy.LAST_MODIFIED -> bucketSections(entries, ListGrouping.lastModifiedGroups) { it.lastModified ?: it.created }
-            ListSortedBy.START -> bucketSections(entries, ListGrouping.startGroups) { it.dtStart }
-            ListSortedBy.DUE -> bucketSections(entries, ListGrouping.dueGroups) { it.due }
+            ListSortedBy.CREATED -> datetimeBucketSections(entries, ListGrouping.createdGroups) { it.created }
+            ListSortedBy.LAST_MODIFIED -> datetimeBucketSections(entries, ListGrouping.lastModifiedGroups) { it.lastModified ?: it.created }
+            ListSortedBy.START -> datetimeBucketSections(entries, ListGrouping.startGroups) { it.dtStart }
+            ListSortedBy.DUE -> datetimeBucketSections(entries, ListGrouping.dueGroups) { it.due }
             ListSortedBy.DATE -> daySections(entries)
             // No grouping criterion: a single header-less block.
             ListSortedBy.SUMMARY, ListSortedBy.DRAGANDDROP -> listOf(
@@ -271,7 +269,7 @@ data class ListState(
     }
 
     /** Groups [entries] into [ListGrouping] date buckets, preserving the sorted encounter order. */
-    private fun bucketSections(
+    private fun datetimeBucketSections(
         entries: List<IcalEntry>,
         groups: Set<ListGrouping>,
         dateSelector: (IcalEntry) -> IcsDateTime?
