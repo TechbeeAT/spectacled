@@ -1,5 +1,6 @@
 package at.techbee.spectacled.widget
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -10,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.glance.Button
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -159,9 +161,9 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                 val mainEntries = entries[null] ?: emptyList()    // no subtasks
 
                 if (calendar == null) {
-                    WidgetEmptyState("Please select a calendar in widget settings")
+                    WidgetEmptyState("Please select a calendar in widget settings", true)
                 } else if (mainEntries.isEmpty()) {
-                    WidgetEmptyState("No entries found")
+                    WidgetEmptyState("No entries found", false)
                 } else {
                     LazyColumn(
                         modifier = GlanceModifier
@@ -214,15 +216,28 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     }
 
     @Composable
-    private fun WidgetEmptyState(message: String) {
-        Text(
-            text = message,
-            style = TextStyle(
-                color = GlanceTheme.colors.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            ),
-            modifier = GlanceModifier.padding(16.dp)
-        )
+    private fun WidgetEmptyState(message: String, showConfigureButton: Boolean) {
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = GlanceModifier.padding(16.dp)) {
+            Text(
+                text = message,
+                style = TextStyle(
+                    color = GlanceTheme.colors.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                ),
+                modifier = GlanceModifier.padding(16.dp)
+            )
+
+            if(showConfigureButton) {
+                Button(
+                    text = "Configure",
+                    modifier = GlanceModifier.padding(16.dp),
+                    onClick = actionRunCallback<OpenConfigAction>()
+                )
+            }
+        }
     }
 
     @Composable
@@ -360,5 +375,20 @@ class ToggleTaskAction : ActionCallback, KoinComponent {
     companion object {
         val EntryIdKey = ActionParameters.Key<Long>("entryId")
         val IsCheckedKey = ActionParameters.Key<Boolean>("isChecked")
+    }
+}
+
+
+class OpenConfigAction : ActionCallback {
+    override suspend fun onAction(
+        context: Context,
+        glanceId: GlanceId,
+        parameters: ActionParameters
+    ) {
+        val intent = Intent(context, SpectacledWidgetConfigActivity::class.java).apply {
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, GlanceAppWidgetManager(context).getAppWidgetId(glanceId))
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        context.startActivity(intent)
     }
 }
