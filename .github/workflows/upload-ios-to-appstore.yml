@@ -13,13 +13,16 @@ on:
 # Signing is "Automatic": with the App Store Connect API key + -allowProvisioningUpdates,
 # Xcode fetches the distribution certificate and provisioning profile automatically.
 #
-# NOTE: The .xcodeproj files pin CODE_SIGN_IDENTITY to "Apple Development" (fine for
-# local dev). For an App Store archive that must be signed for *distribution*, so we
-# override CODE_SIGN_IDENTITY=Apple Distribution on the archive command below.
-# Without this override, -allowProvisioningUpdates tries to create a Development
-# certificate on the empty CI keychain and looks for an "iOS App Development" profile,
-# which fails with "You already have a current Development certificate..." /
-# "No profiles for '...' were found".
+# The .xcodeproj files intentionally do NOT pin CODE_SIGN_IDENTITY. Under automatic
+# signing, an `xcodebuild ... archive` selects the App Store *distribution* profile on
+# its own, while regular build/run uses "Apple Development". Pinning
+# CODE_SIGN_IDENTITY = "Apple Development" (which older Xcode ignored during archive but
+# Xcode 26 honors) forced development signing here, so archive looked for an
+# "iOS App Development" profile and tried to mint a Development certificate on the empty
+# CI keychain -- failing with "You already have a current Development certificate..." /
+# "No profiles for '...' were found". Do not re-add a CODE_SIGN_IDENTITY override on the
+# xcodebuild command either: with automatic signing Xcode rejects a manually specified
+# identity ("conflicting provisioning settings").
 
 jobs:
   ios:
@@ -70,9 +73,6 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM="$TEAM_ID" \
             archive
 
       - name: Export & upload to App Store Connect
