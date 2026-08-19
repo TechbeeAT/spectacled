@@ -88,6 +88,15 @@ fun ListScreenTasks(
         }
     }
 
+    // Shared per-entry renderer for the grouped body and the trashbin (the drag branch renders its
+    // own reorderable items).
+    val taskItem: @Composable LazyItemScope.(IcalEntry, ListSection, Int) -> Unit = { icalEntry, section, _ ->
+        getTaskListItem(
+            icalEntry = icalEntry,
+            subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
+            modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier
+        )
+    }
 
     LazyColumn(
         state = lazyListState,
@@ -136,28 +145,18 @@ fun ListScreenTasks(
             listSections(
                 sections = state.sections.filter { it.kind != ListSection.Kind.TRASHBIN },
                 collapsedGroups = state.listCollapsedGroups,
-                onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
-            ) { icalEntry, section, _ ->
-                getTaskListItem(
-                    icalEntry = icalEntry,
-                    subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
-                    modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier
-                )
-            }
+                onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) },
+                itemContent = taskItem
+            )
         }
 
         // TRASHBIN (shown below both the drag-and-drop and the grouped body)
         listSections(
             sections = state.sections.filter { it.kind == ListSection.Kind.TRASHBIN },
             collapsedGroups = state.listCollapsedGroups,
-            onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
-        ) { icalEntry, section, _ ->
-            getTaskListItem(
-                icalEntry = icalEntry,
-                subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
-                modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier
-            )
-        }
+            onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) },
+            itemContent = taskItem
+        )
 
         item {
             Spacer(modifier = Modifier.height(112.dp))

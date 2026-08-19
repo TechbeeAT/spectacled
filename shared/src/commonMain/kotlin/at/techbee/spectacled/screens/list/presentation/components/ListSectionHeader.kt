@@ -68,7 +68,8 @@ fun ListSectionHeader(
     }
 }
 
-/** Resolves a [ListSectionHeader] to its displayable text (used by the flat [ListSectionHeader] path). */
+/** Resolves a header model to the text shown in the collapsible header row; month headers render via
+ *  [MonthHeader] instead and skip this. */
 @Composable
 internal fun ListSectionHeader.resolveText(): String = when (this) {
     is ListSectionHeader.Res ->

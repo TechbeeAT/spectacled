@@ -117,6 +117,17 @@ fun ListScreenNotes(
         }
     }
 
+    // Shared per-entry renderer for the grouped body and the trashbin (the drag branch renders its
+    // own reorderable items).
+    val noteItem: @Composable LazyStaggeredGridItemScope.(IcalEntry, ListSection, Int) -> Unit = { icalEntry, section, index ->
+        getNoteListItem(
+            icalEntry = icalEntry,
+            subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
+            index = index,
+            lastIndex = section.entries.lastIndex,
+            modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier
+        )
+    }
 
     LazyVerticalStaggeredGrid(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -169,32 +180,18 @@ fun ListScreenNotes(
             listSections(
                 sections = state.sections.filter { it.kind != ListSection.Kind.TRASHBIN },
                 collapsedGroups = state.listCollapsedGroups,
-                onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
-            ) { icalEntry, section, index ->
-                getNoteListItem(
-                    icalEntry = icalEntry,
-                    subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
-                    index = index,
-                    lastIndex = section.entries.lastIndex,
-                    modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier
-                )
-            }
+                onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) },
+                itemContent = noteItem
+            )
         }
 
         // TRASHBIN (shown below both the drag-and-drop and the grouped body)
         listSections(
             sections = state.sections.filter { it.kind == ListSection.Kind.TRASHBIN },
             collapsedGroups = state.listCollapsedGroups,
-            onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
-        ) { icalEntry, section, index ->
-            getNoteListItem(
-                icalEntry = icalEntry,
-                subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
-                index = index,
-                lastIndex = section.entries.lastIndex,
-                modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier
-            )
-        }
+            onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) },
+            itemContent = noteItem
+        )
 
         item(span = StaggeredGridItemSpan.FullLine) {
             Spacer(modifier = Modifier.height(112.dp))
