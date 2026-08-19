@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.list.presentation.datastructures
 
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 
 /**
@@ -35,11 +36,11 @@ data class ListSection(
 /** How a [ListSection]'s header should be rendered. */
 sealed interface ListSectionHeader {
 
-    /** A localized header, optionally formatted with [param] and with a trailing [suffix] (emoji/count). */
+    /** A localized header, optionally formatted with [param], an [iconDrawableRes] for pinned or trashbin */
     data class Res(
         val stringRes: StringResource,
         val param: Int? = null,
-        val suffix: String? = null,
+        val iconDrawableRes: DrawableResource? = null
     ) : ListSectionHeader
 
     /** A pre-formatted, non-localized header such as a day label. */

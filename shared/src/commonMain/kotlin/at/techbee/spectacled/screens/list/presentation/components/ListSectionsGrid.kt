@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListSectionHeader
 
 /**
  * [LazyVerticalStaggeredGrid] counterpart of [listSections] for the notes list. Headers span the
@@ -34,6 +35,7 @@ fun LazyStaggeredGridScope.listSections(
                 ListSectionHeader(
                     appPreferencesTag = section.key,
                     headerText = header.resolveText(),
+                    headerIcon = if(header is ListSectionHeader.Res) header.iconDrawableRes else null,
                     isCollapsed = collapsed,
                     onToggleListGroupExpanded = onToggleGroup,
                     modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier

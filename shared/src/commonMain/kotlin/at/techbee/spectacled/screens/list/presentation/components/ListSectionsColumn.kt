@@ -41,6 +41,7 @@ fun LazyListScope.listSections(
                 ListSectionHeader(
                     appPreferencesTag = section.key,
                     headerText = header.resolveText(),
+                    headerIcon = if(header is ListSectionHeader.Res) header.iconDrawableRes else null,
                     isCollapsed = collapsed,
                     onToggleListGroupExpanded = onToggleGroup,
                     modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier

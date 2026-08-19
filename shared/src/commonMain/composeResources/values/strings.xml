@@ -92,7 +92,7 @@
     <string name="grouping_no_date">No date</string>
     <string name="grouping_other">Other</string>
 
-    <string name="trashbin">Trashbin</string>
+    <string name="trashbin_x">Trashbin (%1$d)</string>
 
     <string name="search">Search…</string>
     <string name="add_journal">Add journal</string>
