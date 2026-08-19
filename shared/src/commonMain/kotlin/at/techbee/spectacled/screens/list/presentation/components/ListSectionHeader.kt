@@ -25,13 +25,14 @@ import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.formatLocalized
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListSectionHeader
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.collapse
 import spectacled.shared.generated.resources.expand
 
 @Composable
-fun ListGroupHeader(
+fun ListSectionHeader(
     appPreferencesTag: String,
     headerText: String,
     isCollapsed: Boolean,
@@ -67,10 +68,22 @@ fun ListGroupHeader(
     }
 }
 
+/** Resolves a header model to the text shown in the collapsible header row; month headers render via
+ *  [MonthHeader] instead and skip this. */
+@Composable
+internal fun ListSectionHeader.resolveText(): String = when (this) {
+    is ListSectionHeader.Res ->
+        (param?.let { stringResource(stringRes, it) } ?: stringResource(stringRes)) + (suffix ?: "")
+    is ListSectionHeader.Raw -> text
+    // Month headers render via MonthHeader, not this path; provide a sensible fallback anyway.
+    is ListSectionHeader.Month -> icsDateTime?.formatLocalized(IcsDateTimeFormat.FULL_MONTH_NAME) ?: ""
+}
+
+
 @Preview
 @Composable
-fun ListGroupHeaderTodayCollapsedPreview() {
-    ListGroupHeader(
+fun ListSectionHeaderTodayCollapsedPreview() {
+    ListSectionHeader(
         appPreferencesTag = "today",
         headerText = "Today",
         isCollapsed = true,
@@ -80,8 +93,8 @@ fun ListGroupHeaderTodayCollapsedPreview() {
 
 @Preview
 @Composable
-fun ListGroupHeaderTomorrowExpandedPreview() {
-    ListGroupHeader(
+fun ListSectionHeaderTomorrowExpandedPreview() {
+    ListSectionHeader(
         appPreferencesTag = "date",
         headerText = IcsDateTime.now().formatLocalized(IcsDateTimeFormat.DATE),
         isCollapsed = false,

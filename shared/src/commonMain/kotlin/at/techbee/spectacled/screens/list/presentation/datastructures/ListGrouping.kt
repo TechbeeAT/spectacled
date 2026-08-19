@@ -15,7 +15,6 @@ import spectacled.shared.generated.resources.grouping_start_in_30_plus_days
 import spectacled.shared.generated.resources.grouping_start_in_past
 import spectacled.shared.generated.resources.grouping_start_within_x_days
 import spectacled.shared.generated.resources.grouping_start_within_x_hours
-import spectacled.shared.generated.resources.no_date
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -141,13 +140,6 @@ enum class ListGrouping(
         null,
         Res.string.grouping_start_in_30_plus_days,
         null
-    ),
-
-    GROUP_NO_DATE(
-        null,
-        null,
-        Res.string.no_date,
-        null
     );
 
 
@@ -155,18 +147,21 @@ enum class ListGrouping(
 
         val createdGroups = setOf(GROUP_24_HOURS, GROUP_48_HOURS, GROUP_7_DAYS, GROUP_30_DAYS, GROUP_YEAR, GROUP_OLDER)
         val lastModifiedGroups = setOf(GROUP_24_HOURS, GROUP_48_HOURS, GROUP_7_DAYS, GROUP_30_DAYS, GROUP_YEAR, GROUP_OLDER)
-        val dueGroups = setOf(DUE_OVERDUE, DUE_WITHIN_24_HOURS, DUE_WITHIN_48_HOURS, DUE_WITHIN_7_DAYS, DUE_WITHIN_30_DAYS, DUE_IN_30_PLUS_DAYS, GROUP_NO_DATE)
-        val startGroups = setOf(START_IN_PAST, START_WITHIN_24_HOURS, START_WITHIN_48_HOURS, START_WITHIN_7_DAYS, START_WITHIN_30_DAYS, START_IN_30_PLUS_DAYS, GROUP_NO_DATE)
+        val dueGroups = setOf(DUE_OVERDUE, DUE_WITHIN_24_HOURS, DUE_WITHIN_48_HOURS, DUE_WITHIN_7_DAYS, DUE_WITHIN_30_DAYS, DUE_IN_30_PLUS_DAYS)
+        val startGroups = setOf(START_IN_PAST, START_WITHIN_24_HOURS, START_WITHIN_48_HOURS, START_WITHIN_7_DAYS, START_WITHIN_30_DAYS, START_IN_30_PLUS_DAYS)
 
-        fun getGrouping(baseGroups: Set<ListGrouping>, icsDateTime: IcsDateTime?): ListGrouping {
-            return if(icsDateTime == null)
-                GROUP_NO_DATE
-            else
-                 baseGroups.find { group ->
-                    val lowerIcsDateTime = IcsDateTime(group.lowerThreshold?.let { Clock.System.now().plus(it) }?: Instant.DISTANT_PAST, false).toLocalDateTime()
-                    val upperIcsDateTime = IcsDateTime(group.upperThreshold?.let { Clock.System.now().plus(it) }?: Instant.DISTANT_FUTURE, false).toLocalDateTime()
-                    icsDateTime.toLocalDateTime() in lowerIcsDateTime .. upperIcsDateTime
-                    }?: GROUP_NO_DATE
+        /**
+         * The date bucket [icsDateTime] falls into, or `null` when there is no date or it matches no
+         * bucket. A `null` result routes the entry to the list's dedicated "no criteria" section
+         * instead of being forced into a catch-all bucket.
+         */
+        fun getGrouping(baseGroups: Set<ListGrouping>, icsDateTime: IcsDateTime?): ListGrouping? {
+            if (icsDateTime == null) return null
+            return baseGroups.find { group ->
+                val lowerIcsDateTime = IcsDateTime(group.lowerThreshold?.let { Clock.System.now().plus(it) } ?: Instant.DISTANT_PAST, false).toLocalDateTime()
+                val upperIcsDateTime = IcsDateTime(group.upperThreshold?.let { Clock.System.now().plus(it) } ?: Instant.DISTANT_FUTURE, false).toLocalDateTime()
+                icsDateTime.toLocalDateTime() in lowerIcsDateTime..upperIcsDateTime
+            }
         }
     }
 }

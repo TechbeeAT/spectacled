@@ -37,6 +37,7 @@ import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
+import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.theme.AppTheme
@@ -74,7 +75,7 @@ fun TaskListItem(
             leadingIcon = { dragHandle() },
             trailingIcon = {
                 TriStateCheckbox(
-                    enabled = allowEditing,
+                    enabled = allowEditing && !icalEntry.syncState.isDeletedState(),
                     state = icalEntry.getProgressTriState(),
                     onClick = {
                         onToggleProgress()
@@ -252,7 +253,7 @@ private fun TaskListItem_drag_Preview() {
 private fun TaskListItem_drag_short_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         TaskListItem(
-            icalEntry = IcalEntry(calendarComponent = CalendarComponent.VTODO, summary = "short summary"),
+            icalEntry = IcalEntry(calendarComponent = CalendarComponent.VTODO, summary = "short summary", syncState = SyncState.LOCAL_DELETED),
             isSelected = false,
             allowEditing = false,
             onClick = {},

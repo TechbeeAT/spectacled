@@ -457,7 +457,7 @@ fun ListScreenRoot(
 
                         when (listViewModel.spectacledVariant) {
                             SpectacledVariant.JOURNALS -> {
-                                JournalsListJournals(
+                                ListScreenJournals(
                                     state = state,
                                     onAction = { action -> listViewModel.onAction(action) },
                                     modifier = Modifier.fillMaxSize()

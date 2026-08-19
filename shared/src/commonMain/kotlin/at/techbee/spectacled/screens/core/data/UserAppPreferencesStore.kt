@@ -21,6 +21,7 @@ const val LIST_LAYOUT = "list_layout"
 const val LIST_COLLAPSED_GROUPS = "list_collapsed_groups"
 const val LIST_COLLAPSED_GROUP_TRASHBIN = "list_collapsed_group_trashbin"
 const val LIST_COLLAPSED_GROUP_PINNED = "list_collapsed_group_pinned"
+const val LIST_COLLAPSED_GROUP_NO_CRITERIA = "list_collapsed_group_no_criteria"
 
 const val THEME_OPTION = "theme_option"
 const val THEME_DYNAMIC_COLORS_ENABLED = "theme_dynamic_colors_enabled"
