@@ -170,7 +170,7 @@ fun ListItem(
                                     )
                                 }
 
-                                icalEntry.categories.forEach { category ->
+                                icalEntry.categoriesWithoutPinned.forEach { category ->
                                     MetaInfoCard(
                                         icon = Icons.AutoMirrored.Outlined.Label,
                                         iconContentDescription = stringResource(Res.string.category),

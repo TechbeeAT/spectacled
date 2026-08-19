@@ -152,6 +152,9 @@ data class IcalEntry(
 
     fun isPinned() = categories.any { category -> category == PINNED_CATEGORY}
 
+    val categoriesWithoutPinned: List<String>
+        get() = categories.filterNot { it == PINNED_CATEGORY }
+
     fun withProgressUpdated(newPercent: Long): IcalEntry {
 
         return this.copy(
