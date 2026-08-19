@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material.icons.outlined.EventRepeat
+import androidx.compose.material.icons.outlined.RestoreFromTrash
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -436,15 +437,20 @@ fun DetailsScreen(
             //HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp))
             WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 
-            val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+            val sortedSubtasks = state.subtasks.sortedWith(
+                compareBy<IcalEntry> { if(it.syncState.isDeletedState()) 1 else 0 }
+                    .thenBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+            )
+
+            val (deletedSubtasks, activeSortedSubtasks) = sortedSubtasks.partition { it.syncState.isDeletedState() }
 
 
             ReorderableColumn(
-                list = sortedSubtasks,
+                list = activeSortedSubtasks,
                 onSettle = { fromIndex, toIndex ->
                     onAction(
                         DetailsAction.OnPersistOrderNo(
-                            sortedSubtasks.toMutableList().apply {
+                            activeSortedSubtasks.toMutableList().apply {
                             add(toIndex, removeAt(fromIndex))
                         }.map { it.id }
                     ))
@@ -486,6 +492,35 @@ fun DetailsScreen(
                             }
                         )
                     }
+                }
+            }
+
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                deletedSubtasks.forEach { deletedSubtask ->
+                    TaskListItem(
+                        icalEntry = deletedSubtask,
+                        isSelected = false,
+                        allowEditing = false,
+                        onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(deletedSubtask.id)) },
+                        onLongClick = {},
+                        onToggleProgress = {},
+                        onFilterCategory = {},
+                        dragHandle = {
+                            IconButton(
+                                onClick = {},
+                                enabled = false
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.RestoreFromTrash,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    )
                 }
             }
 
