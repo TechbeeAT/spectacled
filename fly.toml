@@ -24,6 +24,9 @@ primary_region = "fra"
   PROXY_ALLOWED_ORIGINS = "https://spectacled.techbee.at"
   # Recommended for a demo instance: restrict which CalDAV hosts may be reached.
   # PROXY_ALLOWED_TARGET_HOSTS = "example-caldav.org"
+  # Leave OFF in production — this is the SSRF guard (default "false" blocks targets that
+  # resolve to loopback/link-local/private/metadata addresses). Only set "true" for local testing.
+  # PROXY_ALLOW_PRIVATE_TARGETS = "false"
 
 [http_service]
   internal_port = 8080
