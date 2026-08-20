@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.list.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
 import kotlinx.coroutines.delay
@@ -49,15 +51,18 @@ import kotlin.time.Duration.Companion.milliseconds
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeriveEntriesBottomSheet(
-    isLoading: Boolean,
+    aiDerivedEntriesResult: AiDeriveEntriesResult?,
     allowSubtasks: Boolean,
-    onCreate: (String, Boolean) -> Unit,
+    onCreate: (text: String, createSubtasks: Boolean) -> Unit,
+    onCreateWithoutAi: (text: String) -> Unit,
     onDismiss: () -> Unit
 ) {
 
     var text by rememberSaveable { mutableStateOf("") }
     var createSubtasks by rememberSaveable { mutableStateOf(true) }
     val focusRequester = remember { FocusRequester() }
+    val isLoading = aiDerivedEntriesResult is AiDeriveEntriesResult.Processing
+
 
     LaunchedEffect(Unit) {
         delay(300.milliseconds)
@@ -125,6 +130,37 @@ fun DeriveEntriesBottomSheet(
                     enabled = !isLoading && allowSubtasks
                 )
             }
+
+            AnimatedVisibility(aiDerivedEntriesResult is AiDeriveEntriesResult.Failed) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (aiDerivedEntriesResult is AiDeriveEntriesResult.Failed) {
+                        Text(
+                            text = aiDerivedEntriesResult.message,
+                            color = MaterialTheme.colorScheme.error
+                        )
+
+                        aiDerivedEntriesResult.details?.let {
+                            Text(
+                                text = it,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+
+                        TextButton(
+                            onClick = { onCreateWithoutAi(text) }
+                        ) {
+                            Text("Create without AI")
+                        }
+                    }
+
+                }
+            }
+
+
         }
     }
 }
@@ -136,9 +172,10 @@ private fun DeriveEntriesBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         Scaffold {
             DeriveEntriesBottomSheet(
-                isLoading = false,
+                aiDerivedEntriesResult = AiDeriveEntriesResult.Processing,
                 allowSubtasks = true,
                 onCreate = { _, _ -> },
+                onCreateWithoutAi = { },
                 onDismiss = { }
             )
         }
@@ -151,9 +188,10 @@ private fun DeriveEntriesBottomSheet_noSubtasks_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         Scaffold {
             DeriveEntriesBottomSheet(
-                isLoading = false,
+                aiDerivedEntriesResult = AiDeriveEntriesResult.Failed("Error message", "Error details"),
                 allowSubtasks = false,
                 onCreate = { _, _ -> },
+                onCreateWithoutAi = { },
                 onDismiss = { }
             )
         }

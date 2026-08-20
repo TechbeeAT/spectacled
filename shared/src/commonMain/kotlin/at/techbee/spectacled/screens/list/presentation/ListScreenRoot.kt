@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Gesture
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -224,9 +225,13 @@ fun ListScreenRoot(
 
         if (state.showDeriveEntriesBottomSheet) {
             DeriveEntriesBottomSheet(
-                isLoading = state.isDerivingEntries,
+                aiDerivedEntriesResult = state.aiDerivedEntriesResult,
                 allowSubtasks = state.calendar.isTasksSupported(),
                 onCreate = { text, createSubtasks -> listViewModel.onAction(ListAction.OnDeriveEntriesFromText(text, createSubtasks)) },
+                onCreateWithoutAi = { text ->
+                    onNavigate(IcalEntryDetails(icalEntryId = 0L, newIcalEntryCalendarId = state.calendar.id, newIcalEntryInitialDescription = text))
+                    listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(false))
+                },
                 onDismiss = { listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(false)) }
             )
         }
@@ -274,6 +279,7 @@ fun ListScreenRoot(
                             ) {
                                 TextButton(
                                     onClick = { onNavigate(IcalEntryDetails(0L, state.calendar.id)) },
+                                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,

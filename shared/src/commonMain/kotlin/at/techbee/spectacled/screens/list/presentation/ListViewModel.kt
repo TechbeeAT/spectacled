@@ -250,7 +250,7 @@ class ListViewModel(
                 }
             }
             is ListAction.OnShowDateSelectorBottomSheet -> { _state.update { it.copy(showDateSelectorBottomSheet = action.show) } }
-            is ListAction.OnShowDeriveEntriesBottomSheet -> { _state.update { it.copy(showDeriveEntriesBottomSheet = action.show) } }
+            is ListAction.OnShowDeriveEntriesBottomSheet -> { _state.update { it.copy(showDeriveEntriesBottomSheet = action.show, aiDerivedEntriesResult = null) } }
             is ListAction.OnDeriveEntriesFromText -> deriveEntriesFromText(action.text, action.createSubtasks)
             is ListAction.OnUpdateCategoryOfSelected -> { onUpdateCategoryOfSelectedItems(action.addCategory, action.removeCategory) }
             is ListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
@@ -314,7 +314,7 @@ class ListViewModel(
             }
         }
 
-        _state.update { it.copy(isDerivingEntries = true) }
+        _state.update { it.copy(aiDerivedEntriesResult = AiDeriveEntriesResult.Processing) }
 
         val calendarId = state.value.calendar.id
         val batchCategory = newAiBatchCategory()
@@ -327,10 +327,10 @@ class ListViewModel(
         // is decided by which list we're on (spectacledVariant), not by the AI.
         viewModelScope.launch(ioDispatcher) {
             when(val result = dataSource.deriveEntries(text, spectacledVariant, createSubtasks, existingCategories)) {
+                AiDeriveEntriesResult.Processing -> { } // just wait
                 is AiDeriveEntriesResult.Failed -> {
                     _state.update { it.copy(
-                        isDerivingEntries = false,
-                        snackbarText = result.message + if(!result.details.isNullOrBlank()) " (${result.details})" else ""
+                        aiDerivedEntriesResult = result
                     ) }
                 }
                 is AiDeriveEntriesResult.Success -> {
@@ -347,9 +347,8 @@ class ListViewModel(
                     }
 
                     _state.update { it.copy(
-                        isDerivingEntries = false,
-                        showDeriveEntriesBottomSheet = toInsert.isEmpty(),   // keep open if nothing was created
-                        snackbarText = if(toInsert.isEmpty()) "No entries could be created from the text." else null
+                        aiDerivedEntriesResult = if(toInsert.isEmpty()) AiDeriveEntriesResult.Failed("No entries could be created from the text.") else null,
+                        showDeriveEntriesBottomSheet = toInsert.isEmpty()   // keep open if nothing was created
                     ) }
                 }
             }

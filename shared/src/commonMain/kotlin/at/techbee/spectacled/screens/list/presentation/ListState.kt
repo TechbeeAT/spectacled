@@ -7,6 +7,7 @@ import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_NO_CRITERIA
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_PINNED
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
+import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
 import at.techbee.spectacled.screens.core.data.ai.AiProvider
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
@@ -85,7 +86,7 @@ data class ListState(
     val claudeApiKeyPresent: Boolean = false,
     val openAiBaseUrlPresent: Boolean = false,
     val showDeriveEntriesBottomSheet: Boolean = false,
-    val isDerivingEntries: Boolean = false,
+    val aiDerivedEntriesResult: AiDeriveEntriesResult? = null,
 
     val draggingIcalEntryId: Long? = null,
     val scrollToDate: IcsDateTime? = null,
