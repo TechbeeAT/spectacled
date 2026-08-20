@@ -7,6 +7,9 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import org.jetbrains.compose.resources.Font
 import spectacled.shared.generated.resources.ABeeZee_Regular
+import spectacled.shared.generated.resources.Libertine
+import spectacled.shared.generated.resources.LibreBaskerville
+import spectacled.shared.generated.resources.Literata
 import spectacled.shared.generated.resources.NotoSerif
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.Roboto
@@ -42,7 +45,10 @@ val DefaultAppTypography = Typography()    // Default Material 3 typography valu
 enum class ThemeFont(val fontName: String) {
     ROBOTO("Roboto"),
     ABEEZEE("ABeeZee"),
-    NOTO_SERIF("Noto Serif");
+    NOTO_SERIF("Noto Serif"),
+    LIBERTINE("Libertine"),
+    LITERATA("Literata"),
+    LIBRE_BASKERVILLE("Libre Baskerville");
 
     val themeFont: Font
         @Composable
@@ -50,6 +56,9 @@ enum class ThemeFont(val fontName: String) {
             ROBOTO -> Font(Res.font.Roboto)
             ABEEZEE -> Font(Res.font.ABeeZee_Regular)
             NOTO_SERIF -> Font(Res.font.NotoSerif)
+            LIBERTINE -> Font(Res.font.Libertine)
+            LITERATA -> Font(Res.font.Literata)
+            LIBRE_BASKERVILLE -> Font(Res.font.LibreBaskerville)
         }
 
     val themeFontFamily: FontFamily

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Spectacled connects to user-provided servers: CalDAV/WebDAV collections and, for the AI feature,
+    self-hosted OpenAI-compatible endpoints such as Ollama or LM Studio. These are frequently reached
+    over plaintext HTTP on a local network (e.g. http://192.168.x.x:11434). Because the host is
+    entered by the user it cannot be enumerated here, so cleartext is permitted in the base config.
+
+    This is the future-proof replacement for android:usesCleartextTraffic, which is ignored for apps
+    targeting API level 38+. minSdk is 26 (>= 24), so a Network Security Config alone is sufficient;
+    no usesCleartextTraffic fallback is required. HTTPS continues to validate against the system CAs.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

@@ -36,7 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,13 +61,20 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.attachment
+import spectacled.shared.generated.resources.attachment_sync_state_pending_download
+import spectacled.shared.generated.resources.attachment_sync_state_pending_upload
+import spectacled.shared.generated.resources.attachment_sync_state_sync_error
+import spectacled.shared.generated.resources.attachment_sync_state_synchronized
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.drawing
+import spectacled.shared.generated.resources.file_size_kb
 import spectacled.shared.generated.resources.ic_cloud_error
+import spectacled.shared.generated.resources.unknown
 
 @Composable
 fun AttachmentCard(
     attachment: Attachment,
+    allowEditing: Boolean,
     onAction: (DetailsAction) -> Unit,
     isDownloading: Boolean = false,
     fileManager: FileManager = koinInject<FileManager>(),
@@ -72,12 +82,16 @@ fun AttachmentCard(
 ) {
 
     var drawingPaths by remember { mutableStateOf<List<PathData>?>(null) }
+    var drawingSize by remember { mutableStateOf<Size?>(null) }
     var imagePreview by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(attachment) {
         if (attachment.isSVG() && attachment.localPath != null && fileManager.exists(attachment.localPath)) {
             val fileContent = fileManager.readAttachment(attachment.localPath).decodeToString()
-            PathDataSvgConverter.fromSvg(fileContent)?.let { drawingPaths = it }
+            PathDataSvgConverter.fromSvg(fileContent)?.let {
+                drawingPaths = it.paths
+                drawingSize = Size(it.width, it.height)
+            }
         } else if(attachment.isImage()) {
             if (attachment.localPath != null && fileManager.exists(attachment.localPath)) {
                 imagePreview = attachment.localPath
@@ -112,14 +126,14 @@ fun AttachmentCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = attachment.fileName ?: "unknown",
+                        text = attachment.fileName ?: stringResource(Res.string.unknown),
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     if (attachment.size != null) {
                         Text(
-                            text = "${attachment.size / 1024} KB",
+                            text = stringResource(Res.string.file_size_kb, (attachment.size / 1024).toInt()),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -149,18 +163,18 @@ fun AttachmentCard(
                         Crossfade(attachment.syncState) { attachmentSyncState ->
                             when(attachmentSyncState) {
                                 AttachmentSyncState.LOCAL_MODIFIED -> {
-                                    Icon(Icons.Outlined.CloudUpload, "Pending upload")
+                                    Icon(Icons.Outlined.CloudUpload, stringResource(Res.string.attachment_sync_state_pending_upload))
                                 }
                                 AttachmentSyncState.SYNCED -> {
-                                    Icon(Icons.Outlined.CloudDone, "Synchronized")
+                                    Icon(Icons.Outlined.CloudDone, stringResource(Res.string.attachment_sync_state_synchronized))
                                 }
                                 AttachmentSyncState.PENDING_DOWNLOAD -> {
-                                    Icon(Icons.Outlined.CloudDownload, "Pending download")
+                                    Icon(Icons.Outlined.CloudDownload, stringResource(Res.string.attachment_sync_state_pending_download))
                                 }
                                 AttachmentSyncState.FAILED -> {
                                     Icon(
                                         painterResource(Res.drawable.ic_cloud_error),
-                                        "Attachment sync error"
+                                        stringResource(Res.string.attachment_sync_state_sync_error)
                                     )
                                 }
                             }
@@ -169,12 +183,14 @@ fun AttachmentCard(
                     }
                 }
 
-                IconButton(onClick = { onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) }) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = stringResource(Res.string.delete),
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                if(allowEditing) {
+                    IconButton(onClick = { onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = stringResource(Res.string.delete),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
 
@@ -184,16 +200,20 @@ fun AttachmentCard(
                         .clipToBounds()
                         .fillMaxWidth()
                         .height(600.dp)
-                        //.weight(1f)
                         .background(Color.White)
                 ) {
-                    drawingPaths?.fastForEach { pathData ->
-                        drawPath(
-                            path = pathData.paths,
-                            color = pathData.color,
-                            thickness = pathData.thickness,
-                            smoothness = 3
-                        )
+                    if (drawingSize != null && drawingSize!!.width > 0) {
+                        val scale = size.width / drawingSize!!.width
+                        scale(scale, pivot = Offset.Zero) {
+                            drawingPaths?.fastForEach { pathData ->
+                                drawPath(
+                                    path = pathData.paths,
+                                    color = pathData.color,
+                                    thickness = pathData.thickness,
+                                    smoothness = 3
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -224,6 +244,7 @@ private fun AttachmentCard_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
+        allowEditing = false,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -298,6 +319,7 @@ private fun AttachmentCard_Drawing_Preview() {
             mimeType = MIMETYPE_SVG,
             size = 125000L
         ),
+        allowEditing = true,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -325,6 +347,7 @@ private fun AttachmentCard_SyncState_SYNCHRONIZED_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
+        allowEditing = true,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -351,6 +374,7 @@ private fun AttachmentCard_SyncState_PENDING_DOWNLOAD_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
+        allowEditing = false,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"
@@ -378,6 +402,7 @@ private fun AttachmentCard_SyncState_FAILED_Preview() {
             mimeType = "application/pdf",
             size = 125000L
         ),
+        allowEditing = true,
         onAction = {},
         fileManager = object: FileManager {
             override fun getAttachmentsDirectory() = "/"

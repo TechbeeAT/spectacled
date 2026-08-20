@@ -10,8 +10,10 @@ import at.techbee.spectacled.screens.core.domain.Classification
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.mapper.ics.escapeIcsValue
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcsDateTime
+import at.techbee.spectacled.screens.core.mapper.ics.splitIcsList
 import at.techbee.spectacled.sqldelight.IcalEntryDto
 import io.ktor.http.Url
 import kotlinx.serialization.json.Json
@@ -48,7 +50,7 @@ fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList()): IcalEntr
         priority = this.priority,
         percentComplete = this.percentComplete ?: 0L,
         dtstamp = parseIcsDateTime(this.dtstamp) ?: IcsDateTime.now(),
-        categories = this.categories?.split(CATEGORY_SPLIT_DELIMITER) ?: emptyList(),
+        categories = this.categories?.let { splitIcsList(it) } ?: emptyList(),
         created = parseIcsDateTime(this.created) ?: IcsDateTime.now(),
         lastModified = parseIcsDateTime(this.lastModified) ?: IcsDateTime.now(),
         extraProperties = extraProps,
@@ -90,7 +92,9 @@ fun IcalEntry.toDto(): IcalEntryDto {
         percentComplete = if(this.calendarComponent == CalendarComponent.VTODO) this.percentComplete else null,
         priority = if(this.calendarComponent == CalendarComponent.VTODO) this.priority else null,
         classification = this.classification?.name,
-        categories = this.categories.joinToString(CATEGORY_SPLIT_DELIMITER).ifEmpty { null },
+        // Escape each category so a comma inside a value stays distinguishable from the
+        // delimiter - same scheme as the ICS wire format, so one escaping implementation.
+        categories = this.categories.joinToString(CATEGORY_SPLIT_DELIMITER) { escapeIcsValue(it) }.ifEmpty { null },
         created = formatIcsDateTime(this.created)?.first,
         lastModified = formatIcsDateTime(this.lastModified)?.first,
         extraProperties = if(this.extraProperties.isNotEmpty()) mapperJson.encodeToString(this.extraProperties) else null,

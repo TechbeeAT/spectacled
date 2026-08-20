@@ -37,6 +37,7 @@ import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
+import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.theme.AppTheme
@@ -54,6 +55,7 @@ import kotlin.time.ExperimentalTime
 fun TaskListItem(
     icalEntry: IcalEntry,
     isSelected: Boolean,
+    allowEditing: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleProgress: () -> Unit,
@@ -73,6 +75,7 @@ fun TaskListItem(
             leadingIcon = { dragHandle() },
             trailingIcon = {
                 TriStateCheckbox(
+                    enabled = allowEditing && !icalEntry.syncState.isDeletedState(),
                     state = icalEntry.getProgressTriState(),
                     onClick = {
                         onToggleProgress()
@@ -189,6 +192,7 @@ private fun TaskListItem_first_Preview() {
         TaskListItem(
             icalEntry = IcalEntry.getSampleIcalEntry(),
             isSelected = false,
+            allowEditing = true,
             onClick = {},
             onLongClick = {},
             onFilterCategory = {},
@@ -208,6 +212,7 @@ private fun TaskListItem_colored_Preview() {
             TaskListItem(
                 icalEntry = IcalEntry.getSampleIcalEntry(),
                 isSelected = false,
+                allowEditing = true,
                 onClick = {},
                 onLongClick = {},
                 onFilterCategory = {},
@@ -226,6 +231,7 @@ private fun TaskListItem_drag_Preview() {
         TaskListItem(
             icalEntry = IcalEntry.getSampleIcalEntry(),
             isSelected = false,
+            allowEditing = true,
             onClick = {},
             onLongClick = {},
             onFilterCategory = {},
@@ -247,8 +253,9 @@ private fun TaskListItem_drag_Preview() {
 private fun TaskListItem_drag_short_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         TaskListItem(
-            icalEntry = IcalEntry(calendarComponent = CalendarComponent.VTODO, summary = "short summary"),
+            icalEntry = IcalEntry(calendarComponent = CalendarComponent.VTODO, summary = "short summary", syncState = SyncState.LOCAL_DELETED),
             isSelected = false,
+            allowEditing = false,
             onClick = {},
             onLongClick = {},
             onFilterCategory = {},

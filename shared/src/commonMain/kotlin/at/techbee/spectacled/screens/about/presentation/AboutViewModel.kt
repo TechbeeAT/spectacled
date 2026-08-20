@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.about.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.about.data.KtorRemoteGitHubContributorDataSource
 import at.techbee.spectacled.screens.about.data.KtorRemoteGitHubReleaseDataSource
 import com.mikepenz.aboutlibraries.Libs
@@ -23,7 +24,9 @@ class AboutViewModel(
     val state = _state.asStateFlow()
 
     init {
-        viewModelScope.launch {
+        // GitHub network calls, the resource read and JSON parsing must not run on the
+        // Main dispatcher; run them on IO (repository/DB work self-dispatches, network does not).
+        viewModelScope.launch(ioDispatcher) {
 
             launch {
                 KtorRemoteGitHubContributorDataSource(client).getContributors().let { contributors ->

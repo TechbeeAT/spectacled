@@ -20,7 +20,7 @@ import org.koin.dsl.module
 actual val platformModule = module {
     single { DatabaseDriverFactory(androidContext(), get()) }
     single<PlatformCredentialStore> { PlatformCredentialStore(androidContext()) }.bind<CredentialStore>()
-    single<PlatformUserAppPreferencesStore> { PlatformUserAppPreferencesStore(androidContext()) }.bind<UserAppPreferencesStore>()
+    single<PlatformUserAppPreferencesStore> { PlatformUserAppPreferencesStore(androidContext(), get()) }.bind<UserAppPreferencesStore>()
     single<PlatformSyncTrigger> { PlatformSyncTrigger(androidContext()) }.bind<SyncTrigger>()
     single<PlatformShareManager> { PlatformShareManager(androidContext()) }.bind<ShareManager>()
     single<PlatformFileManager> { PlatformFileManager(androidContext()) }.bind<FileManager>()

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.ArrowDropUp
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -44,8 +47,10 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastForEach
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.theme.AppTheme
@@ -60,6 +65,7 @@ import spectacled.shared.generated.resources.ic_canvas_marker
 import spectacled.shared.generated.resources.ic_canvas_pen
 import spectacled.shared.generated.resources.marker
 import spectacled.shared.generated.resources.pen
+import spectacled.shared.generated.resources.undo
 import kotlin.math.abs
 import kotlin.time.Clock
 
@@ -78,8 +84,10 @@ enum class DrawingTool {
 @Composable
 fun DrawingCanvas(
     paths: List<PathData>,
-    onAddPath: (PathData) -> Unit = {},
-    onRemovePaths: (List<PathData>) -> Unit = {},
+    onAddPath: (PathData) -> Unit,
+    onRemovePaths: (List<PathData>) -> Unit,
+    onRestorePaths: (List<PathData>) -> Unit,
+    onSizeChanged: (Size) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
 
@@ -88,8 +96,16 @@ fun DrawingCanvas(
     var selectedThickness by remember { mutableStateOf(5f) }
     var currentPath: PathData? by remember { mutableStateOf(null) }
 
+    val pathHistory = remember { mutableStateListOf<List<PathData>>() }
+
     var showColorAndThicknessPicker by remember { mutableStateOf(true) }
 
+    LaunchedEffect(paths.size) {
+        val currentPaths = paths.toList()
+        if (currentPaths != pathHistory.lastOrNull()) {
+            pathHistory.add(currentPaths)
+        }
+    }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -103,6 +119,7 @@ fun DrawingCanvas(
                 .fillMaxWidth()
                 .weight(1f)
                 .background(Color.White)
+                .onSizeChanged { onSizeChanged(it.toSize()) }
                 .pointerInput(selectedTool) {
                     detectDragGestures(
                         onDragStart = { offset ->
@@ -194,6 +211,26 @@ fun DrawingCanvas(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
+
+
+            IconButton(
+                onClick = {
+                    pathHistory.removeLastOrNull()
+                    onRestorePaths(pathHistory.lastOrNull()?:emptyList())
+                },
+                enabled = pathHistory.size > 1,
+                modifier = Modifier.background(
+                    Color.Transparent,
+                    CircleShape
+                )
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Outlined.Undo,
+                    contentDescription = stringResource(Res.string.undo)
+                )
+            }
+
+            VerticalDivider(modifier = Modifier.height(28.dp))
 
             IconButton(
                 onClick = {
@@ -404,6 +441,7 @@ private fun DrawingCanvas_Preview() {
             paths = paths,
             onAddPath = { paths.add(it) },
             onRemovePaths = { paths.removeAll(it) },
+            onRestorePaths = { },
             modifier = Modifier.fillMaxSize()
         )
     }

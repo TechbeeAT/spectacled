@@ -22,10 +22,15 @@ sealed interface ListAction {
     object OnSelectAllMultiselectItems: ListAction
     data class OnShowDeleteSelectedItemsDialog(val showDialog: Boolean): ListAction
     object OnDeleteSelectedItems: ListAction
+    data class OnShowMoveSelectedItemsDialog(val showDialog: Boolean): ListAction
+    data class OnMoveSelectedItems(val targetCalendarId: Long): ListAction
 
     data class OnShowDateSelectorBottomSheet(val show: Boolean): ListAction
     data class OnShowUpdateColorOfSelectedBottomSheet(val show: Boolean): ListAction
     data class OnShowUpdateCategoryOfSelectedBottomSheet(val show: Boolean): ListAction
+
+    data class OnShowDeriveEntriesBottomSheet(val show: Boolean): ListAction
+    data class OnDeriveEntriesFromText(val text: String, val createSubtasks: Boolean): ListAction
 
     data class OnUpdateColorOfSelected(val color: Color?): ListAction
     data class OnUpdateCategoryOfSelected(val addCategory: String?, val removeCategory: String?): ListAction

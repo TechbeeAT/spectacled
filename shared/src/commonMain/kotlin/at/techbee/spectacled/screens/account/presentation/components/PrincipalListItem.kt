@@ -44,6 +44,7 @@ import spectacled.shared.generated.resources.ic_folder_managed
 import spectacled.shared.generated.resources.ic_folder_match
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.refresh_all
+import spectacled.shared.generated.resources.reload_folders
 import spectacled.shared.generated.resources.remove_account
 
 @Composable
@@ -99,15 +100,18 @@ fun PrincipalListItem(
                         onDismissRequest = { iCalCollectionMenuExpanded = false }
                     ) {
 
+                        val homeCollection = homeCollections.firstOrNull()
+
                         DropdownMenuItem(
                             text = { Text(stringResource(Res.string.create_folder)) },
+                            enabled = homeCollection?.canBind() == true,
                             onClick = {
                                 iCalCollectionMenuExpanded = false
 
                                 onAction(AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet(
                                     principal = principal,
-                                    homeCollection = homeCollections.first(),
-                                    calendar = Calendar.getNewCalendar(homeCollections.first())
+                                    homeCollection = homeCollection!!,
+                                    calendar = Calendar.getNewCalendar(homeCollection)
                                 ))
                             },
                             leadingIcon = { Icon(Icons.Outlined.CreateNewFolder, null) }
@@ -136,7 +140,7 @@ fun PrincipalListItem(
                         )
 
                         DropdownMenuItem(
-                            text = { Text("Reload folders") },
+                            text = { Text(stringResource(Res.string.reload_folders)) },
                             onClick = {
                                 iCalCollectionMenuExpanded = false
                                 onAction(AccountListAction.OnRerunAccountDiscovery(listOf(principal)))

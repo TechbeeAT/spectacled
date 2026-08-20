@@ -18,14 +18,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.account.presentation.components.CalendarCard
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListItem
-import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
-import at.techbee.spectacled.screens.core.getPlatform
 import io.ktor.http.Url
+import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_folder_calendar
+import spectacled.shared.generated.resources.insufficient_access_rights_create_folder
+import spectacled.shared.generated.resources.no_compatible_folders_found
 
 
 @Composable
@@ -37,12 +40,12 @@ fun AccountListScreen(
 
     PullToRefreshBox(
         isRefreshing = state.processingState == ProcessingState.Processing,
-        onRefresh = { onAction(AccountListAction.OnRerunAccountDiscovery(state.principals))  }
+        onRefresh = { onAction(AccountListAction.OnRerunAccountDiscovery(state.principals))  },
+        modifier = modifier
     ) {
 
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(1.dp),
-        modifier = modifier.padding(8.dp)
+        verticalArrangement = Arrangement.spacedBy(1.dp)
     ) {
 
         state.principals.forEachIndexed { indexPrincipal, principal ->
@@ -72,7 +75,7 @@ fun AccountListScreen(
                 if (calendars.isEmpty()) {
                     item {
                         Text(
-                            text = "No compatible folders/calendars found",
+                            text = stringResource(Res.string.no_compatible_folders_found),
                             fontStyle = FontStyle.Italic
                         )
 
@@ -88,11 +91,11 @@ fun AccountListScreen(
                                     )
                                 }
                             ) {
-                                Text("Add folder/calendar")
+                                Text(stringResource(Res.string.add_folder_calendar))
                             }
                         } else {
                             Text(
-                                text = "Insufficient access rights to create a new folder/calendar.",
+                                text = stringResource(Res.string.insufficient_access_rights_create_folder),
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
@@ -120,21 +123,8 @@ fun AccountListScreen(
             }
         }
 
-        // TODO: remove after testing!
-        if(getPlatform().platform == Platforms.WASM) {
-            item {
-                TextButton(
-                    onClick = {
-                        onAction(AccountListAction.OnAddLocalCalendar)
-                    }
-                ) {
-                    Text("Add collection")
-                }
-            }
-        }
-
         item {
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(112.dp))
         }
     }
 }

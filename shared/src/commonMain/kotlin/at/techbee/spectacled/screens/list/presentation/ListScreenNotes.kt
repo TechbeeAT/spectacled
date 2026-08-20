@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -25,27 +24,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_PINNED
-import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.list.presentation.components.EmptyListScreen
 import at.techbee.spectacled.screens.list.presentation.components.ListDragHandle
-import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
+import at.techbee.spectacled.screens.list.presentation.components.listSections
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
-import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.pinned
-import spectacled.shared.generated.resources.trashbin
 
 @Composable
 fun ListScreenNotes(
@@ -107,13 +100,14 @@ fun ListScreenNotes(
 
                 TaskListItem(
                     icalEntry = subtask,
+                    isSelected = state.multiselectItems?.contains(subtask.id) == true || isDragging,
+                    allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState() && !subtask.isRecurring(),
                     onClick = {
                         if (state.multiselectItems == null)
                             onAction(ListAction.OnIcalEntryClicked(subtask.id))
                         else
                             onAction(ListAction.OnToggleMultiselectItem(subtask.id))
                     },
-                    isSelected = state.multiselectItems?.contains(subtask.id) == true || isDragging,
                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                     onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                     onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
@@ -145,7 +139,7 @@ fun ListScreenNotes(
                 ReorderableItem(
                     state = reorderableLazyListState,
                     key = icalEntry.uid,
-                    enabled = true
+                    enabled = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState(),
                 ) { isDragging ->
 
                     LaunchedEffect(isDragging) {
@@ -172,133 +166,42 @@ fun ListScreenNotes(
                 }
             }
         } else {
-
-            if(state.pinned.isNotEmpty()) {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    ListGroupHeader(
-                        appPreferencesTag = LIST_COLLAPSED_GROUP_PINNED,
-                        headerText = stringResource(Res.string.pinned) + "  " + IcalEntry.PINNED_CATEGORY,
-                        isCollapsed = LIST_COLLAPSED_GROUP_PINNED in state.listCollapsedGroups,
-                        onToggleListGroupExpanded = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
-                    )
-                }
-
-                if (LIST_COLLAPSED_GROUP_PINNED !in state.listCollapsedGroups) {
-                    itemsIndexed(
-                        items = state.pinned,
-                        key = { _, icalEntry -> icalEntry.uid }
-                    ) { index, icalEntry ->
-                        getNoteListItem(icalEntry = icalEntry, index = index, lastIndex = state.pinned.lastIndex)
-                    }
-                }
-            }
-
-
-
-            if (state.listSortedBy == ListSortedBy.DATE) {
-                val groupedByDay = state.displayMapByDtStartDay
-                groupedByDay.keys.forEach { dayGroup ->
-                    if (groupedByDay[dayGroup].isNullOrEmpty())
-                        return@forEach
-
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        ListGroupHeader(
-                            appPreferencesTag = dayGroup,
-                            headerText = dayGroup,
-                            isCollapsed = dayGroup in state.listCollapsedGroups,
-                            onToggleListGroupExpanded = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
-                        )
-                    }
-
-                    if (dayGroup !in state.listCollapsedGroups) {
-                        itemsIndexed(
-                            items = groupedByDay[dayGroup]!!,
-                            key = { _, icalEntry -> icalEntry.uid }
-                        ) { index, icalEntry ->
-                            getNoteListItem(
-                                icalEntry = icalEntry,
-                                subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
-                                index = index,
-                                lastIndex = groupedByDay[dayGroup]!!.lastIndex
-                            )
-                        }
-                    }
-                }
-
-            } else {
-                // No drag and drop. We build the grouped list based on the map
-
-                state.displayMap.keys.forEach { grouping ->
-
-                        if (state.displayMap[grouping].isNullOrEmpty())
-                            return@forEach
-
-                        if (grouping.stringRes != null) {
-                            item(span = StaggeredGridItemSpan.FullLine) {
-                                ListGroupHeader(
-                                    appPreferencesTag = grouping.name,
-                                    headerText = if (grouping.stringResParam != null)
-                                        stringResource(grouping.stringRes, grouping.stringResParam)
-                                    else
-                                        stringResource(grouping.stringRes),
-                                    isCollapsed = grouping.name in state.listCollapsedGroups,
-                                    onToggleListGroupExpanded = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
-                                )
-                            }
-                        }
-
-                        if (grouping.name !in state.listCollapsedGroups) {
-                            itemsIndexed(state.displayMap[grouping]!!, key = { _, icalEntry -> icalEntry.uid }) { index, icalEntry ->
-                                getNoteListItem(
-                                    icalEntry = icalEntry,
-                                    subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
-                                    index = index,
-                                    lastIndex = state.displayMap[grouping]!!.lastIndex
-                                )
-                            }
-                        }
-                    }
-            }
-
-        }
-        // TRASHBIN
-        if(state.trashbin.isNotEmpty()) {
-
-            item(span = StaggeredGridItemSpan.FullLine) {
-                ListGroupHeader(
-                    appPreferencesTag = LIST_COLLAPSED_GROUP_TRASHBIN,
-                    headerText = stringResource(Res.string.trashbin) + " \uD83D\uDDD1 " + "(${state.trashbin.size})",
-                    isCollapsed = LIST_COLLAPSED_GROUP_TRASHBIN in state.listCollapsedGroups,
-                    onToggleListGroupExpanded = { onAction(ListAction.OnToggleListGroupExpanded(it)) },
-                    modifier = Modifier.alpha(0.33f)
+            listSections(
+                sections = state.sections.filter { it.kind != ListSection.Kind.TRASHBIN },
+                collapsedGroups = state.listCollapsedGroups,
+                onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
+            ) { icalEntry, section, index ->
+                getNoteListItem(
+                    icalEntry = icalEntry,
+                    subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
+                    index = index,
+                    lastIndex = section.entries.lastIndex,
+                    modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier
                 )
             }
         }
 
-        if(state.trashbin.isNotEmpty() &&  LIST_COLLAPSED_GROUP_TRASHBIN in state.listCollapsedGroups) {
-            if (state.trashbin.isEmpty())
-                item { Text(
-                    text = "Nothing here",
-                    fontStyle = FontStyle.Italic
-                ) }
-            else
-                itemsIndexed(state.trashbin, key = { _, note -> note.uid }) { index, note ->
-                    getNoteListItem(
-                        icalEntry = note,
-                        subtasks = state.subtasks[note.uid] ?: emptyList(),
-                        index = index,
-                        lastIndex = state.trashbin.lastIndex,
-                        modifier = Modifier.alpha(0.33f)
-                    )
-                }
+        // TRASHBIN (shown below both the drag-and-drop and the grouped body)
+        listSections(
+            sections = state.sections.filter { it.kind == ListSection.Kind.TRASHBIN },
+            collapsedGroups = state.listCollapsedGroups,
+            onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
+        ) { icalEntry, section, index ->
+            getNoteListItem(
+                icalEntry = icalEntry,
+                subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
+                index = index,
+                lastIndex = section.entries.lastIndex,
+                modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier
+            )
         }
 
         item(span = StaggeredGridItemSpan.FullLine) {
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(112.dp))
         }
     }
 
-        Crossfade (state.displayMap.values.isEmpty()) {
+        Crossfade (state.isDisplayEmpty) {
             if(it)
                 EmptyListScreen(
                     isEmptyFolder = state.icalEntries.isEmpty(),

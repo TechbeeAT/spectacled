@@ -93,13 +93,56 @@ fun parseProperty(line: String): IcsProperty {
             else part.substring(0, eqIndex) to unquote(part.substring(eqIndex + 1))
         }
 
-    val value = rawValue
-        .replace("\\n", "\n")
-        .replace("\\,", ",")
-        .replace("\\;", ";")
-        .replace("\\\\", "\\")
+    return IcsProperty(name, params, unescapeIcsValue(rawValue), rawValue)
+}
 
-    return IcsProperty(name, params, value)
+/**
+ * Splits a raw (still-escaped) ICS list value on unescaped commas only, then unescapes
+ * each element - the inverse of joinToString(",") { escapeIcsValue(it) }. An escaped
+ * "\," inside an element is kept as part of that element; RFC 5545 uses the unescaped
+ * comma as the list separator for properties like CATEGORIES.
+ */
+fun splitIcsList(rawValue: String): List<String> {
+    val parts = mutableListOf<String>()
+    val current = StringBuilder()
+    var i = 0
+    while (i < rawValue.length) {
+        val c = rawValue[i]
+        when {
+            c == '\\' && i + 1 < rawValue.length -> { current.append(c).append(rawValue[i + 1]); i += 2 }
+            c == ',' -> { parts.add(current.toString()); current.clear(); i += 1 }
+            else -> { current.append(c); i += 1 }
+        }
+    }
+    parts.add(current.toString())
+    return parts.map { unescapeIcsValue(it) }.filter { it.isNotEmpty() }
+}
+
+/**
+ * Single-pass inverse of escapeIcsValue (RFC 5545 §3.3.11 TEXT). Sequential String.replace
+ * calls are not a correct inverse: escaping "C:\Users\name" yields "C:\\Users\\name", whose
+ * middle "\\n" a sequential replace("\\n", "\n") pass misreads as an escaped newline,
+ * corrupting the text to "C:\Users<newline>ame". A single left-to-right scan can't pair a
+ * backslash with a character that was itself produced by an earlier escape. Also accepts
+ * the uppercase "\N" newline form RFC 5545 allows from other producers.
+ */
+fun unescapeIcsValue(value: String): String {
+    val sb = StringBuilder(value.length)
+    var i = 0
+    while (i < value.length) {
+        val c = value[i]
+        if (c == '\\' && i + 1 < value.length) {
+            when (val next = value[i + 1]) {
+                'n', 'N' -> { sb.append('\n'); i += 2 }
+                ',', ';', '\\' -> { sb.append(next); i += 2 }
+                else -> { sb.append(c); i += 1 }
+            }
+        } else {
+            sb.append(c)
+            i += 1
+        }
+    }
+    return sb.toString()
 }
 
 fun parseIcsDateTime(
@@ -234,7 +277,11 @@ fun parseIcalEntryBlock(
     val dtstamp = knownProps[KnownIcsPropertyName.DTSTAMP.propertyName]?.firstOrNull()?.value?.let { parseIcsDateTime(it, null) }
     val created = knownProps[KnownIcsPropertyName.CREATED.propertyName]?.firstOrNull()?.value?.let { parseIcsDateTime(it, null) }
     val lastModified = knownProps[KnownIcsPropertyName.LAST_MODIFIED.propertyName]?.firstOrNull()?.value?.let { parseIcsDateTime(it, null) }
-    val categories = knownProps[KnownIcsPropertyName.CATEGORIES.propertyName]?.firstOrNull()?.value?.split(',') ?: emptyList()
+    // flatMap over ALL CATEGORIES properties (RFC 5545 allows several per entry, and some
+    // clients emit them that way), splitting each raw value on unescaped commas only.
+    val categories = knownProps[KnownIcsPropertyName.CATEGORIES.propertyName]
+        ?.flatMap { splitIcsList(it.rawValue) }
+        ?: emptyList()
 
     val status = knownProps[KnownIcsPropertyName.STATUS.propertyName]?.firstOrNull()?.value?.let { Status.entries.find { status -> status.rfcName == it } }
     val classification = knownProps[KnownIcsPropertyName.CLASSIFICATION.propertyName]?.firstOrNull()?.value?.let { Classification.entries.find { classification -> classification.name == it } }

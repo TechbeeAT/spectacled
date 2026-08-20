@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
@@ -45,7 +46,7 @@ fun DeleteSelectedItemsDialog(
         },
         text = {
             Column {
-                Text(stringResource(Res.string.delete_selected_warning, multiselectItems.size))
+                Text(pluralStringResource(Res.plurals.delete_selected_warning, multiselectItems.size, multiselectItems.size))
             }
         }
     )

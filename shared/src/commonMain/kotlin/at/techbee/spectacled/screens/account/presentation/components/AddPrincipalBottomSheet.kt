@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
@@ -55,6 +56,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -70,12 +73,24 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
+import spectacled.shared.generated.resources.add_account_header_info
+import spectacled.shared.generated.resources.add_account_option1_headline
+import spectacled.shared.generated.resources.add_account_option1_text
+import spectacled.shared.generated.resources.add_account_option2_headline
+import spectacled.shared.generated.resources.add_account_option2_recommendation_info
+import spectacled.shared.generated.resources.add_account_option2_recommended_providers
+import spectacled.shared.generated.resources.add_account_option2_text
+import spectacled.shared.generated.resources.add_account_option_x
+import spectacled.shared.generated.resources.add_account_spectacled_is_provider_independent
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.insecure_connection_warning
+import spectacled.shared.generated.resources.open_in_browser
 import spectacled.shared.generated.resources.password
+import spectacled.shared.generated.resources.server_optional
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.username
+import spectacled.shared.generated.resources.welcome
 
 enum class AddPrincipalBottomSheetPage { SELECTION, USE_EXISTING, SELECT_FROM_LIST }
 
@@ -84,6 +99,7 @@ enum class AddPrincipalBottomSheetPage { SELECTION, USE_EXISTING, SELECT_FROM_LI
 fun AddPrincipalBottomSheet(
     sheetState: SheetState,
     processingState: ProcessingState,
+    isFirstAccount: Boolean,
     onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -178,6 +194,7 @@ fun AddPrincipalBottomSheet(
         ) {
             if (pagerState.currentPage == 0) {
                 SelectAccountOptionScreen(
+                    isFirstAccount = isFirstAccount,
                     onPageChanged = { selectedPage = it },
                     modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
                 )
@@ -202,6 +219,7 @@ fun AddPrincipalBottomSheet(
 
 @Composable
 fun SelectAccountOptionScreen(
+    isFirstAccount: Boolean,
     onPageChanged: (AddPrincipalBottomSheetPage) -> Unit,
     modifier: Modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
 ) {
@@ -213,8 +231,13 @@ fun SelectAccountOptionScreen(
     ) {
 
         Text(
-            text = "Spectacled works with CalDAV-compatible providers. " +
-                    "You can either sign in with an existing account or create a new account with one of our recommended providers.",
+            text = stringResource(if(isFirstAccount) Res.string.welcome else Res.string.add_account),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.headlineLarge
+        )
+
+        Text(
+            text = stringResource(Res.string.add_account_header_info),
             textAlign = TextAlign.Center
         )
 
@@ -233,20 +256,20 @@ fun SelectAccountOptionScreen(
 
 
                     Text(
-                        text = "Option 1",
+                        text = stringResource(Res.string.add_account_option_x, 1),
                         style = MaterialTheme.typography.labelSmall,
                         textAlign = TextAlign.Center
                     )
 
                     Text(
-                        text = "Have an account?",
+                        text = stringResource(Res.string.add_account_option1_headline),
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
 
                     Text(
-                        text = "Connect any CalDAV-compatible server using your existing credentials.",
+                        text = stringResource(Res.string.add_account_option1_text),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -271,20 +294,20 @@ fun SelectAccountOptionScreen(
 
 
                     Text(
-                        text = "Option 2",
+                        text = stringResource(Res.string.add_account_option_x, 2),
                         style = MaterialTheme.typography.labelSmall,
                         textAlign = TextAlign.Center
                     )
 
                     Text(
-                        text = "Need an account?",
+                        text = stringResource(Res.string.add_account_option2_headline),
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
 
                     Text(
-                        text = "Choose from a selection of privacy-focused providers that work well with Spectacled.",
+                        text = stringResource(Res.string.add_account_option2_text),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -346,24 +369,39 @@ fun AddAccountScreen(
     ) {
 
         Text(
-            text = "Spectacled is provider-independent",
+            text = stringResource(Res.string.add_account_spectacled_is_provider_independent),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
         Text(
-            text = "Connect any CalDAV-compatible server using your existing credentials.",
+            text = stringResource(Res.string.add_account_option1_text),
             textAlign = TextAlign.Center
         )
 
         val error = processingState as? ProcessingState.Error
         AnimatedVisibility(error != null) {
-            Text(
-                text = error?.message ?: "",
-                color = MaterialTheme.colorScheme.error,
-                textAlign = TextAlign.Center
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = error?.message ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center
+                )
+                error?.detail?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelSmall,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+            }
+
         }
 
         Column(
@@ -393,7 +431,7 @@ fun AddAccountScreen(
                         }
                     }
                 },
-                label = { Text("Server (optional)") },
+                label = { Text(stringResource(Res.string.server_optional)) },
                 trailingIcon = {
                     TextButton(
                         onClick = { testDropdownMenuExpanded = !testDropdownMenuExpanded },
@@ -434,6 +472,12 @@ fun AddAccountScreen(
                         }
                     }
                 },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Uri,
+                    autoCorrectEnabled = false
+                    //imeAction = ImeAction.Done
+                ),
                 modifier = Modifier.width(400.dp)
             )
 
@@ -441,16 +485,19 @@ fun AddAccountScreen(
                 value = username,
                 onValueChange = { username = it },
                 placeholder = { Text(stringResource(Res.string.username)) },
-                //supportingText = { Text("Optional") },
                 label = { Text(stringResource(Res.string.username)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Email,
+                    autoCorrectEnabled = false
+                    //imeAction = ImeAction.Done
+                ),
                 modifier = Modifier.width(400.dp)
             )
 
             OutlinedSecureTextField(
                 state = passwordState,
-                //placeholder = { Text("******") },
-                //supportingText = { Text("Optional") },
                 label = { Text(stringResource(Res.string.password)) },
                 textObfuscationMode = if (isPasswordVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
                 trailingIcon = {
@@ -466,19 +513,14 @@ fun AddAccountScreen(
                         }
                     }
                 },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Password,
+                    autoCorrectEnabled = false
+                    //imeAction = ImeAction.Done
+                ),
                 modifier = Modifier.width(400.dp)
             )
-            /*
-                            TextButton(
-                                onClick = {
-                                    onAction(AccountListAction.OnAddPrincipal(Credentials(serverUrl, username, passwordState.text.toString())))
-                                },
-                                enabled = server.isNotBlank() && username.isNotBlank() && passwordState.text.isNotEmpty() && processingState !is ProcessingState.Processing
-                            ) {
-                                Text(stringResource(Res.string.add_account))
-                            }
-
-             */
         }
     }
 }
@@ -495,21 +537,21 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
     ) {
 
         Text(
-            text = "Spectacled is provider-independent",
+            text = stringResource(Res.string.add_account_spectacled_is_provider_independent),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
         Text(
-            text = "Choose from a selection of privacy-focused providers that work well with Spectacled.",
+            text = stringResource(Res.string.add_account_option2_text),
             textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "We recommend services based on privacy, reliability, and compatibility. Some links may generate a referral commission, which helps fund ongoing development. Recommendations are never influenced solely by referral agreements.",
+            text = stringResource(Res.string.add_account_option2_recommendation_info),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.labelSmall
         )
@@ -517,7 +559,7 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "Recommended providers",
+            text = stringResource(Res.string.add_account_option2_recommended_providers),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleLarge
         )
@@ -556,7 +598,7 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
                         IconButton(
                             onClick = { uriHandler.openUri(calDavProvider.url) }
                         ) {
-                            Icon(Icons.AutoMirrored.Outlined.OpenInNew, "Open in browser")
+                            Icon(Icons.AutoMirrored.Outlined.OpenInNew, stringResource(Res.string.open_in_browser))
                         }
                     },
                     modifier = Modifier.padding(vertical = 2.dp)
@@ -576,6 +618,7 @@ private fun AddAccountScreen_Preview_Idle() {
             AddPrincipalBottomSheet(
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 processingState = ProcessingState.Idle,
+                isFirstAccount = true,
                 onAction = {},
                 onDismiss = {}
             )
@@ -592,6 +635,7 @@ private fun AddAccountScreen_Preview_Processing() {
             AddPrincipalBottomSheet(
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 processingState = ProcessingState.Processing,
+                isFirstAccount = false,
                 onAction = {},
                 onDismiss = {}
             )

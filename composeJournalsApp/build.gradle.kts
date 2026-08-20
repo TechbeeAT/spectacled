@@ -1,4 +1,4 @@
-﻿import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
@@ -51,11 +51,9 @@ kotlin {
             commonWebpackConfig {
                 outputFileName = "composeJournalsApp.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
+                    // Serve sources to debug inside browser
+                    static(rootDirPath)
+                    static(projectDirPath)
                 }
             }
         }
@@ -71,11 +69,9 @@ kotlin {
             commonWebpackConfig {
                 outputFileName = "composeJournalsApp.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
+                    // Serve sources to debug inside browser
+                    static(rootDirPath)
+                    static(projectDirPath)
                 }
             }
         }
@@ -116,14 +112,60 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "at.techbee.spectacled.journals.MainKt"
+
+        // jpackage (used to build the native .dmg/.msi/.deb installers) is not shipped with
+        // every JDK — notably Android Studio's bundled JBR omits it, which makes `packageDmg`
+        // fail in `checkRuntime`. When a desktop packaging task is requested, point it at a
+        // full Temurin JDK provisioned via Gradle's Java toolchain support (auto-downloaded by
+        // the Foojay resolver). The vendor is pinned to one that ships jpackage so the JBR is
+        // never selected, and it's guarded by task name so Android/Web/run builds don't have
+        // to provision a JDK they don't need.
+        val needsPackagingJdk = gradle.startParameter.taskNames.any { taskName ->
+            listOf("package", "distributable", "checkRuntime", "notarize").any {
+                taskName.contains(it, ignoreCase = true)
+            }
+        }
+        if (needsPackagingJdk) {
+            javaHome = javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(21))
+                vendor.set(JvmVendorSpec.ADOPTIUM)
+            }.get().metadata.installationPath.asFile.absolutePath
+        }
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+
+            // jpackage trims the bundled runtime with jlink and can't see reflectively
+            // loaded modules, so it drops these and the packaged app crashes at runtime:
+            //   - java.sql: required by SQLDelight's JDBC SQLite driver (NoClassDefFoundError:
+            //     java/sql/DriverManager) — without it every database call fails.
+            //   - jdk.unsupported: sun.misc.Unsafe, needed by KSafe for the DataStore backend
+            //     and OS-backed key custody; without it KSafe silently falls back to a
+            //     plain-JSON store.
+            modules("java.sql", "jdk.unsupported")
+
             packageName = "at.techbee.spectacled.journals"
             packageVersion = libs.versions.appVersionString.get()
 
             linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_png.png")) }
             windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_ico.ico")) }
-            macOS { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_icns.icns")) }
+            macOS {
+                dockName = "spectacled Journals"
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_journals_icns.icns"))
+                bundleID = "at.techbee.spectacled.journals"
+
+                // Sign the .app with the "Developer ID Application" certificate only when a
+                // signing identity is provided (CI release builds on macOS). Local and
+                // Linux/Windows builds keep working unsigned with no Apple setup required.
+                // Notarization + stapling of the resulting .dmg is done in the release
+                // workflow (create-release.yml) via `xcrun notarytool` / `stapler`.
+                System.getenv("MACOS_SIGN_IDENTITY")?.takeIf { it.isNotBlank() }?.let { signIdentity ->
+                    signing {
+                        sign.set(true)
+                        identity.set(signIdentity)
+                    }
+                }
+            }
         }
     }
 }

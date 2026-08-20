@@ -1,6 +1,5 @@
 package at.techbee.spectacled.screens.account.presentation
 
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
@@ -13,22 +12,15 @@ import at.techbee.spectacled.screens.core.data.webdav.DiscoverCalendarsResult
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverHomeCollectionsResult
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverPrincipalsResult
 import at.techbee.spectacled.screens.core.data.webdav.UpsertCalendarResult
-import at.techbee.spectacled.screens.core.data.webdav.createCalendarMultiplatform
-import at.techbee.spectacled.screens.core.data.webdav.deleteCalendarMultiplatform
-import at.techbee.spectacled.screens.core.data.webdav.discoverCalendars
-import at.techbee.spectacled.screens.core.data.webdav.discoverHomeCollections
-import at.techbee.spectacled.screens.core.data.webdav.discoverPrincipalsMultiplatform
-import at.techbee.spectacled.screens.core.data.webdav.updateCalDavCalendarMultiplatform
-import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
+import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteCalendarDataSource
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.ioDispatcher
 import io.github.aakira.napier.Napier
-import io.ktor.client.HttpClient
-import io.ktor.http.Url
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,7 +29,6 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.login_message_forbidden
-import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -46,7 +37,7 @@ class AccountListViewModel(
     private val calendarRepository: CalendarRepository,
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
-    private val client: HttpClient,
+    private val webDavCalendarDataSource: WebDavRemoteCalendarDataSource,
     val spectacledVariant: SpectacledVariant,
     val userAppPreferencesStore: PlatformUserAppPreferencesStore
     ): ViewModel() {
@@ -73,7 +64,8 @@ class AccountListViewModel(
         Napier.d("Observing principals")
         calendarRepository.getAllPrincipalsFlow().collect { principals ->
             _state.update { state -> state.copy(
-                principals = principals
+                principals = principals,
+                isInitialized = true
             ) }
         }
     }
@@ -125,7 +117,6 @@ class AccountListViewModel(
             }
             is AccountListAction.OnDismissSyncInfoDialog -> { _state.update { it.copy(showSyncInfoDialog = null) } }
             AccountListAction.OnDismissUpdatePrincipalPasswordBottomSheet -> { _state.update { it.copy(showUpdatePrincipalPasswordBottomSheet = null) } }
-            AccountListAction.OnAddLocalCalendar -> addLocalCalendar()
             is AccountListAction.OnShowSettingsBottomSheet -> { _state.update { it.copy(showSettingsBottomSheet = action.show) } }
             is AccountListAction.OnToggleSyncEnabled -> { onToggleSyncEnabled(action.calendarId, action.enabled)}
         }
@@ -148,13 +139,17 @@ class AccountListViewModel(
 
 
     private fun deleteCalendar(principal: Principal, calendar: Calendar) {
+
+        if(state.value.homeCollections.find { homeCollection -> homeCollection.id == calendar.homeCollectionId }?.canUnbind() != true)
+            return
+
         _state.update { it.copy(processingState = ProcessingState.Processing) }
-        viewModelScope.launch {
+        viewModelScope.launch(ioDispatcher) {
 
             try {
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
 
-                deleteCalendarMultiplatform(client, calendar, credentials).let { remoteResult ->
+                webDavCalendarDataSource.deleteCalendar(calendar, credentials).let { remoteResult ->
 
                     when (remoteResult) {
                         is DeleteCalendarResult.SuccessfullyDeleted, is DeleteCalendarResult.AlreadyDeleted -> {
@@ -178,56 +173,6 @@ class AccountListViewModel(
             }
         }
     }
-
-
-    private fun addLocalCalendar() {
-        Napier.d("Adding local calendar")
-        viewModelScope.launch {
-            Napier.d("Entered viewModelScope for Adding local calendar")
-
-            val testUrl = Url("https://localhost/${Random.nextInt(100)}")
-
-            calendarRepository.upsertPrincipal(
-                Principal(
-                    id = 0,
-                    principalUrl = testUrl,
-                    displayName = "Local Calendar",
-                    calendarUserAddressSet = listOf("john@doe.com")
-                )
-            )
-
-            calendarRepository.upsertHomeCollection(
-                HomeCollection(
-                    id = 0,
-                    principalId = 0,
-                    url = testUrl,
-                    calDavPrivileges = listOf(CalDavPrivilege.WRITE)
-                ),
-                testUrl
-            )
-
-            calendarRepository.upsertCalendar(
-                Calendar(
-                    id = 0,
-                    homeCollectionId = 0,
-                    url = testUrl,
-                    displayName = "Local Calendar",
-                    calendarDescription = "Description of local calendar",
-                    color = Color(Random.nextInt(256), Random.nextInt(256), Random.nextInt(256)),
-                    ctag = "",
-                    supportedComponents = emptyList(),
-                    calDavPrivileges = listOf(CalDavPrivilege.WRITE),
-                    calendarSyncStatus = null,
-                    syncToken = null,
-                    attachmentCollectionUrl = null
-                ),
-                testUrl
-            )
-
-            Napier.d("Local principal, home collection and calendar added")
-        }
-    }
-
 
     private fun rerunAccountDiscovery(principal: Principal) = rerunAccountDiscovery(principal, null)
 
@@ -260,11 +205,15 @@ class AccountListViewModel(
         Napier.d("Adding principals")
         _state.update { it.copy(processingState = ProcessingState.Processing) }
 
-        viewModelScope.launch {
+        // Run the whole discovery pipeline off the Main dispatcher. On Compose Desktop the
+        // viewModelScope's Main dispatcher does not reliably resume suspended network
+        // continuations (nor the HttpTimeout timer), so leaving this on Main makes discovery
+        // hang forever without ever hitting a timeout. IO resumes reliably on every platform.
+        viewModelScope.launch(ioDispatcher) {
             try {
 
                 // STEP 1: Discover principals
-                val discoverPrincipalsResult = discoverPrincipalsMultiplatform(client, credentials.server, credentials)
+                val discoverPrincipalsResult = webDavCalendarDataSource.discoverPrincipals(credentials.server, credentials)
                 when(discoverPrincipalsResult) {
                     is DiscoverPrincipalsResult.Failed -> {
                         _state.update { it.copy(processingState = ProcessingState.Error(message = discoverPrincipalsResult.message, detail = discoverPrincipalsResult.details)) }
@@ -292,7 +241,7 @@ class AccountListViewModel(
                 val discoveredCalendars = mutableListOf<Calendar>()
                 discoverPrincipalsResult.principals.forEach { principal ->
 
-                    when(val discoverHomeCollectionsResult = discoverHomeCollections(client, principal, credentials)) {
+                    when(val discoverHomeCollectionsResult = webDavCalendarDataSource.discoverHomeCollections(principal, credentials)) {
                         is DiscoverHomeCollectionsResult.Failed -> {
                             _state.update { it.copy(
                                 processingState = ProcessingState.Error(
@@ -318,8 +267,7 @@ class AccountListViewModel(
 
                     // STEP 3: Discover Calendars
                     discoveredHomeCollections.forEach { homeCollection ->
-                        when(val discoverCalendarsResult = discoverCalendars(
-                            client = client,
+                        when(val discoverCalendarsResult = webDavCalendarDataSource.discoverCalendars(
                             homeCollection = homeCollection,
                             credentials = credentials
                         )) {
@@ -390,17 +338,21 @@ class AccountListViewModel(
     }
 
     private fun createOrUpdateCalendar(principal: Principal, homeCollection: HomeCollection, calendar: Calendar) {
+
+        if(!homeCollection.canBind())
+            return
+
         Napier.d("Adding calendar")
         _state.update { it.copy(processingState = ProcessingState.Processing) }
 
-        viewModelScope.launch {
+        viewModelScope.launch(ioDispatcher) {
 
             try {
                 val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
                 val upsertCalendarResult = if(calendar.id == 0L) {
-                    createCalendarMultiplatform(client,calendar, credentials)
+                    webDavCalendarDataSource.createCalendar(calendar, credentials)
                 } else {
-                    updateCalDavCalendarMultiplatform(client, calendar, credentials)
+                    webDavCalendarDataSource.updateCalendar(calendar, credentials)
                 }
 
                 when(upsertCalendarResult) {

@@ -1,0 +1,103 @@
+name: Upload iOS apps to App Store Connect
+on:
+  push:
+    tags:
+      - 'v*beta*'      # betas  -> TestFlight
+      - 'v*'           # finals -> TestFlight (promote to the App Store from ASC)
+      - '!v*alpha*'
+  workflow_dispatch:
+
+# Values read straight from the Xcode configs (iosApp/ios*App/Configuration/Config.xcconfig):
+#   Team ID:    BZY8AT5K2W   (same for all three apps)
+#   Bundle IDs: at.techbee.spectacled.{journals,notes,tasks}
+# Signing is "Automatic": with the App Store Connect API key + -allowProvisioningUpdates,
+# Xcode fetches the distribution certificate and provisioning profile automatically.
+#
+# The .xcodeproj files intentionally do NOT pin CODE_SIGN_IDENTITY. Under automatic
+# signing, an `xcodebuild ... archive` selects the App Store *distribution* profile on
+# its own, while regular build/run uses "Apple Development". Pinning
+# CODE_SIGN_IDENTITY = "Apple Development" (which older Xcode ignored during archive but
+# Xcode 26 honors) forced development signing here, so archive looked for an
+# "iOS App Development" profile and tried to mint a Development certificate on the empty
+# CI keychain -- failing with "You already have a current Development certificate..." /
+# "No profiles for '...' were found". Do not re-add a CODE_SIGN_IDENTITY override on the
+# xcodebuild command either: with automatic signing Xcode rejects a manually specified
+# identity ("conflicting provisioning settings").
+
+jobs:
+  ios:
+    name: Build & upload ${{ matrix.scheme }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scheme: iosJournalsApp
+            project: iosApp/iosJournalsApp/iosJournalsApp.xcodeproj
+          - scheme: iosNotesApp
+            project: iosApp/iosNotesApp/iosNotesApp.xcodeproj
+          - scheme: iosTasksApp
+            project: iosApp/iosTasksApp/iosTasksApp.xcodeproj
+    env:
+      TEAM_ID: BZY8AT5K2W
+      ASC_KEY_ID: ${{ secrets.asc_api_key_id }}
+      ASC_ISSUER_ID: ${{ secrets.asc_api_key_issuer_id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      # Needed by the Xcode Run Script phase that runs
+      # ./gradlew :composeXApp:embedAndSignAppleFrameworkForXcode
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6.3.0
+
+      - name: Prepare App Store Connect API key
+        run: |
+          mkdir -p "$RUNNER_TEMP/private_keys"
+          echo -n "${{ secrets.asc_api_key_p8_base64 }}" | base64 --decode \
+            > "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Archive
+        run: |
+          xcodebuild \
+            -project "${{ matrix.project }}" \
+            -scheme "${{ matrix.scheme }}" \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/${{ matrix.scheme }}.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            archive
+
+      - name: Export & upload to App Store Connect
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store-connect</string>
+              <key>destination</key>
+              <string>upload</string>
+              <key>teamID</key>
+              <string>${TEAM_ID}</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/${{ matrix.scheme }}.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"

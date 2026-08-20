@@ -4,11 +4,15 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.ArrowCircleDown
@@ -32,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,6 +64,7 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListSorted
 import at.techbee.spectacled.theme.AppTheme
 import com.materialkolor.dynamicColorScheme
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
@@ -69,6 +76,7 @@ import spectacled.shared.generated.resources.ic_gotodate
 import spectacled.shared.generated.resources.ic_pin
 import spectacled.shared.generated.resources.ic_unpin
 import spectacled.shared.generated.resources.more
+import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.pin
 import spectacled.shared.generated.resources.refresh
 import spectacled.shared.generated.resources.search
@@ -88,8 +96,9 @@ fun IcalEntryListTopBar(
     onAction: (ListAction) -> Unit,
     allSelectedPinned: Boolean,
     modifier: Modifier = Modifier,
-    spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>()
-) {
+    spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>(),
+    removeHorizontalWindowInsets: Boolean = false
+    ) {
 
     var sortedByDropdownExpanded by remember { mutableStateOf(false) }
     var multiselectMoreDropdownExpanded by remember { mutableStateOf(false) }
@@ -97,12 +106,16 @@ fun IcalEntryListTopBar(
     val calendar = state.calendar
 
     CenterAlignedTopAppBar(
-        title = {},
-        navigationIcon = {
+        windowInsets = if (removeHorizontalWindowInsets) TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Vertical) else TopAppBarDefaults.windowInsets,
+        //title = {},
+        title = {
 
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
             Crossfade(state.multiselectItems != null) { multiselectEnabled ->
 
-                Row {
+
                     if (!multiselectEnabled) {
                         TextButton(
                             onClick = {
@@ -121,7 +134,7 @@ fun IcalEntryListTopBar(
                                     text = calendar.displayName?:calendar.url.toString(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 120.dp).padding(end = 4.dp)
+                                    modifier = Modifier.padding(end = 4.dp)
                                 )
 
                                 AnimatedVisibility(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.IN_PROGRESS) {
@@ -130,39 +143,40 @@ fun IcalEntryListTopBar(
                             }
                         }
                     } else {
-                        TextButton(
-                            onClick = { onAction(ListAction.OnClearMultiselectItems) },
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                                verticalAlignment = Alignment.CenterVertically
+                        Row {
+                            TextButton(
+                                onClick = { onAction(ListAction.OnClearMultiselectItems) },
                             ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Close,
-                                    contentDescription = stringResource(Res.string.clear_selection)
-                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = stringResource(Res.string.clear_selection)
+                                    )
+                                    val selectedCount = state.multiselectItems?.size ?: 0
+                                    Text(
+                                        text = pluralStringResource(Res.plurals.x_selected, selectedCount, selectedCount),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.widthIn(max = 120.dp)
+                                    )
+                                }
+                            }
+
+                            VerticalDivider(modifier = Modifier.padding(vertical = 8.dp).heightIn(max = 30.dp))
+
+                            TextButton(
+                                onClick = { onAction(ListAction.OnSelectAllMultiselectItems) },
+                            ) {
                                 Text(
-                                    text = stringResource(Res.string.x_selected, state.multiselectItems?.size ?: 0),
+                                    text = stringResource(Res.string.select_all),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.widthIn(max = 120.dp)
                                 )
                             }
-                        }
-
-
-
-                        VerticalDivider(modifier = Modifier.padding(vertical = 8.dp).heightIn(max = 30.dp))
-
-                        TextButton(
-                            onClick = { onAction(ListAction.OnSelectAllMultiselectItems) },
-                        ) {
-                            Text(
-                                text = stringResource(Res.string.select_all),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.widthIn(max = 120.dp)
-                            )
                         }
                     }
                 }
@@ -213,7 +227,7 @@ fun IcalEntryListTopBar(
                                             if (state.listSortedBy.name == sortedByOption.name && state.listSortedBy != ListSortedBy.DRAGANDDROP)
                                                 onAction(ListAction.OnSortedByChanged(sortedByOption, !state.listSortedByAscending))
                                             else
-                                                onAction(ListAction.OnSortedByChanged(sortedByOption, true))
+                                                onAction(ListAction.OnSortedByChanged(sortedByOption, sortedByOption.defaultAsc))
                                         },
                                         trailingIcon = {
                                             if (state.listSortedBy.name == sortedByOption.name && state.listSortedByAscending)
@@ -294,7 +308,7 @@ fun IcalEntryListTopBar(
                     if(spectacledVariant == SpectacledVariant.NOTES) {
                         TextButton(
                             onClick = { onAction(ListAction.OnTogglePinEntry(!allSelectedPinned)) },
-                            enabled = state.multiselectItems?.isNotEmpty() == true
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent()
                         ) {
                             if (allSelectedPinned)
                                 Icon(
@@ -304,7 +318,8 @@ fun IcalEntryListTopBar(
                             else
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_pin),
-                                    contentDescription = stringResource(Res.string.pin)
+                                    contentDescription = stringResource(Res.string.pin),
+                                    modifier = Modifier.rotate(45f)
                                 )
                         }
                     }
@@ -330,7 +345,7 @@ fun IcalEntryListTopBar(
                                     text = stringResource(Res.string.update_color)
                                 )
                             },
-                            enabled = state.multiselectItems?.isNotEmpty() == true,
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
                             onClick = { onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(true)) },
                             leadingIcon = {
                                 Icon(
@@ -344,7 +359,7 @@ fun IcalEntryListTopBar(
                             text = {
                                 Text(text = stringResource(Res.string.update_category))
                             },
-                            enabled = state.multiselectItems?.isNotEmpty() == true,
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
                             onClick = { onAction(ListAction.OnShowUpdateCategoryOfSelectedBottomSheet(true)) },
                             leadingIcon = {
                                 Icon(
@@ -358,11 +373,25 @@ fun IcalEntryListTopBar(
 
                         DropdownMenuItem(
                             text = {
+                                Text(text = stringResource(Res.string.move))
+                            },
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
+                            onClick = { onAction(ListAction.OnShowMoveSelectedItemsDialog(true)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.DriveFileMove,
+                                    contentDescription = stringResource(Res.string.move)
+                                )
+                            }
+                        )
+
+                        DropdownMenuItem(
+                            text = {
                                 Text(
                                     text = stringResource(Res.string.delete_selected)
                                 )
                             },
-                            enabled = state.multiselectItems?.isNotEmpty() == true,
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
                             onClick = { onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))  },
                             leadingIcon = {
                                 Icon(
