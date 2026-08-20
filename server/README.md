@@ -63,6 +63,15 @@ docker run --rm -p 8088:8080 \
   spectacled-proxy
 ```
 
+Rather than repeating `-e` flags, copy [`.env.example`](.env.example) to `.env`, edit it,
+and pass it at run time (the config is read when the container starts, not baked into the
+image; `.env` is gitignored):
+
+```bash
+cp server/.env.example server/.env   # then edit server/.env
+docker run --rm -p 8088:8080 --env-file server/.env spectacled-proxy
+```
+
 A pre-built image is published to GitHub Container Registry on `proxy-v*` tags
 (see `.github/workflows/publish-proxy-image.yml`):
 
