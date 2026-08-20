@@ -77,7 +77,12 @@ fun SettingsMorePage(
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
-                        Text("TODO: Info about proxy server")
+                        Text(
+                            "Web only. Browsers block cross-origin CalDAV (WebDAV) requests, so the " +
+                                    "web app routes them through this proxy, which adds the required CORS " +
+                                    "headers. The proxy can see your credentials in transit — prefer one you " +
+                                    "host yourself. Setup: github.com/TechbeeAT/spectacled/tree/main/server"
+                        )
                     }
                 },
                 label = { Text("Proxy server") },
