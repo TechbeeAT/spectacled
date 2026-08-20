@@ -100,11 +100,11 @@ fun SettingsMorePage(
                                 text = {
                                     Column {
                                         Text("Development test")
-                                        Text("http://0.0.0.0:8088")
+                                        Text("http://localhost:8088")
                                     }
                                 },
                                 onClick = {
-                                    userAppPreferencesStore.userProxyServer = "http://0.0.0.0:8088"
+                                    userAppPreferencesStore.userProxyServer = "http://localhost:8088"
                                     userProxyServerDropdownExpanded = false
                                 }
                             )
