@@ -3,7 +3,10 @@
 # Build the Ktor proxy as a self-contained fat JAR.
 # Build context is the repository ROOT (the server module depends on :shared), e.g.:
 #   docker build -f server/Dockerfile -t spectacled-proxy .
-FROM eclipse-temurin:21-jdk AS build
+# Pin the build stage to the *builder's* native architecture. The produced fat JAR is
+# architecture-independent Java bytecode, so we build it once (natively, no emulation) and
+# only the small runtime stage below is materialised per target architecture.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 
 # Warm the Gradle wrapper cache separately from sources for better layer caching.
