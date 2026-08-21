@@ -13,7 +13,10 @@ name: Deploy web apps to GitHub Pages
 # the proxy's PROXY_ALLOWED_ORIGINS.
 on:
   push:
-    branches: [main]
+    tags:
+      - 'v*'           # finals -> TestFlight (promote to the App Store from ASC)
+      - '!v*alpha*'
+      - '!v*beta*'
   workflow_dispatch:
 
 permissions:
