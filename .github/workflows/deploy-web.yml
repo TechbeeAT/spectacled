@@ -1,0 +1,80 @@
+name: Deploy web apps to GitHub Pages
+
+# Builds the three Compose/Web apps as static JS bundles and publishes them to
+# GitHub Pages under one origin:
+#   /            landing page
+#   /journals/   Spectacled Journals
+#   /notes/      Spectacled Notes
+#   /tasks/      Spectacled Tasks
+#
+# Prerequisite: in the repo Settings → Pages, set "Build and deployment" →
+# Source to "GitHub Actions" (one-time). For a custom domain (e.g.
+# spectacled.techbee.at) also set it there — and remember that origin must be in
+# the proxy's PROXY_ALLOWED_ORIGINS.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; don't cancel an in-progress run mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6.3.0
+
+      - name: Build web distributions (JS)
+        run: >
+          ./gradlew --no-daemon
+          :composeJournalsApp:jsBrowserDistribution
+          :composeNotesApp:jsBrowserDistribution
+          :composeTasksApp:jsBrowserDistribution
+
+      - name: Assemble Pages site
+        run: |
+          set -eu
+          mkdir -p _site/journals _site/notes _site/tasks
+          # Each app's production bundle (JS + index.html + styles.css + favicon +
+          # spectacledSqlWorker.js + sql-wasm.{js,wasm}) lands flat in this dir.
+          cp -R composeJournalsApp/build/dist/js/productionExecutable/. _site/journals/
+          cp -R composeNotesApp/build/dist/js/productionExecutable/. _site/notes/
+          cp -R composeTasksApp/build/dist/js/productionExecutable/. _site/tasks/
+          cp .github/pages/index.html _site/index.html
+          # Serve the artifact verbatim (no Jekyll processing of files/underscore dirs).
+          touch _site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
