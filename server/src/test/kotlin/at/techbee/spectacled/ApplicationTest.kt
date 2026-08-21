@@ -8,6 +8,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
@@ -99,6 +100,50 @@ class ApplicationTest {
             }
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals("hello-from-upstream", response.bodyAsText())
+        } finally {
+            upstream.stop(gracePeriodMillis = 0, timeoutMillis = 500)
+        }
+    }
+
+    @Test
+    fun followsRedirectToFinalResponse() = testApplication {
+        // Mirrors CalDAV discovery: /.well-known/caldav redirects to the real DAV root.
+        val upstream = embeddedServer(Netty, port = 0) {
+            routing {
+                get("/.well-known/caldav") { call.respondRedirect("/dav/", permanent = true) }
+                get("/dav/") { call.respondText("discovered") }
+            }
+        }
+        upstream.start(wait = false)
+        try {
+            val upstreamPort = upstream.engine.resolvedConnectors().first().port
+            application { module(config()) }
+
+            val response = client.get("/.well-known/caldav") {
+                header("X-Target-Url", "http://127.0.0.1:$upstreamPort/.well-known/caldav")
+            }
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals("discovered", response.bodyAsText())
+        } finally {
+            upstream.stop(gracePeriodMillis = 0, timeoutMillis = 500)
+        }
+    }
+
+    @Test
+    fun rejectsRedirectToDisallowedHost() = testApplication {
+        // A redirect must not slip past the host allow-list / SSRF guard.
+        val upstream = embeddedServer(Netty, port = 0) {
+            routing { get("/go") { call.respondRedirect("http://blocked.example/secret") } }
+        }
+        upstream.start(wait = false)
+        try {
+            val upstreamPort = upstream.engine.resolvedConnectors().first().port
+            application { module(config(allowedTargetHosts = listOf("127.0.0.1"))) }
+
+            val response = client.get("/go") {
+                header("X-Target-Url", "http://127.0.0.1:$upstreamPort/go")
+            }
+            assertEquals(HttpStatusCode.Forbidden, response.status)
         } finally {
             upstream.stop(gracePeriodMillis = 0, timeoutMillis = 500)
         }
