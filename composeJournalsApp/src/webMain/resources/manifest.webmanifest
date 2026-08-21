@@ -1,0 +1,20 @@
+{
+  "name": "spectacled Journals",
+  "short_name": "Journals",
+  "description": "Keep private, standards-based journal entries synced over CalDAV.",
+  "lang": "en",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#006896",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
