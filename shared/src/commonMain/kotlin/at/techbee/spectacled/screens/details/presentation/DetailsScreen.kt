@@ -26,6 +26,8 @@ import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material.icons.outlined.DragIndicator
+import androidx.compose.material.icons.outlined.EventRepeat
+import androidx.compose.material.icons.outlined.RestoreFromTrash
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,10 +66,12 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -94,6 +98,8 @@ import spectacled.shared.generated.resources.drag_handle
 import spectacled.shared.generated.resources.format_bold
 import spectacled.shared.generated.resources.format_italic
 import spectacled.shared.generated.resources.format_underline
+import spectacled.shared.generated.resources.recurring_entry_read_only_message
+import spectacled.shared.generated.resources.recurring_entry_read_only_title
 import spectacled.shared.generated.resources.summary
 
 
@@ -166,6 +172,10 @@ fun DetailsScreen(
                 .verticalScroll(scrollState)
         ) {
 
+            AnimatedVisibility(state.icalEntry.isRecurring()) {
+                RecurringReadOnlyBanner(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+            }
+
             if (state.icalEntry.isTask() || state.icalEntry.isJournal()) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -220,7 +230,7 @@ fun DetailsScreen(
             }
 
             AnimatedVisibility(
-                state.icalEntry.categories.isNotEmpty() || state.icalEntry.status in listOf(
+                state.icalEntry.categoriesWithoutPinned.isNotEmpty() || state.icalEntry.status in listOf(
                     Status.DRAFT,
                     Status.CANCELLED
                 )
@@ -239,7 +249,7 @@ fun DetailsScreen(
                         )
                     }
 
-                    state.icalEntry.categories.sorted().forEach { category ->
+                    state.icalEntry.categoriesWithoutPinned.sorted().forEach { category ->
 
                         MetaInfoCard(
                             icon = Icons.AutoMirrored.Outlined.Label,
@@ -247,7 +257,7 @@ fun DetailsScreen(
                             text = category,
                             onClick = {
                                 if(state.allowEditing())
-                                    onAction(DetailsAction.OnShowCategorySelectorBottomSheet(true)) }
+                                    onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.CATEGORY_SELECTOR)) }
                         )
                     }
                 }
@@ -427,15 +437,20 @@ fun DetailsScreen(
             //HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp))
             WavyHorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 
-            val sortedSubtasks = state.subtasks.sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+            val sortedSubtasks = state.subtasks.sortedWith(
+                compareBy<IcalEntry> { if(it.syncState.isDeletedState()) 1 else 0 }
+                    .thenBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
+            )
+
+            val (deletedSubtasks, activeSortedSubtasks) = sortedSubtasks.partition { it.syncState.isDeletedState() }
 
 
             ReorderableColumn(
-                list = sortedSubtasks,
+                list = activeSortedSubtasks,
                 onSettle = { fromIndex, toIndex ->
                     onAction(
                         DetailsAction.OnPersistOrderNo(
-                            sortedSubtasks.toMutableList().apply {
+                            activeSortedSubtasks.toMutableList().apply {
                             add(toIndex, removeAt(fromIndex))
                         }.map { it.id }
                     ))
@@ -448,7 +463,7 @@ fun DetailsScreen(
                         TaskListItem(
                             icalEntry = subtask,
                             isSelected = isDragging,
-                            allowEditing = state.allowEditing(),
+                            allowEditing = state.allowEditing() && !subtask.isRecurring(),
                             onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                             onLongClick = {},
                             onToggleProgress = {
@@ -477,6 +492,35 @@ fun DetailsScreen(
                             }
                         )
                     }
+                }
+            }
+
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                deletedSubtasks.forEach { deletedSubtask ->
+                    TaskListItem(
+                        icalEntry = deletedSubtask,
+                        isSelected = false,
+                        allowEditing = false,
+                        onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(deletedSubtask.id)) },
+                        onLongClick = {},
+                        onToggleProgress = {},
+                        onFilterCategory = {},
+                        dragHandle = {
+                            IconButton(
+                                onClick = {},
+                                enabled = false
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.RestoreFromTrash,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    )
                 }
             }
 
@@ -510,6 +554,43 @@ fun DetailsScreen(
                     }
                 }
             )
+        }
+    }
+}
+
+/**
+ * A read-only notice shown at the top of the details screen for entries that belong to a
+ * recurring series. The app has no recurrence support, so these entries can't be edited; this
+ * banner tells the user why the editing controls are disabled.
+ */
+@Composable
+private fun RecurringReadOnlyBanner(modifier: Modifier = Modifier) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.EventRepeat,
+                contentDescription = null
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = stringResource(Res.string.recurring_entry_read_only_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = stringResource(Res.string.recurring_entry_read_only_message),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
@@ -570,6 +651,21 @@ private fun ListScreen_Preview() {
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
         ),
         onAction = {}
+    )
+}
+
+@Preview
+@Composable
+private fun ListScreen_recurring_readonly_Preview() {
+    DetailsScreen(
+        state = DetailsState(
+            icalEntry = IcalEntry.getSampleJournal().copy(
+                extraProperties = listOf(RawIcsProperty(name = "RRULE", unfoldedLine = "RRULE:FREQ=WEEKLY"))
+            ),
+            originalIcalEntry = IcalEntry.getSampleIcalEntry()
+        ),
+        onAction = {},
+        modifier = Modifier.fillMaxHeight()
     )
 }
 

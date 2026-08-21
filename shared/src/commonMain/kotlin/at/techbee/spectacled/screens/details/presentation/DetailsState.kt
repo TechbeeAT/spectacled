@@ -23,16 +23,10 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val allHomeCollections: List<HomeCollection> = emptyList(),
     val allPrincipals: List<Principal> = emptyList(),
 
-    val showDeleteDialog: Boolean = false,
-    val showMoveDialog: Boolean = false,
-    val showMoreBottomSheet: Boolean = false,
-    val showColorSelectorBottomSheet: Boolean = false,
-    val showCategorySelectorBottomSheet: Boolean = false,
-    val showJournalStatusPickerBottomSheet: Boolean = false,
-    val showTaskStatusProgressPickerBottomSheet: Boolean = false,
-    val showAddSubtaskBottomSheet: Boolean = false,
-    val showEditUrlBottomSheet: Boolean = false,
+    val showSheetOrDialog: DetailsSheetOrDialog? = null,
     val showDrawingCanvasBottomSheet: DetailsAction.OnShowDrawingCanvasBottomSheet = DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
+
+    val launchPickerAction: AttachmentPickerAction? = null,      // One-shot signal to the screen to launch a platform picker.
 
     val isLoading: Boolean = true,
     val isInitialized: Boolean = false,
@@ -45,9 +39,27 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val claudeUserApiKey: String? = null
 ) {
 
-    fun allowEditing() = calendar?.canWriteContent() == true && !icalEntry.syncState.isDeletedState()
+    // Recurring entries are read-only: this app has no recurrence support, so editing one would
+    // silently reinterpret or drop its RRULE/RDATE/RECURRENCE-ID and corrupt the series.
+    fun allowEditing() = calendar?.canWriteContent() == true
+            && !icalEntry.syncState.isDeletedState()
+            && !icalEntry.isRecurring()
 
     fun allowRestore() = calendar?.canWriteContent() == true && icalEntry.syncState.isDeletedState()
 
-    fun isAttachmentSupportEnabled() = calendar?.isAttachmentSyncSupported() == true
 }
+
+enum class DetailsSheetOrDialog {
+    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, ADD_ATTACHMENT_URL
+}
+
+// Action to perform right after the details screen opens
+enum class DetailsInitialAction {
+    ADD_DRAWING, ADD_ATTACHMENT, ADD_PHOTO, ADD_FROM_GALLERY, ADD_ATTACHMENT_URL
+}
+
+// The three platform pickers the screen can launch on behalf of the ViewModel.
+enum class AttachmentPickerAction {
+    FILE, PHOTO, GALLERY
+}
+

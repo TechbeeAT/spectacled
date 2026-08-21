@@ -12,6 +12,17 @@ on:
 #   Bundle IDs: at.techbee.spectacled.{journals,notes,tasks}
 # Signing is "Automatic": with the App Store Connect API key + -allowProvisioningUpdates,
 # Xcode fetches the distribution certificate and provisioning profile automatically.
+#
+# The .xcodeproj files intentionally do NOT pin CODE_SIGN_IDENTITY. Under automatic
+# signing, an `xcodebuild ... archive` selects the App Store *distribution* profile on
+# its own, while regular build/run uses "Apple Development". Pinning
+# CODE_SIGN_IDENTITY = "Apple Development" (which older Xcode ignored during archive but
+# Xcode 26 honors) forced development signing here, so archive looked for an
+# "iOS App Development" profile and tried to mint a Development certificate on the empty
+# CI keychain -- failing with "You already have a current Development certificate..." /
+# "No profiles for '...' were found". Do not re-add a CODE_SIGN_IDENTITY override on the
+# xcodebuild command either: with automatic signing Xcode rejects a manually specified
+# identity ("conflicting provisioning settings").
 
 jobs:
   ios:
@@ -42,7 +53,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.3.0
 
       - name: Prepare App Store Connect API key
         run: |

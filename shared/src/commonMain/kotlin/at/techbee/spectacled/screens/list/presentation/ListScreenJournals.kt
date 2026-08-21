@@ -10,40 +10,31 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
-import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.list.presentation.components.EmptyListScreen
-import at.techbee.spectacled.screens.list.presentation.components.ListGroupHeader
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
-import at.techbee.spectacled.screens.list.presentation.components.MonthHeader
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
+import at.techbee.spectacled.screens.list.presentation.components.listSections
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.stringResource
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.nothing_here
-import spectacled.shared.generated.resources.trashbin
 
 
 @Composable
-fun JournalsListJournals(
+fun ListScreenJournals(
     state: ListState,
     onAction: (ListAction) -> Unit,
     modifier: Modifier = Modifier
@@ -94,7 +85,7 @@ fun JournalsListJournals(
             TaskListItem(
                 icalEntry = subtask,
                 isSelected = state.multiselectItems?.contains(subtask.id) == true,
-                allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState(),
+                allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState() && !subtask.isRecurring(),
                 onClick = {
                     if (state.multiselectItems == null)
                         onAction(ListAction.OnIcalEntryClicked(subtask.id))
@@ -111,25 +102,28 @@ fun JournalsListJournals(
 
     LaunchedEffect(state.scrollToDate) {
         state.scrollToDate?.let { scrollToIcsDateTime ->
-            val scrollToDayGroup = scrollToIcsDateTime.formatLocalized(IcsDateTimeFormat.DATE)
+            val scrollToDay = scrollToIcsDateTime.formatLocalized(IcsDateTimeFormat.DATE)
 
+            // Walk the rendered sections (a header item plus its entries) to find the flat list index
+            // of the first grouped entry on the requested day, honouring collapsed sections.
+            var flatIndex = 0
             var targetIndex = -1
-            var currentIndex = 0
-            val groupedByDay = state.displayMapByDtStartDay
+            for (section in state.sections) {
+                if (section.entries.isEmpty()) continue
+                if (section.header != null) flatIndex += 1
+                val collapsed = section.header != null && section.key in state.listCollapsedGroups
+                if (collapsed) continue
 
-            for (dayGroup in groupedByDay.keys) {
-                val entries = groupedByDay[dayGroup] ?: continue
-                if (entries.isEmpty()) continue
-
-                if (dayGroup == scrollToDayGroup) {
-                    targetIndex = currentIndex
-                    break
+                if (section.kind == ListSection.Kind.GROUPED) {
+                    val entryIndex = section.entries.indexOfFirst {
+                        it.dtStart?.formatLocalized(IcsDateTimeFormat.DATE) == scrollToDay
+                    }
+                    if (entryIndex >= 0) {
+                        targetIndex = flatIndex + entryIndex
+                        break
+                    }
                 }
-
-                currentIndex++     // Add 1 for the day group header
-                if (dayGroup !in state.listCollapsedGroups)
-                    currentIndex += entries.size   // Add size of entries if group is expanded
-
+                flatIndex += section.entries.size
             }
 
             if (targetIndex != -1) {
@@ -148,75 +142,37 @@ fun JournalsListJournals(
         modifier = modifier
     ) {
 
-        val groupedByMonth = state.displayMapByDtStartMonth
-        groupedByMonth.keys.forEach { monthGroup ->
-            if (groupedByMonth[monthGroup].isNullOrEmpty())
-                return@forEach
+        listSections(
+            sections = state.sections,
+            collapsedGroups = state.listCollapsedGroups,
+            onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
+        ) { icalEntry, section, index ->
 
-            stickyHeader {
-                MonthHeader(
-                    icsDateTime = groupedByMonth[monthGroup]?.firstOrNull()?.dtStart,
-                    modifier = Modifier.padding(bottom = 8.dp)
+            if (section.kind == ListSection.Kind.GROUPED) {
+                // Month section: round the block corners and show a day block on each new day.
+                val isNewDay = index == 0 ||
+                        icalEntry.dtStart?.toLocalDateTime()?.date != section.entries[index - 1].dtStart?.toLocalDateTime()?.date
+
+                getListItem(
+                    icalEntry = icalEntry,
+                    subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
+                    index = index,
+                    lastIndex = section.entries.lastIndex,
+                    overrideTopRoundedCornerSize = if (index == 0) 16.dp else 0.dp,
+                    overrideBottomRoundedCornerSize = if (index == section.entries.lastIndex) 16.dp else 0.dp,
+                    showDayBlock = icalEntry.isJournal() && (index == 0 || isNewDay)
+                )
+            } else {
+                // Pinned / no-criteria / trashbin section (dimmed for the trashbin).
+                getListItem(
+                    icalEntry = icalEntry,
+                    subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
+                    index = index,
+                    lastIndex = section.entries.lastIndex,
+                    showDayBlock = icalEntry.isJournal(),
+                    modifier = if (section.dimmed) Modifier.alpha(0.33f) else Modifier
                 )
             }
-
-            if (monthGroup !in state.listCollapsedGroups) {
-                itemsIndexed(
-                    items = groupedByMonth[monthGroup]!!,
-                    key = { _, icalEntry -> icalEntry.uid }
-                ) { index, icalEntry ->
-
-                    val isNewDay = index == 0 || icalEntry.dtStart?.toLocalDateTime()?.date != groupedByMonth[monthGroup]!![index - 1].dtStart?.toLocalDateTime()?.date
-
-                    getListItem(
-                        icalEntry = icalEntry,
-                        subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
-                        index = index,
-                        lastIndex = groupedByMonth[monthGroup]!!.lastIndex,
-                        overrideTopRoundedCornerSize = if (index == 0) 16.dp else 0.dp,
-                        overrideBottomRoundedCornerSize = if (index == groupedByMonth[monthGroup]!!.lastIndex) 16.dp else 0.dp,
-                        showDayBlock = icalEntry.isJournal() && (index == 0 || isNewDay)
-                    )
-
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-        }
-
-        // TRASHBIN
-        if (state.trashbin.isNotEmpty()) {
-
-            item {
-                ListGroupHeader(
-                    appPreferencesTag = LIST_COLLAPSED_GROUP_TRASHBIN,
-                    headerText = stringResource(Res.string.trashbin) + " \uD83D\uDDD1 " + "(${state.trashbin.size})",
-                    isCollapsed = LIST_COLLAPSED_GROUP_TRASHBIN in state.listCollapsedGroups,
-                    onToggleListGroupExpanded = { onAction(ListAction.OnToggleListGroupExpanded(it)) },
-                    modifier = Modifier.alpha(0.33f)
-                )
-            }
-        }
-
-        if (state.trashbin.isNotEmpty() && LIST_COLLAPSED_GROUP_TRASHBIN in state.listCollapsedGroups) {
-            if (state.trashbin.isEmpty())
-                item {
-                    Text(
-                        text = stringResource(Res.string.nothing_here),
-                        fontStyle = FontStyle.Italic
-                    )
-                }
-            else
-                items(state.trashbin, key = { note -> note.uid }) { note ->
-                    getListItem(
-                        icalEntry = note,
-                        subtasks = state.subtasks[note.uid] ?: emptyList(),
-                        index = 0,
-                        lastIndex = 0,
-                        showDayBlock = true,
-                        modifier = Modifier.alpha(0.33f)
-                    )
-                }
         }
 
         item {
@@ -224,7 +180,7 @@ fun JournalsListJournals(
         }
     }
 
-    Crossfade(state.displayMap.values.isEmpty()) {
+    Crossfade(state.isDisplayEmpty) {
         if (it)
             EmptyListScreen(
                 isEmptyFolder = state.icalEntries.isEmpty(),
@@ -238,7 +194,7 @@ fun JournalsListJournals(
 
 @Preview
 @Composable
-private fun JournalsListJournals_Preview() {
+private fun ListScreenJournals_Preview() {
 
     var state = ListState()
     state = state.copy(
@@ -247,7 +203,7 @@ private fun JournalsListJournals_Preview() {
         icalEntries = listOf(IcalEntry.getSampleJournal(), IcalEntry.getSampleJournal())
     )
 
-    JournalsListJournals(
+    ListScreenJournals(
         state = state,
         onAction = {}
     )
@@ -255,7 +211,7 @@ private fun JournalsListJournals_Preview() {
 
 @Preview
 @Composable
-private fun JournalsListJournals_Search_Preview() {
+private fun ListScreenJournals_Search_Preview() {
 
     var state = ListState()
     state = state.copy(
@@ -263,7 +219,7 @@ private fun JournalsListJournals_Search_Preview() {
         icalEntries = listOf(IcalEntry.getSampleIcalEntry(), IcalEntry.getSampleIcalEntry())
     )
 
-    JournalsListJournals(
+    ListScreenJournals(
         state = state,
         onAction = {}
     )
@@ -271,9 +227,9 @@ private fun JournalsListJournals_Search_Preview() {
 
 @Preview
 @Composable
-private fun JournalsListJournals_empty_Preview() {
+private fun ListScreenJournals_empty_Preview() {
 
-    JournalsListJournals(
+    ListScreenJournals(
         state = ListState(),
         onAction = {}
     )

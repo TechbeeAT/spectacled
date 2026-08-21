@@ -23,7 +23,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.3.0
 
       - name: Prepare keystore
         run: echo "${{ secrets.android_keystore_base64 }}" | base64 -d > "$GITHUB_WORKSPACE/keystore.jks"
@@ -79,7 +79,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.3.0
 
       # --- macOS only: import the "Developer ID Application" certificate so the .app
       #     bundles get signed during packageDmg (see composeXApp/build.gradle.kts).
@@ -151,7 +151,7 @@ jobs:
       contents: write
     steps:
       - name: Download all build artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true

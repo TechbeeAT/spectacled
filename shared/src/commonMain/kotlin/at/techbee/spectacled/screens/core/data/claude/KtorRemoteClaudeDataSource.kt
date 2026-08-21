@@ -1,8 +1,10 @@
 package at.techbee.spectacled.screens.core.data.claude
 
-import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
-import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
+import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesDataSource
+import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
+import at.techbee.spectacled.screens.core.data.ai.buildDeriveEntriesPrompt
+import at.techbee.spectacled.screens.core.data.ai.parseDerivedEntries
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -18,64 +20,36 @@ import kotlinx.serialization.json.putJsonArray
 
 private const val ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
 
-sealed class ClaudeRemoteResponseResult {
-    data class Success(val icalEntry: IcalEntry) : ClaudeRemoteResponseResult()
-    data class Failed(val message: String, val details: String? = null) : ClaudeRemoteResponseResult()
-}
-
+/**
+ * Derives entries via the hosted Anthropic API using the user's own [claudeUserApiKey] and the
+ * selected [model] (an Anthropic model id - see
+ * [at.techbee.spectacled.screens.core.data.ai.ClaudeModel]). The prompt and response parsing are
+ * shared with every other [AiDeriveEntriesDataSource] (see [buildDeriveEntriesPrompt] /
+ * [parseDerivedEntries]); only the request transport is Claude-specific.
+ */
 class KtorRemoteClaudeDataSource(
     val client: HttpClient,
+    val model: String,
     val claudeUserApiKey: String
-) {
+) : AiDeriveEntriesDataSource {
 
-    suspend fun applyAiMetadata(icalEntry: IcalEntry): ClaudeRemoteResponseResult {
+    override suspend fun deriveEntries(
+        rawText: String,
+        variant: SpectacledVariant,
+        createSubtasks: Boolean,
+        existingCategories: List<String>,
+    ): AiDeriveEntriesResult {
 
-        val dtStartPromptPart = if (icalEntry.isJournal()) {
-            """
-                "dtstart": "The date or datetime of the journal entry RFC-5545 compliant if mentioned, otherwise null", 
-                """
-        } else if (icalEntry.isTask()) {
-            """
-                "dtstart": "The start date or start datetime of the task entry RFC-5545 compliant if mentioned, otherwise null. Make sure that the dtstart and due date/datetime have the same format, date or datetime.", 
-                """
-        } else
-            ""
+        val prompt = buildDeriveEntriesPrompt(rawText, variant, createSubtasks, existingCategories)
 
-        val duePromptPart = if (icalEntry.isTask()) {
-            """
-                "due": "The due date or datetime of the task entry RFC-5545 compliant if mentioned, otherwise null. Make sure that the dtstart and due date/datetime have the same format, date or datetime.", 
-                """
-        } else
-            ""
-
-        val prompt = """
-        You are a structured data extractor. The user will give you a free-text journal entry.
-        Extract the following fields and return ONLY valid JSON, no markdown, no explanation:
-        
-        {
-          "summary": "A short one-line title for the entry",
-          "description": "The full cleaned-up text of the entry",
-          $dtStartPromptPart
-          $duePromptPart
-          "location": "Physical location if mentioned, otherwise null",
-          "categories": ["list", "of", "topic", "tags"]
-        }
-        
-        Now is ${formatIcsDateTime(IcsDateTime.now())!!.first}
-                
-        Raw text:
-        ${icalEntry.summary}
-        ${icalEntry.description}
-    """.trimIndent()
-
-        try {
+        return try {
             val response = client.post(ANTHROPIC_BASE_URL) {
                 contentType(ContentType.Application.Json)
                 header("x-api-key", claudeUserApiKey)
                 header("anthropic-version", "2023-06-01")
                 setBody(buildJsonObject {
-                    put("model", "claude-sonnet-4-6")
-                    put("max_tokens", 1000)
+                    put("model", model)
+                    put("max_tokens", 4096)
                     putJsonArray("messages") {
                         addJsonObject {
                             put("role", "user")
@@ -85,11 +59,14 @@ class KtorRemoteClaudeDataSource(
                 })
             }.body<ClaudeResponseDto>()
 
-            return ClaudeRemoteResponseResult.Success(response.applyClaudeResponse(icalEntry))
+            val text = response.content.firstOrNull { it.type == "text" }?.text
+                ?: return AiDeriveEntriesResult.Failed("AI response contained no text")
+
+            AiDeriveEntriesResult.Success(parseDerivedEntries(text))
 
         } catch (e: Exception) {
-            Napier.e("AI metadata request failed", e)
-            return ClaudeRemoteResponseResult.Failed(
+            Napier.e("AI derive-entries request failed", e)
+            AiDeriveEntriesResult.Failed(
                 message = "Fetching AI response failed",
                 details = e.message
             )

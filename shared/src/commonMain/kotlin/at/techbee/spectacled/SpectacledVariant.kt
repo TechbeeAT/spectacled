@@ -8,9 +8,15 @@ import at.techbee.spectacled.theme.ThemeFont
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_journal
+import spectacled.shared.generated.resources.add_note
+import spectacled.shared.generated.resources.add_task
 import spectacled.shared.generated.resources.app_name_spectacled_journals
 import spectacled.shared.generated.resources.app_name_spectacled_notes
 import spectacled.shared.generated.resources.app_name_spectacled_tasks
+import spectacled.shared.generated.resources.ic_add_journal
+import spectacled.shared.generated.resources.ic_add_note
+import spectacled.shared.generated.resources.ic_add_task
 import spectacled.shared.generated.resources.logo_spectacled_journals
 import spectacled.shared.generated.resources.logo_spectacled_notes
 import spectacled.shared.generated.resources.logo_spectacled_tasks
@@ -19,6 +25,8 @@ enum class SpectacledVariant(
     val dbName: String,
     val appNameStringRes: StringResource,
     val logoDrawableResource: DrawableResource,
+    val addNewStringRes: StringResource,
+    val addNewDrawableRes: DrawableResource,
     val mainCalendarComponent: CalendarComponent,
     val themeSeedColor: Color,
     val deeplinkUriScheme: String,
@@ -32,6 +40,8 @@ enum class SpectacledVariant(
         "spectacled_journals.db",
         Res.string.app_name_spectacled_journals,
         Res.drawable.logo_spectacled_journals,
+        Res.string.add_journal,
+        Res.drawable.ic_add_journal,
         CalendarComponent.VJOURNAL,
         Color(0, 104, 150),
         "spectacled-journals",
@@ -44,6 +54,8 @@ enum class SpectacledVariant(
         "spectacled_notes.db",
         Res.string.app_name_spectacled_notes,
         Res.drawable.logo_spectacled_notes,
+        Res.string.add_note,
+        Res.drawable.ic_add_note,
         CalendarComponent.VJOURNAL,
         Color(153, 76, 44),
         "spectacled-notes",
@@ -57,6 +69,8 @@ enum class SpectacledVariant(
         "spectacled_tasks.db",
         Res.string.app_name_spectacled_tasks,
         Res.drawable.logo_spectacled_tasks,
+        Res.string.add_task,
+        Res.drawable.ic_add_task,
         CalendarComponent.VTODO,
         Color(41, 111, 35),
         "spectacled-tasks",

@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryList
-import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.about.presentation.AboutScreen
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.components.AddPrincipalBottomSheet
@@ -45,10 +44,11 @@ import at.techbee.spectacled.screens.account.presentation.components.CreateOrUpd
 import at.techbee.spectacled.screens.account.presentation.components.DeleteCalendarDialog
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListTopBar
 import at.techbee.spectacled.screens.account.presentation.components.RemovePrincipalDialog
-import at.techbee.spectacled.screens.account.presentation.components.SettingsBottomSheet
 import at.techbee.spectacled.screens.account.presentation.components.UpdatePrincipalPasswordBottomSheet
+import at.techbee.spectacled.screens.account.presentation.components.settings.SettingsBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject

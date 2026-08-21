@@ -1,0 +1,18 @@
+# Keep the Docker build context small and reproducible.
+# (The proxy image builds from the repo root because :server depends on :shared.)
+.git
+.github
+**/build/
+**/.gradle/
+.gradle/
+.kotlin/
+kotlin-js-store/
+node_modules/
+**/node_modules/
+.idea/
+*.iml
+.DS_Store
+local.properties
+# iOS artefacts are irrelevant to the JVM proxy build
+ios*/
+*.xcworkspace

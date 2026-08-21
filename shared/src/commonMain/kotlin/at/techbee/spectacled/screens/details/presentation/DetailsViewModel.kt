@@ -14,13 +14,13 @@ import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
-import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
-import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
+import at.techbee.spectacled.screens.core.domain.INLINE_ATTACHMENT_WARN_BYTES
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.MAX_INLINE_ATTACHMENT_BYTES
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -50,6 +50,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.attachment_large_warning
+import spectacled.shared.generated.resources.attachment_too_large
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.entry_copy
@@ -139,7 +141,11 @@ class DetailsViewModel(
         }
     }
 
-    fun loadNew(calendarId: Long? = null, initialDescription: String? = null) {
+    fun loadNew(
+        calendarId: Long? = null,
+        initialDescription: String? = null,
+        detailsInitialAction: String? = null    // name of enum value of [DetailsInitialAction]
+        ) {
 
         viewModelScope.launch {
 
@@ -158,13 +164,21 @@ class DetailsViewModel(
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
-                showDeleteDialog = false,
+                showDrawingCanvasBottomSheet = if(detailsInitialAction == DetailsInitialAction.ADD_DRAWING.name) DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null) else DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
+                launchPickerAction = when (detailsInitialAction) {
+                    DetailsInitialAction.ADD_ATTACHMENT.name -> AttachmentPickerAction.FILE
+                    DetailsInitialAction.ADD_PHOTO.name -> AttachmentPickerAction.PHOTO
+                    DetailsInitialAction.ADD_FROM_GALLERY.name -> AttachmentPickerAction.GALLERY
+                    else -> null
+                },
+                showSheetOrDialog = if(detailsInitialAction == DetailsInitialAction.ADD_ATTACHMENT_URL.name) DetailsSheetOrDialog.ADD_ATTACHMENT_URL else null,
                 navigateUp = false
             ) }
 
             observeIcalEntry(newIcalEntry.calendarId, newIcalEntry.uid)
         }
     }
+
 
     @OptIn(ExperimentalUuidApi::class)
     fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
@@ -286,14 +300,9 @@ class DetailsViewModel(
             DetailsAction.OnDelete -> saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
             is DetailsAction.OnMove -> { onMove(action.newCalendarId) }
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
-            is DetailsAction.OnShowDeleteDialog -> { _state.update { it.copy(showDeleteDialog = action.show) } }
-            is DetailsAction.OnShowMoveDialog -> { _state.update { it.copy(showMoveDialog = action.show) } }
-            is DetailsAction.OnShowMoreBottomSheet -> { _state.update { it.copy(showMoreBottomSheet = action.show) } }
-            is DetailsAction.OnShowCategorySelectorBottomSheet -> { _state.update { it.copy(showCategorySelectorBottomSheet = action.show) } }
-            is DetailsAction.OnShowColorSelectorBottomSheet -> { _state.update { it.copy(showColorSelectorBottomSheet = action.show) } }
-            is DetailsAction.OnShowAddSubtaskBottomSheet -> { _state.update { it.copy(showAddSubtaskBottomSheet = action.show) } }
-            is DetailsAction.OnShowEditUrlBottomSheet -> { _state.update { it.copy(showEditUrlBottomSheet = action.show) } }
+            is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
             is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
+            is DetailsAction.OnLaunchPicker -> { _state.update { it.copy(launchPickerAction = action.pickerAction) } }
             DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
@@ -311,8 +320,6 @@ class DetailsViewModel(
             }
             DetailsAction.OnDispose -> onDispose()
             DetailsAction.OnRestoreEntry -> onRestoreEntry()
-            is DetailsAction.OnShowJournalStatusPickerBottomSheet -> { _state.update { it.copy(showJournalStatusPickerBottomSheet = action.show) } }
-            is DetailsAction.OnShowTaskStatusProgressPickerBottomSheet -> { _state.update { it.copy(showTaskStatusProgressPickerBottomSheet = action.show) } }
             is DetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
             is DetailsAction.OnUpdateDue -> { onUpdateDue(action.icsDateTime) }
             DetailsAction.OnShare -> onShare()
@@ -323,17 +330,17 @@ class DetailsViewModel(
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
             is DetailsAction.OnNavigateToIcalEntryId -> { _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
-            DetailsAction.OnProcessWithAI -> { onProcessWithAI() }
             is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
+            is DetailsAction.OnAddUrlAttachment -> { onAddUrlAttachment(action.url) }
             is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentUid) }
             is DetailsAction.OnDeleteAttachment -> { onDeleteAttachment(action.attachmentUid) }
-            is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths) }
+            is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
         }
     }
 
     private fun onShare() {
-        _state.update { it.copy(showMoreBottomSheet = false) }
+        _state.update { it.copy(showSheetOrDialog = null) }
         viewModelScope.launch {
             val categoryLabel = getString(Res.string.category)
             shareManager.share(
@@ -571,7 +578,7 @@ class DetailsViewModel(
         _state.update {
             it.copy(
                 icalEntry = entryToSave,
-                showDeleteDialog = false,
+                showSheetOrDialog = if(navigateUp) null else _state.value.showSheetOrDialog,
                 navigateUp = navigateUp
             )
         }
@@ -694,6 +701,9 @@ class DetailsViewModel(
             return
 
         val subtask = _state.value.subtasks.find { it.id == subtaskIcalEntryId } ?: return
+        // A recurring subtask is read-only even if its parent isn't (no recurrence support).
+        if(subtask.isRecurring())
+            return
 
         val updatedSubtask = subtask.withProgressUpdated(percent)
         viewModelScope.launch {
@@ -717,70 +727,32 @@ class DetailsViewModel(
         }
     }
 
-    private fun onProcessWithAI() {
-
-        if(!state.value.allowEditing())
-            return
-
-        if(state.value.claudeUserApiKey.isNullOrEmpty()) {
-            _state.update {
-                it.copy(
-                    isLoading = false,
-                    snackbarText = "API key not provided. Please update the API key in the settings."
-                )
-            }
-            return
-        }
-
-        _state.update { it.copy(isLoading = true) }
-
-        // Claude API network call — keep it off the Main dispatcher.
-        viewModelScope.launch(ioDispatcher) {
-
-            val remoteResult = KtorRemoteClaudeDataSource(client, state.value.claudeUserApiKey?:"").applyAiMetadata(_state.value.icalEntry)
-
-            when(remoteResult) {
-                is ClaudeRemoteResponseResult.Failed -> {
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            snackbarText = remoteResult.message + if(!remoteResult.details.isNullOrBlank()) "(${remoteResult.details})" else ""
-                        )
-                    }
-                }
-                is ClaudeRemoteResponseResult.Success -> {
-
-                    val processedEntry = remoteResult.icalEntry
-                    val currentEntry = _state.value.icalEntry
-
-                    _state.update {
-                        it.copy(
-                            icalEntry = currentEntry.copy(
-                                summary = currentEntry.summary ?: processedEntry.summary,
-                                //description = processedEntry.description,
-                                dtStart = if(currentEntry.dtStart == null && currentEntry.isTask()) processedEntry.dtStart else currentEntry.dtStart ,
-                                due = if(currentEntry.due == null && currentEntry.isTask()) processedEntry.due else currentEntry.due ,
-                                categories = currentEntry.categories.plus(processedEntry.categories).distinct(),
-                                lastModified = IcsDateTime.now(),
-                                syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
-                            ),
-                            isLoading = false
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     private fun onNewCalendarIdSelected(calendarId: Long) {
         loadNew(calendarId, state.value.icalEntry.description)
     }
 
+    // Attachments default to inline: the bytes are embedded (BASE64) in the iCalendar object, so
+    // they sync to any CalDAV server without needing server-side attachment support. Because the
+    // whole object is re-uploaded on every edit — and servers cap object size — oversized files are
+    // guarded against (see MAX_INLINE_ATTACHMENT_BYTES / INLINE_ATTACHMENT_WARN_BYTES).
     @OptIn(ExperimentalTime::class)
-    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
+    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = true) {
 
         if(!state.value.allowEditing())
             return
+
+        // Reject files too large to safely embed inline, before touching the disk.
+        if (isInline && bytes.size > MAX_INLINE_ATTACHMENT_BYTES) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(snackbarText = getString(
+                        Res.string.attachment_too_large,
+                        (MAX_INLINE_ATTACHMENT_BYTES / (1024 * 1024)).toInt()
+                    ))
+                }
+            }
+            return
+        }
 
         // Writes the attachment bytes to disk — keep the file I/O off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
@@ -797,17 +769,72 @@ class DetailsViewModel(
                 syncState = AttachmentSyncState.LOCAL_MODIFIED
             )
 
+            val largeWarning = if (isInline && bytes.size > INLINE_ATTACHMENT_WARN_BYTES)
+                getString(Res.string.attachment_large_warning) else null
+
             _state.update {
                 it.copy(
                     icalEntry = it.icalEntry.copy(
                         attachments = it.icalEntry.attachments + newAttachment,
                         lastModified = IcsDateTime.now(),
                         syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
-                    )
+                    ),
+                    snackbarText = largeWarning ?: it.snackbarText
                 )
             }
         }
     }
+
+    // Adds a linked (remote-URL) attachment: only the pointer is stored, the bytes stay on their
+    // server. Serialized as ATTACH:<url>, it works on any CalDAV server. The URL is not fetched here
+    // — download happens lazily in onOpenAttachment — so there is no size guard and no disk I/O.
+    @OptIn(ExperimentalTime::class)
+    private fun onAddUrlAttachment(url: Url) {
+
+        if(!state.value.allowEditing())
+            return
+
+        val fileName = deriveFileNameFromUrl(url)
+        val newAttachment = Attachment(
+            icalEntryId = _state.value.icalEntry.id,
+            remoteUrl = url.toString(),
+            fileName = fileName,
+            mimeType = guessMimeTypeFromFileName(fileName),
+            size = null,
+            isInline = false,
+            syncState = AttachmentSyncState.PENDING_DOWNLOAD
+        )
+
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    attachments = it.icalEntry.attachments + newAttachment,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                )
+            )
+        }
+    }
+
+    // Last non-blank path segment of the URL, e.g. ".../docs/report.pdf" -> "report.pdf".
+    // Falls back to the host when the path carries no usable file name.
+    private fun deriveFileNameFromUrl(url: Url): String {
+        val path = url.encodedPath.substringBefore('?').substringBefore('#')
+        return path.trimEnd('/').substringAfterLast('/').ifBlank { url.host }
+    }
+
+    private fun guessMimeTypeFromFileName(fileName: String): String? =
+        when (fileName.substringAfterLast('.', "").lowercase()) {
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            "bmp" -> "image/bmp"
+            "svg" -> MIMETYPE_SVG
+            "pdf" -> "application/pdf"
+            "txt" -> "text/plain"
+            else -> null
+        }
 
     private fun onOpenAttachment(attachmentUid: String) {
         val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid } ?: return
@@ -871,12 +898,12 @@ class DetailsViewModel(
         }
     }
 
-    private fun onUpdateDrawing(replaceAttachmentUid: String?, paths: List<PathData>) {
+    private fun onUpdateDrawing(replaceAttachmentUid: String?, paths: List<PathData>, width: Float, height: Float) {
 
         if(!state.value.allowEditing())
             return
 
-        val svg = PathDataSvgConverter.toSvg(paths)
+        val svg = PathDataSvgConverter.toSvg(paths, width, height)
         onAddAttachment(
             fileName = "drawing_" + Uuid.random().toString().take(8) + ".svg",
             bytes = svg.toByteArray(),
@@ -895,14 +922,14 @@ class DetailsViewModel(
 
         val entryId = _state.value.icalEntry.id
 
-        _state.update { it.copy(showMoveDialog = false, isLoading = true) }
+        _state.update { it.copy(isLoading = true) }
 
         // Attachment download + DB work + sync trigger - keep it off the Main dispatcher.
         // We navigate up only once the move is persisted, so popping the screen (which cancels
         // viewModelScope) can't interrupt it mid-way.
         viewModelScope.launch(ioDispatcher) {
             moveIcalEntriesUseCase.move(listOf(entryId), newCalendarId)
-            _state.update { it.copy(isLoading = false, navigateUp = true) }
+            _state.update { it.copy(showSheetOrDialog = null, isLoading = false, navigateUp = true) }
         }
     }
 }
