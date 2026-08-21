@@ -23,6 +23,7 @@
         }
         a.app:hover { transform: translateY(-2px); border-color: CanvasText; }
         a.app span { display: block; font-size: 0.85rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem; }
+        img.logo { margin: 10px; border-radius: 10px }
         footer { font-size: 0.85rem; opacity: 0.6; }
         footer a { color: inherit; }
     </style>
@@ -33,9 +34,18 @@
         <p>Open, standards-based journals, notes, and tasks — synced over CalDAV.</p>
     </div>
     <nav class="apps">
-        <a class="app" href="journals/">Journals<span>Dated journal entries</span></a>
-        <a class="app" href="notes/">Notes<span>Free-form notes</span></a>
-        <a class="app" href="tasks/">Tasks<span>To-dos &amp; due dates</span></a>
+        <a class="app" href="journals/">
+            <img class="logo" src="journals/favicon.ico" height = "80" alt="spectacled Journals"/>
+            <br/>Journals
+            <span>Dated journal entries</span></a>
+        <a class="app" href="notes/">
+            <img class="logo" src="notes/favicon.ico" height = "80" alt="spectacled Notes"/>
+            <br/>Notes
+            <span>Free-form notes</span></a>
+        <a class="app" href="tasks/">
+            <img class="logo" src="tasks/favicon.ico" height = "80" alt="spectacled Tasks"/>
+            <br/>Tasks
+            <span>To-dos &amp; due dates</span></a>
     </nav>
     <footer>
         <a href="https://github.com/TechbeeAT/spectacled">Source on GitHub</a>
