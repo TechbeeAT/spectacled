@@ -26,7 +26,7 @@ primary_region = 'fra'
   # Leave OFF in production — this is the SSRF guard (default "false" blocks targets that
   # resolve to loopback/link-local/private/metadata addresses). Only set "true" for local testing.
   # PROXY_ALLOW_PRIVATE_TARGETS = "false"
-  PROXY_ALLOWED_ORIGINS = 'https://spectacled.techbee.at'
+  PROXY_ALLOWED_ORIGINS = 'https://techbeeat.github.io'
   # REQUIRED for a public instance: the web origin(s) allowed to use this proxy.
   PROXY_REQUIRE_HTTPS_TARGET = 'true'
 
