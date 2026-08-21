@@ -1,0 +1,7 @@
+CREATE TABLE PendingRemoteDeletionDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    calendarId INTEGER NOT NULL,
+    remoteUrl TEXT NOT NULL UNIQUE
+);
+
+CREATE INDEX idx_pending_remote_deletion_calendarId ON PendingRemoteDeletionDto(calendarId);
