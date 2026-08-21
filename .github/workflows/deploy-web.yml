@@ -44,8 +44,13 @@ jobs:
         uses: gradle/actions/wrapper-validation@v6.3.0
 
       - name: Build web distributions (JS)
+        # The Kotlin/JS production compiler is memory-hungry; the repo default
+        # (kotlin.daemon.jvmargs=-Xmx3072M) OOMs here. Raise it just for CI —
+        # GitHub's public-repo runners have 16 GB — without changing the default
+        # that local Android/desktop builds rely on.
         run: >
           ./gradlew --no-daemon
+          -Pkotlin.daemon.jvmargs=-Xmx6g
           :composeJournalsApp:jsBrowserDistribution
           :composeNotesApp:jsBrowserDistribution
           :composeTasksApp:jsBrowserDistribution
