@@ -49,6 +49,7 @@ jobs:
       - name: Build web distributions (JS)
         run: >
           ./gradlew --no-daemon
+          -Pkotlin.daemon.jvmargs=-Xmx6g
           :composeJournalsApp:jsBrowserDistribution
           :composeNotesApp:jsBrowserDistribution
           :composeTasksApp:jsBrowserDistribution
