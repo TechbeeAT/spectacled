@@ -19,7 +19,7 @@ name: Deploy web apps to GitHub Pages
 on:
   push:
     tags:
-      - 'v*'           # finals -> TestFlight (promote to the App Store from ASC)
+      - 'v*'           # only release versions are published automatically
       - '!v*alpha*'
       - '!v*beta*'
   workflow_dispatch:
