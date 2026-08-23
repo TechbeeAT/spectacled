@@ -16,6 +16,8 @@
     <string name="terms_conditions">Terms &amp; Conditions</string>
     <string name="close">Close</string>
     <string name="settings">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+
 
     <string name="edit">Edit</string>
     <string name="done">Done</string>
@@ -52,6 +54,9 @@
     <string name="no_summary_description">No summary/description</string>
     <string name="categories">Categories</string>
     <string name="read_only">Read only</string>
+    <string name="recurring_entry_read_only_title">Recurring entry</string>
+    <string name="recurring_entry_read_only_message">This entry is part of a recurring series, which isn't supported. It's shown read-only so its recurrence isn't accidentally changed.</string>
+    <string name="recurring_entry_read_only_snackbar">Recurring entries are read-only and can't be selected.</string>
     <string name="sync_problem">Sync problem</string>
     <string name="sync_conflict_detected">Sync conflict detected</string>
     <string name="refresh">Refresh</string>
@@ -85,8 +90,9 @@
     <string name="grouping_start_in_past">Start in past</string>
 
     <string name="grouping_no_date">No date</string>
+    <string name="grouping_other">Other</string>
 
-    <string name="trashbin">Trashbin</string>
+    <string name="trashbin_x">Trashbin (%1$d)</string>
 
     <string name="search">Search…</string>
     <string name="add_journal">Add journal</string>
@@ -134,9 +140,13 @@
     <string name="subtasks_not_supported_in_collection">Not supported in this collection</string>
     <string name="url">URL</string>
     <string name="add_url">Add URL</string>
+    <string name="add">Add</string>
+    <string name="link_file_by_url">Link file by URL</string>
+    <string name="link_file_by_url_hint">The file stays on its server - Spectacled only stores the link and downloads it when opened.</string>
     <string name="add_attachment">Add attachment</string>
     <string name="attachment">Attachment</string>
-    <string name="attachment_not_supported_by_server">Not supported by server</string>
+    <string name="attachment_too_large">Attachment is too large to sync (max %1$d MB) and was not added.</string>
+    <string name="attachment_large_warning">Large attachment — it's embedded in the entry and re-uploaded on every edit, which some servers may reject.</string>
     <string name="add_photo">Add photo</string>
     <string name="add_from_gallery">Add from gallery</string>
     <string name="add_drawing">Add drawing</string>
@@ -238,10 +248,17 @@
 
     <string name="advanced">Advanced</string>
     <string name="anthropic_api_key">Anthropic API key</string>
-    <string name="anthropic_api_key_info">Used only for the "AI Extract" action, stored on this device only.</string>
+    <string name="anthropic_api_key_info">Used only for the "Create with AI" action, stored on this device only.</string>
     <string name="get_an_api_key">Get an API key</string>
-    <string name="ai_extract_claude">AI Extract (Claude)</string>
-    <string name="ai_extract_no_api_key">Add your Anthropic API key in Settings to use AI Extract.</string>
+    <string name="ai_provider">AI provider</string>
+    <string name="ai_provider_claude">Claude (Anthropic)</string>
+    <string name="ai_provider_openai">Open-source model (custom endpoint)</string>
+    <string name="ai_provider_none">None</string>
+    <string name="ai_provider_not_configured">Configure your AI provider in the settings to use this feature.</string>
+    <string name="ai_model">Model</string>
+    <string name="openai_base_url">Server URL</string>
+    <string name="openai_api_key">API key (optional)</string>
+    <string name="openai_info">Point this at a local or self-hosted server that speaks the OpenAI API (Ollama, LM Studio, llama.cpp, LocalAI).</string>
 
     <string name="sync_info">Sync info</string>
     <string name="reload_calendars_folders">Reload calendars/folders</string>
@@ -261,5 +278,10 @@
     <string name="unknown">Unknown</string>
     <string name="file_size_kb">%1$d KB</string>
     <string name="percent_complete">%1$d %%</string>
+
+    <string name="ai_create_entries">Create with AI</string>
+    <string name="ai_paste_text_placeholder">Paste text to create entries…</string>
+    <string name="ai_create_subtasks">Create subtasks</string>
+    <string name="create">Create</string>
 
 </resources>

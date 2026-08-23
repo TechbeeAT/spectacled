@@ -21,30 +21,22 @@ sealed interface DetailsAction {
     data class OnAddSubtask(val summary: String): DetailsAction
     data class OnUpdateUrl(val url: Url?): DetailsAction
     data class OnAddAttachment(val fileName: String, val bytes: ByteArray, val mimeType: String?): DetailsAction
+    data class OnAddUrlAttachment(val url: Url): DetailsAction
     data class OnOpenAttachment(val attachmentUid: String): DetailsAction
     data class OnDeleteAttachment(val attachmentUid: String): DetailsAction
-    data class OnUpdateDrawing(val replaceAttachmentUid: String?, val paths: List<PathData>): DetailsAction
+    data class OnUpdateDrawing(val replaceAttachmentUid: String?, val paths: List<PathData>, val width: Float, val height: Float): DetailsAction
 
     data class OnNewCalendarIdSelected(val calendarId: Long): DetailsAction
 
     data class OnSyncConflictUpdateUserDecision(val syncState: SyncState): DetailsAction
 
-    data class OnShowMoreBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowDeleteDialog(val show: Boolean): DetailsAction
-    data class OnShowMoveDialog(val show: Boolean): DetailsAction
-    data class OnShowColorSelectorBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowCategorySelectorBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowJournalStatusPickerBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowTaskStatusProgressPickerBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowAddSubtaskBottomSheet(val show: Boolean): DetailsAction
-    data class OnShowEditUrlBottomSheet(val show: Boolean): DetailsAction
+    data class OnShowSheetOrDialog(val sheetOrDialog: DetailsSheetOrDialog?): DetailsAction
     data class OnShowDrawingCanvasBottomSheet(val show: Boolean, val replaceAttachmentUid: String?, val initialPaths: List<PathData>?): DetailsAction
+    data class OnLaunchPicker(val pickerAction: AttachmentPickerAction?): DetailsAction
 
     data class OnPersistOrderNo(val list: List<Long>): DetailsAction
 
     data class OnNavigateToIcalEntryId(val id: Long?): DetailsAction
-
-    object OnProcessWithAI: DetailsAction
 
     object OnDelete: DetailsAction
     data class OnMove(val newCalendarId: Long): DetailsAction

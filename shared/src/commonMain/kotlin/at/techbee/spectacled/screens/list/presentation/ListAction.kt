@@ -29,6 +29,9 @@ sealed interface ListAction {
     data class OnShowUpdateColorOfSelectedBottomSheet(val show: Boolean): ListAction
     data class OnShowUpdateCategoryOfSelectedBottomSheet(val show: Boolean): ListAction
 
+    data class OnShowDeriveEntriesBottomSheet(val show: Boolean): ListAction
+    data class OnDeriveEntriesFromText(val text: String, val createSubtasks: Boolean): ListAction
+
     data class OnUpdateColorOfSelected(val color: Color?): ListAction
     data class OnUpdateCategoryOfSelected(val addCategory: String?, val removeCategory: String?): ListAction
     data class OnUpdateOrderNo(val fromIndex: Int, val toIndex: Int): ListAction

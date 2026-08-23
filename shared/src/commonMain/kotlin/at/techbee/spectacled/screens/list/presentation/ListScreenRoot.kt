@@ -10,15 +10,28 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Attachment
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.DatasetLinked
 import androidx.compose.material.icons.outlined.EditOff
+import androidx.compose.material.icons.outlined.Gesture
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -26,6 +39,7 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -34,25 +48,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
+import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
+import at.techbee.spectacled.screens.details.presentation.DetailsInitialAction
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
+import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
 import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
@@ -62,13 +83,15 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_journal
-import spectacled.shared.generated.resources.add_note
-import spectacled.shared.generated.resources.add_task
+import spectacled.shared.generated.resources.add_attachment
+import spectacled.shared.generated.resources.add_drawing
+import spectacled.shared.generated.resources.add_from_gallery
+import spectacled.shared.generated.resources.add_photo
+import spectacled.shared.generated.resources.ai_create_entries
+import spectacled.shared.generated.resources.ai_provider_not_configured
 import spectacled.shared.generated.resources.done
-import spectacled.shared.generated.resources.ic_add_journal
-import spectacled.shared.generated.resources.ic_add_note
-import spectacled.shared.generated.resources.ic_add_task
+import spectacled.shared.generated.resources.link_file_by_url
+import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.read_only
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -200,6 +223,19 @@ fun ListScreenRoot(
             )
         }
 
+        if (state.showDeriveEntriesBottomSheet) {
+            DeriveEntriesBottomSheet(
+                aiDerivedEntriesResult = state.aiDerivedEntriesResult,
+                allowSubtasks = state.calendar.isTasksSupported(),
+                onCreate = { text, createSubtasks -> listViewModel.onAction(ListAction.OnDeriveEntriesFromText(text, createSubtasks)) },
+                onCreateWithoutAi = { text ->
+                    onNavigate(IcalEntryDetails(icalEntryId = 0L, newIcalEntryCalendarId = state.calendar.id, newIcalEntryInitialDescription = text))
+                    listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(false))
+                },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(false)) }
+            )
+        }
+
         if (state.showDateSelectorBottomSheet) {
             DatePickerBottomSheet(
                 icsDateTime = IcsDateTime.now(),
@@ -226,44 +262,131 @@ fun ListScreenRoot(
             },
             floatingActionButton = {
                 // only shown if multiselect is null
-                if (state.multiselectItems == null) {
+                AnimatedVisibility(state.multiselectItems == null) {
                     if (state.calendar.canWriteContent()) {
                         ExtendedFloatingActionButton(
-                            onClick = { onNavigate(IcalEntryDetails(0L, state.calendar.id)) },
+                            onClick = { },
                             // Lift the FAB by the bottom safe-area inset so it clears the iOS home
                             // indicator (the content still fills to the edge, only the FAB is padded).
                             modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom)),
                         ) {
+
+                            var fabMoreExpanded by remember { mutableStateOf(false) }
+
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(
-                                    painter = painterResource(
-                                        when (listViewModel.spectacledVariant) {
-                                            SpectacledVariant.JOURNALS -> Res.drawable.ic_add_journal
-                                            SpectacledVariant.NOTES -> Res.drawable.ic_add_note
-                                            SpectacledVariant.TASKS -> Res.drawable.ic_add_task
-                                        }
-                                    ),
-                                    contentDescription = stringResource(
-                                        when (listViewModel.spectacledVariant) {
-                                            SpectacledVariant.JOURNALS -> Res.string.add_journal
-                                            SpectacledVariant.NOTES -> Res.string.add_note
-                                            SpectacledVariant.TASKS -> Res.string.add_task
-                                        }
-                                    )
+                                TextButton(
+                                    onClick = { onNavigate(IcalEntryDetails(0L, state.calendar.id)) },
+                                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(listViewModel.spectacledVariant.addNewDrawableRes),
+                                            contentDescription = stringResource(listViewModel.spectacledVariant.addNewStringRes)
+                                        )
+
+                                        Text(
+                                            text = stringResource(listViewModel.spectacledVariant.addNewStringRes)
+                                        )
+                                    }
+                                }
+
+                                VerticalDivider(
+                                    modifier = Modifier
+                                        .height(24.dp)
+                                        .padding(horizontal = 4.dp),
+                                    color = IconButtonDefaults.iconButtonColors().contentColor
                                 )
 
-                                Text(
-                                    text = stringResource(
-                                        when (listViewModel.spectacledVariant) {
-                                            SpectacledVariant.JOURNALS -> Res.string.add_journal
-                                            SpectacledVariant.NOTES -> Res.string.add_note
-                                            SpectacledVariant.TASKS -> Res.string.add_task
-                                        }
+                                IconButton(
+                                    onClick = { fabMoreExpanded = !fabMoreExpanded }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MoreVert,
+                                        contentDescription = stringResource(Res.string.more)
                                     )
-                                )
+
+                                    DropdownMenu(
+                                        expanded = fabMoreExpanded,
+                                        onDismissRequest = { fabMoreExpanded = false }
+                                    ) {
+
+                                        // AI "create entries from text" - only when an Anthropic key is set and the
+                                        // collection is writable.
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(stringResource(Res.string.ai_create_entries))
+                                                    if (!state.isAiProviderConfigured)
+                                                        Text(
+                                                            text = stringResource(Res.string.ai_provider_not_configured),
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontStyle = FontStyle.Italic
+                                                        )
+                                                }
+                                            },
+                                            leadingIcon = { Icon(Icons.Outlined.AutoAwesome, stringResource(Res.string.ai_create_entries)) },
+                                            enabled = state.isAiProviderConfigured,
+                                            onClick = {
+                                                listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(true))
+                                                fabMoreExpanded = false
+                                            },
+                                        )
+
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.add_attachment)) },
+                                            leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
+                                            onClick = {
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_ATTACHMENT.name))
+                                                fabMoreExpanded = false
+                                            },
+                                        )
+
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.link_file_by_url)) },
+                                            leadingIcon = { Icon(Icons.Outlined.DatasetLinked, stringResource(Res.string.link_file_by_url)) },
+                                            onClick = {
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_ATTACHMENT_URL.name))
+                                                fabMoreExpanded = false
+                                            },
+                                        )
+
+                                        if (getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID)) {
+                                            DropdownMenuItem(
+                                                text = { Text(stringResource(Res.string.add_photo)) },
+                                                leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
+                                                onClick = {
+                                                    onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_PHOTO.name))
+                                                    fabMoreExpanded = false
+                                                },
+                                            )
+                                        }
+
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.add_from_gallery)) },
+                                            leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
+                                            onClick = {
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_FROM_GALLERY.name))
+                                                fabMoreExpanded = false
+                                            },
+                                        )
+
+
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.add_drawing)) },
+                                            leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
+                                            onClick = {
+                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_DRAWING.name))
+                                                fabMoreExpanded = false
+                                            },
+                                        )
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -340,7 +463,7 @@ fun ListScreenRoot(
 
                         when (listViewModel.spectacledVariant) {
                             SpectacledVariant.JOURNALS -> {
-                                JournalsListJournals(
+                                ListScreenJournals(
                                     state = state,
                                     onAction = { action -> listViewModel.onAction(action) },
                                     modifier = Modifier.fillMaxSize()

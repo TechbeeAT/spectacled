@@ -4,6 +4,9 @@ package at.techbee.spectacled.screens.core.presentation.components
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter.encodeMetadata
+import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter.fromSvg
+import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter.toSvg
 import kotlin.math.max
 import kotlin.math.round
 
@@ -48,6 +51,12 @@ import kotlin.math.round
  * geometry. See [fromSvg].
  */
 object PathDataSvgConverter {
+
+    data class DrawingData(
+        val paths: List<PathData>,
+        val width: Float,
+        val height: Float
+    )
 
     /**
      * Serializes a list of [PathData] (one per stroke) to an SVG document string.
@@ -100,7 +109,7 @@ object PathDataSvgConverter {
     }
 
     /**
-     * Parses an SVG string back into an editable `List<PathData>`, but ONLY if it
+     * Parses an SVG string back into an editable [DrawingData], but ONLY if it
      * contains this class's own embedded `<metadata>` block (see [encodeMetadata] for
      * the format).
      *
@@ -112,13 +121,13 @@ object PathDataSvgConverter {
      * function refuses to touch it.
      *
      * @param svg The SVG document string to parse.
-     * @return The reconstructed, editable `List<PathData>` if — and only if — a valid
+     * @return The reconstructed, editable [DrawingData] if — and only if — a valid
      *   metadata block produced by [toSvg] is present. Returns `null` for any other SVG
      *   (foreign, hand-edited, corrupted, or missing the block entirely); the caller
      *   should treat a `null` result as "render this attachment as a flat, read-only
      *   image, don't offer stroke-level editing."
      */
-    fun fromSvg(svg: String): List<PathData>? = parseMetadata(svg)
+    fun fromSvg(svg: String): DrawingData? = parseMetadata(svg)
 
     // -----------------------------------------------------------------
     // Geometry (write-only) — used to emit <path> elements so any SVG
@@ -213,20 +222,22 @@ object PathDataSvgConverter {
 
     /**
      * Parses the embedded `<metadata>` CDATA block (see [encodeMetadata] for the format)
-     * back into a full-fidelity `List<PathData>`, if present and well-formed. This is the
+     * back into a full-fidelity [DrawingData], if present and well-formed. This is the
      * sole source of truth for [fromSvg] — no other part of the SVG is read.
      *
      * @param svg The SVG document string.
-     * @return The reconstructed `List<PathData>`, or `null` if there is no metadata
+     * @return The reconstructed [DrawingData], or `null` if there is no metadata
      *   block, it's empty, or any line fails to parse (malformed/truncated/foreign
      *   data) — signaling the caller to treat the attachment as non-editable.
      */
-    private fun parseMetadata(svg: String): List<PathData>? {
+    private fun parseMetadata(svg: String): DrawingData? {
         val raw = CDATA_REGEX.find(svg)?.groupValues?.get(1) ?: return null
         val lines = raw.split('\n').map { it.trim() }.filter { it.isNotEmpty() }
         if (lines.isEmpty()) return null
 
         val result = mutableListOf<PathData>()
+        var canvasWidth = 0f
+        var canvasHeight = 0f
         var currentId = ""
         var currentColor = Color.Black
         var currentThickness = 0f
@@ -250,9 +261,9 @@ object PathDataSvgConverter {
             for (line in lines) {
                 when {
                     line.startsWith("W:") -> {
-                        // Canvas size isn't part of PathData; parsed only to validate
-                        // the line, not returned. Swap in your own handling here if you
-                        // want to recover it.
+                        val parts = line.removePrefix("W:").split(',')
+                        canvasWidth = parts[0].toFloat()
+                        canvasHeight = parts[1].toFloat()
                     }
                     line.startsWith("S:") -> {
                         flush()
@@ -270,12 +281,18 @@ object PathDataSvgConverter {
                 }
             }
             flush()
+
+            if (canvasWidth == 0f || canvasHeight == 0f) {
+                val (boundW, boundH) = boundingSize(result)
+                canvasWidth = boundW
+                canvasHeight = boundH
+            }
         } catch (e: Exception) {
             // Malformed or foreign metadata — signal "not editable" rather than guessing.
             return null
         }
 
-        return result.toList()
+        return DrawingData(result.toList(), canvasWidth, canvasHeight)
     }
 
     // -----------------------------------------------------------------

@@ -24,7 +24,7 @@
 // version's sqljs.worker.js and re-apply these changes on top - the upstream
 // protocol could change without notice.
 
-importScripts('/sql-wasm.js');
+importScripts('sql-wasm.js');
 
 const DB_NAME = 'spectacled-sqlite';
 const STORE_NAME = 'snapshots';
@@ -85,7 +85,7 @@ function schedulePersist() {
 }
 
 async function createDatabase() {
-  const SQL = await initSqlJs({ locateFile: () => '/sql-wasm.wasm' });
+  const SQL = await initSqlJs({ locateFile: () => 'sql-wasm.wasm' });
   const snapshot = await loadSnapshot();
   db = snapshot ? new SQL.Database(snapshot) : new SQL.Database();
 }

@@ -23,15 +23,14 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val sharedModule = module {
-
     single {
-        val preferences: UserAppPreferencesStore = get()
+        val preferences = get<UserAppPreferencesStore>()
         HttpClientFactory.create(
             engine = getPlatformEngine(),
-            userProxyUrlProvider = { preferences.userProxyServer }
+            // Prefer the user-configured proxy, falling back to the platform default (web only).
+            proxyUrlProvider = { preferences.userProxyServer ?: HttpClientFactory.defaultProxyUrl() }
         )
     }
-
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
     singleOf(::IcalEntryRepositoryImpl) { bind<IcalEntryRepository>() }
 

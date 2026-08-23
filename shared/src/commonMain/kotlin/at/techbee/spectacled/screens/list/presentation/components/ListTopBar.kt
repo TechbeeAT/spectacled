@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -70,12 +71,12 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_selection
 import spectacled.shared.generated.resources.date_selector
 import spectacled.shared.generated.resources.delete_selected
-import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.folders
 import spectacled.shared.generated.resources.ic_gotodate
 import spectacled.shared.generated.resources.ic_pin
 import spectacled.shared.generated.resources.ic_unpin
 import spectacled.shared.generated.resources.more
+import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.pin
 import spectacled.shared.generated.resources.refresh
 import spectacled.shared.generated.resources.search
@@ -317,7 +318,8 @@ fun IcalEntryListTopBar(
                             else
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_pin),
-                                    contentDescription = stringResource(Res.string.pin)
+                                    contentDescription = stringResource(Res.string.pin),
+                                    modifier = Modifier.rotate(45f)
                                 )
                         }
                     }
