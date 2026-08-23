@@ -8,7 +8,6 @@ enum class CalDavProvider(
     val url: String,
     val tags: List<String>,
     val supportedCalendarComponents: List<CalendarComponent>,
-    val recommended: Boolean = false,
     val warningMessage: String? = null
 ) {
 
@@ -26,8 +25,7 @@ enum class CalDavProvider(
         listOf(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
-        ),
-        recommended = true
+        )
     ),
 
     MURENA(

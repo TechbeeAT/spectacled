@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.DropdownMenu
@@ -71,6 +73,7 @@ import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
 import spectacled.shared.generated.resources.add_account_header_info
@@ -81,13 +84,13 @@ import spectacled.shared.generated.resources.add_account_option2_recommendation_
 import spectacled.shared.generated.resources.add_account_option2_recommended_providers
 import spectacled.shared.generated.resources.add_account_option2_text
 import spectacled.shared.generated.resources.add_account_option_x
+import spectacled.shared.generated.resources.add_account_provider_tasks_only_warning
 import spectacled.shared.generated.resources.add_account_spectacled_is_provider_independent
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.open_in_browser
 import spectacled.shared.generated.resources.password
-import spectacled.shared.generated.resources.recommended
 import spectacled.shared.generated.resources.server_optional
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.username
@@ -528,9 +531,17 @@ fun AddAccountScreen(
 
 
 @Composable
-fun ChooseProviderScreen(modifier: Modifier = Modifier) {
+fun ChooseProviderScreen(
+    modifier: Modifier = Modifier,
+    spectacledVariant: SpectacledVariant = koinInject()
+) {
 
     val uriHandler = LocalUriHandler.current
+
+    val requiredComponent = spectacledVariant.mainCalendarComponent
+    val providers = CalDavProvider.entries.filter {
+        it.supportedCalendarComponents.contains(requiredComponent)
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -571,7 +582,7 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
         Column {
 
 
-            CalDavProvider.entries.forEach { calDavProvider ->
+            providers.forEach { calDavProvider ->
                 AssistChip(
                     onClick = { uriHandler.openUri(calDavProvider.url) },
                     label = {
@@ -584,14 +595,6 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
                                 verticalArrangement = Arrangement.spacedBy(2.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                if (calDavProvider.recommended) {
-                                    Badge(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary
-                                    ) {
-                                        Text(stringResource(Res.string.recommended))
-                                    }
-                                }
                                 calDavProvider.tags.forEach { tag ->
                                     Badge { Text(tag) }
                                 }
@@ -602,6 +605,26 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Text(calDavProvider.description)
+
+                            if (calDavProvider.hasTodo && !calDavProvider.hasJournal) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Warning,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(Res.string.add_account_provider_tasks_only_warning),
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
                         }
                     },
                     trailingIcon = {
@@ -660,7 +683,7 @@ private fun AddAccountScreen_Preview_Processing() {
 private fun ChooseProviderScreen_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         Scaffold {
-            ChooseProviderScreen()
+            ChooseProviderScreen(spectacledVariant = SpectacledVariant.TASKS)
         }
 
     }
