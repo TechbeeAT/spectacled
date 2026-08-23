@@ -58,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -575,9 +576,6 @@ fun ChooseProviderScreen(
             style = MaterialTheme.typography.titleLarge
         )
 
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         Column {
 
             CalDavProviderCategory.entries.forEach { category ->
@@ -588,7 +586,8 @@ fun ChooseProviderScreen(
                 Text(
                     text = stringResource(category.headline),
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp)
                 )
 
@@ -721,6 +720,17 @@ private fun AddAccountScreen_Preview_Error() {
                 onCredentialsUpdated = {},
                 //onAction = {}
             )
+        }
+
+    }
+}
+
+@Preview
+@Composable
+private fun CalDavProviderChip_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CalDavProviderChip(CalDavProvider.FASTMAIL)
         }
 
     }

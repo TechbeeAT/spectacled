@@ -21,6 +21,23 @@ enum class CalDavProvider(
     val supportedCalendarComponents: List<CalendarComponent>,
     val category: CalDavProviderCategory
 ) {
+    MURENA(
+        "Murena Workspace",
+        "Privacy-focused, deGoogled online workspace from France built on Nextcloud and OnlyOffice, including calendars, tasks, journals, and contacts, with a free tier to get started.",
+        "https://murena.com/workspace/partner/techbee/",
+        listOf(
+            "🇫🇷", // France
+            "Nextcloud",
+            "Privacy",
+            "GDPR",
+            "Free plan"
+        ),
+        listOf(
+            CalendarComponent.VTODO,
+            CalendarComponent.VJOURNAL
+        ),
+        CalDavProviderCategory.NEXTCLOUD
+    ),
 
     TABDIGITAL(
         "Tab.Digital",
@@ -40,27 +57,9 @@ enum class CalDavProvider(
         CalDavProviderCategory.NEXTCLOUD
     ),
 
-    MURENA(
-        "Murena Workspace",
-        "Privacy-focused, deGoogled online workspace from France built on Nextcloud and OnlyOffice, including calendars, tasks, journals, and contacts, with a free tier to get started.",
-        "https://murena.com/workspace/",
-        listOf(
-            "🇫🇷", // France
-            "Nextcloud",
-            "Privacy",
-            "GDPR",
-            "Free plan"
-        ),
-        listOf(
-            CalendarComponent.VTODO,
-            CalendarComponent.VJOURNAL
-        ),
-        CalDavProviderCategory.NEXTCLOUD
-    ),
-
     HETZNER(
         "Hetzner Storage Share",
-        "Managed Nextcloud hosting from Germany with full calendar, tasks, journals, contacts, and file synchronisation.",
+        "Managed Nextcloud hosting from Germany with full calendar, tasks, journals, contacts, and file synchronization.",
         "https://www.hetzner.com/storage/storage-share/",
         listOf(
             "🇩🇪", // Germany
