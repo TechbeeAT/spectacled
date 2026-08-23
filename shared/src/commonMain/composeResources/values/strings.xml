@@ -229,6 +229,7 @@
     <string name="add_account_spectacled_is_provider_independent">Spectacled is provider-independent</string>
     <string name="add_account_option2_recommendation_info">We recommend services based on privacy, reliability, and compatibility. Some links may generate a referral commission, which helps fund ongoing development. Recommendations are never influenced solely by referral agreements.</string>
     <string name="add_account_option2_recommended_providers">Recommended providers</string>
+    <string name="recommended">Recommended</string>
 
     <string name="attachment_sync_state_pending_upload">Pending upload</string>
     <string name="attachment_sync_state_pending_download">Pending download</string>

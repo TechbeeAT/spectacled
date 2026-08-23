@@ -87,6 +87,7 @@ import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.open_in_browser
 import spectacled.shared.generated.resources.password
+import spectacled.shared.generated.resources.recommended
 import spectacled.shared.generated.resources.server_optional
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.username
@@ -582,6 +583,14 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
                                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
+                                if (calDavProvider.recommended) {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    ) {
+                                        Text(stringResource(Res.string.recommended))
+                                    }
+                                }
                                 calDavProvider.tags.forEach { tag ->
                                     Badge { Text(tag) }
                                 }
