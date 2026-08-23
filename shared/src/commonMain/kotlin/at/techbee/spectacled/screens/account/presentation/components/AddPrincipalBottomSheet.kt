@@ -67,6 +67,7 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProvider
+import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProviderCategory
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
@@ -536,8 +537,6 @@ fun ChooseProviderScreen(
     spectacledVariant: SpectacledVariant = koinInject()
 ) {
 
-    val uriHandler = LocalUriHandler.current
-
     val requiredComponent = spectacledVariant.mainCalendarComponent
     val providers = CalDavProvider.entries.filter {
         it.supportedCalendarComponents.contains(requiredComponent)
@@ -581,65 +580,87 @@ fun ChooseProviderScreen(
 
         Column {
 
+            CalDavProviderCategory.entries.forEach { category ->
 
-            providers.forEach { calDavProvider ->
-                AssistChip(
-                    onClick = { uriHandler.openUri(calDavProvider.url) },
-                    label = {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                verticalArrangement = Arrangement.spacedBy(2.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                calDavProvider.tags.forEach { tag ->
-                                    Badge { Text(tag) }
-                                }
-                            }
-                            Text(
-                                text = calDavProvider.providerName,
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(calDavProvider.description)
+                val providersInCategory = providers.filter { it.category == category }
+                if (providersInCategory.isEmpty()) return@forEach
 
-                            if (calDavProvider.hasTodo && !calDavProvider.hasJournal) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Warning,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text = stringResource(Res.string.add_account_provider_tasks_only_warning),
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = { uriHandler.openUri(calDavProvider.url) }
-                        ) {
-                            Icon(Icons.AutoMirrored.Outlined.OpenInNew, stringResource(Res.string.open_in_browser))
-                        }
-                    },
-                    modifier = Modifier.padding(vertical = 2.dp)
+                Text(
+                    text = stringResource(category.headline),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp)
                 )
+
+                providersInCategory.forEach { calDavProvider ->
+                    CalDavProviderChip(calDavProvider = calDavProvider)
+                }
             }
         }
 
     }
+}
+
+@Composable
+private fun CalDavProviderChip(
+    calDavProvider: CalDavProvider,
+    modifier: Modifier = Modifier
+) {
+    val uriHandler = LocalUriHandler.current
+
+    AssistChip(
+        onClick = { uriHandler.openUri(calDavProvider.url) },
+        label = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.padding(8.dp)
+            ) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    calDavProvider.tags.forEach { tag ->
+                        Badge { Text(tag) }
+                    }
+                }
+                Text(
+                    text = calDavProvider.providerName,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(calDavProvider.description)
+
+                if (calDavProvider.hasTodo && !calDavProvider.hasJournal) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = stringResource(Res.string.add_account_provider_tasks_only_warning),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            }
+        },
+        trailingIcon = {
+            IconButton(
+                onClick = { uriHandler.openUri(calDavProvider.url) }
+            ) {
+                Icon(Icons.AutoMirrored.Outlined.OpenInNew, stringResource(Res.string.open_in_browser))
+            }
+        },
+        modifier = modifier.padding(vertical = 2.dp)
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

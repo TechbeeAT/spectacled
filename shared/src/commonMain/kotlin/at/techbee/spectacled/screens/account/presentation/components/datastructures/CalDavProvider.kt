@@ -1,13 +1,25 @@
 package at.techbee.spectacled.screens.account.presentation.components.datastructures
 
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
+import org.jetbrains.compose.resources.StringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.provider_category_email
+import spectacled.shared.generated.resources.provider_category_nextcloud
+import spectacled.shared.generated.resources.provider_category_self_hosted
+
+enum class CalDavProviderCategory(val headline: StringResource) {
+    NEXTCLOUD(Res.string.provider_category_nextcloud),
+    SELF_HOSTED(Res.string.provider_category_self_hosted),
+    EMAIL(Res.string.provider_category_email)
+}
 
 enum class CalDavProvider(
     val providerName: String,
     val description: String,
     val url: String,
     val tags: List<String>,
-    val supportedCalendarComponents: List<CalendarComponent>
+    val supportedCalendarComponents: List<CalendarComponent>,
+    val category: CalDavProviderCategory
 ) {
 
     TABDIGITAL(
@@ -24,7 +36,8 @@ enum class CalDavProvider(
         listOf(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
-        )
+        ),
+        CalDavProviderCategory.NEXTCLOUD
     ),
 
     MURENA(
@@ -41,7 +54,8 @@ enum class CalDavProvider(
         listOf(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
-        )
+        ),
+        CalDavProviderCategory.NEXTCLOUD
     ),
 
     HETZNER(
@@ -57,7 +71,8 @@ enum class CalDavProvider(
         listOf(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
-        )
+        ),
+        CalDavProviderCategory.NEXTCLOUD
     ),
 
     WOELKLI(
@@ -73,7 +88,8 @@ enum class CalDavProvider(
         listOf(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
-        )
+        ),
+        CalDavProviderCategory.NEXTCLOUD
     ),
 
     DISROOT(
@@ -90,7 +106,8 @@ enum class CalDavProvider(
         listOf(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
-        )
+        ),
+        CalDavProviderCategory.NEXTCLOUD
     ),
 
     NEXTCLOUD(
@@ -105,7 +122,8 @@ enum class CalDavProvider(
         listOf(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
-        )
+        ),
+        CalDavProviderCategory.SELF_HOSTED
     ),
 
     BAIKAL(
@@ -120,7 +138,8 @@ enum class CalDavProvider(
         listOf(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
-        )
+        ),
+        CalDavProviderCategory.SELF_HOSTED
     ),
 
     RADICALE(
@@ -135,7 +154,8 @@ enum class CalDavProvider(
         listOf(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
-        )
+        ),
+        CalDavProviderCategory.SELF_HOSTED
     ),
 /*
     MAILBOX_ORG(
@@ -147,7 +167,8 @@ enum class CalDavProvider(
             "Privacy",
             "GDPR"
         ),
-        listOf(CalendarComponent.VTODO)
+        listOf(CalendarComponent.VTODO),
+        CalDavProviderCategory.EMAIL
     ),
 
  */
@@ -161,7 +182,8 @@ enum class CalDavProvider(
             "Power users",
             "Free trial"
         ),
-        listOf(CalendarComponent.VTODO)
+        listOf(CalendarComponent.VTODO),
+        CalDavProviderCategory.EMAIL
     ),
 
     INFOMANIAK(
@@ -173,7 +195,8 @@ enum class CalDavProvider(
             "Privacy",
             "GDPR"
         ),
-        listOf(CalendarComponent.VTODO)
+        listOf(CalendarComponent.VTODO),
+        CalDavProviderCategory.EMAIL
     ),
 
     MAILFENCE(
@@ -185,7 +208,8 @@ enum class CalDavProvider(
             "Privacy",
             "GDPR"
         ),
-        listOf(CalendarComponent.VTODO)
+        listOf(CalendarComponent.VTODO),
+        CalDavProviderCategory.EMAIL
     ),
 /*
     RUNBOX(
@@ -196,7 +220,8 @@ enum class CalDavProvider(
             "🇳🇴", // Norway
             "Privacy"
         ),
-        listOf(CalendarComponent.VTODO)
+        listOf(CalendarComponent.VTODO),
+        CalDavProviderCategory.EMAIL
     ),
 
     MIGADU(
@@ -208,7 +233,8 @@ enum class CalDavProvider(
             "Privacy",
             "Power users"
         ),
-        listOf(CalendarComponent.VTODO)
+        listOf(CalendarComponent.VTODO),
+        CalDavProviderCategory.EMAIL
     ),
 
  */
@@ -223,7 +249,8 @@ enum class CalDavProvider(
             "GDPR",
             "Anonymous payments"
         ),
-        listOf(CalendarComponent.VTODO)
+        listOf(CalendarComponent.VTODO),
+        CalDavProviderCategory.EMAIL
     )
     ;
 
