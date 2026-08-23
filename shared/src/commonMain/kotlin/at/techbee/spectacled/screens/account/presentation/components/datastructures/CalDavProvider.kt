@@ -140,7 +140,7 @@ enum class CalDavProvider(
             CalendarComponent.VJOURNAL
         )
     ),
-
+/*
     MAILBOX_ORG(
         "mailbox.org",
         "Privacy-focused email, calendar, contacts, and task management hosted in Germany with excellent CalDAV support.",
@@ -152,6 +152,8 @@ enum class CalDavProvider(
         ),
         listOf(CalendarComponent.VTODO)
     ),
+
+ */
 
     FASTMAIL(
         "Fastmail",
@@ -191,7 +193,7 @@ enum class CalDavProvider(
         ),
         listOf(CalendarComponent.VTODO)
     ),
-
+/*
     RUNBOX(
         "Runbox",
         "Norwegian email and collaboration platform focused on privacy and sustainability.",
@@ -215,6 +217,8 @@ enum class CalDavProvider(
         listOf(CalendarComponent.VTODO)
     ),
 
+ */
+
     POSTEO(
         "Posteo",
         "Privacy-first email, calendar, and contacts provider from Germany.",
@@ -226,7 +230,8 @@ enum class CalDavProvider(
             "Anonymous payments"
         ),
         listOf(CalendarComponent.VTODO)
-    );
+    )
+    ;
 
     val hasTodo = supportedCalendarComponents.contains(CalendarComponent.VTODO)
     val hasJournal = supportedCalendarComponents.contains(CalendarComponent.VJOURNAL)
