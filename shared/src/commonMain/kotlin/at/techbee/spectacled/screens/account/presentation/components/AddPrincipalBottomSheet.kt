@@ -581,6 +581,7 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
                         ) {
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 if (calDavProvider.recommended) {
