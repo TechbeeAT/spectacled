@@ -7,8 +7,7 @@ enum class CalDavProvider(
     val description: String,
     val url: String,
     val tags: List<String>,
-    val supportedCalendarComponents: List<CalendarComponent>,
-    val warningMessage: String? = null
+    val supportedCalendarComponents: List<CalendarComponent>
 ) {
 
     TABDIGITAL(
@@ -162,10 +161,7 @@ enum class CalDavProvider(
             "Power users",
             "Free trial"
         ),
-        listOf(
-            CalendarComponent.VTODO,
-            CalendarComponent.VJOURNAL
-        )
+        listOf(CalendarComponent.VTODO)
     ),
 
     INFOMANIAK(
