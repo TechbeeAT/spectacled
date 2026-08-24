@@ -11,22 +11,25 @@ on:
 #   Team ID:    BZY8AT5K2W   (same for all three apps)
 #   Bundle IDs: at.techbee.spectacled.{journals,notes,tasks}
 #
-# Signing is MANUAL. We import a single reusable "Apple Distribution" certificate and the
-# per-app "App Store" provisioning profile into a throwaway keychain, then sign directly
-# for distribution. This deliberately avoids automatic signing + -allowProvisioningUpdates:
-# on ephemeral CI runners that flow re-creates a Development certificate every run, which
-# eventually trips Apple's certificate cap ("You already have a current Development
-# certificate" / "Your account has reached the maximum number of certificates").
+# Signing stays AUTOMATIC, but we pre-import the Apple Distribution certificate into a
+# throwaway keychain first. That is the part that was missing before:
+#
+#   Xcode's automatic signing only creates a NEW certificate when it cannot find a usable
+#   one in the keychain. GitHub runners start with an empty keychain, so every run minted
+#   a fresh certificate until the account hit Apple's cap ("You already have a current
+#   Development certificate" -> "Your account has reached the maximum number of
+#   certificates").
+#
+# Certificates are capped; provisioning profiles are not. So we supply the certificate
+# ourselves (one reusable cert, stored as a secret) and still let
+# -allowProvisioningUpdates create/refresh the App Store profiles automatically.
 #
 # Required repository secrets (in addition to the existing asc_api_key_* used for upload):
 #   ios_dist_cert_p12_base64   base64 of the Apple Distribution cert exported from
 #                              Keychain Access as .p12 (must include the private key)
 #   ios_dist_cert_password     the password set when exporting that .p12
-#   ios_profile_journals_base64 \
-#   ios_profile_notes_base64     > base64 of each app's App Store .mobileprovision profile
-#   ios_profile_tasks_base64   /
-# Create the secrets with e.g.:  base64 -i dist_cert.p12 | pbcopy
-# The certificate is shared by all three apps; each app needs its own App Store profile.
+# Create with:  base64 -i dist_cert.p12 | pbcopy
+# The one certificate is shared by all three apps.
 
 jobs:
   ios:
@@ -65,23 +68,24 @@ jobs:
           echo -n "${{ secrets.asc_api_key_p8_base64 }}" | base64 --decode \
             > "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8"
 
-      - name: Import signing certificate & provisioning profile
+      - name: Import signing certificate
         env:
           DIST_CERT_P12_BASE64: ${{ secrets.ios_dist_cert_p12_base64 }}
           DIST_CERT_PASSWORD: ${{ secrets.ios_dist_cert_password }}
-          # All three are referenced statically here; the matching one is picked below.
-          PROFILE_JOURNALS_BASE64: ${{ secrets.ios_profile_journals_base64 }}
-          PROFILE_NOTES_BASE64: ${{ secrets.ios_profile_notes_base64 }}
-          PROFILE_TASKS_BASE64: ${{ secrets.ios_profile_tasks_base64 }}
         run: |
           set -euo pipefail
+
+          if [ -z "$DIST_CERT_P12_BASE64" ]; then
+            echo "::error::Missing secret ios_dist_cert_p12_base64"
+            exit 1
+          fi
 
           KEYCHAIN="$RUNNER_TEMP/app-signing.keychain-db"
           KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
           CERT_PATH="$RUNNER_TEMP/dist_cert.p12"
 
-          # --- distribution certificate -> throwaway keychain ---
           echo -n "$DIST_CERT_P12_BASE64" | base64 --decode > "$CERT_PATH"
+
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security set-keychain-settings -lut 21600 "$KEYCHAIN"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
@@ -90,45 +94,12 @@ jobs:
           # Let codesign use the imported key without an interactive prompt.
           security set-key-partition-list -S apple-tool:,apple: \
             -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
-          # Put our keychain on the search list (keep the existing ones too).
+          # Put our keychain on the search list, keeping the existing ones.
           security list-keychains -d user -s "$KEYCHAIN" \
             $(security list-keychains -d user | sed 's/["[:space:]]//g')
 
-          # --- pick this app's App Store profile ---
-          case "${{ matrix.scheme }}" in
-            iosJournalsApp) PROFILE_BASE64="$PROFILE_JOURNALS_BASE64" ;;
-            iosNotesApp)    PROFILE_BASE64="$PROFILE_NOTES_BASE64" ;;
-            iosTasksApp)    PROFILE_BASE64="$PROFILE_TASKS_BASE64" ;;
-            *) echo "::error::Unknown scheme ${{ matrix.scheme }}"; exit 1 ;;
-          esac
-          if [ -z "$PROFILE_BASE64" ]; then
-            echo "::error::Missing provisioning-profile secret for ${{ matrix.scheme }}"
-            exit 1
-          fi
-
-          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
-          PLIST="$RUNNER_TEMP/profile.plist"
-          echo -n "$PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
-          # Decode the CMS-signed profile to read its metadata.
-          security cms -D -i "$PROFILE_PATH" > "$PLIST"
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$PLIST")
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$PLIST")
-          APP_ID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" "$PLIST")
-          BUNDLE_ID="${APP_ID#*.}"   # strip the leading TEAMID.
-
-          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$PROFILES_DIR"
-          cp "$PROFILE_PATH" "$PROFILES_DIR/$PROFILE_UUID.mobileprovision"
-
-          echo "Installed profile '$PROFILE_NAME' ($PROFILE_UUID) for $BUNDLE_ID"
-
-          # Hand these to the archive/export steps.
-          {
-            echo "KEYCHAIN=$KEYCHAIN"
-            echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD"
-            echo "PROFILE_NAME=$PROFILE_NAME"
-            echo "BUNDLE_ID=$BUNDLE_ID"
-          } >> "$GITHUB_ENV"
+          echo "Codesigning identities visible to Xcode:"
+          security find-identity -v -p codesigning "$KEYCHAIN"
 
       - name: Archive
         run: |
@@ -138,11 +109,10 @@ jobs:
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/${{ matrix.scheme }}.xcarchive" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM="$TEAM_ID" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             archive
 
       - name: Export & upload to App Store Connect
@@ -159,14 +129,7 @@ jobs:
               <key>teamID</key>
               <string>${TEAM_ID}</string>
               <key>signingStyle</key>
-              <string>manual</string>
-              <key>signingCertificate</key>
-              <string>Apple Distribution</string>
-              <key>provisioningProfiles</key>
-              <dict>
-                  <key>${BUNDLE_ID}</key>
-                  <string>${PROFILE_NAME}</string>
-              </dict>
+              <string>automatic</string>
           </dict>
           </plist>
           PLIST
@@ -174,6 +137,7 @@ jobs:
             -archivePath "$RUNNER_TEMP/${{ matrix.scheme }}.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
             -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
