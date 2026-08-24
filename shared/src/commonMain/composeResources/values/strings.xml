@@ -244,6 +244,42 @@
     <string name="provider_category_self_hosted">Self-hosted solutions</string>
     <string name="provider_category_email">Email providers with CalDAV support</string>
 
+    <!-- Country/region flags shown as provider badges; symbols, not translatable text. -->
+    <string name="provider_flag_australia" translatable="false">🇦🇺</string>
+    <string name="provider_flag_belgium" translatable="false">🇧🇪</string>
+    <string name="provider_flag_european_union" translatable="false">🇪🇺</string>
+    <string name="provider_flag_france" translatable="false">🇫🇷</string>
+    <string name="provider_flag_germany" translatable="false">🇩🇪</string>
+    <string name="provider_flag_netherlands" translatable="false">🇳🇱</string>
+    <string name="provider_flag_norway" translatable="false">🇳🇴</string>
+    <string name="provider_flag_switzerland" translatable="false">🇨🇭</string>
+
+    <string name="provider_tag_nextcloud" translatable="false">Nextcloud</string>
+    <string name="provider_tag_gdpr" translatable="false">GDPR</string>
+    <string name="provider_tag_privacy">Privacy</string>
+    <string name="provider_tag_open_source">Open Source</string>
+    <string name="provider_tag_self_hosted">Self-hosted</string>
+    <string name="provider_tag_power_users">Power users</string>
+    <string name="provider_tag_free_plan">Free plan</string>
+    <string name="provider_tag_free_trial">Free trial</string>
+    <string name="provider_tag_anonymous_payments">Anonymous payments</string>
+
+    <string name="provider_murena_description">Privacy-focused, deGoogled online workspace from France built on Nextcloud and OnlyOffice, including calendars, tasks, journals, and contacts, with a free tier to get started.</string>
+    <string name="provider_tabdigital_description">Managed Nextcloud hosting in the EU with calendars, tasks, journals, contacts, and files. Offers a free account to get started without a credit card.</string>
+    <string name="provider_hetzner_description">Managed Nextcloud hosting from Germany with full calendar, tasks, journals, contacts, and file synchronization.</string>
+    <string name="provider_woelkli_description">Secure Nextcloud-based cloud storage hosted in Switzerland, including calendars, tasks, journals, and contacts. Includes a free tier.</string>
+    <string name="provider_disroot_description">Community-run, donation-funded platform from the Netherlands built on Nextcloud, offering calendars, tasks, journals, and more for free.</string>
+    <string name="provider_nextcloud_description">Host your own calendar, contacts, tasks, and notes while maintaining full control over your data.</string>
+    <string name="provider_baikal_description">Lightweight open-source CalDAV and CardDAV server designed for self-hosting.</string>
+    <string name="provider_radicale_description">Lightweight open-source CalDAV and CardDAV server designed for self-hosting, supporting events, tasks, and journals.</string>
+    <string name="provider_mailbox_org_description">Privacy-focused email, calendar, contacts, and task management hosted in Germany with excellent CalDAV support.</string>
+    <string name="provider_fastmail_description">Fast and reliable email, calendar, and contact synchronization with excellent standards support.</string>
+    <string name="provider_infomaniak_description">Swiss-hosted productivity services with strong privacy protections and excellent value.</string>
+    <string name="provider_mailfence_description">Privacy-focused email and collaboration services hosted in Belgium.</string>
+    <string name="provider_runbox_description">Norwegian email and collaboration platform focused on privacy and sustainability.</string>
+    <string name="provider_migadu_description">Swiss email hosting designed for custom domains and technical users.</string>
+    <string name="provider_posteo_description">Privacy-first email, calendar, and contacts provider from Germany.</string>
+
     <string name="attachment_sync_state_pending_upload">Pending upload</string>
     <string name="attachment_sync_state_pending_download">Pending download</string>
     <string name="attachment_sync_state_synchronized">Synchronized</string>
@@ -286,5 +322,52 @@
     <string name="ai_paste_text_placeholder">Paste text to create entries…</string>
     <string name="ai_create_subtasks">Create subtasks</string>
     <string name="create">Create</string>
+
+    <string name="account_added_updated">Account added/updated</string>
+    <string name="account_successfully_removed">Account successfully removed</string>
+    <string name="calendar_successfully_added_updated">Calendar successfully added/updated</string>
+    <string name="calendar_successfully_deleted">Calendar successfully deleted</string>
+    <string name="calendars_synced">Calendars synced</string>
+    <string name="credentials_not_found_readd_account">Credentials not found, please remove this account and add it again.</string>
+    <string name="login_message_not_authorized">Not authorized. Please check your username and password.</string>
+    <string name="server_not_found">Server not found.</string>
+    <string name="some_calendars_failed_to_sync">Some calendars failed to sync. Please check the calendars for details.</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="unknown_error_occurred">Unknown error occurred.</string>
+
+    <string name="sync_status_not_authorized">Not authorized</string>
+    <string name="sync_status_not_found">Not found</string>
+    <string name="sync_error_connection_timed_out">Connection timed out. Please check your internet connection and try again.</string>
+    <string name="sync_error_request_failed">Request error. Please check your server, username and password and try again.</string>
+    <string name="sync_error_server_error">An unexpected server error occurred. Please try again.</string>
+    <string name="sync_error_connection_error">Connection error. Please check your internet connection and try again.</string>
+    <string name="sync_error_connection_error_detail">Connection error: %1$s</string>
+    <string name="attachment_upload_failed">Uploading attachment failed: %1$s (%2$d)</string>
+
+    <string name="calendar_create_failed">Creating collection failed.</string>
+    <string name="calendar_create_failed_privileges">Calendar couldn't be created due to missing privileges.</string>
+    <string name="calendar_create_failed_conflict">Parent does not exist or calendar already exists.</string>
+    <string name="calendar_create_failed_unsupported">Server doesn't support creation of new collections.</string>
+    <string name="calendar_create_failed_component">Creation of calendar with supported component failed.</string>
+    <string name="calendar_fetch_failed">Calendar couldn't be fetched.</string>
+    <string name="calendar_parse_failed">Calendar couldn't be parsed.</string>
+    <string name="calendar_update_failed_privileges">Calendar couldn't be updated due to missing privileges.</string>
+    <string name="calendar_update_failed_conflict">Calendar couldn't be updated due to conflict.</string>
+    <string name="calendar_delete_failed_privileges">Calendar couldn't be deleted due to missing privileges</string>
+    <string name="calendar_delete_forbidden">Server forbids deleting this calendar</string>
+    <string name="calendar_delete_forbidden_locked">Server forbids deleting this calendar. Locked or server-side constraint.</string>
+
+    <string name="ai_response_failed">Fetching AI response failed</string>
+    <string name="ai_response_no_text">AI response contained no text</string>
+    <string name="ai_create_without_ai">Create without AI</string>
+
+    <string name="server_inferred">Inferred: %1$s</string>
+    <string name="settings_proxy_server">Proxy server</string>
+    <string name="settings_proxy_server_info">Web only. Browsers block cross-origin CalDAV (WebDAV) requests, so the web app routes them through this proxy, which adds the required CORS headers. The proxy can see your credentials in transit — prefer one you host yourself. Setup: github.com/TechbeeAT/spectacled/tree/main/server</string>
+
+    <string name="widget_configuration">Widget configuration</string>
+
+    <!-- Label/value pair, e.g. "Created: 5 Jan 2026". Some locales space the colon differently. -->
+    <string name="label_value">%1$s: %2$s</string>
 
 </resources>

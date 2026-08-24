@@ -3,9 +3,37 @@ package at.techbee.spectacled.screens.account.presentation.components.datastruct
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import org.jetbrains.compose.resources.StringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.provider_baikal_description
 import spectacled.shared.generated.resources.provider_category_email
 import spectacled.shared.generated.resources.provider_category_nextcloud
 import spectacled.shared.generated.resources.provider_category_self_hosted
+import spectacled.shared.generated.resources.provider_disroot_description
+import spectacled.shared.generated.resources.provider_fastmail_description
+import spectacled.shared.generated.resources.provider_flag_australia
+import spectacled.shared.generated.resources.provider_flag_belgium
+import spectacled.shared.generated.resources.provider_flag_european_union
+import spectacled.shared.generated.resources.provider_flag_france
+import spectacled.shared.generated.resources.provider_flag_germany
+import spectacled.shared.generated.resources.provider_flag_netherlands
+import spectacled.shared.generated.resources.provider_flag_switzerland
+import spectacled.shared.generated.resources.provider_hetzner_description
+import spectacled.shared.generated.resources.provider_infomaniak_description
+import spectacled.shared.generated.resources.provider_mailfence_description
+import spectacled.shared.generated.resources.provider_murena_description
+import spectacled.shared.generated.resources.provider_nextcloud_description
+import spectacled.shared.generated.resources.provider_posteo_description
+import spectacled.shared.generated.resources.provider_radicale_description
+import spectacled.shared.generated.resources.provider_tabdigital_description
+import spectacled.shared.generated.resources.provider_tag_anonymous_payments
+import spectacled.shared.generated.resources.provider_tag_free_plan
+import spectacled.shared.generated.resources.provider_tag_free_trial
+import spectacled.shared.generated.resources.provider_tag_gdpr
+import spectacled.shared.generated.resources.provider_tag_nextcloud
+import spectacled.shared.generated.resources.provider_tag_open_source
+import spectacled.shared.generated.resources.provider_tag_power_users
+import spectacled.shared.generated.resources.provider_tag_privacy
+import spectacled.shared.generated.resources.provider_tag_self_hosted
+import spectacled.shared.generated.resources.provider_woelkli_description
 
 enum class CalDavProviderCategory(val headline: StringResource) {
     NEXTCLOUD(Res.string.provider_category_nextcloud),
@@ -15,22 +43,22 @@ enum class CalDavProviderCategory(val headline: StringResource) {
 
 enum class CalDavProvider(
     val providerName: String,
-    val description: String,
+    val description: StringResource,
     val url: String,
-    val tags: List<String>,
+    val tags: List<StringResource>,
     val supportedCalendarComponents: List<CalendarComponent>,
     val category: CalDavProviderCategory
 ) {
     MURENA(
         "Murena Workspace",
-        "Privacy-focused, deGoogled online workspace from France built on Nextcloud and OnlyOffice, including calendars, tasks, journals, and contacts, with a free tier to get started.",
+        Res.string.provider_murena_description,
         "https://murena.com/workspace/partner/techbee/",
         listOf(
-            "🇫🇷", // France
-            "Nextcloud",
-            "Privacy",
-            "GDPR",
-            "Free plan"
+            Res.string.provider_flag_france,
+            Res.string.provider_tag_nextcloud,
+            Res.string.provider_tag_privacy,
+            Res.string.provider_tag_gdpr,
+            Res.string.provider_tag_free_plan
         ),
         listOf(
             CalendarComponent.VTODO,
@@ -41,14 +69,14 @@ enum class CalDavProvider(
 
     TABDIGITAL(
         "Tab.Digital",
-        "Managed Nextcloud hosting in the EU with calendars, tasks, journals, contacts, and files. Offers a free account to get started without a credit card.",
+        Res.string.provider_tabdigital_description,
         "https://tab.digital",
         listOf(
-            "🇪🇺", // European Union
-            "Nextcloud",
-            "Privacy",
-            "GDPR",
-            "Free plan"
+            Res.string.provider_flag_european_union,
+            Res.string.provider_tag_nextcloud,
+            Res.string.provider_tag_privacy,
+            Res.string.provider_tag_gdpr,
+            Res.string.provider_tag_free_plan
         ),
         listOf(
             CalendarComponent.VTODO,
@@ -59,13 +87,13 @@ enum class CalDavProvider(
 
     HETZNER(
         "Hetzner Storage Share",
-        "Managed Nextcloud hosting from Germany with full calendar, tasks, journals, contacts, and file synchronization.",
+        Res.string.provider_hetzner_description,
         "https://www.hetzner.com/storage/storage-share/",
         listOf(
-            "🇩🇪", // Germany
-            "Nextcloud",
-            "GDPR",
-            "Power users"
+            Res.string.provider_flag_germany,
+            Res.string.provider_tag_nextcloud,
+            Res.string.provider_tag_gdpr,
+            Res.string.provider_tag_power_users
         ),
         listOf(
             CalendarComponent.VTODO,
@@ -76,13 +104,13 @@ enum class CalDavProvider(
 
     WOELKLI(
         "woelkli",
-        "Secure Nextcloud-based cloud storage hosted in Switzerland, including calendars, tasks, journals, and contacts. Includes a free tier.",
+        Res.string.provider_woelkli_description,
         "https://woelkli.com",
         listOf(
-            "🇨🇭", // Switzerland
-            "Nextcloud",
-            "Privacy",
-            "Free plan"
+            Res.string.provider_flag_switzerland,
+            Res.string.provider_tag_nextcloud,
+            Res.string.provider_tag_privacy,
+            Res.string.provider_tag_free_plan
         ),
         listOf(
             CalendarComponent.VTODO,
@@ -93,14 +121,14 @@ enum class CalDavProvider(
 
     DISROOT(
         "Disroot",
-        "Community-run, donation-funded platform from the Netherlands built on Nextcloud, offering calendars, tasks, journals, and more for free.",
+        Res.string.provider_disroot_description,
         "https://disroot.org",
         listOf(
-            "🇳🇱", // Netherlands
-            "Nextcloud",
-            "Open Source",
-            "Privacy",
-            "Free plan"
+            Res.string.provider_flag_netherlands,
+            Res.string.provider_tag_nextcloud,
+            Res.string.provider_tag_open_source,
+            Res.string.provider_tag_privacy,
+            Res.string.provider_tag_free_plan
         ),
         listOf(
             CalendarComponent.VTODO,
@@ -111,12 +139,12 @@ enum class CalDavProvider(
 
     NEXTCLOUD(
         "Nextcloud",
-        "Host your own calendar, contacts, tasks, and notes while maintaining full control over your data.",
+        Res.string.provider_nextcloud_description,
         "https://nextcloud.com",
         listOf(
-            "Self-hosted",
-            "Open Source",
-            "Privacy"
+            Res.string.provider_tag_self_hosted,
+            Res.string.provider_tag_open_source,
+            Res.string.provider_tag_privacy
         ),
         listOf(
             CalendarComponent.VTODO,
@@ -127,12 +155,12 @@ enum class CalDavProvider(
 
     BAIKAL(
         "Baikal",
-        "Lightweight open-source CalDAV and CardDAV server designed for self-hosting.",
+        Res.string.provider_baikal_description,
         "https://sabre.io/baikal/",
         listOf(
-            "Self-hosted",
-            "Open Source",
-            "Privacy"
+            Res.string.provider_tag_self_hosted,
+            Res.string.provider_tag_open_source,
+            Res.string.provider_tag_privacy
         ),
         listOf(
             CalendarComponent.VTODO,
@@ -143,12 +171,12 @@ enum class CalDavProvider(
 
     RADICALE(
         "Radicale",
-        "Lightweight open-source CalDAV and CardDAV server designed for self-hosting, supporting events, tasks, and journals.",
+        Res.string.provider_radicale_description,
         "https://radicale.org",
         listOf(
-            "Self-hosted",
-            "Open Source",
-            "Privacy"
+            Res.string.provider_tag_self_hosted,
+            Res.string.provider_tag_open_source,
+            Res.string.provider_tag_privacy
         ),
         listOf(
             CalendarComponent.VTODO,
@@ -159,12 +187,12 @@ enum class CalDavProvider(
 /*
     MAILBOX_ORG(
         "mailbox.org",
-        "Privacy-focused email, calendar, contacts, and task management hosted in Germany with excellent CalDAV support.",
+        Res.string.provider_mailbox_org_description,
         "https://mailbox.org",
         listOf(
-            "🇩🇪", // Germany
-            "Privacy",
-            "GDPR"
+            Res.string.provider_flag_germany,
+            Res.string.provider_tag_privacy,
+            Res.string.provider_tag_gdpr
         ),
         listOf(CalendarComponent.VTODO),
         CalDavProviderCategory.EMAIL
@@ -174,12 +202,12 @@ enum class CalDavProvider(
 
     FASTMAIL(
         "Fastmail",
-        "Fast and reliable email, calendar, and contact synchronization with excellent standards support.",
+        Res.string.provider_fastmail_description,
         "https://www.fastmail.com",
         listOf(
-            "🇦🇺", // Australia
-            "Power users",
-            "Free trial"
+            Res.string.provider_flag_australia,
+            Res.string.provider_tag_power_users,
+            Res.string.provider_tag_free_trial
         ),
         listOf(CalendarComponent.VTODO),
         CalDavProviderCategory.EMAIL
@@ -187,12 +215,12 @@ enum class CalDavProvider(
 
     INFOMANIAK(
         "Infomaniak",
-        "Swiss-hosted productivity services with strong privacy protections and excellent value.",
+        Res.string.provider_infomaniak_description,
         "https://www.infomaniak.com",
         listOf(
-            "🇨🇭", // Switzerland
-            "Privacy",
-            "GDPR"
+            Res.string.provider_flag_switzerland,
+            Res.string.provider_tag_privacy,
+            Res.string.provider_tag_gdpr
         ),
         listOf(CalendarComponent.VTODO),
         CalDavProviderCategory.EMAIL
@@ -200,12 +228,12 @@ enum class CalDavProvider(
 
     MAILFENCE(
         "Mailfence",
-        "Privacy-focused email and collaboration services hosted in Belgium.",
+        Res.string.provider_mailfence_description,
         "https://mailfence.com",
         listOf(
-            "🇧🇪", // Belgium
-            "Privacy",
-            "GDPR"
+            Res.string.provider_flag_belgium,
+            Res.string.provider_tag_privacy,
+            Res.string.provider_tag_gdpr
         ),
         listOf(CalendarComponent.VTODO),
         CalDavProviderCategory.EMAIL
@@ -213,11 +241,11 @@ enum class CalDavProvider(
 /*
     RUNBOX(
         "Runbox",
-        "Norwegian email and collaboration platform focused on privacy and sustainability.",
+        Res.string.provider_runbox_description,
         "https://runbox.com",
         listOf(
-            "🇳🇴", // Norway
-            "Privacy"
+            Res.string.provider_flag_norway,
+            Res.string.provider_tag_privacy
         ),
         listOf(CalendarComponent.VTODO),
         CalDavProviderCategory.EMAIL
@@ -225,12 +253,12 @@ enum class CalDavProvider(
 
     MIGADU(
         "Migadu",
-        "Swiss email hosting designed for custom domains and technical users.",
+        Res.string.provider_migadu_description,
         "https://migadu.com",
         listOf(
-            "🇨🇭", // Switzerland
-            "Privacy",
-            "Power users"
+            Res.string.provider_flag_switzerland,
+            Res.string.provider_tag_privacy,
+            Res.string.provider_tag_power_users
         ),
         listOf(CalendarComponent.VTODO),
         CalDavProviderCategory.EMAIL
@@ -240,13 +268,13 @@ enum class CalDavProvider(
 
     POSTEO(
         "Posteo",
-        "Privacy-first email, calendar, and contacts provider from Germany.",
+        Res.string.provider_posteo_description,
         "https://posteo.de",
         listOf(
-            "🇩🇪", // Germany
-            "Privacy",
-            "GDPR",
-            "Anonymous payments"
+            Res.string.provider_flag_germany,
+            Res.string.provider_tag_privacy,
+            Res.string.provider_tag_gdpr,
+            Res.string.provider_tag_anonymous_payments
         ),
         listOf(CalendarComponent.VTODO),
         CalDavProviderCategory.EMAIL

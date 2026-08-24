@@ -48,6 +48,7 @@ import spectacled.shared.generated.resources.created
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.last_modified
+import spectacled.shared.generated.resources.label_value
 import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.send_as_email
 import spectacled.shared.generated.resources.share
@@ -175,16 +176,20 @@ fun DetailsMoreBottomSheet(
                 modifier = Modifier.padding(top = 24.dp, bottom = 8.dp, start = 16.dp, end = 16.dp).fillMaxWidth()
             ) {
                 Text(
-                    text = "${stringResource(Res.string.created)}: ${icalEntry.created.formatLocalized(IcsDateTimeFormat.DATE_TIME)}",
+                    text = stringResource(
+                        Res.string.label_value,
+                        stringResource(Res.string.created),
+                        icalEntry.created.formatLocalized(IcsDateTimeFormat.DATE_TIME)
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = LocalContentColor.current.copy(alpha = 0.5f)
                 )
                 Text(
-                    text = "${stringResource(Res.string.last_modified)}: ${
-                        (icalEntry.lastModified ?: icalEntry.created).formatLocalized(
-                            IcsDateTimeFormat.DATE_TIME
-                        )
-                    }",
+                    text = stringResource(
+                        Res.string.label_value,
+                        stringResource(Res.string.last_modified),
+                        (icalEntry.lastModified ?: icalEntry.created).formatLocalized(IcsDateTimeFormat.DATE_TIME)
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = LocalContentColor.current.copy(alpha = 0.5f)
                 )

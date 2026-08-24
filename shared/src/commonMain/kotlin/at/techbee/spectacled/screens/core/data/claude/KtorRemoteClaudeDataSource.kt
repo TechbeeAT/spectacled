@@ -17,6 +17,10 @@ import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
+import org.jetbrains.compose.resources.getString
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.ai_response_failed
+import spectacled.shared.generated.resources.ai_response_no_text
 
 private const val ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
 
@@ -60,14 +64,14 @@ class KtorRemoteClaudeDataSource(
             }.body<ClaudeResponseDto>()
 
             val text = response.content.firstOrNull { it.type == "text" }?.text
-                ?: return AiDeriveEntriesResult.Failed("AI response contained no text")
+                ?: return AiDeriveEntriesResult.Failed(getString(Res.string.ai_response_no_text))
 
             AiDeriveEntriesResult.Success(parseDerivedEntries(text))
 
         } catch (e: Exception) {
             Napier.e("AI derive-entries request failed", e)
             AiDeriveEntriesResult.Failed(
-                message = "Fetching AI response failed",
+                message = getString(Res.string.ai_response_failed),
                 details = e.message
             )
         }

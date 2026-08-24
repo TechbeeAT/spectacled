@@ -39,6 +39,7 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.ai_create_entries
 import spectacled.shared.generated.resources.ai_create_subtasks
+import spectacled.shared.generated.resources.ai_create_without_ai
 import spectacled.shared.generated.resources.ai_paste_text_placeholder
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.create
@@ -153,7 +154,7 @@ fun DeriveEntriesBottomSheet(
                         TextButton(
                             onClick = { onCreateWithoutAi(text) }
                         ) {
-                            Text("Create without AI")
+                            Text(stringResource(Res.string.ai_create_without_ai))
                         }
                     }
 
