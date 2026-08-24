@@ -19,8 +19,9 @@ enum class CalDavProvider(
     val url: String,
     val tags: List<String>,
     val supportedCalendarComponents: List<CalendarComponent>,
-    val category: CalDavProviderCategory
-) {
+    val category: CalDavProviderCategory,
+    val calDavUrl: String? = null
+    ) {
     MURENA(
         "Murena Workspace",
         "Privacy-focused, deGoogled online workspace from France built on Nextcloud and OnlyOffice, including calendars, tasks, journals, and contacts, with a free tier to get started.",
@@ -36,7 +37,8 @@ enum class CalDavProvider(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
         ),
-        CalDavProviderCategory.NEXTCLOUD
+        CalDavProviderCategory.NEXTCLOUD,
+        "https://murena.io/remote.php/dav"
     ),
 
     TABDIGITAL(
@@ -88,7 +90,8 @@ enum class CalDavProvider(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
         ),
-        CalDavProviderCategory.NEXTCLOUD
+        CalDavProviderCategory.NEXTCLOUD,
+        "https://cloud.woelkli.com/remote.php/dav"
     ),
 
     DISROOT(
