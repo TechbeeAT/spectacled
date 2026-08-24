@@ -33,16 +33,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.jetbrains.compose.resources.getString
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.attachment_upload_failed
-import spectacled.shared.generated.resources.sync_error_connection_error
-import spectacled.shared.generated.resources.sync_error_connection_error_detail
-import spectacled.shared.generated.resources.sync_error_connection_timed_out
-import spectacled.shared.generated.resources.sync_error_request_failed
-import spectacled.shared.generated.resources.sync_error_server_error
-import spectacled.shared.generated.resources.sync_status_not_authorized
-import spectacled.shared.generated.resources.sync_status_not_found
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -161,6 +151,14 @@ class SyncCoordinator(
         }
     }
 
+    // NOTE: The status/error strings below are deliberately NOT moved to string resources.
+    // CalendarSyncStatus is serialized into the database, so a localized message would be frozen
+    // in whatever language was active at sync time and would not follow a later language change.
+    // Resolving getString() here also pulls the Compose resource runtime into this data-layer
+    // class, which isn't available in every environment (the JS/wasm browser tests can't serve
+    // the generated .cvr and fail with MissingResourceException).
+    // To localize these properly, keep persisting only CalendarSyncStatusType (plus untranslated
+    // technical details) and resolve the display text from the type at the UI layer.
     private suspend fun sync(calendar: Calendar) {
 
         try {
@@ -188,7 +186,7 @@ class SyncCoordinator(
 
                 MultigetSyncCollectionResult.NotAuthorized -> {
                     calendarRepository.updateCalendarSyncStatus(
-                        CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, getString(Res.string.sync_status_not_authorized)).serialize(),
+                        CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, "Not authorized").serialize(),
                         calendar.syncToken,
                         calendar.id
                     )
@@ -197,7 +195,7 @@ class SyncCoordinator(
 
                 MultigetSyncCollectionResult.NotFound -> {
                     calendarRepository.updateCalendarSyncStatus(
-                        CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, getString(Res.string.sync_status_not_found)).serialize(),
+                        CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, "Not found").serialize(),
                         calendar.syncToken,
                         calendar.id
                     )
@@ -223,7 +221,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    getString(Res.string.sync_error_connection_timed_out),
+                    "Connection timed out. Please check your internet connection and try again.",
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -231,7 +229,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    getString(Res.string.sync_error_connection_timed_out),
+                    "Connection timed out. Please check your internet connection and try again.",
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -239,7 +237,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    getString(Res.string.sync_error_connection_timed_out),
+                    "Connection timed out. Please check your internet connection and try again.",
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -247,7 +245,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    getString(Res.string.sync_error_request_failed),
+                    "Request error. Please check your server, username and password and try again.",
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -255,7 +253,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    getString(Res.string.sync_error_server_error),
+                    "An unexpected server error occurred. Please try again.",
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -263,7 +261,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    getString(Res.string.sync_error_connection_error),
+                    "Connection error. Please check your internet connection and try again.",
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -271,7 +269,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    getString(Res.string.sync_error_connection_error_detail, e.message.orEmpty()),
+                    "Connection error: ${e.message}",
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -296,7 +294,7 @@ class SyncCoordinator(
 
             MultigetResourceHrefETagResult.NotAuthorized -> {
                 calendarRepository.updateCalendarSyncStatus(
-                    CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, getString(Res.string.sync_status_not_authorized)).serialize(),
+                    CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, "Not authorized").serialize(),
                     calendar.syncToken,
                     calendar.id
                 )
@@ -305,7 +303,7 @@ class SyncCoordinator(
 
             MultigetResourceHrefETagResult.NotFound -> {
                 calendarRepository.updateCalendarSyncStatus(
-                    CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, getString(Res.string.sync_status_not_found)).serialize(),
+                    CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, "Not found").serialize(),
                     calendar.syncToken,
                     calendar.id
                 )
@@ -622,7 +620,7 @@ class SyncCoordinator(
                 } else {
                     val failedAttachment = attachment.copy(
                         syncState = AttachmentSyncState.FAILED,
-                        syncErrorMessage = getString(Res.string.attachment_upload_failed, uploadResult.description, uploadResult.value)
+                        syncErrorMessage = "Uploading attachment failed: ${uploadResult.description} (${uploadResult.value})"
                     )
                     icalEntryRepository.insertOrUpdateAttachment(failedAttachment)
                     failedAttachment
