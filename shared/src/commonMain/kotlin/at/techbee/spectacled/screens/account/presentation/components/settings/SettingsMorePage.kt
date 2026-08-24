@@ -37,6 +37,8 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.more
+import spectacled.shared.generated.resources.settings_proxy_server
+import spectacled.shared.generated.resources.settings_proxy_server_info
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,15 +79,10 @@ fun SettingsMorePage(
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
-                        Text(
-                            "Web only. Browsers block cross-origin CalDAV (WebDAV) requests, so the " +
-                                    "web app routes them through this proxy, which adds the required CORS " +
-                                    "headers. The proxy can see your credentials in transit — prefer one you " +
-                                    "host yourself. Setup: github.com/TechbeeAT/spectacled/tree/main/server"
-                        )
+                        Text(stringResource(Res.string.settings_proxy_server_info))
                     }
                 },
-                label = { Text("Proxy server") },
+                label = { Text(stringResource(Res.string.settings_proxy_server)) },
                 trailingIcon = {
                     TextButton(
                         onClick = { userProxyServerDropdownExpanded = !userProxyServerDropdownExpanded },

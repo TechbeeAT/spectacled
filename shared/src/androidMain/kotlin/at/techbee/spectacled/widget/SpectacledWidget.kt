@@ -129,7 +129,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                         if (calendar != null) {
                             SquareIconButton(
                                 imageProvider = ImageProvider(R.drawable.ic_add),
-                                contentDescription = "New entry",
+                                contentDescription = context.getString(R.string.widget_new_entry),
                                 onClick = actionStartActivity(
                                     getLaunchIntent(context, calendar.id, 0L)
                                 ),
@@ -139,7 +139,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
                             SquareIconButton(
                                 imageProvider = ImageProvider(R.drawable.ic_open_in_new),
-                                contentDescription = "Open calendar",
+                                contentDescription = context.getString(R.string.widget_open_calendar),
                                 onClick = actionStartActivity(
                                     getLaunchIntent(context, calendar.id)
                                 ),
@@ -161,9 +161,9 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                 val mainEntries = entries[null] ?: emptyList()    // no subtasks
 
                 if (calendar == null) {
-                    WidgetEmptyState("Please select a calendar in widget settings", true)
+                    WidgetEmptyState(context.getString(R.string.widget_select_calendar), true)
                 } else if (mainEntries.isEmpty()) {
-                    WidgetEmptyState("No entries found", false)
+                    WidgetEmptyState(context.getString(R.string.widget_no_entries), false)
                 } else {
                     LazyColumn(
                         modifier = GlanceModifier
@@ -232,7 +232,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
             if(showConfigureButton) {
                 Button(
-                    text = "Configure",
+                    text = LocalContext.current.getString(R.string.widget_configure),
                     modifier = GlanceModifier.padding(16.dp),
                     onClick = actionRunCallback<OpenConfigAction>()
                 )
@@ -259,7 +259,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
             if(showSubtaskIcon)
                 Image(
                     provider = ImageProvider(R.drawable.ic_sub),
-                    contentDescription = "Descriptive text of your icon",
+                    contentDescription = LocalContext.current.getString(R.string.widget_subtask),
                     modifier = GlanceModifier.size(16.dp).padding(end = 4.dp),
                     contentScale = ContentScale.FillBounds,
                     colorFilter = ColorFilter.tint(GlanceTheme.colors.onBackground)

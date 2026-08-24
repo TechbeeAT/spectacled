@@ -50,6 +50,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.done
+import spectacled.shared.generated.resources.widget_configuration
 
 class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
 
@@ -174,7 +175,7 @@ fun WidgetConfigContent(
                 modifier = Modifier.padding(paddingValues).padding(16.dp)) {
 
                 Text(
-                    text = "Widget configuration",
+                    text = stringResource(Res.string.widget_configuration),
                     style = MaterialTheme.typography.headlineSmall
                 )
 

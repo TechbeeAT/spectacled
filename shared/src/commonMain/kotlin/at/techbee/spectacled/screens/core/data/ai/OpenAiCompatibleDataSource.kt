@@ -17,6 +17,10 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import org.jetbrains.compose.resources.getString
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.ai_response_failed
+import spectacled.shared.generated.resources.ai_response_no_text
 
 /**
  * Derives entries via any server that speaks the OpenAI `POST /v1/chat/completions` API - i.e. an
@@ -74,14 +78,14 @@ class OpenAiCompatibleDataSource(
             }.body<OpenAiChatResponseDto>()
 
             val text = response.choices.firstOrNull()?.message?.content
-                ?: return AiDeriveEntriesResult.Failed("AI response contained no text")
+                ?: return AiDeriveEntriesResult.Failed(getString(Res.string.ai_response_no_text))
 
             AiDeriveEntriesResult.Success(parseDerivedEntries(text))
 
         } catch (e: Exception) {
             Napier.e("AI derive-entries request (OpenAI-compatible) failed", e)
             AiDeriveEntriesResult.Failed(
-                message = "Fetching AI response failed",
+                message = getString(Res.string.ai_response_failed),
                 details = e.message
             )
         }

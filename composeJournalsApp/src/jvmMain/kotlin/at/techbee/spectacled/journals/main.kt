@@ -6,6 +6,7 @@ import at.techbee.spectacled.DeepLinkHandler
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.parseArgs
 import at.techbee.spectacled.setupDesktopHandler
+import org.jetbrains.compose.resources.stringResource
 
 fun main(args: Array<String>) {
     DeepLinkHandler.setupDesktopHandler(SpectacledVariant.JOURNALS)
@@ -14,7 +15,7 @@ fun main(args: Array<String>) {
     application {
         Window(
             onCloseRequest = ::exitApplication,
-            title = "spectacled Journals",
+            title = stringResource(SpectacledVariant.JOURNALS.appNameStringRes),
         ) {
             JournalsApp()
         }

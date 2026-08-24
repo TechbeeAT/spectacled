@@ -151,6 +151,14 @@ class SyncCoordinator(
         }
     }
 
+    // NOTE: The status/error strings below are deliberately NOT moved to string resources.
+    // CalendarSyncStatus is serialized into the database, so a localized message would be frozen
+    // in whatever language was active at sync time and would not follow a later language change.
+    // Resolving getString() here also pulls the Compose resource runtime into this data-layer
+    // class, which isn't available in every environment (the JS/wasm browser tests can't serve
+    // the generated .cvr and fail with MissingResourceException).
+    // To localize these properly, keep persisting only CalendarSyncStatusType (plus untranslated
+    // technical details) and resolve the display text from the type at the UI layer.
     private suspend fun sync(calendar: Calendar) {
 
         try {

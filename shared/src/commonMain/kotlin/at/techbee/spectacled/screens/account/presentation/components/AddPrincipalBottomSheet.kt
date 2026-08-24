@@ -94,6 +94,7 @@ import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.open_in_browser
 import spectacled.shared.generated.resources.password
+import spectacled.shared.generated.resources.server_inferred
 import spectacled.shared.generated.resources.server_optional
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.username
@@ -428,7 +429,7 @@ fun AddAccountScreen(
 
                     Column {
                         AnimatedVisibility(inferred?.isNotBlank() == true) {
-                            Text("Inferred: $inferred")
+                            Text(stringResource(Res.string.server_inferred, inferred.orEmpty()))
                         }
                         AnimatedVisibility(isInsecure) {
                             Text(
@@ -647,7 +648,7 @@ private fun CalDavProviderChip(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     calDavProvider.tags.forEach { tag ->
-                        Badge { Text(tag) }
+                        Badge { Text(stringResource(tag)) }
                     }
                 }
                 Text(
@@ -655,7 +656,7 @@ private fun CalDavProviderChip(
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleMedium
                 )
-                Text(calDavProvider.description)
+                Text(stringResource(calDavProvider.description))
 
                 if (calDavProvider.hasTodo && !calDavProvider.hasJournal) {
                     Row(
