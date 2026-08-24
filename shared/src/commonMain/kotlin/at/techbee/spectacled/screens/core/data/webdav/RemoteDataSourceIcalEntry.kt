@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.core.data.webdav
 import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.CalendarSyncError
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcalEntries
@@ -67,7 +68,7 @@ suspend fun multigetResourceHrefsMultiplatform(
             return when(response.status) {
                 HttpStatusCode.NotFound -> MultigetResourceHrefETagResult.NotFound
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> MultigetResourceHrefETagResult.NotAuthorized
-                else -> MultigetResourceHrefETagResult.Failed(response.status, "Calendar couldn't be fetched.", "${response.status.description} ${response.status.value}" )
+                else -> MultigetResourceHrefETagResult.Failed(response.status, CalendarSyncError.CALENDAR_NOT_FETCHABLE, "${response.status.description} ${response.status.value}" )
             }
         }
 
@@ -89,7 +90,7 @@ suspend fun multigetResourceHrefsMultiplatform(
             return MultigetResourceHrefETagResult.Success(hrefMap, multistatusResponse.syncToken)
         } catch (e: XmlParsingException) {
             Napier.e("Parsing failed: ${e.message}", e)
-            return MultigetResourceHrefETagResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
+            return MultigetResourceHrefETagResult.Failed(response.status, CalendarSyncError.CALENDAR_NOT_PARSABLE, e.stackTraceToString())
         }
     }
 }
@@ -117,7 +118,7 @@ suspend fun syncCollectionMultiplatform(
             return when(response.status) {
                 HttpStatusCode.NotFound -> MultigetSyncCollectionResult.NotFound
                 HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> MultigetSyncCollectionResult.NotAuthorized
-                else -> MultigetSyncCollectionResult.Failed(response.status, "Calendar couldn't be fetched.", "${response.status.description} ${response.status.value}" )
+                else -> MultigetSyncCollectionResult.Failed(response.status, CalendarSyncError.CALENDAR_NOT_FETCHABLE, "${response.status.description} ${response.status.value}" )
             }
         }
 
@@ -136,7 +137,7 @@ suspend fun syncCollectionMultiplatform(
             return MultigetSyncCollectionResult.Success(syncToken = multistatusResponse.syncToken, hrefMap)
         } catch (e: XmlParsingException) {
             Napier.e("Parsing failed: ${e.message}", e)
-            return MultigetSyncCollectionResult.Failed(response.status, "Calendar couldn't be parsed.", e.stackTraceToString())
+            return MultigetSyncCollectionResult.Failed(response.status, CalendarSyncError.CALENDAR_NOT_PARSABLE, e.stackTraceToString())
         }
     }
 }

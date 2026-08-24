@@ -32,11 +32,13 @@ import spectacled.shared.generated.resources.calendar_create_failed_component
 import spectacled.shared.generated.resources.calendar_create_failed_conflict
 import spectacled.shared.generated.resources.calendar_create_failed_privileges
 import spectacled.shared.generated.resources.calendar_create_failed_unsupported
+import spectacled.shared.generated.resources.calendar_delete_failed
 import spectacled.shared.generated.resources.calendar_delete_failed_privileges
 import spectacled.shared.generated.resources.calendar_delete_forbidden
 import spectacled.shared.generated.resources.calendar_delete_forbidden_locked
 import spectacled.shared.generated.resources.calendar_fetch_failed
 import spectacled.shared.generated.resources.calendar_parse_failed
+import spectacled.shared.generated.resources.calendar_update_failed
 import spectacled.shared.generated.resources.calendar_update_failed_conflict
 import spectacled.shared.generated.resources.calendar_update_failed_privileges
 import spectacled.shared.generated.resources.unknown_error_occurred
@@ -220,7 +222,7 @@ suspend fun updateCalDavCalendarMultiplatform(
                 HttpStatusCode.NotFound ->
                     UpsertCalendarResult.NotFound
                 else ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed), "${response.status.description} ${response.status.value}")
             }
         }
     }
@@ -306,7 +308,7 @@ suspend fun deleteCalendarMultiplatform(
                 DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_forbidden), "Status: ${response.status.description} ${response.status.value}")
             response.status == HttpStatusCode.Conflict ->
                 DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_forbidden_locked), "Status: ${response.status.description} ${response.status.value}")
-            else -> DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed), "Status: ${response.bodyAsText()} (${response.status})")
+            else -> DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_failed), "Status: ${response.bodyAsText()} (${response.status})")
         }
     }
 }

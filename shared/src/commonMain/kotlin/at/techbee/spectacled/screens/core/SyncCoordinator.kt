@@ -13,6 +13,7 @@ import at.techbee.spectacled.screens.core.data.webdav.PutResourceResult
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.CalendarSyncError
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -151,14 +152,6 @@ class SyncCoordinator(
         }
     }
 
-    // NOTE: The status/error strings below are deliberately NOT moved to string resources.
-    // CalendarSyncStatus is serialized into the database, so a localized message would be frozen
-    // in whatever language was active at sync time and would not follow a later language change.
-    // Resolving getString() here also pulls the Compose resource runtime into this data-layer
-    // class, which isn't available in every environment (the JS/wasm browser tests can't serve
-    // the generated .cvr and fail with MissingResourceException).
-    // To localize these properly, keep persisting only CalendarSyncStatusType (plus untranslated
-    // technical details) and resolve the display text from the type at the UI layer.
     private suspend fun sync(calendar: Calendar) {
 
         try {
@@ -174,7 +167,7 @@ class SyncCoordinator(
                     calendarRepository.updateCalendarSyncStatus(
                         CalendarSyncStatus(
                             CalendarSyncStatusType.FAILED,
-                            syncCollectionResponse.message,
+                            syncCollectionResponse.error,
                             syncCollectionResponse.details
                         ).serialize(),
                         calendar.syncToken,
@@ -186,7 +179,7 @@ class SyncCoordinator(
 
                 MultigetSyncCollectionResult.NotAuthorized -> {
                     calendarRepository.updateCalendarSyncStatus(
-                        CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, "Not authorized").serialize(),
+                        CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED).serialize(),
                         calendar.syncToken,
                         calendar.id
                     )
@@ -195,7 +188,7 @@ class SyncCoordinator(
 
                 MultigetSyncCollectionResult.NotFound -> {
                     calendarRepository.updateCalendarSyncStatus(
-                        CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, "Not found").serialize(),
+                        CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND).serialize(),
                         calendar.syncToken,
                         calendar.id
                     )
@@ -221,7 +214,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection timed out. Please check your internet connection and try again.",
+                    CalendarSyncError.CONNECTION_TIMED_OUT,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -229,7 +222,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection timed out. Please check your internet connection and try again.",
+                    CalendarSyncError.CONNECTION_TIMED_OUT,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -237,7 +230,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection timed out. Please check your internet connection and try again.",
+                    CalendarSyncError.CONNECTION_TIMED_OUT,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -245,7 +238,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Request error. Please check your server, username and password and try again.",
+                    CalendarSyncError.REQUEST_ERROR,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -253,7 +246,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "An unexpected server error occurred. Please try again.",
+                    CalendarSyncError.SERVER_ERROR,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -261,7 +254,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection error. Please check your internet connection and try again.",
+                    CalendarSyncError.CONNECTION_ERROR,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -269,7 +262,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection error: ${e.message}",
+                    CalendarSyncError.UNKNOWN,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -283,7 +276,7 @@ class SyncCoordinator(
                 calendarRepository.updateCalendarSyncStatus(
                     CalendarSyncStatus(
                         CalendarSyncStatusType.FAILED,
-                        multigetResourceHrefsMultiplatformResult.message,
+                        multigetResourceHrefsMultiplatformResult.error,
                         multigetResourceHrefsMultiplatformResult.details
                     ).serialize(),
                     calendar.syncToken,
@@ -294,7 +287,7 @@ class SyncCoordinator(
 
             MultigetResourceHrefETagResult.NotAuthorized -> {
                 calendarRepository.updateCalendarSyncStatus(
-                    CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, "Not authorized").serialize(),
+                    CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED).serialize(),
                     calendar.syncToken,
                     calendar.id
                 )
@@ -303,7 +296,7 @@ class SyncCoordinator(
 
             MultigetResourceHrefETagResult.NotFound -> {
                 calendarRepository.updateCalendarSyncStatus(
-                    CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, "Not found").serialize(),
+                    CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND).serialize(),
                     calendar.syncToken,
                     calendar.id
                 )
