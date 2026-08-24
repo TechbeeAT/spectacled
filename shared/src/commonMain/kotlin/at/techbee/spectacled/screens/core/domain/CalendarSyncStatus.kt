@@ -3,6 +3,11 @@ package at.techbee.spectacled.screens.core.domain
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.jetbrains.compose.resources.StringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.sync_status_failed
+import spectacled.shared.generated.resources.sync_status_not_authorized
+import spectacled.shared.generated.resources.sync_status_not_found
 
 
 @Serializable
@@ -18,6 +23,14 @@ data class CalendarSyncStatus(
     val details: String? = null,
     val icsDateTime: IcsDateTime = IcsDateTime.now()
 ) {
+
+    /**
+     * What to tell the user about this status, or null when the status speaks for itself. Falls
+     * back to the type when [error] is absent, which is the case for statuses written before error
+     * codes existed and for codes written by a newer app version.
+     */
+    val messageStringRes: StringResource?
+        get() = error?.stringRes ?: type.stringRes
 
     companion object {
 
@@ -37,11 +50,11 @@ data class CalendarSyncStatus(
 }
 
 @Serializable
-enum class CalendarSyncStatusType {
+enum class CalendarSyncStatusType(val stringRes: StringResource? = null) {
     IN_PROGRESS,
-    FAILED,
-    NOT_AUTHORIZED,
-    NOT_FOUND,
+    FAILED(Res.string.sync_status_failed),
+    NOT_AUTHORIZED(Res.string.sync_status_not_authorized),
+    NOT_FOUND(Res.string.sync_status_not_found),
     SYNCED,
     DISABLED;
 

@@ -335,6 +335,7 @@
     <string name="unknown_error">Unknown error</string>
     <string name="unknown_error_occurred">Unknown error occurred.</string>
 
+    <string name="sync_status_failed">Sync failed. Please try again.</string>
     <string name="sync_status_not_authorized">Not authorized</string>
     <string name="sync_status_not_found">Not found</string>
     <string name="sync_error_connection_timed_out">Connection timed out. Please check your internet connection and try again.</string>
@@ -343,7 +344,6 @@
     <string name="sync_error_request_failed">Request error. Please check your server, username and password and try again.</string>
     <string name="sync_error_calendar_not_fetchable">Calendar couldn't be fetched.</string>
     <string name="sync_error_calendar_not_parsable">Calendar couldn't be parsed.</string>
-    <string name="sync_error_unknown">Sync failed. Please try again.</string>
 
     <string name="calendar_create_failed">Creating collection failed.</string>
     <string name="calendar_update_failed">Calendar couldn't be updated.</string>

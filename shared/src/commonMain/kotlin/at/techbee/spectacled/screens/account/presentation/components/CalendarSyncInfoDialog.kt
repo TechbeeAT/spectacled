@@ -85,7 +85,7 @@ fun CalendarSyncInfoDialog(
 
                 Text(calendarSyncStatus.icsDateTime.formatLocalized(IcsDateTimeFormat.DATE_TIME))
 
-                val syncMessage = calendarSyncStatus.messageLabelRes()?.let { stringResource(it) }
+                val syncMessage = calendarSyncStatus.messageStringRes?.let { stringResource(it) }
                 syncMessage?.let {
                     Text(
                         text = it,
