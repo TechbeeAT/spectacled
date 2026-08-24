@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.data.ics
 
+import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsModule
 
 /**
