@@ -20,7 +20,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
@@ -36,6 +35,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
@@ -337,7 +338,7 @@ fun AddAccountScreen(
     var username by rememberSaveable { mutableStateOf("") }
     val passwordState = rememberTextFieldState()
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
-    var testDropdownMenuExpanded by remember { mutableStateOf(false) }
+    var serverDropdownMenuExpanded by remember { mutableStateOf(false) }
 
     val credentials by remember {
         derivedStateOf {
@@ -441,39 +442,65 @@ fun AddAccountScreen(
                 label = { Text(stringResource(Res.string.server_optional)) },
                 trailingIcon = {
                     TextButton(
-                        onClick = { testDropdownMenuExpanded = !testDropdownMenuExpanded },
+                        onClick = { serverDropdownMenuExpanded = !serverDropdownMenuExpanded },
                     ) {
                         Icon(Icons.Outlined.MoreVert, null)
 
                         DropdownMenu(
-                            expanded = testDropdownMenuExpanded,
-                            onDismissRequest = { testDropdownMenuExpanded = false }
+                            expanded = serverDropdownMenuExpanded,
+                            onDismissRequest = { serverDropdownMenuExpanded = false }
                         ) {
+
+                            CalDavProvider.entries.filter { it.calDavUrl != null }.forEach { provider ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(
+                                                text = provider.providerName,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = provider.calDavUrl?:"",
+                                                overflow = TextOverflow.Ellipsis,
+                                                maxLines = 1,
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        server = provider.calDavUrl?:""
+                                        serverDropdownMenuExpanded = false
+                                    }
+                                )
+                            }
+
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+                            )
+
                             DropdownMenuItem(
-                                text = { Text("Set caldavnotes@baikal") },
+                                text = {
+                                    Column {
+                                        Text(
+                                            text = "spectacled (internal testing)",
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "https://baikal.techbee.at/html/dav.php/calendars",
+                                            overflow = TextOverflow.Ellipsis,
+                                            maxLines = 1,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+                                },
                                 onClick = {
                                     username = "caldavnotes"
-                                    passwordState.setTextAndPlaceCursorAtEnd("caldavnotes")
                                     server = "https://baikal.techbee.at/html/dav.php/calendars/caldavnotes/"
-                                    testDropdownMenuExpanded = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Set tyler@baikal") },
-                                onClick = {
-                                    username = "tyler"
-                                    passwordState.setTextAndPlaceCursorAtEnd("tyler")
-                                    server = "https://baikal.techbee.at/html/dav.php/calendars/"
-                                    testDropdownMenuExpanded = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Set caldavnotes@nextcloud") },
-                                onClick = {
-                                    username = "caldavnotes"
-                                    passwordState.setTextAndPlaceCursorAtEnd("caldavnotes")
-                                    server = "https://nextcloud.techbee.at/remote.php/dav"
-                                    testDropdownMenuExpanded = false
+                                    serverDropdownMenuExpanded = false
                                 }
                             )
                         }
