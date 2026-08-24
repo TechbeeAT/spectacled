@@ -16,8 +16,10 @@ CREATE TABLE CalendarDto (
 getAllCalendars:
 SELECT * FROM CalendarDto;
 
+/**
 getCalendarsByHomeCollection:
 SELECT * FROM CalendarDto WHERE homeCollectionId = ?;
+*/
 
 getCalendarById:
 SELECT * FROM CalendarDto WHERE id = ?;
