@@ -339,6 +339,8 @@
     <string name="sync_status_not_found">Not found</string>
 
     <string name="calendar_create_failed">Creating collection failed.</string>
+    <string name="calendar_update_failed">Calendar couldn't be updated.</string>
+    <string name="calendar_delete_failed">Calendar couldn't be deleted.</string>
     <string name="calendar_create_failed_privileges">Calendar couldn't be created due to missing privileges.</string>
     <string name="calendar_create_failed_conflict">Parent does not exist or calendar already exists.</string>
     <string name="calendar_create_failed_unsupported">Server doesn't support creation of new collections.</string>
