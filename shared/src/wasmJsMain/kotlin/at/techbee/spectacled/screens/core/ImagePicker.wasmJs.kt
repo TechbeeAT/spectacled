@@ -23,7 +23,7 @@ actual fun rememberImagePicker(onImagePicked: (PickedFile?) -> Unit): ImagePicke
                     if (file != null) {
                         val reader = FileReader()
                         reader.onload = {
-                            @OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+                            @OptIn(ExperimentalWasmJsInterop::class)
                             val arrayBuffer = reader.result as ArrayBuffer
                             val uint8Array = Uint8Array(arrayBuffer)
                             val bytes = ByteArray(uint8Array.length) { i -> uint8Array.get(i) }

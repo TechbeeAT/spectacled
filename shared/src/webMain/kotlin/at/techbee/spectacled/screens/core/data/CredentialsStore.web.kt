@@ -5,7 +5,7 @@ import eu.anifantakis.lib.ksafe.KSafeWriteMode
 import eu.anifantakis.lib.ksafe.awaitCacheReady
 import io.ktor.http.Url
 
-actual class PlatformCredentialStore(): CredentialStore {
+actual class PlatformCredentialStore : CredentialStore {
 
     private val ksafe = KSafe(CREDENTIALS_FILE_NAME)
 

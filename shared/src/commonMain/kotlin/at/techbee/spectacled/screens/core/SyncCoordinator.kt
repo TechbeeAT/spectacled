@@ -160,8 +160,7 @@ class SyncCoordinator(
                 calendar.id
             )
 
-            val syncCollectionResponse = remote.syncCollection(calendar, credentials)
-            when (syncCollectionResponse) {
+            when (val syncCollectionResponse = remote.syncCollection(calendar, credentials)) {
 
                 is MultigetSyncCollectionResult.Failed -> {
                     calendarRepository.updateCalendarSyncStatus(
@@ -449,8 +448,7 @@ class SyncCoordinator(
 
             SyncState.LOCAL_MODIFIED -> {
                 val entryToPush = pushAttachments(dirtyIcalEntry, calendar)    // TODO: store error?
-                val insertOrUpdateIcalEntryResult = remote.putResource(calendar, entryToPush, credentials)
-                when (insertOrUpdateIcalEntryResult) {
+                when (val insertOrUpdateIcalEntryResult = remote.putResource(calendar, entryToPush, credentials)) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
                         val conflictingServerIcalEntryResult = remote.getResource(calendar, entryToPush, credentials)
@@ -485,12 +483,10 @@ class SyncCoordinator(
             // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_CLIENT_WINS -> {
                 val entryToPush = pushAttachments(dirtyIcalEntry, calendar)
-                val insertOrUpdateIcalEntryResult = remote.putResource(calendar, entryToPush, credentials)
-                when (insertOrUpdateIcalEntryResult) {
+                when (val insertOrUpdateIcalEntryResult = remote.putResource(calendar, entryToPush, credentials)) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
-                        val conflictingServerIcalEntryResult = remote.getResource(calendar, entryToPush, credentials)
-                        when (conflictingServerIcalEntryResult) {
+                        when (val conflictingServerIcalEntryResult = remote.getResource(calendar, entryToPush, credentials)) {
 
                             // failed will be kept for another retry TODO: Review if this is sufficient in future
                             is GetResourceResult.Failed -> Unit   // Retry
@@ -537,9 +533,8 @@ class SyncCoordinator(
             }
 
             // entry was locally modified, we put and see if there's a conflict
-            SyncState.USER_DECIDED_SERVER_WINS -> {   //TODO!!
-                val conflictingServerIcalEntryResult = remote.getResource(calendar, dirtyIcalEntry, credentials)
-                when (conflictingServerIcalEntryResult) {
+            SyncState.USER_DECIDED_SERVER_WINS -> {
+                when (val conflictingServerIcalEntryResult = remote.getResource(calendar, dirtyIcalEntry, credentials)) {
 
                     // failed will be kept for another retry TODO: Review if this is sufficient in future
                     is GetResourceResult.Failed -> Unit   // Retry
