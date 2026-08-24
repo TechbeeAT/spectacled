@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.DropdownMenu
@@ -56,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -65,12 +68,14 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProvider
+import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProviderCategory
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_account
 import spectacled.shared.generated.resources.add_account_header_info
@@ -81,6 +86,7 @@ import spectacled.shared.generated.resources.add_account_option2_recommendation_
 import spectacled.shared.generated.resources.add_account_option2_recommended_providers
 import spectacled.shared.generated.resources.add_account_option2_text
 import spectacled.shared.generated.resources.add_account_option_x
+import spectacled.shared.generated.resources.add_account_provider_tasks_only_warning
 import spectacled.shared.generated.resources.add_account_spectacled_is_provider_independent
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.cancel
@@ -527,9 +533,15 @@ fun AddAccountScreen(
 
 
 @Composable
-fun ChooseProviderScreen(modifier: Modifier = Modifier) {
+fun ChooseProviderScreen(
+    modifier: Modifier = Modifier,
+    spectacledVariant: SpectacledVariant = koinInject()
+) {
 
-    val uriHandler = LocalUriHandler.current
+    val requiredComponent = spectacledVariant.mainCalendarComponent
+    val providers = CalDavProvider.entries.filter {
+        it.supportedCalendarComponents.contains(requiredComponent)
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -564,49 +576,90 @@ fun ChooseProviderScreen(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.titleLarge
         )
 
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         Column {
 
+            CalDavProviderCategory.entries.forEach { category ->
 
-            CalDavProvider.entries.forEach { calDavProvider ->
-                AssistChip(
-                    onClick = { uriHandler.openUri(calDavProvider.url) },
-                    label = {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                calDavProvider.tags.forEach { tag ->
-                                    Badge { Text(tag) }
-                                }
-                            }
-                            Text(
-                                text = calDavProvider.providerName,
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(calDavProvider.description)
-                        }
-                    },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = { uriHandler.openUri(calDavProvider.url) }
-                        ) {
-                            Icon(Icons.AutoMirrored.Outlined.OpenInNew, stringResource(Res.string.open_in_browser))
-                        }
-                    },
-                    modifier = Modifier.padding(vertical = 2.dp)
+                val providersInCategory = providers.filter { it.category == category }
+                if (providersInCategory.isEmpty()) return@forEach
+
+                Text(
+                    text = stringResource(category.headline),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp)
                 )
+
+                providersInCategory.forEach { calDavProvider ->
+                    CalDavProviderChip(calDavProvider = calDavProvider)
+                }
             }
         }
 
     }
+}
+
+@Composable
+private fun CalDavProviderChip(
+    calDavProvider: CalDavProvider,
+    modifier: Modifier = Modifier
+) {
+    val uriHandler = LocalUriHandler.current
+
+    AssistChip(
+        onClick = { uriHandler.openUri(calDavProvider.url) },
+        label = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.padding(8.dp)
+            ) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    calDavProvider.tags.forEach { tag ->
+                        Badge { Text(tag) }
+                    }
+                }
+                Text(
+                    text = calDavProvider.providerName,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(calDavProvider.description)
+
+                if (calDavProvider.hasTodo && !calDavProvider.hasJournal) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = stringResource(Res.string.add_account_provider_tasks_only_warning),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            }
+        },
+        trailingIcon = {
+            IconButton(
+                onClick = { uriHandler.openUri(calDavProvider.url) }
+            ) {
+                Icon(Icons.AutoMirrored.Outlined.OpenInNew, stringResource(Res.string.open_in_browser))
+            }
+        },
+        modifier = modifier.padding(vertical = 2.dp)
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -650,7 +703,7 @@ private fun AddAccountScreen_Preview_Processing() {
 private fun ChooseProviderScreen_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         Scaffold {
-            ChooseProviderScreen()
+            ChooseProviderScreen(spectacledVariant = SpectacledVariant.TASKS)
         }
 
     }
@@ -667,6 +720,17 @@ private fun AddAccountScreen_Preview_Error() {
                 onCredentialsUpdated = {},
                 //onAction = {}
             )
+        }
+
+    }
+}
+
+@Preview
+@Composable
+private fun CalDavProviderChip_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CalDavProviderChip(CalDavProvider.FASTMAIL)
         }
 
     }
