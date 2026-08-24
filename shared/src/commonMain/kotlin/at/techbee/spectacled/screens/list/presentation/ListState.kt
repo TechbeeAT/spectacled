@@ -7,6 +7,7 @@ import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_NO_CRITERIA
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_PINNED
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
+import at.techbee.spectacled.screens.core.data.ai.AiDeriveEntriesResult
 import at.techbee.spectacled.screens.core.data.ai.AiProvider
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
@@ -25,8 +26,10 @@ import kotlinx.datetime.number
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.grouping_no_date
 import spectacled.shared.generated.resources.grouping_other
+import spectacled.shared.generated.resources.ic_pin_rotated
+import spectacled.shared.generated.resources.ic_trashbin
 import spectacled.shared.generated.resources.pinned
-import spectacled.shared.generated.resources.trashbin
+import spectacled.shared.generated.resources.trashbin_x
 
 data class ListState(
     val icalEntries: List<IcalEntry> = emptyList(),
@@ -83,7 +86,7 @@ data class ListState(
     val claudeApiKeyPresent: Boolean = false,
     val openAiBaseUrlPresent: Boolean = false,
     val showDeriveEntriesBottomSheet: Boolean = false,
-    val isDerivingEntries: Boolean = false,
+    val aiDerivedEntriesResult: AiDeriveEntriesResult? = null,
 
     val draggingIcalEntryId: Long? = null,
     val scrollToDate: IcsDateTime? = null,
@@ -217,7 +220,7 @@ data class ListState(
             if (pinned.isNotEmpty()) add(
                 ListSection(
                     key = LIST_COLLAPSED_GROUP_PINNED,
-                    header = ListSectionHeader.Res(Res.string.pinned, suffix = "  " + IcalEntry.PINNED_CATEGORY),
+                    header = ListSectionHeader.Res(Res.string.pinned, iconDrawableRes = Res.drawable.ic_pin_rotated),
                     entries = pinned,
                     kind = ListSection.Kind.PINNED
                 )
@@ -238,7 +241,7 @@ data class ListState(
             if (trashbin.isNotEmpty()) add(
                 ListSection(
                     key = LIST_COLLAPSED_GROUP_TRASHBIN,
-                    header = ListSectionHeader.Res(Res.string.trashbin, suffix = " 🗑 (${trashbin.size})"),
+                    header = ListSectionHeader.Res(Res.string.trashbin_x, param = trashbin.size, iconDrawableRes = Res.drawable.ic_trashbin),
                     entries = trashbin,
                     kind = ListSection.Kind.TRASHBIN,
                     dimmed = true

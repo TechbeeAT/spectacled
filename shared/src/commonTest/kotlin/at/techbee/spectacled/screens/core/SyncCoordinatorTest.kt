@@ -13,6 +13,7 @@ import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataS
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
+import at.techbee.spectacled.screens.core.domain.CalendarSyncError
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
@@ -281,7 +282,7 @@ class SyncCoordinatorTest {
             deletedDeltaHrefs = emptyList()
         )
         val remote = FakeRemote(
-            syncCollectionResult = { MultigetSyncCollectionResult.Failed(HttpStatusCode.Conflict, "invalid sync token") },
+            syncCollectionResult = { MultigetSyncCollectionResult.Failed(HttpStatusCode.Conflict, CalendarSyncError.CALENDAR_NOT_FETCHABLE) },
             multigetHrefsResult = { MultigetResourceHrefETagResult.Success(emptyMap(), "fresh-token") }
         )
         val calRepo = FakeCalendarRepository()

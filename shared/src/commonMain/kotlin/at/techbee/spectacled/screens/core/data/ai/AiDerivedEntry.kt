@@ -38,6 +38,7 @@ data class AiDerivedEntryListDto(
 
 /** Outcome of an AI "derive entries from text" request. */
 sealed class AiDeriveEntriesResult {
+    object Processing: AiDeriveEntriesResult()
     data class Success(val entries: List<AiDerivedEntryDto>) : AiDeriveEntriesResult()
     data class Failed(val message: String, val details: String? = null) : AiDeriveEntriesResult()
 }

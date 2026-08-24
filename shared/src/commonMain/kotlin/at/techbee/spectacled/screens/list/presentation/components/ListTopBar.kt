@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -317,7 +318,8 @@ fun IcalEntryListTopBar(
                             else
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_pin),
-                                    contentDescription = stringResource(Res.string.pin)
+                                    contentDescription = stringResource(Res.string.pin),
+                                    modifier = Modifier.rotate(45f)
                                 )
                         }
                     }

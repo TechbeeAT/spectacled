@@ -11,8 +11,10 @@ SELECT * FROM PrincipalDto;
 getPrincipalByUrl:
 SELECT * FROM PrincipalDto WHERE principalUrl = ?;
 
+/**
 getPrincipalById:
 SELECT * FROM PrincipalDto WHERE id = ?;
+*/
 
 getPrincipalForCalendar:
 SELECT PrincipalDto.*

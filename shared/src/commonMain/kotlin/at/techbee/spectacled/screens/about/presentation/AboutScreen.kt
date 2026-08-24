@@ -32,7 +32,7 @@ fun AboutScreen(
     val state by viewModel.state.collectAsState()
     val screens = listOf(
         AboutTabDestination.Jtx,
-        AboutTabDestination.Releasenotes,
+        AboutTabDestination.ReleaseNotes,
         AboutTabDestination.Contributors,
         AboutTabDestination.Libraries
     )
@@ -64,7 +64,7 @@ fun AboutScreen(
         ) { page ->
             when (page) {
                 screens.indexOf(AboutTabDestination.Jtx) -> AboutApp(viewModel.spectacledVariant)
-                screens.indexOf(AboutTabDestination.Releasenotes) -> GitHubReleases(state.gitHubReleases)
+                screens.indexOf(AboutTabDestination.ReleaseNotes) -> GitHubReleases(state.gitHubReleases)
                 screens.indexOf(AboutTabDestination.Contributors) -> GitHubContributors(state.gitHubContributors)
                 screens.indexOf(AboutTabDestination.Libraries) -> AboutLibraries(state.libraries)
             }

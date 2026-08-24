@@ -37,6 +37,8 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.more
+import spectacled.shared.generated.resources.settings_proxy_server
+import spectacled.shared.generated.resources.settings_proxy_server_info
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,10 +79,10 @@ fun SettingsMorePage(
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
-                        Text("TODO: Info about proxy server")
+                        Text(stringResource(Res.string.settings_proxy_server_info))
                     }
                 },
-                label = { Text("Proxy server") },
+                label = { Text(stringResource(Res.string.settings_proxy_server)) },
                 trailingIcon = {
                     TextButton(
                         onClick = { userProxyServerDropdownExpanded = !userProxyServerDropdownExpanded },
@@ -95,11 +97,11 @@ fun SettingsMorePage(
                                 text = {
                                     Column {
                                         Text("Development test")
-                                        Text("http://0.0.0.0:8088")
+                                        Text("http://localhost:8088")
                                     }
                                 },
                                 onClick = {
-                                    userAppPreferencesStore.userProxyServer = "http://0.0.0.0:8088"
+                                    userAppPreferencesStore.userProxyServer = "http://localhost:8088"
                                     userProxyServerDropdownExpanded = false
                                 }
                             )

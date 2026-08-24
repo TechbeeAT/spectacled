@@ -28,7 +28,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.account_added_updated
+import spectacled.shared.generated.resources.account_successfully_removed
+import spectacled.shared.generated.resources.calendar_successfully_added_updated
+import spectacled.shared.generated.resources.calendar_successfully_deleted
+import spectacled.shared.generated.resources.calendars_synced
+import spectacled.shared.generated.resources.credentials_not_found
+import spectacled.shared.generated.resources.credentials_not_found_readd_account
 import spectacled.shared.generated.resources.login_message_forbidden
+import spectacled.shared.generated.resources.login_message_not_authorized
+import spectacled.shared.generated.resources.server_not_found
+import spectacled.shared.generated.resources.some_calendars_failed_to_sync
+import spectacled.shared.generated.resources.sync_status_not_authorized
+import spectacled.shared.generated.resources.sync_status_not_found
+import spectacled.shared.generated.resources.unknown_error
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -130,9 +143,9 @@ class AccountListViewModel(
             credentialStore.clear(principal.principalUrl)
             calendarRepository.deletePrincipal(principal.id)
             _state.update { it.copy(
-                processingState = ProcessingState.Success(message = "Account successfully removed"),
+                processingState = ProcessingState.Success(message = getString(Res.string.account_successfully_removed)),
                 showRemovePrincipalDialog = null,
-                snackbarText = "Account successfully removed"
+                snackbarText = getString(Res.string.account_successfully_removed)
             ) }
         }
     }
@@ -147,7 +160,7 @@ class AccountListViewModel(
         viewModelScope.launch(ioDispatcher) {
 
             try {
-                val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
+                val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
                 webDavCalendarDataSource.deleteCalendar(calendar, credentials).let { remoteResult ->
 
@@ -155,9 +168,9 @@ class AccountListViewModel(
                         is DeleteCalendarResult.SuccessfullyDeleted, is DeleteCalendarResult.AlreadyDeleted -> {
                             calendarRepository.deleteCalendar(calendar.id)
                             _state.update { it.copy(
-                                processingState = ProcessingState.Success(message = "Calendar successfully deleted"),
+                                processingState = ProcessingState.Success(message = getString(Res.string.calendar_successfully_deleted)),
                                 showDeleteCalendarDialog = null,
-                                snackbarText = "Calendar successfully deleted",
+                                snackbarText = getString(Res.string.calendar_successfully_deleted),
                             ) }
                         }
                         is DeleteCalendarResult.Failed -> _state.update { it.copy(
@@ -192,8 +205,8 @@ class AccountListViewModel(
 
             if(credentials == null)
                 _state.update { it.copy(
-                    processingState = ProcessingState.Error(message = "Credentials not found"),
-                    snackbarText = "Credentials not found, please remove this account and add it again."
+                    processingState = ProcessingState.Error(message = getString(Res.string.credentials_not_found)),
+                    snackbarText = getString(Res.string.credentials_not_found_readd_account)
                 ) }
             else
                 runAccountDiscovery(credentials)
@@ -224,7 +237,7 @@ class AccountListViewModel(
                         return@launch
                     }
                     DiscoverPrincipalsResult.NotFound -> {
-                        _state.update { it.copy(processingState = ProcessingState.Error(message = "Server not found.")) }
+                        _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.server_not_found))) }
                         return@launch
                     }
                     is DiscoverPrincipalsResult.Success -> {
@@ -251,10 +264,10 @@ class AccountListViewModel(
                             ) }
                         }
                         DiscoverHomeCollectionsResult.NotAuthorized -> {
-                            _state.update { it.copy(processingState = ProcessingState.Error(message = "Not authorized. Please check your username and password.")) }
+                            _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.login_message_not_authorized))) }
                         }
                         DiscoverHomeCollectionsResult.NotFound -> {
-                            _state.update { it.copy(processingState = ProcessingState.Error(message = "Server not found.")) }
+                            _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.server_not_found))) }
                         }
                         is DiscoverHomeCollectionsResult.Success -> {
                             principal.displayName = discoverHomeCollectionsResult.principalDisplayName
@@ -280,10 +293,10 @@ class AccountListViewModel(
                                 ) }
                             }
                             DiscoverCalendarsResult.NotAuthorized -> {
-                                _state.update { it.copy(processingState = ProcessingState.Error(message = "Not authorized. Please check your username and password.")) }
+                                _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.login_message_not_authorized))) }
                             }
                             DiscoverCalendarsResult.NotFound -> {
-                                _state.update { it.copy(processingState = ProcessingState.Error(message = "Server not found.")) }
+                                _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.server_not_found))) }
                             }
                             is DiscoverCalendarsResult.Success -> {
                                 homeCollection.calDavPrivileges = discoverCalendarsResult.calDavPrivileges
@@ -319,18 +332,18 @@ class AccountListViewModel(
                     val localCalendars = calendarRepository.getCalendarsForPrincipalUrl(principal.principalUrl.toString())
                     val removedCalendars = localCalendars.filter { localCalendar -> discoveredCalendars.none { calendar -> calendar.url == localCalendar.url}  }
                     removedCalendars.forEach { calendarRepository.deleteCalendar(it.id) }
-                    // Todo: infom user that calendar was removed!
+                    // Todo: inform user that calendar was removed!
 
                     _state.update { it.copy(
                         showAddPrincipalBottomSheet = false,
-                        processingState = ProcessingState.Success("Account added/updated"),
-                        snackbarText = "Account added/updated"
+                        processingState = ProcessingState.Success(getString(Res.string.account_added_updated)),
+                        snackbarText = getString(Res.string.account_added_updated)
                     ) }
                     onSyncCalendars(localCalendars)
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(
-                    processingState = ProcessingState.Error(message = e.message ?: "Unknown error"),
+                    processingState = ProcessingState.Error(message = e.message ?: getString(Res.string.unknown_error)),
                     snackbarText = e.message
                 ) }
             }
@@ -348,7 +361,7 @@ class AccountListViewModel(
         viewModelScope.launch(ioDispatcher) {
 
             try {
-                val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception("Credentials not found")
+                val credentials = credentialStore.load(principal.principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
                 val upsertCalendarResult = if(calendar.id == 0L) {
                     webDavCalendarDataSource.createCalendar(calendar, credentials)
                 } else {
@@ -361,9 +374,9 @@ class AccountListViewModel(
                         calendarRepository.upsertCalendar(upsertCalendarResult.calendar, homeCollection.url)
                         Napier.d("Calendar ${calendar.displayName} added")
                         _state.update { it.copy(
-                            snackbarText = "Calendar successfully added/updated",
+                            snackbarText = getString(Res.string.calendar_successfully_added_updated),
                             showAddOrUpdateCalendarBottomSheet = null,
-                            processingState = ProcessingState.Success("Calendar successfully added/updated"),
+                            processingState = ProcessingState.Success(getString(Res.string.calendar_successfully_added_updated)),
                         ) }
                     }
                     UpsertCalendarResult.NotFound -> deleteCalendar(principal, calendar)  // TODO: Inform user that the calendar was deleted in the background
@@ -371,7 +384,7 @@ class AccountListViewModel(
                 }
 
             } catch (e: Exception) {
-                _state.update { it.copy(processingState = ProcessingState.Error(message = e.message ?: "Unknown error", detail = e.stackTraceToString())) }
+                _state.update { it.copy(processingState = ProcessingState.Error(message = e.message ?: getString(Res.string.unknown_error), detail = e.stackTraceToString())) }
                 Napier.e(e.stackTraceToString())
             }
         }
@@ -397,13 +410,13 @@ class AccountListViewModel(
 
             // TODO: Double-Check if this actually works!
             val newProcessingState = if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.SYNCED })
-                ProcessingState.Success("Calendars synced")
+                ProcessingState.Success(getString(Res.string.calendars_synced))
             else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_AUTHORIZED })
-                ProcessingState.Error(calendarsRelevantForSyncCheck.firstOrNull()?.calendarSyncStatus?.message?: "Not authorized", _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
+                ProcessingState.Error(getString(Res.string.sync_status_not_authorized), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
             else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_FOUND })
-                ProcessingState.Error(calendarsRelevantForSyncCheck.firstOrNull()?.calendarSyncStatus?.message?: "Not found", _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
+                ProcessingState.Error(getString(Res.string.sync_status_not_found), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
             else
-                ProcessingState.Error("Some calendars failed to sync. Please check the calendars for details.")
+                ProcessingState.Error(getString(Res.string.some_calendars_failed_to_sync))
 
             _state.update { it.copy(processingState = newProcessingState) }
         }

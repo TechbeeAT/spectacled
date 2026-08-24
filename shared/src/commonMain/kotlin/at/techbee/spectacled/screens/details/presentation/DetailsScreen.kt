@@ -230,7 +230,7 @@ fun DetailsScreen(
             }
 
             AnimatedVisibility(
-                state.icalEntry.categories.isNotEmpty() || state.icalEntry.status in listOf(
+                state.icalEntry.categoriesWithoutPinned.isNotEmpty() || state.icalEntry.status in listOf(
                     Status.DRAFT,
                     Status.CANCELLED
                 )
@@ -249,7 +249,7 @@ fun DetailsScreen(
                         )
                     }
 
-                    state.icalEntry.categories.sorted().forEach { category ->
+                    state.icalEntry.categoriesWithoutPinned.sorted().forEach { category ->
 
                         MetaInfoCard(
                             icon = Icons.AutoMirrored.Outlined.Label,
