@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
+import at.techbee.spectacled.screens.core.domain.CalendarSyncError
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.formatLocalized
@@ -84,7 +85,8 @@ fun CalendarSyncInfoDialog(
 
                 Text(calendarSyncStatus.icsDateTime.formatLocalized(IcsDateTimeFormat.DATE_TIME))
 
-                calendarSyncStatus.message?.let {
+                val syncMessage = calendarSyncStatus.messageLabelRes()?.let { stringResource(it) }
+                syncMessage?.let {
                     Text(
                         text = it,
                         textAlign = TextAlign.Center)
@@ -124,7 +126,7 @@ fun CalendarSyncInfoDialog(
                         TextButton(
                             onClick = {
                                 clipboard.setText(
-                                    AnnotatedString(calendarSyncStatus.message + "\n" + calendarSyncStatus.details)
+                                    AnnotatedString(listOfNotNull(syncMessage, calendarSyncStatus.details).joinToString("\n"))
                                 )
                             }
                         ) {
@@ -147,7 +149,7 @@ private fun CalendarSyncStatus_Preview_FAILED() {
     CalendarSyncInfoDialog(
         calendarSyncStatus = CalendarSyncStatus(
             type = CalendarSyncStatusType.FAILED,
-            message = "Connection error. Please check your internet connection and try again.",
+            error = CalendarSyncError.CONNECTION_ERROR,
             details = "Details message"
         ),
         onRetry = { },
@@ -163,7 +165,7 @@ private fun CalendarSyncStatus_Preview_NOT_AUTHORIZED() {
     CalendarSyncInfoDialog(
         calendarSyncStatus = CalendarSyncStatus(
             type = CalendarSyncStatusType.NOT_AUTHORIZED,
-            //message = "Connection error. Please check your internet connection and try again.",
+            //error = CalendarSyncError.CONNECTION_ERROR,
             //details = "Details message"
         ),
         onRetry = { },
@@ -179,7 +181,7 @@ private fun CalendarSyncStatus_Preview_NOT_FOUND() {
     CalendarSyncInfoDialog(
         calendarSyncStatus = CalendarSyncStatus(
             type = CalendarSyncStatusType.NOT_FOUND,
-            //message = "Connection error. Please check your internet connection and try again.",
+            //error = CalendarSyncError.CONNECTION_ERROR,
             //details = "Details message"
         ),
         onRetry = { },

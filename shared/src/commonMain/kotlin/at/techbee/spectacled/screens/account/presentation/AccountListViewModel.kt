@@ -412,9 +412,9 @@ class AccountListViewModel(
             val newProcessingState = if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.SYNCED })
                 ProcessingState.Success(getString(Res.string.calendars_synced))
             else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_AUTHORIZED })
-                ProcessingState.Error(calendarsRelevantForSyncCheck.firstOrNull()?.calendarSyncStatus?.message?: getString(Res.string.sync_status_not_authorized), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
+                ProcessingState.Error(getString(Res.string.sync_status_not_authorized), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
             else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_FOUND })
-                ProcessingState.Error(calendarsRelevantForSyncCheck.firstOrNull()?.calendarSyncStatus?.message?: getString(Res.string.sync_status_not_found), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
+                ProcessingState.Error(getString(Res.string.sync_status_not_found), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
             else
                 ProcessingState.Error(getString(Res.string.some_calendars_failed_to_sync))
 

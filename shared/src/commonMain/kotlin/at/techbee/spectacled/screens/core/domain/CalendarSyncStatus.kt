@@ -8,7 +8,13 @@ import kotlinx.serialization.json.Json
 @Serializable
 data class CalendarSyncStatus(
     val type: CalendarSyncStatusType,
-    val message: String? = null,
+    /**
+     * Why the sync failed, for the error types. Null when there is nothing to add beyond [type].
+     * A code rather than a message so the text can be localized at render time - see
+     * [CalendarSyncError].
+     */
+    val error: CalendarSyncError? = null,
+    /** Untranslated technical detail (HTTP status, stack trace) shown behind "Show more". */
     val details: String? = null,
     val icsDateTime: IcsDateTime = IcsDateTime.now()
 ) {
@@ -18,6 +24,10 @@ data class CalendarSyncStatus(
         private val mapperJson = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
+            // A status written by a newer app version may carry an error code this build doesn't
+            // know, and rows written before error codes existed carry a "message" string instead.
+            // Both decode to error = null, and the UI falls back to text derived from `type`.
+            coerceInputValues = true
         }
 
         fun deserialize(string: String) = mapperJson.decodeFromString<CalendarSyncStatus>(string)
