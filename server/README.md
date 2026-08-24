@@ -33,13 +33,13 @@ apps don't use this proxy at all.
 
 ## Configuration (environment variables)
 
-| Variable                     | Default  | Purpose                                                                                       |
-|------------------------------|----------|-----------------------------------------------------------------------------------------------|
-| `PORT`                       | `8088`   | Port to bind. PaaS hosts (Fly.io, Render, …) inject this automatically.                        |
-| `PROXY_ALLOWED_ORIGINS`      | *(any)*  | Comma-separated web origins allowed by CORS, e.g. `https://spectacled.techbee.at`. Unset = reflect any origin (**dev only**, logged as a warning). Set this in production. |
-| `PROXY_ALLOWED_TARGET_HOSTS` | *(any)*  | Comma-separated allow-list of destination hostnames. Unset = any host. Strongly recommended for a shared/demo instance so it can't be abused as an open relay. |
-| `PROXY_REQUIRE_HTTPS_TARGET` | `true`   | Reject non-`https` target URLs.                                                               |
-| `PROXY_ALLOW_PRIVATE_TARGETS`| `false`  | When `false`, targets that resolve to loopback/link-local/private/unique-local addresses (e.g. `169.254.169.254`, `127.0.0.1`) are rejected. This is the SSRF guard — leave it off in production. |
+| Variable                      | Default | Purpose                                                                                                                                                                                           |
+|-------------------------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `PORT`                        | `8088`  | Port to bind. PaaS hosts (Fly.io, Render, …) inject this automatically.                                                                                                                           |
+| `PROXY_ALLOWED_ORIGINS`       | *(any)* | Comma-separated web origins allowed by CORS, e.g. `https://spectacled.techbee.at`. Unset = reflect any origin (**dev only**, logged as a warning). Set this in production.                        |
+| `PROXY_ALLOWED_TARGET_HOSTS`  | *(any)* | Comma-separated allow-list of destination hostnames. Unset = any host. Strongly recommended for a shared/demo instance so it can't be abused as an open relay.                                    |
+| `PROXY_REQUIRE_HTTPS_TARGET`  | `true`  | Reject non-`https` target URLs.                                                                                                                                                                   |
+| `PROXY_ALLOW_PRIVATE_TARGETS` | `false` | When `false`, targets that resolve to loopback/link-local/private/unique-local addresses (e.g. `169.254.169.254`, `127.0.0.1`) are rejected. This is the SSRF guard — leave it off in production. |
 
 ## Run locally
 

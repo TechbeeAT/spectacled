@@ -208,7 +208,7 @@ DEVELOPMENT_TEAM=YOUR_APPLE_TEAM_ID
 | Command                      | What it does                                                   |
 |------------------------------|----------------------------------------------------------------|
 | `./gradlew :shared:allTests` | Run the shared module's test suite                             |
-| `./gradlew :server:run`      | Run the Web CORS proxy locally on `http://localhost:8088`       |
+| `./gradlew :server:run`      | Run the Web CORS proxy locally on `http://localhost:8088`      |
 | `./gradlew :server:test`     | Run the proxy's test suite                                     |
 | `./gradlew clean`            | Delete all build outputs                                       |
 | `./gradlew --stop`           | Stop all Gradle daemons (useful after a bad incremental build) |
