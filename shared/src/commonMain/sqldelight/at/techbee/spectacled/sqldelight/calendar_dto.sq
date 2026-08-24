@@ -42,7 +42,6 @@ WHERE CalendarDto.id = :calendarId
 LIMIT 1;
 
 
-
 updateCalendar:
 UPDATE CalendarDto
 SET
@@ -60,7 +59,6 @@ SET
 WHERE
     url = :url
 ;
-
 
 insertCalendar:
 INSERT OR IGNORE INTO
@@ -90,10 +88,6 @@ VALUES (
         :syncToken,
         :attachmentCollectionUrl
 );
-
-
-updateColor:
-UPDATE CalendarDto SET color = ? WHERE id = ?;
 
 updateCalendarSyncStatus:
 UPDATE
