@@ -319,7 +319,7 @@ class AccountListViewModel(
                     val localCalendars = calendarRepository.getCalendarsForPrincipalUrl(principal.principalUrl.toString())
                     val removedCalendars = localCalendars.filter { localCalendar -> discoveredCalendars.none { calendar -> calendar.url == localCalendar.url}  }
                     removedCalendars.forEach { calendarRepository.deleteCalendar(it.id) }
-                    // Todo: infom user that calendar was removed!
+                    // Todo: inform user that calendar was removed!
 
                     _state.update { it.copy(
                         showAddPrincipalBottomSheet = false,
