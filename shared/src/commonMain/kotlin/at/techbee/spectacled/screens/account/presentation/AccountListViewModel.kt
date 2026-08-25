@@ -78,7 +78,7 @@ class AccountListViewModel(
         calendarRepository.getAllPrincipalsFlow().collect { principals ->
             _state.update { state -> state.copy(
                 principals = principals,
-                isInitialized = true
+                showAddPrincipalBottomSheet = principals.isEmpty()  // show bottom sheet if no principal was added
             ) }
         }
     }

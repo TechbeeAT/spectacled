@@ -11,7 +11,6 @@ data class AccountListState(
     val editFoldersOfPrincipal: Principal? = null,
     val snackbarText: String? = null,
     var processingState: ProcessingState = ProcessingState.Idle,
-    val isInitialized: Boolean = false,
 
     var showAboutBottomSheet: Boolean = false,
     var showAddPrincipalBottomSheet: Boolean = false,
