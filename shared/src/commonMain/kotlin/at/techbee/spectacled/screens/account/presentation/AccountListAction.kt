@@ -6,7 +6,6 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 
 sealed interface AccountListAction {
-    object OnAddLocalCalendar: AccountListAction
 
     data class OnShowAboutBottomSheet(val show: Boolean? = null): AccountListAction
     data class OnShowAddPrincipalBottomSheet(val show: Boolean? = null): AccountListAction

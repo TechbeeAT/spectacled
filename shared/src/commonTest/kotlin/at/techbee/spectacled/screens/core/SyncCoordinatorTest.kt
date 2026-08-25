@@ -13,6 +13,7 @@ import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataS
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
+import at.techbee.spectacled.screens.core.domain.CalendarSyncError
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
@@ -281,7 +282,7 @@ class SyncCoordinatorTest {
             deletedDeltaHrefs = emptyList()
         )
         val remote = FakeRemote(
-            syncCollectionResult = { MultigetSyncCollectionResult.Failed(HttpStatusCode.Conflict, "invalid sync token") },
+            syncCollectionResult = { MultigetSyncCollectionResult.Failed(HttpStatusCode.Conflict, CalendarSyncError.CALENDAR_NOT_FETCHABLE) },
             multigetHrefsResult = { MultigetResourceHrefETagResult.Success(emptyMap(), "fresh-token") }
         )
         val calRepo = FakeCalendarRepository()
@@ -422,6 +423,8 @@ private class FakeIcalEntryRepository(
     override fun getSubtasksByParentUid(calendarId: Long, parentUid: String): Flow<List<IcalEntry>> = TODO()
     override suspend fun getIcalEntryById(id: Long): IcalEntry = TODO()
     override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = TODO()
+    override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = TODO()
+    override suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long) = TODO()
     override suspend fun markAsDeleted(ids: List<Long>) = TODO()
     override suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState) = TODO()
     override suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>) = TODO()

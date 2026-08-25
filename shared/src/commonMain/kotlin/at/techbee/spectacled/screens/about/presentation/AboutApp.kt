@@ -1,9 +1,7 @@
 package at.techbee.spectacled.screens.about.presentation
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -20,21 +17,21 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
 import at.techbee.spectacled.shared.BuildKonfig
+import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -64,25 +61,10 @@ fun AboutApp(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Box(
-                modifier = Modifier
-                    .size(180.dp)
-                    .padding(top = 24.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(spectacledVariant.themeSeedColor),
-                    //.background(Color(0, 136, 123)),
-                contentAlignment = Alignment.Center
-            ) {
-
-                Image(
-                    painter = painterResource(spectacledVariant.logoDrawableResource),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(Color.White),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                )
-            }
+            SplashScreen(
+                spectacledVariant = spectacledVariant,
+                modifier = Modifier.padding(top = 32.dp)
+            )
 
             Text(
                 text = stringResource(spectacledVariant.appNameStringRes),
@@ -225,5 +207,9 @@ fun AboutApp(
 @Composable
 fun AboutApp_Preview(
 ) {
-    AboutApp(spectacledVariant = SpectacledVariant.JOURNALS)
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            AboutApp(spectacledVariant = SpectacledVariant.JOURNALS)
+        }
+    }
 }

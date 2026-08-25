@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -46,8 +47,10 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastForEach
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.theme.AppTheme
@@ -63,8 +66,6 @@ import spectacled.shared.generated.resources.ic_canvas_pen
 import spectacled.shared.generated.resources.marker
 import spectacled.shared.generated.resources.pen
 import spectacled.shared.generated.resources.undo
-import kotlin.collections.emptyList
-import kotlin.collections.listOf
 import kotlin.math.abs
 import kotlin.time.Clock
 
@@ -86,6 +87,7 @@ fun DrawingCanvas(
     onAddPath: (PathData) -> Unit,
     onRemovePaths: (List<PathData>) -> Unit,
     onRestorePaths: (List<PathData>) -> Unit,
+    onSizeChanged: (Size) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
 
@@ -117,6 +119,7 @@ fun DrawingCanvas(
                 .fillMaxWidth()
                 .weight(1f)
                 .background(Color.White)
+                .onSizeChanged { onSizeChanged(it.toSize()) }
                 .pointerInput(selectedTool) {
                     detectDragGestures(
                         onDragStart = { offset ->

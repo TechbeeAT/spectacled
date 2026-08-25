@@ -1,0 +1,13 @@
+<resources>
+    <!--
+      Strings for the Glance app widget. Glance compositions don't provide the
+      Compose Multiplatform resource environment, so widget strings live here as
+      Android resources instead of in commonMain/composeResources.
+    -->
+    <string name="widget_new_entry">New entry</string>
+    <string name="widget_open_calendar">Open calendar</string>
+    <string name="widget_configure">Configure</string>
+    <string name="widget_select_calendar">Please select a calendar in widget settings</string>
+    <string name="widget_no_entries">No entries found</string>
+    <string name="widget_subtask">Subtask</string>
+</resources>

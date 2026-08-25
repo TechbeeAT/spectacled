@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.account.presentation.components
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -26,6 +27,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,6 +36,7 @@ import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
+import io.ktor.http.protocolWithAuthority
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -44,6 +47,7 @@ import spectacled.shared.generated.resources.ic_folder_managed
 import spectacled.shared.generated.resources.ic_folder_match
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.refresh_all
+import spectacled.shared.generated.resources.reload_folders
 import spectacled.shared.generated.resources.remove_account
 
 @Composable
@@ -68,14 +72,26 @@ fun PrincipalListItem(
             modifier = Modifier.heightIn(min = 48.dp).weight(1f),
             contentAlignment = Alignment.CenterStart
         ) {
-            Text(
-                text = principal.displayName ?: principal.principalUrl.toString(),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = principal.displayName ?: principal.principalUrl.toString(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = principal.principalUrl.protocolWithAuthority,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontStyle = FontStyle.Italic,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
         }
 
         Crossfade(folderEditEnabled) { enabled ->
@@ -99,15 +115,18 @@ fun PrincipalListItem(
                         onDismissRequest = { iCalCollectionMenuExpanded = false }
                     ) {
 
+                        val homeCollection = homeCollections.firstOrNull()
+
                         DropdownMenuItem(
                             text = { Text(stringResource(Res.string.create_folder)) },
+                            enabled = homeCollection?.canBind() == true,
                             onClick = {
                                 iCalCollectionMenuExpanded = false
 
                                 onAction(AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet(
                                     principal = principal,
-                                    homeCollection = homeCollections.first(),
-                                    calendar = Calendar.getNewCalendar(homeCollections.first())
+                                    homeCollection = homeCollection!!,
+                                    calendar = Calendar.getNewCalendar(homeCollection)
                                 ))
                             },
                             leadingIcon = { Icon(Icons.Outlined.CreateNewFolder, null) }
@@ -136,7 +155,7 @@ fun PrincipalListItem(
                         )
 
                         DropdownMenuItem(
-                            text = { Text("Reload folders") },
+                            text = { Text(stringResource(Res.string.reload_folders)) },
                             onClick = {
                                 iCalCollectionMenuExpanded = false
                                 onAction(AccountListAction.OnRerunAccountDiscovery(listOf(principal)))

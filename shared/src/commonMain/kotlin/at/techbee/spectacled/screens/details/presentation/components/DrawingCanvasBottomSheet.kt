@@ -10,9 +10,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
@@ -31,12 +35,13 @@ import spectacled.shared.generated.resources.drawing
 fun DrawingCanvasBottomSheet(
     initialPathData: List<PathData>?,
     replaceAttachmentUid: String?,
-    onDrawingUpdated: (String?, List<PathData>) -> Unit,
+    onDrawingUpdated: (String?, List<PathData>, Float, Float) -> Unit,
     onDismiss: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
 
     val pathData = remember { mutableStateListOf<PathData>().apply { initialPathData?.let { addAll(it) } } }
+    var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     BottomSheetWithMenu(
         sheetState = sheetState,
@@ -45,7 +50,7 @@ fun DrawingCanvasBottomSheet(
         menuActionRight = {
             TextButton(
                 onClick = {
-                    onDrawingUpdated(replaceAttachmentUid, pathData)
+                    onDrawingUpdated(replaceAttachmentUid, pathData, canvasSize.width, canvasSize.height)
                     onDismiss()
                 }
             ) {
@@ -69,6 +74,7 @@ fun DrawingCanvasBottomSheet(
             onRestorePaths = {
                 pathData.clear()
                 pathData.addAll(it) },
+            onSizeChanged = { canvasSize = it },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(800.dp)
@@ -87,7 +93,7 @@ private fun DrawingCanvasBottomSheet_Preview() {
             DrawingCanvasBottomSheet(
                 initialPathData = null,
                 replaceAttachmentUid = null,
-                onDrawingUpdated = { _, _ -> },
+                onDrawingUpdated = { _, _, _, _ -> },
                 onDismiss = { }
             )
         }

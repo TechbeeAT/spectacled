@@ -5,13 +5,15 @@ import androidx.compose.material.icons.outlined.DataObject
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.ui.graphics.vector.ImageVector
+import org.jetbrains.compose.resources.StringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about
 import spectacled.shared.generated.resources.about_contributors
 import spectacled.shared.generated.resources.about_libraries
 import spectacled.shared.generated.resources.about_release_notes
-import org.jetbrains.compose.resources.StringResource
+import spectacled.shared.generated.resources.about_sponsor
 
 
 sealed class AboutTabDestination (
@@ -23,6 +25,10 @@ sealed class AboutTabDestination (
         titleResource = Res.string.about,
         icon = Icons.Outlined.Info,
     )
+    data object Sponsor: AboutTabDestination(
+        titleResource = Res.string.about_sponsor,
+        icon = Icons.Outlined.VolunteerActivism,
+    )
     /*
     data object JtxBoardPro: AboutTabDestination(
         titleResource = R.string.buypro_initial_dialog_title,
@@ -30,7 +36,7 @@ sealed class AboutTabDestination (
     )
 
      */
-    data object Releasenotes: AboutTabDestination(
+    data object ReleaseNotes: AboutTabDestination(
         titleResource = Res.string.about_release_notes,
         icon = Icons.Outlined.NewReleases,
     )

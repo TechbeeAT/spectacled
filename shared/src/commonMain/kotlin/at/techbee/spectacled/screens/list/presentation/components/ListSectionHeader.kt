@@ -25,15 +25,21 @@ import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.formatLocalized
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListSectionHeader
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.collapse
 import spectacled.shared.generated.resources.expand
+import spectacled.shared.generated.resources.ic_pin_rotated
+import spectacled.shared.generated.resources.ic_trashbin
 
 @Composable
-fun ListGroupHeader(
+fun ListSectionHeader(
     appPreferencesTag: String,
     headerText: String,
+    headerIcon: DrawableResource? = null,
     isCollapsed: Boolean,
     onToggleListGroupExpanded: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -50,6 +56,8 @@ fun ListGroupHeader(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
+
+            headerIcon?.let { Icon(painterResource(it), null, tint = MaterialTheme.colorScheme.primary) }
             Text(
                 text = headerText,
                 style = MaterialTheme.typography.headlineSmall,
@@ -67,10 +75,22 @@ fun ListGroupHeader(
     }
 }
 
+/** Resolves a header model to the text shown in the collapsible header row; month headers render via
+ *  [MonthHeader] instead and skip this. */
+@Composable
+internal fun ListSectionHeader.resolveText(): String = when (this) {
+    is ListSectionHeader.Res ->
+        (param?.let { stringResource(stringRes, it) } ?: stringResource(stringRes))
+    is ListSectionHeader.Raw -> text
+    // Month headers render via MonthHeader, not this path; provide a sensible fallback anyway.
+    is ListSectionHeader.Month -> icsDateTime?.formatLocalized(IcsDateTimeFormat.FULL_MONTH_NAME) ?: ""
+}
+
+
 @Preview
 @Composable
-fun ListGroupHeaderTodayCollapsedPreview() {
-    ListGroupHeader(
+fun ListSectionHeaderTodayCollapsedPreview() {
+    ListSectionHeader(
         appPreferencesTag = "today",
         headerText = "Today",
         isCollapsed = true,
@@ -80,11 +100,36 @@ fun ListGroupHeaderTodayCollapsedPreview() {
 
 @Preview
 @Composable
-fun ListGroupHeaderTomorrowExpandedPreview() {
-    ListGroupHeader(
+fun ListSectionHeaderTomorrowExpandedPreview() {
+    ListSectionHeader(
         appPreferencesTag = "date",
         headerText = IcsDateTime.now().formatLocalized(IcsDateTimeFormat.DATE),
         isCollapsed = false,
+        onToggleListGroupExpanded = {}
+    )
+}
+
+@Preview
+@Composable
+fun ListSectionHeaderTodayCollapsed_pinned_Preview() {
+    ListSectionHeader(
+        appPreferencesTag = "pinned",
+        headerText = "Pinned",
+        headerIcon = Res.drawable.ic_pin_rotated,
+        isCollapsed = true,
+        onToggleListGroupExpanded = {}
+    )
+}
+
+
+@Preview
+@Composable
+fun ListSectionHeaderTodayCollapsed_trashbin_Preview() {
+    ListSectionHeader(
+        appPreferencesTag = "trashbin",
+        headerText = "Trashbin",
+        headerIcon = Res.drawable.ic_trashbin,
+        isCollapsed = true,
         onToggleListGroupExpanded = {}
     )
 }

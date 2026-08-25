@@ -10,6 +10,7 @@ import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Attachment
+import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -44,7 +45,13 @@ class IcalEntryRepositoryImpl(
     override fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>> {
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).asFlow()
-                .map { query -> query.awaitAsList().map { it.toDomain() } }
+                .map { query ->
+                    val icalEntryDtos = query.awaitAsList()
+                    val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
+                    icalEntryDtos.map { icalEntryDto ->
+                        icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList())
+                    }
+                }
         }.flowOn(ioDispatcher)
     }
 
@@ -84,7 +91,8 @@ class IcalEntryRepositoryImpl(
         if (entryIds.isEmpty()) return emptyMap()
 
         val db = getDatabase()
-        return db.attachment_dtoQueries.getAttachmentsForEntries(entryIds).awaitAsList()
+        return entryIds.chunked(500)   // chunk to make sure SQL limits for IN (...) aren't reached.
+            .flatMap { chunk -> db.attachment_dtoQueries.getAttachmentsForEntries(chunk).awaitAsList() }
             .map { it.toDomain() }
             .groupBy { it.icalEntryId }
     }
@@ -104,7 +112,9 @@ class IcalEntryRepositoryImpl(
     }
 
     override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = withContext(ioDispatcher) {
-        getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList().map { it.toDomain() }
+        val icalEntryDtos = getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList()
+        val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
+        icalEntryDtos.map { it.toDomain(attachmentsByEntryId[it.id] ?: emptyList()) }
     }
 
     override suspend fun getDeletedDeltaHrefs(
@@ -147,7 +157,13 @@ class IcalEntryRepositoryImpl(
     override fun getSubtasksByParentUid(calendarId: Long, parentUid: String): Flow<List<IcalEntry>> {
         return dbFlow.flatMapLatest { db ->
             db.icalentry_dtoQueries.getSubtasksByParentUid(calendarId, parentUid).asFlow()
-                .map { query -> query.awaitAsList().map { it.toDomain() } }
+                .map { query ->
+                    val icalEntryDtos = query.awaitAsList()
+                    val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
+                    icalEntryDtos.map { icalEntryDto ->
+                        icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList())
+                    }
+                }
         }.flowOn(ioDispatcher)
     }
 
@@ -262,6 +278,66 @@ class IcalEntryRepositoryImpl(
             getDatabase().icalentry_dtoQueries.markAsDeleted(ids)
         }
     }
+
+    override suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long) = withContext(ioDispatcher) {
+
+        // Re-read fresh so any attachments downloaded just before the move are picked up.
+        val entriesToMove = getIcalEntriesWithSubtasks(icalEntryIds)
+
+        // 1. Re-create each entry in the target calendar. Same uid keeps its identity; clearing
+        //    href/etag makes the sync engine PUT it as a new resource into the target collection.
+        entriesToMove.forEach { entry ->
+            insertOrUpdateIcalEntry(
+                entry.copy(
+                    id = 0L,
+                    calendarId = targetCalendarId,
+                    href = null,
+                    etag = null,
+                    syncState = SyncState.LOCAL_MODIFIED,
+                    attachments = entry.attachments.map { it.remappedForMove() }
+                )
+            )
+        }
+
+        // 2. Mark the originals deleted. The sync engine DELETEs them from the source collection;
+        //    we only mark locally and let it reconcile the ordering with the server.
+        markAsDeleted(entriesToMove.map { it.id })
+    }
+
+    override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = withContext(ioDispatcher) {
+
+        // Children reference the parent by uid, and we keep uids on move, so relocating the whole
+        // tree preserves the RELATED-TO parent/child links inside the target collection.
+        val acc = LinkedHashMap<Long, IcalEntry>()
+        icalEntryIds.forEach { id ->
+            getIcalEntryById(id)?.let { collectWithSubtasks(it, acc) }
+        }
+        acc.values.toList()
+    }
+
+    // Depth-first collection of an entry and all of its (transitive) subtasks. The visited-set keyed
+    // on id guards against cycles in malformed data and against a shared child being visited twice.
+    private suspend fun collectWithSubtasks(entry: IcalEntry, acc: LinkedHashMap<Long, IcalEntry>) {
+        if (acc.containsKey(entry.id)) return
+        acc[entry.id] = entry
+
+        val db = getDatabase()
+        db.icalentry_dtoQueries.getSubtasksByParentUid(entry.calendarId, entry.uid).awaitAsList().forEach { childDto ->
+            val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(childDto.id).awaitAsList().map { it.toDomain() }
+            collectWithSubtasks(childDto.toDomain(attachments), acc)
+        }
+    }
+
+
+    // Prepares an attachment to travel with a moved entry. A local copy is re-uploaded into the
+    // target collection - callers pre-download server-only attachments so they take this path. If
+    // one still has no local copy (e.g. the pre-download failed), we keep its existing reference so
+    // the file stays accessible; it then physically remains in the source collection.
+    private fun Attachment.remappedForMove(): Attachment =
+        if (localPath != null)
+            copy(id = 0L, icalEntryId = 0L, remoteUrl = null, syncState = AttachmentSyncState.LOCAL_MODIFIED)
+        else
+            copy(id = 0L, icalEntryId = 0L, syncState = AttachmentSyncState.SYNCED)
 
     override suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState) {
         withContext(ioDispatcher) {

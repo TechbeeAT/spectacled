@@ -2,12 +2,14 @@ package at.techbee.spectacled.screens.account.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -16,23 +18,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.components.CalendarCard
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListItem
-import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
-import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
+import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.add_folder_calendar
+import spectacled.shared.generated.resources.insufficient_access_rights_create_folder
+import spectacled.shared.generated.resources.no_account_connected_yet
+import spectacled.shared.generated.resources.no_compatible_folders_found
 
 
 @Composable
 fun AccountListScreen(
     state: AccountListState,
     onAction: (AccountListAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    spectacledVariant: SpectacledVariant = koinInject()
 ) {
 
     PullToRefreshBox(
@@ -41,103 +52,101 @@ fun AccountListScreen(
         modifier = modifier
     ) {
 
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(1.dp)
-    ) {
+        if (state.principals.isEmpty()) {
+            SplashScreen(
+                spectacledVariant = spectacledVariant,
+                showProgressIndicator = false,
+                text = stringResource(Res.string.no_account_connected_yet),
+                reducedAlpha = true,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
 
-        state.principals.forEachIndexed { indexPrincipal, principal ->
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
 
-            val principalHomeCollections = state.homeCollections.filter { it.principalId == principal.id }
-            val principalInEditMode = state.editFoldersOfPrincipal?.id == principal.id
+                state.principals.forEachIndexed { indexPrincipal, principal ->
 
-            item {
-                PrincipalListItem(
-                    principal = principal,
-                    homeCollections = principalHomeCollections,
-                    calendars = state.calendars.filter { calendar -> principalHomeCollections.any { homeCollection -> homeCollection.id == calendar.homeCollectionId } },
-                    folderEditEnabled = state.editFoldersOfPrincipal?.id == principal.id,
-                    onAction = onAction,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            bottom = 8.dp,
-                            top = if (indexPrincipal != 0) 24.dp else 0.dp
-                        )
-                        .animateItem()
-                )
-            }
+                    val principalHomeCollections = state.homeCollections.filter { it.principalId == principal.id }
+                    val principalInEditMode = state.editFoldersOfPrincipal?.id == principal.id
 
-            principalHomeCollections.forEach { homeCollection ->
-                val calendars = state.calendars.filter { it.homeCollectionId == homeCollection.id }
-                if (calendars.isEmpty()) {
                     item {
-                        Text(
-                            text = "No compatible folders/calendars found",
-                            fontStyle = FontStyle.Italic
+                        PrincipalListItem(
+                            principal = principal,
+                            homeCollections = principalHomeCollections,
+                            calendars = state.calendars.filter { calendar -> principalHomeCollections.any { homeCollection -> homeCollection.id == calendar.homeCollectionId } },
+                            folderEditEnabled = state.editFoldersOfPrincipal?.id == principal.id,
+                            onAction = onAction,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    bottom = 8.dp,
+                                    top = if (indexPrincipal != 0) 24.dp else 0.dp
+                                )
+                                .animateItem()
                         )
+                    }
 
-                        if (homeCollection.canBind()) {
-                            TextButton(
-                                onClick = {
-                                    onAction(
-                                        AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet(
-                                            principal,
-                                            homeCollection,
-                                            Calendar.getNewCalendar(homeCollection)
-                                        )
+                    principalHomeCollections.forEach { homeCollection ->
+                        val calendars = state.calendars.filter { it.homeCollectionId == homeCollection.id }
+                        if (calendars.isEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(Res.string.no_compatible_folders_found),
+                                    fontStyle = FontStyle.Italic
+                                )
+
+                                if (homeCollection.canBind()) {
+                                    TextButton(
+                                        onClick = {
+                                            onAction(
+                                                AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet(
+                                                    principal,
+                                                    homeCollection,
+                                                    Calendar.getNewCalendar(homeCollection)
+                                                )
+                                            )
+                                        }
+                                    ) {
+                                        Text(stringResource(Res.string.add_folder_calendar))
+                                    }
+                                } else {
+                                    Text(
+                                        text = stringResource(Res.string.insufficient_access_rights_create_folder),
+                                        color = MaterialTheme.colorScheme.error
                                     )
                                 }
-                            ) {
-                                Text("Add folder/calendar")
                             }
-                        } else {
-                            Text(
-                                text = "Insufficient access rights to create a new folder/calendar.",
-                                color = MaterialTheme.colorScheme.error
+                        }
+
+                        itemsIndexed(calendars, key = { _, calendar -> calendar.id }) { indexCalendar, calendar ->
+
+                            if(!principalInEditMode && calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
+                                return@itemsIndexed  // skip calendar if disabled unless it's edit mode
+
+                            CalendarCard(
+                                principal = principal,
+                                homeCollection = homeCollection,
+                                calendar = calendar,
+                                editEditFoldersModeEnabled = principalInEditMode,
+                                isFirst = indexCalendar == 0,
+                                isLast = indexCalendar == calendars.lastIndex,
+                                onAction = onAction,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .animateItem(),
                             )
                         }
                     }
                 }
 
-                itemsIndexed(calendars, key = { _, calendar -> calendar.id }) { indexCalendar, calendar ->
-
-                    if(!principalInEditMode && calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
-                        return@itemsIndexed  // skip calendar if disabled unless it's edit mode
-
-                    CalendarCard(
-                        principal = principal,
-                        homeCollection = homeCollection,
-                        calendar = calendar,
-                        editEditFoldersModeEnabled = principalInEditMode,
-                        isFirst = indexCalendar == 0,
-                        isLast = indexCalendar == calendars.lastIndex,
-                        onAction = onAction,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .animateItem(),
-                    )
+                item {
+                    Spacer(modifier = Modifier.height(112.dp))
                 }
             }
-        }
-
-        // TODO: remove after testing!
-        if(getPlatform().platform == Platforms.WASM) {
-            item {
-                TextButton(
-                    onClick = {
-                        onAction(AccountListAction.OnAddLocalCalendar)
-                    }
-                ) {
-                    Text("Add collection")
-                }
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(112.dp))
         }
     }
-}
 }
 
 
@@ -145,76 +154,115 @@ fun AccountListScreen(
 @Preview
 @Composable
 private fun FolderListScreen_edit_off_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState().copy(
+                    principals = listOf(
+                        Principal.getPrincipalForPreview().copy(
+                            id = 0,
+                            principalUrl = Url("https://example.com"),
+                            displayName = "My Account"
+                        ),
+                        Principal.getPrincipalForPreview().copy(
+                            id = 1,
+                            principalUrl = Url("https://example2.com"),
+                            displayName = "My Account2"
+                        ),
+                    ),
+                    homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                    calendars = listOf(Calendar.getCalendarForPreview())
                 ),
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example2.com"),
-                    displayName = "My Account2"
-                ),
-            ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-            calendars = listOf(Calendar.getCalendarForPreview())
-        ),
-        onAction = { }
-    )
+                onAction = { },
+                spectacledVariant = SpectacledVariant.JOURNALS
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_edit_on_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState().copy(
+                    principals = listOf(
+                        Principal.getPrincipalForPreview().copy(
+                            principalUrl = Url("https://example.com"),
+                            displayName = "My Account"
+                        ),
+                    ),
+                    homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                    calendars = listOf(Calendar.getCalendarForPreview()),
+                    editFoldersOfPrincipal = Principal.getPrincipalForPreview()
                 ),
-            ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-            calendars = listOf(Calendar.getCalendarForPreview()),
-            editFoldersOfPrincipal = Principal.getPrincipalForPreview()
-        ),
-        onAction = { }
-    )
+                onAction = { },
+                spectacledVariant = SpectacledVariant.JOURNALS
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_edit_off_empty_without_rights_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState().copy(
+                    principals = listOf(
+                        Principal.getPrincipalForPreview().copy(
+                            principalUrl = Url("https://example.com"),
+                            displayName = "My Account"
+                        ),
+                    ),
+                    homeCollections = listOf(HomeCollection.getHomeCollectionForPreview())
                 ),
-            ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview())
-        ),
-        onAction = { }
-    )
+                onAction = { },
+                spectacledVariant = SpectacledVariant.JOURNALS
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_edit_off_empty_with_rights_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState().copy(
+                    principals = listOf(
+                        Principal.getPrincipalForPreview().copy(
+                            principalUrl = Url("https://example.com"),
+                            displayName = "My Account"
+                        ),
+                    ),
+                    homeCollections = listOf(
+                        HomeCollection.getHomeCollectionForPreview().copy(
+                            calDavPrivileges = listOf(CalDavPrivilege.WRITE)
+                        )
+                    ),
                 ),
-            ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview().copy(
-                calDavPrivileges = listOf(CalDavPrivilege.WRITE)
-            )),
-        ),
-        onAction = { }
-    )
+                onAction = { },
+                spectacledVariant = SpectacledVariant.JOURNALS
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun FolderListScreen_no_accounts_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState(),
+                onAction = { },
+                spectacledVariant = SpectacledVariant.NOTES
+            )
+        }
+    }
 }

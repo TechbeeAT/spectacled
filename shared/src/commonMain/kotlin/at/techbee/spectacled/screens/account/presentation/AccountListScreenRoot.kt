@@ -3,13 +3,16 @@ package at.techbee.spectacled.screens.account.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.GroupAdd
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,6 +20,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,10 +44,11 @@ import at.techbee.spectacled.screens.account.presentation.components.CreateOrUpd
 import at.techbee.spectacled.screens.account.presentation.components.DeleteCalendarDialog
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListTopBar
 import at.techbee.spectacled.screens.account.presentation.components.RemovePrincipalDialog
-import at.techbee.spectacled.screens.account.presentation.components.SettingsBottomSheet
 import at.techbee.spectacled.screens.account.presentation.components.UpdatePrincipalPasswordBottomSheet
+import at.techbee.spectacled.screens.account.presentation.components.settings.SettingsBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -57,7 +62,7 @@ import spectacled.shared.generated.resources.close
 fun AccountListScreenRoot(
     viewModel: AccountListViewModel,
     onNavigate: (Route) -> Unit,
-    keepSafeAreaPaddingValues: Boolean = false,
+    removeSafeAreaPaddingValues: Boolean = false,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
 
@@ -162,11 +167,17 @@ fun AccountListScreenRoot(
 
     Scaffold(
         topBar = {
-            PrincipalListTopBar(onAction = { action -> viewModel.onAction(action) })
+            PrincipalListTopBar(
+                removeHorizontalWindowInsets = removeSafeAreaPaddingValues,
+                onAction = { action -> viewModel.onAction(action) }
+            )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { viewModel.onAction(AccountListAction.OnShowAddPrincipalBottomSheet(true)) }
+                onClick = { viewModel.onAction(AccountListAction.OnShowAddPrincipalBottomSheet(true)) },
+                // Lift the FAB by the bottom safe-area inset so it clears the iOS home indicator
+                // (the content still fills to the edge, only the FAB is padded).
+                modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -180,25 +191,23 @@ fun AccountListScreenRoot(
                 }
             }
         },
+        // Drop the bottom safe-area inset so the content fills to the screen edge and there
+        // is no empty strip (the "white gap") over the iOS home indicator. In landscape we
+        // additionally drop the horizontal insets so the content fills the sides; the top bar
+        // keeps its own vertical insets in either case.
+        contentWindowInsets = if (removeSafeAreaPaddingValues)
+            ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Top)
+        else
+            ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         modifier = modifier
 
     ) { paddingValues ->
 
-        val currentPaddingValues = if(keepSafeAreaPaddingValues)
-            paddingValues
-        else
-            PaddingValues(
-                top = paddingValues.calculateTopPadding(),
-                bottom = 0.dp,
-                start = 0.dp,
-                end = 0.dp
-            )
-
         Box(
             modifier = Modifier
-                .padding(currentPaddingValues)
-                .consumeWindowInsets(currentPaddingValues)
-                .imePadding()
+                .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+                .imeAwarePadding()
                 .padding(top = 8.dp, start = 8.dp, end = 8.dp)
                 .fillMaxSize(),
             contentAlignment = Alignment.BottomCenter
@@ -230,6 +239,7 @@ fun AccountListScreenRoot(
             AddPrincipalBottomSheet(
                 sheetState = addPrincipalBottomSheetState,
                 processingState = state.processingState,
+                isFirstAccount = state.principals.isEmpty(),
                 onAction = { viewModel.onAction(it) },
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAddPrincipalBottomSheet(false)) }
             )

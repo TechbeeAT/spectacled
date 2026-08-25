@@ -1,0 +1,166 @@
+name: Create GitHub release
+on:
+  push:
+    tags:
+      - 'v*beta*'      # betas  -> pre-release
+      - 'v*'           # finals -> release
+      - '!v*alpha*'    # alphas are handled by upload-aab-to-google.yml
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build-android:
+    name: Build Android APKs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6.3.0
+
+      - name: Prepare keystore
+        run: echo "${{ secrets.android_keystore_base64 }}" | base64 -d > "$GITHUB_WORKSPACE/keystore.jks"
+
+      - name: Build release APKs (Journals, Notes, Tasks)
+        run: ./gradlew androidJournalsApp:assembleRelease androidNotesApp:assembleRelease androidTasksApp:assembleRelease
+        env:
+          ANDROID_KEYSTORE: ${{ github.workspace }}/keystore.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
+          ANDROID_KEY_ALIAS_JOURNALS: ${{ secrets.android_key_alias_journals }}
+          ANDROID_KEY_PASSWORD_JOURNALS: ${{ secrets.android_key_password_journals }}
+          ANDROID_KEY_ALIAS_NOTES: ${{ secrets.android_key_alias_notes }}
+          ANDROID_KEY_PASSWORD_NOTES: ${{ secrets.android_key_password_notes }}
+          ANDROID_KEY_ALIAS_TASKS: ${{ secrets.android_key_alias_tasks }}
+          ANDROID_KEY_PASSWORD_TASKS: ${{ secrets.android_key_password_tasks }}
+
+      - name: Collect & rename APKs
+        # Version-less, stable names so a website can always link to
+        # https://github.com/<owner>/<repo>/releases/latest/download/spectacled-<app>.apk
+        run: |
+          mkdir -p dist
+          cp androidJournalsApp/build/outputs/apk/release/*.apk dist/spectacled-journals.apk
+          cp androidNotesApp/build/outputs/apk/release/*.apk    dist/spectacled-notes.apk
+          cp androidTasksApp/build/outputs/apk/release/*.apk     dist/spectacled-tasks.apk
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-apks
+          path: dist/*.apk
+          if-no-files-found: error
+
+  build-desktop:
+    name: Build desktop installers (${{ matrix.format }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            task: packageDeb
+            format: deb
+          - os: windows-latest
+            task: packageMsi
+            format: msi
+          - os: macos-latest
+            task: packageDmg
+            format: dmg
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6.3.0
+
+      # --- macOS only: import the "Developer ID Application" certificate so the .app
+      #     bundles get signed during packageDmg (see composeXApp/build.gradle.kts).
+      - name: Import macOS signing certificate
+        if: matrix.os == 'macos-latest'
+        env:
+          CERT_P12_BASE64: ${{ secrets.macos_signing_certificate_p12_base64 }}
+          CERT_PASSWORD: ${{ secrets.macos_signing_certificate_password }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PW="$(uuidgen)"
+          echo -n "$CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security list-keychain -d user -s "$KEYCHAIN" "$(security default-keychain -d user | tr -d ' "')"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PW" "$KEYCHAIN" >/dev/null
+
+      - name: Build ${{ matrix.format }} installers (Journals, Notes, Tasks)
+        shell: bash
+        env:
+          # Empty on Linux/Windows, so the Gradle signing block stays disabled there.
+          MACOS_SIGN_IDENTITY: ${{ matrix.os == 'macos-latest' && secrets.macos_signing_identity || '' }}
+        run: ./gradlew composeJournalsApp:${{ matrix.task }} composeNotesApp:${{ matrix.task }} composeTasksApp:${{ matrix.task }}
+
+      # --- macOS only: notarize the signed .dmg files and staple the ticket so
+      #     Gatekeeper accepts them offline. Reuses the App Store Connect API key.
+      - name: Notarize & staple macOS installers
+        if: matrix.os == 'macos-latest'
+        env:
+          ASC_KEY_ID: ${{ secrets.asc_api_key_id }}
+          ASC_ISSUER_ID: ${{ secrets.asc_api_key_issuer_id }}
+        run: |
+          echo -n "${{ secrets.asc_api_key_p8_base64 }}" | base64 --decode > "$RUNNER_TEMP/asc_key.p8"
+          for app in composeJournalsApp composeNotesApp composeTasksApp; do
+            for file in "$app"/build/compose/binaries/main/dmg/*.dmg; do
+              xcrun notarytool submit "$file" \
+                --key "$RUNNER_TEMP/asc_key.p8" \
+                --key-id "$ASC_KEY_ID" \
+                --issuer "$ASC_ISSUER_ID" \
+                --wait
+              xcrun stapler staple "$file"
+            done
+          done
+
+      - name: Collect & rename installers
+        # Version-less, stable names so a website can always link to
+        # https://github.com/<owner>/<repo>/releases/latest/download/spectacled-<app>.<format>
+        # Each compose module writes exactly one installer to its own output dir.
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp composeJournalsApp/build/compose/binaries/main/${{ matrix.format }}/* dist/spectacled-journals.${{ matrix.format }}
+          cp composeNotesApp/build/compose/binaries/main/${{ matrix.format }}/*    dist/spectacled-notes.${{ matrix.format }}
+          cp composeTasksApp/build/compose/binaries/main/${{ matrix.format }}/*     dist/spectacled-tasks.${{ matrix.format }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: desktop-${{ matrix.format }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: [build-android, build-desktop]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          # Betas (and release candidates) are published as pre-releases; final tags as full releases.
+          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

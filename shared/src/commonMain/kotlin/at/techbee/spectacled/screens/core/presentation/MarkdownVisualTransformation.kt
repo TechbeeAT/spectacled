@@ -33,7 +33,7 @@ class MarkdownVisualTransformation(
         var i = 0
 
         while (i < input.length) {
-            if (input[i] == '*' || input[i] == '_') {
+            if (input[i] == '*' || input[i] == '_' || input[i] == '~') {
                 val delimiter = input[i]
                 val start = i
 
@@ -54,6 +54,7 @@ class MarkdownVisualTransformation(
                     val style = when (delimiter) {
                         '*' -> SpanStyle(fontWeight = FontWeight.Bold)
                         '_' -> SpanStyle(fontStyle = FontStyle.Italic)
+                        '~' -> SpanStyle(textDecoration = TextDecoration.Underline)
                         else -> SpanStyle()
                     }
 

@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.koin
 
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
+import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
@@ -22,20 +23,21 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val sharedModule = module {
-
     single {
-        val preferences: UserAppPreferencesStore = get()
+        val preferences = get<UserAppPreferencesStore>()
         HttpClientFactory.create(
             engine = getPlatformEngine(),
-            userProxyUrlProvider = { preferences.userProxyServer }
+            // Prefer the user-configured proxy, falling back to the platform default (web only).
+            proxyUrlProvider = { preferences.userProxyServer ?: HttpClientFactory.defaultProxyUrl() }
         )
     }
-
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
     singleOf(::IcalEntryRepositoryImpl) { bind<IcalEntryRepository>() }
 
     singleOf(::DefaultWebDavRemoteCalendarDataSource) { bind<WebDavRemoteCalendarDataSource>() }
     singleOf(::DefaultWebDavRemoteIcalEntryDataSource) { bind<WebDavRemoteIcalEntryDataSource>() }
+
+    singleOf(::MoveIcalEntriesUseCase)
 
     viewModelOf(::ListViewModel)
     viewModelOf(::AccountListViewModel)

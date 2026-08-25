@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectacled</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body {
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 2rem;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: Canvas; color: CanvasText; text-align: center; padding: 2rem;
+        }
+        h1 { margin: 0; font-size: 2rem; }
+        p { margin: 0; opacity: 0.75; max-width: 32rem; }
+        .apps { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+        a.app {
+            display: block; padding: 1.25rem 2rem; min-width: 8rem;
+            border: 1px solid GrayText; border-radius: 0.75rem; text-decoration: none;
+            color: inherit; font-size: 1.1rem; font-weight: 600;
+            transition: transform 0.1s ease, border-color 0.1s ease;
+        }
+        a.app:hover { transform: translateY(-2px); border-color: CanvasText; }
+        a.app span { display: block; font-size: 0.85rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem; }
+        img.logo { margin: 10px; border-radius: 10px }
+        footer { font-size: 0.85rem; opacity: 0.6; }
+        footer a { color: inherit; }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Spectacled</h1>
+        <p>Open, standards-based journals, notes, and tasks — synced over CalDAV.</p>
+    </div>
+    <nav class="apps">
+        <a class="app" href="journals/">
+            <img class="logo" src="journals/favicon.ico" height = "80" alt="spectacled Journals"/>
+            <br/>Journals
+            <span>Dated journal entries</span></a>
+        <a class="app" href="notes/">
+            <img class="logo" src="notes/favicon.ico" height = "80" alt="spectacled Notes"/>
+            <br/>Notes
+            <span>Free-form notes</span></a>
+        <a class="app" href="tasks/">
+            <img class="logo" src="tasks/favicon.ico" height = "80" alt="spectacled Tasks"/>
+            <br/>Tasks
+            <span>To-dos &amp; due dates</span></a>
+    </nav>
+    <footer>
+        <a href="https://github.com/TechbeeAT/spectacled">Source on GitHub</a>
+    </footer>
+</body>
+</html>

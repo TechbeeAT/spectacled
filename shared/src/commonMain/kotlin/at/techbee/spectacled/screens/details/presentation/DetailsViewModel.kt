@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.PlatformFileLauncher
 import at.techbee.spectacled.screens.core.PlatformFileManager
 import at.techbee.spectacled.screens.core.PlatformShareManager
@@ -11,22 +12,22 @@ import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.ShareContent
 import at.techbee.spectacled.screens.core.SyncCoordinator
-import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
-import at.techbee.spectacled.screens.core.data.claude.ClaudeRemoteResponseResult
-import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
+import at.techbee.spectacled.screens.core.domain.INLINE_ATTACHMENT_WARN_BYTES
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.MAX_INLINE_ATTACHMENT_BYTES
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.presentation.components.PathData
 import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter
 import io.github.aakira.napier.Napier
@@ -49,6 +50,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.attachment_large_warning
+import spectacled.shared.generated.resources.attachment_too_large
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.entry_copy
@@ -74,6 +77,7 @@ class DetailsViewModel(
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val shareManager: PlatformShareManager,
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
+    private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -97,6 +101,12 @@ class DetailsViewModel(
         viewModelScope.launch { observeCategories() }
         viewModelScope.launch { observeTimezones() }
         viewModelScope.launch { observeSubtasks() }
+
+        viewModelScope.launch {
+            userAppPreferencesStore.getClaudeUserApiKeyAsFlow().collect { apiKey ->
+                _state.update { it.copy(claudeUserApiKey = apiKey) }
+            }
+        }
 
         viewModelScope.launch {
             val allPrincipals = calendarRepository.getAllPrincipals()
@@ -131,21 +141,22 @@ class DetailsViewModel(
         }
     }
 
-    fun reset() {
-        _state.update { DetailsState() }
-    }
-
-
-    fun loadNew(calendarId: Long, initialDescription: String? = null) {
+    fun loadNew(
+        calendarId: Long? = null,
+        initialDescription: String? = null,
+        detailsInitialAction: String? = null    // name of enum value of [DetailsInitialAction]
+        ) {
 
         viewModelScope.launch {
+
+            val calendar = if(calendarId == null || calendarId == 0L) null else calendarRepository.getCalendarById(calendarId)
+
             val newIcalEntry = IcalEntry(
-                calendarId = calendarId,
+                calendarId = calendar?.id ?: 0L,   // if 0L user is forced to select a calendar
                 description = initialDescription,
                 dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
                 calendarComponent = spectacledVariant.mainCalendarComponent
             )
-            val calendar = calendarRepository.getCalendarById(calendarId) ?: return@launch
 
             _state.update { it.copy(
                 icalEntry = newIcalEntry,
@@ -153,7 +164,14 @@ class DetailsViewModel(
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
-                showDeleteDialog = false,
+                showDrawingCanvasBottomSheet = if(detailsInitialAction == DetailsInitialAction.ADD_DRAWING.name) DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null) else DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
+                launchPickerAction = when (detailsInitialAction) {
+                    DetailsInitialAction.ADD_ATTACHMENT.name -> AttachmentPickerAction.FILE
+                    DetailsInitialAction.ADD_PHOTO.name -> AttachmentPickerAction.PHOTO
+                    DetailsInitialAction.ADD_FROM_GALLERY.name -> AttachmentPickerAction.GALLERY
+                    else -> null
+                },
+                showSheetOrDialog = if(detailsInitialAction == DetailsInitialAction.ADD_ATTACHMENT_URL.name) DetailsSheetOrDialog.ADD_ATTACHMENT_URL else null,
                 navigateUp = false
             ) }
 
@@ -161,28 +179,6 @@ class DetailsViewModel(
         }
     }
 
-    fun prepareNew(initialDescription: String? = null) {
-
-        viewModelScope.launch {
-            val newIcalEntry = IcalEntry(
-                calendarId = 0L,
-                description = initialDescription,
-                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
-                calendarComponent = spectacledVariant.mainCalendarComponent
-            )
-
-            _state.update { it.copy(
-                icalEntry = newIcalEntry,
-                originalIcalEntry = newIcalEntry,
-                isLoading = false,
-                isInitialized = true,
-                showDeleteDialog = false,
-                navigateUp = false
-            ) }
-
-            observeIcalEntry(newIcalEntry.calendarId, newIcalEntry.uid)
-        }
-    }
 
     @OptIn(ExperimentalUuidApi::class)
     fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
@@ -199,7 +195,7 @@ class DetailsViewModel(
             }
             val copiedIcalEntry = IcalEntry(
                 calendarId = originalIcalEntry.calendarId,
-                summary = originalIcalEntry.summary + if (isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${
+                summary = (originalIcalEntry.summary?:"") + if (isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${
                     getString(
                         Res.string.entry_copy
                     )
@@ -302,14 +298,11 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateDescription -> onUpdateDescription(action.description)
             is DetailsAction.OnUpdateSummary -> onUpdateSummary(action.summary)
             DetailsAction.OnDelete -> saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
+            is DetailsAction.OnMove -> { onMove(action.newCalendarId) }
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
-            is DetailsAction.OnShowDeleteDialog -> { _state.update { it.copy(showDeleteDialog = action.show) } }
-            is DetailsAction.OnShowMoreBottomSheet -> { _state.update { it.copy(showMoreBottomSheet = action.show) } }
-            is DetailsAction.OnShowCategorySelectorBottomSheet -> { _state.update { it.copy(showCategorySelectorBottomSheet = action.show) } }
-            is DetailsAction.OnShowColorSelectorBottomSheet -> { _state.update { it.copy(showColorSelectorBottomSheet = action.show) } }
-            is DetailsAction.OnShowAddSubtaskBottomSheet -> { _state.update { it.copy(showAddSubtaskBottomSheet = action.show) } }
-            is DetailsAction.OnShowEditUrlBottomSheet -> { _state.update { it.copy(showEditUrlBottomSheet = action.show) } }
+            is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
             is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
+            is DetailsAction.OnLaunchPicker -> { _state.update { it.copy(launchPickerAction = action.pickerAction) } }
             DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
@@ -327,8 +320,6 @@ class DetailsViewModel(
             }
             DetailsAction.OnDispose -> onDispose()
             DetailsAction.OnRestoreEntry -> onRestoreEntry()
-            is DetailsAction.OnShowJournalStatusPickerBottomSheet -> { _state.update { it.copy(showJournalStatusPickerBottomSheet = action.show) } }
-            is DetailsAction.OnShowTaskStatusProgressPickerBottomSheet -> { _state.update { it.copy(showTaskStatusProgressPickerBottomSheet = action.show) } }
             is DetailsAction.OnUpdateDtStart -> { onUpdateDtStart(action.icsDateTime) }
             is DetailsAction.OnUpdateDue -> { onUpdateDue(action.icsDateTime) }
             DetailsAction.OnShare -> onShare()
@@ -339,17 +330,17 @@ class DetailsViewModel(
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
             is DetailsAction.OnNavigateToIcalEntryId -> { _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
-            DetailsAction.OnProcessWithAI -> { onProcessWithAI() }
             is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
+            is DetailsAction.OnAddUrlAttachment -> { onAddUrlAttachment(action.url) }
             is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentUid) }
             is DetailsAction.OnDeleteAttachment -> { onDeleteAttachment(action.attachmentUid) }
-            is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths) }
+            is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
         }
     }
 
     private fun onShare() {
-        _state.update { it.copy(showMoreBottomSheet = false) }
+        _state.update { it.copy(showSheetOrDialog = null) }
         viewModelScope.launch {
             val categoryLabel = getString(Res.string.category)
             shareManager.share(
@@ -364,6 +355,10 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateSummary(newSummary: String) {
+
+        if(!state.value.allowEditing())
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -377,6 +372,10 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDescription(newDescription: String) {
+
+        if(!state.value.allowEditing())
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -389,6 +388,10 @@ class DetailsViewModel(
     }
 
     private fun onPinIcalEntry(pin: Boolean) {
+
+        if(!state.value.allowEditing())
+            return
+
         if(pin)
             onUpdateCategories(IcalEntry.PINNED_CATEGORY, null)
         else
@@ -396,6 +399,10 @@ class DetailsViewModel(
     }
 
     private fun onUpdateCategories(addCategory: String?, removeCategory: String?) {
+
+        if(!state.value.allowEditing())
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -415,6 +422,10 @@ class DetailsViewModel(
     }
 
     private fun onUpdateStatus(status: Status?) {
+
+        if(!state.value.allowEditing())
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -441,6 +452,10 @@ class DetailsViewModel(
 
 
     private fun onUpdateColor(newColor: Color?) {
+
+        if(!state.value.allowEditing())
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -453,6 +468,10 @@ class DetailsViewModel(
     }
 
     private fun onUpdateUrl(newUrl: Url?) {
+
+        if(!state.value.allowEditing())
+            return
+
         _state.update {
             it.copy(
                 icalEntry = it.icalEntry.copy(
@@ -466,6 +485,9 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDtStart(newDtStart: IcsDateTime?) {
+
+        if(!state.value.allowEditing())
+            return
 
         if(_state.value.icalEntry.isJournal() && newDtStart == null)   // for safety only, setting date to null for journals would convert it to a note, not allowed.
             return
@@ -494,6 +516,9 @@ class DetailsViewModel(
 
     @OptIn(ExperimentalTime::class)
     private fun onUpdateDue(newDue: IcsDateTime?) {
+
+        if(!state.value.allowEditing())
+            return
 
         _state.update {
             // make sure dtstart and due have the same format (all day or both with time)
@@ -529,23 +554,31 @@ class DetailsViewModel(
     }
 
     private fun onRestoreEntry() {
+
+        // Restore acts on a deleted entry, so gate on write access only (not allowEditing,
+        // which excludes deleted entries).
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         if(_state.value.icalEntry.syncState == SyncState.LOCAL_DELETED)
             saveIcalEntry(SyncState.LOCAL_MODIFIED)
         else
             loadCopy(_state.value.icalEntry.id, true)
     }
 
-    fun showDeleteDialog(showDialog: Boolean) {
-        _state.update { it.copy(showDeleteDialog = showDialog) }
-    }
-
     private fun saveIcalEntry(syncState: SyncState, navigateUp: Boolean = false) {
+
+        // Persists delete/restore/conflict-resolution transitions too, so gate on write access
+        // only (not allowEditing, which would block saving a deleted entry).
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
         val entryToSave = _state.value.icalEntry.copy(syncState = syncState)
 
         _state.update {
             it.copy(
                 icalEntry = entryToSave,
-                showDeleteDialog = false,
+                showSheetOrDialog = if(navigateUp) null else _state.value.showSheetOrDialog,
                 navigateUp = navigateUp
             )
         }
@@ -634,6 +667,9 @@ class DetailsViewModel(
 
     private fun insertSubtask(summary: String) {
 
+        if(!state.value.allowEditing())
+            return
+
         val subtask = IcalEntry.newTask().copy(
             summary = summary,
             parentUid = _state.value.icalEntry.uid,
@@ -650,6 +686,10 @@ class DetailsViewModel(
     }
 
     private fun onUpdateTaskProgress(percent: Long) {
+
+        if(!state.value.allowEditing())
+            return
+
         _state.update {
             it.copy(icalEntry = it.icalEntry.withProgressUpdated(percent))
         }
@@ -657,7 +697,13 @@ class DetailsViewModel(
 
     private fun onUpdateSubtaskProgress(percent: Long, subtaskIcalEntryId: Long) {
 
+        if(!state.value.allowEditing())
+            return
+
         val subtask = _state.value.subtasks.find { it.id == subtaskIcalEntryId } ?: return
+        // A recurring subtask is read-only even if its parent isn't (no recurrence support).
+        if(subtask.isRecurring())
+            return
 
         val updatedSubtask = subtask.withProgressUpdated(percent)
         viewModelScope.launch {
@@ -672,59 +718,12 @@ class DetailsViewModel(
     }
 
     private fun onPersistOrderNo(sortedList: List<Long>) {
+
+        if(!state.value.allowEditing())
+            return
+
         viewModelScope.launch {
             icalEntryRepository.updateOrderNo(sortedList)
-        }
-    }
-
-    private fun onProcessWithAI() {
-        if(state.value.claudeUserApiKey.isNullOrEmpty()) {
-            _state.update {
-                it.copy(
-                    isLoading = false,
-                    snackbarText = "API key not provided. Please update the API key in the settings."
-                )
-            }
-            return
-        }
-
-        _state.update { it.copy(isLoading = true) }
-
-        // Claude API network call — keep it off the Main dispatcher.
-        viewModelScope.launch(ioDispatcher) {
-
-            val remoteResult = KtorRemoteClaudeDataSource(client, state.value.claudeUserApiKey?:"").applyAiMetadata(_state.value.icalEntry)
-
-            when(remoteResult) {
-                is ClaudeRemoteResponseResult.Failed -> {
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            snackbarText = remoteResult.message + if(!remoteResult.details.isNullOrBlank()) "(${remoteResult.details})" else ""
-                        )
-                    }
-                }
-                is ClaudeRemoteResponseResult.Success -> {
-
-                    val processedEntry = remoteResult.icalEntry
-                    val currentEntry = _state.value.icalEntry
-
-                    _state.update {
-                        it.copy(
-                            icalEntry = currentEntry.copy(
-                                summary = currentEntry.summary ?: processedEntry.summary,
-                                //description = processedEntry.description,
-                                dtStart = if(currentEntry.dtStart == null && currentEntry.isTask()) processedEntry.dtStart else currentEntry.dtStart ,
-                                due = if(currentEntry.due == null && currentEntry.isTask()) processedEntry.due else currentEntry.due ,
-                                categories = currentEntry.categories.plus(processedEntry.categories).distinct(),
-                                lastModified = IcsDateTime.now(),
-                                syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
-                            ),
-                            isLoading = false
-                        )
-                    }
-                }
-            }
         }
     }
 
@@ -732,8 +731,29 @@ class DetailsViewModel(
         loadNew(calendarId, state.value.icalEntry.description)
     }
 
+    // Attachments default to inline: the bytes are embedded (BASE64) in the iCalendar object, so
+    // they sync to any CalDAV server without needing server-side attachment support. Because the
+    // whole object is re-uploaded on every edit — and servers cap object size — oversized files are
+    // guarded against (see MAX_INLINE_ATTACHMENT_BYTES / INLINE_ATTACHMENT_WARN_BYTES).
     @OptIn(ExperimentalTime::class)
-    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = false) {
+    private fun onAddAttachment(fileName: String, bytes: ByteArray, mimeType: String?, isInline: Boolean = true) {
+
+        if(!state.value.allowEditing())
+            return
+
+        // Reject files too large to safely embed inline, before touching the disk.
+        if (isInline && bytes.size > MAX_INLINE_ATTACHMENT_BYTES) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(snackbarText = getString(
+                        Res.string.attachment_too_large,
+                        (MAX_INLINE_ATTACHMENT_BYTES / (1024 * 1024)).toInt()
+                    ))
+                }
+            }
+            return
+        }
+
         // Writes the attachment bytes to disk — keep the file I/O off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
             val attachmentUid = Uuid.random().toString()
@@ -749,17 +769,72 @@ class DetailsViewModel(
                 syncState = AttachmentSyncState.LOCAL_MODIFIED
             )
 
+            val largeWarning = if (isInline && bytes.size > INLINE_ATTACHMENT_WARN_BYTES)
+                getString(Res.string.attachment_large_warning) else null
+
             _state.update {
                 it.copy(
                     icalEntry = it.icalEntry.copy(
                         attachments = it.icalEntry.attachments + newAttachment,
                         lastModified = IcsDateTime.now(),
                         syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
-                    )
+                    ),
+                    snackbarText = largeWarning ?: it.snackbarText
                 )
             }
         }
     }
+
+    // Adds a linked (remote-URL) attachment: only the pointer is stored, the bytes stay on their
+    // server. Serialized as ATTACH:<url>, it works on any CalDAV server. The URL is not fetched here
+    // — download happens lazily in onOpenAttachment — so there is no size guard and no disk I/O.
+    @OptIn(ExperimentalTime::class)
+    private fun onAddUrlAttachment(url: Url) {
+
+        if(!state.value.allowEditing())
+            return
+
+        val fileName = deriveFileNameFromUrl(url)
+        val newAttachment = Attachment(
+            icalEntryId = _state.value.icalEntry.id,
+            remoteUrl = url.toString(),
+            fileName = fileName,
+            mimeType = guessMimeTypeFromFileName(fileName),
+            size = null,
+            isInline = false,
+            syncState = AttachmentSyncState.PENDING_DOWNLOAD
+        )
+
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    attachments = it.icalEntry.attachments + newAttachment,
+                    lastModified = IcsDateTime.now(),
+                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                )
+            )
+        }
+    }
+
+    // Last non-blank path segment of the URL, e.g. ".../docs/report.pdf" -> "report.pdf".
+    // Falls back to the host when the path carries no usable file name.
+    private fun deriveFileNameFromUrl(url: Url): String {
+        val path = url.encodedPath.substringBefore('?').substringBefore('#')
+        return path.trimEnd('/').substringAfterLast('/').ifBlank { url.host }
+    }
+
+    private fun guessMimeTypeFromFileName(fileName: String): String? =
+        when (fileName.substringAfterLast('.', "").lowercase()) {
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            "bmp" -> "image/bmp"
+            "svg" -> MIMETYPE_SVG
+            "pdf" -> "application/pdf"
+            "txt" -> "text/plain"
+            else -> null
+        }
 
     private fun onOpenAttachment(attachmentUid: String) {
         val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid } ?: return
@@ -800,6 +875,10 @@ class DetailsViewModel(
     }
 
     private fun onDeleteAttachment(attachmentUid: String) {
+
+        if(!state.value.allowEditing())
+            return
+
         // Deletes the attachment file from disk — keep the file I/O off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
             val attachment = _state.value.icalEntry.attachments.find { it.uid == attachmentUid }
@@ -819,8 +898,12 @@ class DetailsViewModel(
         }
     }
 
-    private fun onUpdateDrawing(replaceAttachmentUid: String?, paths: List<PathData>) {
-        val svg = PathDataSvgConverter.toSvg(paths)
+    private fun onUpdateDrawing(replaceAttachmentUid: String?, paths: List<PathData>, width: Float, height: Float) {
+
+        if(!state.value.allowEditing())
+            return
+
+        val svg = PathDataSvgConverter.toSvg(paths, width, height)
         onAddAttachment(
             fileName = "drawing_" + Uuid.random().toString().take(8) + ".svg",
             bytes = svg.toByteArray(),
@@ -829,5 +912,24 @@ class DetailsViewModel(
         )
 
         replaceAttachmentUid?.let { onDeleteAttachment(it) }
+    }
+
+    private fun onMove(newCalendarId: Long) {
+
+        // Moving deletes the entry from the source collection, so it needs write access there.
+        if(state.value.calendar?.canWriteContent() != true)
+            return
+
+        val entryId = _state.value.icalEntry.id
+
+        _state.update { it.copy(isLoading = true) }
+
+        // Attachment download + DB work + sync trigger - keep it off the Main dispatcher.
+        // We navigate up only once the move is persisted, so popping the screen (which cancels
+        // viewModelScope) can't interrupt it mid-way.
+        viewModelScope.launch(ioDispatcher) {
+            moveIcalEntriesUseCase.move(listOf(entryId), newCalendarId)
+            _state.update { it.copy(showSheetOrDialog = null, isLoading = false, navigateUp = true) }
+        }
     }
 }

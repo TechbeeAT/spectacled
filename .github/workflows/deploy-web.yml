@@ -1,0 +1,118 @@
+name: Deploy web apps to GitHub Pages
+
+# Builds the three Compose/Web apps as static JS bundles and publishes them to
+# GitHub Pages under one origin:
+#   /            landing page
+#   /journals/   Spectacled Journals
+#   /notes/      Spectacled Notes
+#   /tasks/      Spectacled Tasks
+#
+# Each app is built in its own job (a matrix): the production Kotlin/JS compile
+# plus webpack minification is memory- and time-heavy, so giving each app a
+# fresh runner keeps them from stacking (which previously OOM-cancelled the run)
+# and builds all three in parallel. A final job assembles the pieces and deploys.
+#
+# Prerequisite: in the repo Settings → Pages, set "Build and deployment" →
+# Source to "GitHub Actions" (one-time). For a custom domain (e.g.
+# spectacled.techbee.at) also set it there — and remember that origin must be in
+# the proxy's PROXY_ALLOWED_ORIGINS.
+on:
+  push:
+    tags:
+      - 'v*'           # only release versions are published automatically
+      - '!v*alpha*'
+      - '!v*beta*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Allow one concurrent deployment; don't cancel an in-progress run mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: composeJournalsApp
+            path: journals
+          - app: composeNotesApp
+            path: notes
+          - app: composeTasksApp
+            path: tasks
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6.3.0
+
+      - name: Build ${{ matrix.app }} (JS)
+        # -Xmx6g: the production Kotlin/JS compile OOMs at the repo default 3 GB.
+        # Overridden here only for CI; local Android/desktop builds keep the default.
+        run: >
+          ./gradlew --no-daemon
+          -Pkotlin.daemon.jvmargs=-Xmx6g
+          :${{ matrix.app }}:jsBrowserDistribution
+
+      - name: Upload ${{ matrix.path }} bundle
+        # Name the artifact after the URL subpath; the deploy job downloads each
+        # artifact into _site/<name>/, giving /journals, /notes, /tasks. The bundle
+        # dir holds the flat production output (JS + index.html + styles.css +
+        # favicon + spectacledSqlWorker.js + sql-wasm.{js,wasm}).
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.path }}
+          path: ${{ matrix.app }}/build/dist/js/productionExecutable
+          retention-days: 1
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download app bundles
+        # No name/pattern: downloads all artifacts, each into _site/<artifact-name>/,
+        # i.e. _site/journals, _site/notes, _site/tasks.
+        uses: actions/download-artifact@v7
+        with:
+          path: _site
+
+      - name: Add landing page
+        run: |
+          set -eu
+          cp .github/pages/index.html _site/index.html
+          # Serve the artifact verbatim (no Jekyll processing of files/underscore dirs).
+          touch _site/.nojekyll
+          echo "Assembled site contents:"; ls -la _site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

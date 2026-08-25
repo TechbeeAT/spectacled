@@ -13,6 +13,7 @@ import at.techbee.spectacled.screens.core.data.webdav.PutResourceResult
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.CalendarSyncError
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -160,14 +161,13 @@ class SyncCoordinator(
                 calendar.id
             )
 
-            val syncCollectionResponse = remote.syncCollection(calendar, credentials)
-            when (syncCollectionResponse) {
+            when (val syncCollectionResponse = remote.syncCollection(calendar, credentials)) {
 
                 is MultigetSyncCollectionResult.Failed -> {
                     calendarRepository.updateCalendarSyncStatus(
                         CalendarSyncStatus(
                             CalendarSyncStatusType.FAILED,
-                            syncCollectionResponse.message,
+                            syncCollectionResponse.error,
                             syncCollectionResponse.details
                         ).serialize(),
                         calendar.syncToken,
@@ -179,7 +179,7 @@ class SyncCoordinator(
 
                 MultigetSyncCollectionResult.NotAuthorized -> {
                     calendarRepository.updateCalendarSyncStatus(
-                        CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, "Not authorized").serialize(),
+                        CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED).serialize(),
                         calendar.syncToken,
                         calendar.id
                     )
@@ -188,7 +188,7 @@ class SyncCoordinator(
 
                 MultigetSyncCollectionResult.NotFound -> {
                     calendarRepository.updateCalendarSyncStatus(
-                        CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, "Not found").serialize(),
+                        CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND).serialize(),
                         calendar.syncToken,
                         calendar.id
                     )
@@ -214,7 +214,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection timed out. Please check your internet connection and try again.",
+                    CalendarSyncError.CONNECTION_TIMED_OUT,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -222,7 +222,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection timed out. Please check your internet connection and try again.",
+                    CalendarSyncError.CONNECTION_TIMED_OUT,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -230,7 +230,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection timed out. Please check your internet connection and try again.",
+                    CalendarSyncError.CONNECTION_TIMED_OUT,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -238,7 +238,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Request error. Please check your server, username and password and try again.",
+                    CalendarSyncError.REQUEST_ERROR,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -246,7 +246,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "An unexpected server error occurred. Please try again.",
+                    CalendarSyncError.SERVER_ERROR,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -254,7 +254,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection error. Please check your internet connection and try again.",
+                    CalendarSyncError.CONNECTION_ERROR,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -262,7 +262,7 @@ class SyncCoordinator(
             calendarRepository.updateCalendarSyncStatus(
                 CalendarSyncStatus(
                     CalendarSyncStatusType.FAILED,
-                    "Connection error: ${e.message}",
+                    CalendarSyncError.UNKNOWN,
                     e.stackTraceToString()
                 ).serialize(), calendar.syncToken, calendar.id
             )
@@ -276,7 +276,7 @@ class SyncCoordinator(
                 calendarRepository.updateCalendarSyncStatus(
                     CalendarSyncStatus(
                         CalendarSyncStatusType.FAILED,
-                        multigetResourceHrefsMultiplatformResult.message,
+                        multigetResourceHrefsMultiplatformResult.error,
                         multigetResourceHrefsMultiplatformResult.details
                     ).serialize(),
                     calendar.syncToken,
@@ -287,7 +287,7 @@ class SyncCoordinator(
 
             MultigetResourceHrefETagResult.NotAuthorized -> {
                 calendarRepository.updateCalendarSyncStatus(
-                    CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED, "Not authorized").serialize(),
+                    CalendarSyncStatus(CalendarSyncStatusType.NOT_AUTHORIZED).serialize(),
                     calendar.syncToken,
                     calendar.id
                 )
@@ -296,7 +296,7 @@ class SyncCoordinator(
 
             MultigetResourceHrefETagResult.NotFound -> {
                 calendarRepository.updateCalendarSyncStatus(
-                    CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND, "Not found").serialize(),
+                    CalendarSyncStatus(CalendarSyncStatusType.NOT_FOUND).serialize(),
                     calendar.syncToken,
                     calendar.id
                 )
@@ -449,8 +449,7 @@ class SyncCoordinator(
 
             SyncState.LOCAL_MODIFIED -> {
                 val entryToPush = pushAttachments(dirtyIcalEntry, calendar)    // TODO: store error?
-                val insertOrUpdateIcalEntryResult = remote.putResource(calendar, entryToPush, credentials)
-                when (insertOrUpdateIcalEntryResult) {
+                when (val insertOrUpdateIcalEntryResult = remote.putResource(calendar, entryToPush, credentials)) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
                         val conflictingServerIcalEntryResult = remote.getResource(calendar, entryToPush, credentials)
@@ -485,12 +484,10 @@ class SyncCoordinator(
             // entry was locally modified, we put and see if there's a conflict
             SyncState.USER_DECIDED_CLIENT_WINS -> {
                 val entryToPush = pushAttachments(dirtyIcalEntry, calendar)
-                val insertOrUpdateIcalEntryResult = remote.putResource(calendar, entryToPush, credentials)
-                when (insertOrUpdateIcalEntryResult) {
+                when (val insertOrUpdateIcalEntryResult = remote.putResource(calendar, entryToPush, credentials)) {
                     // Conflict was detected, we get the latest resource
                     PutResourceResult.Conflict -> {
-                        val conflictingServerIcalEntryResult = remote.getResource(calendar, entryToPush, credentials)
-                        when (conflictingServerIcalEntryResult) {
+                        when (val conflictingServerIcalEntryResult = remote.getResource(calendar, entryToPush, credentials)) {
 
                             // failed will be kept for another retry TODO: Review if this is sufficient in future
                             is GetResourceResult.Failed -> Unit   // Retry
@@ -537,9 +534,8 @@ class SyncCoordinator(
             }
 
             // entry was locally modified, we put and see if there's a conflict
-            SyncState.USER_DECIDED_SERVER_WINS -> {   //TODO!!
-                val conflictingServerIcalEntryResult = remote.getResource(calendar, dirtyIcalEntry, credentials)
-                when (conflictingServerIcalEntryResult) {
+            SyncState.USER_DECIDED_SERVER_WINS -> {
+                when (val conflictingServerIcalEntryResult = remote.getResource(calendar, dirtyIcalEntry, credentials)) {
 
                     // failed will be kept for another retry TODO: Review if this is sufficient in future
                     is GetResourceResult.Failed -> Unit   // Retry

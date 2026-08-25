@@ -8,7 +8,7 @@ import io.ktor.client.request.get
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
-private const val BASE_URL = "https://api.github.com/repos/TechbeeAT/jtxBoard/releases?per_page=100"
+private const val BASE_URL = "https://api.github.com/repos/TechbeeAT/spectacled/releases?per_page=100"
 
 class KtorRemoteGitHubReleaseDataSource(
     val client: HttpClient
