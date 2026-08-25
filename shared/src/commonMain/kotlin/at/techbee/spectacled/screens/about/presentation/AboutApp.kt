@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.shared.BuildKonfig
+import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -225,5 +227,9 @@ fun AboutApp(
 @Composable
 fun AboutApp_Preview(
 ) {
-    AboutApp(spectacledVariant = SpectacledVariant.JOURNALS)
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            AboutApp(spectacledVariant = SpectacledVariant.JOURNALS)
+        }
+    }
 }

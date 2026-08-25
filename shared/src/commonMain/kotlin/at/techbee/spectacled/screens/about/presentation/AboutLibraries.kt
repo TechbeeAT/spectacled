@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Badge
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,7 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
+import at.techbee.spectacled.theme.AppTheme
 import com.mikepenz.aboutlibraries.Libs
 import com.mikepenz.aboutlibraries.entity.Library
 import com.mikepenz.aboutlibraries.ui.compose.util.author
@@ -111,5 +114,25 @@ fun AboutLibraries(
 @Preview
 @Composable
 private fun AboutLibraries_Preview() {
-    AboutLibraries(Libs(listOf(Library("1", null, "test-lib", "test-desc", "https://example.com", emptyList(), null, null, emptySet())), emptySet()))
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            AboutLibraries(
+                Libs(
+                    listOf(
+                        Library(
+                            "1",
+                            null,
+                            "test-lib",
+                            "test-desc",
+                            "https://example.com",
+                            emptyList(),
+                            null,
+                            null,
+                            emptySet()
+                        )
+                    ), emptySet()
+                )
+            )
+        }
+    }
 }

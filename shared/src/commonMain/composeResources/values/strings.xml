@@ -12,6 +12,11 @@
     <string name="about_libraries">Libraries</string>
     <string name="about_contributors">Contributors</string>
     <string name="about_nlnet_thanks">This project was realized with the friendly support of the NLnet Foundation</string>
+    <string name="about_sponsor">Sponsor</string>
+    <string name="about_sponsor_info">Spectacled is an open-source software for journals, notes, and tasks - built on open standards (iCalendar + CalDAV), synced to your own server, with no accounts, no proprietary backend, and no tracking. \n\nIt's maintained across Android, iOS, Web, and Desktop as one codebase, which is a lot of ongoing work for a small project. If Spectacled is useful to you, chip in whatever it's worth to you - any amount helps keep development going. \n\nThank you for supporting open source!</string>
+    <string name="about_more_donation_options">More donation options</string>
+    <string name="thank_you">Thank you!</string>
+    <string name="paypal" translatable="false">PayPal</string>
     <string name="more_on_github">More on GitHub.com</string>
     <string name="terms_conditions">Terms &amp; Conditions</string>
     <string name="close">Close</string>
