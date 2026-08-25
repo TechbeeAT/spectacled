@@ -22,6 +22,7 @@ import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.ioDispatcher
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -42,9 +43,13 @@ import spectacled.shared.generated.resources.some_calendars_failed_to_sync
 import spectacled.shared.generated.resources.sync_status_not_authorized
 import spectacled.shared.generated.resources.sync_status_not_found
 import spectacled.shared.generated.resources.unknown_error
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
+
+/** how long the accounts screen is shown before the welcome bottom sheet slides in on first run */
+private val WELCOME_BOTTOM_SHEET_DELAY = 500.milliseconds
 
 class AccountListViewModel(
     private val calendarRepository: CalendarRepository,
@@ -59,6 +64,9 @@ class AccountListViewModel(
     val state = _state.asStateFlow()
 
     private var observationJob: Job? = null
+
+    /** guards the one-time, first-run auto-opening of the add-principal bottom sheet */
+    private var initialPrincipalsHandled = false
 
     init {
         load()
@@ -76,10 +84,21 @@ class AccountListViewModel(
     private suspend fun observePrincipals() {
         Napier.d("Observing principals")
         calendarRepository.getAllPrincipalsFlow().collect { principals ->
-            _state.update { state -> state.copy(
-                principals = principals,
-                showAddPrincipalBottomSheet = principals.isEmpty()  // show bottom sheet if no principal was added
-            ) }
+            _state.update { state -> state.copy(principals = principals) }
+
+            // Welcome the user with the add-principal bottom sheet if there is no principal yet.
+            // Only the first emission is considered, so that dismissing the sheet sticks and so
+            // that removing the last account later doesn't make it pop up again.
+            if (!initialPrincipalsHandled) {
+                initialPrincipalsHandled = true
+                if (principals.isEmpty()) {
+                    // launched separately so the delay doesn't stall the principals flow
+                    viewModelScope.launch {
+                        delay(WELCOME_BOTTOM_SHEET_DELAY)  // let the screen draw first, the sheet then slides in over it
+                        _state.update { state -> state.copy(showAddPrincipalBottomSheet = true) }
+                    }
+                }
+            }
         }
     }
 

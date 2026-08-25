@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.theme.AppTheme
@@ -26,6 +27,7 @@ fun SplashScreen(
     spectacledVariant: SpectacledVariant,
     showProgressIndicator: Boolean = false,
     color: Color? = null,
+    size: Dp = 200.dp,
     modifier: Modifier = Modifier
 ) {
 
@@ -36,12 +38,12 @@ fun SplashScreen(
 
         if(showProgressIndicator)
             CircularProgressIndicator(
-                modifier = Modifier.size(248.dp)
+                modifier = Modifier.size(size * 1.24f)
             )
 
         Box(
             modifier = Modifier
-                .size(200.dp)
+                .size(size)
                 .clip(CircleShape)
                 .background(color ?: spectacledVariant.themeSeedColor),
             contentAlignment = Alignment.Center
@@ -53,7 +55,7 @@ fun SplashScreen(
                 colorFilter = ColorFilter.tint(Color.White),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(size * 0.08f)
             )
         }
     }

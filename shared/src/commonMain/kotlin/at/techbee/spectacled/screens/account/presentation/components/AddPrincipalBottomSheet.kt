@@ -72,6 +72,7 @@ import at.techbee.spectacled.screens.account.presentation.components.datastructu
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProviderCategory
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
 import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
@@ -98,7 +99,8 @@ import spectacled.shared.generated.resources.server_inferred
 import spectacled.shared.generated.resources.server_optional
 import spectacled.shared.generated.resources.show_hide_password
 import spectacled.shared.generated.resources.username
-import spectacled.shared.generated.resources.welcome
+import spectacled.shared.generated.resources.welcome_first_account_info
+import spectacled.shared.generated.resources.welcome_to_app
 
 enum class AddPrincipalBottomSheetPage { SELECTION, USE_EXISTING, SELECT_FROM_LIST }
 
@@ -110,6 +112,7 @@ fun AddPrincipalBottomSheet(
     isFirstAccount: Boolean,
     onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onDismiss: () -> Unit,
+    spectacledVariant: SpectacledVariant = koinInject()
 ) {
 
     var selectedPage by rememberSaveable { mutableStateOf(AddPrincipalBottomSheetPage.SELECTION) }
@@ -204,6 +207,7 @@ fun AddPrincipalBottomSheet(
                 SelectAccountOptionScreen(
                     isFirstAccount = isFirstAccount,
                     onPageChanged = { selectedPage = it },
+                    spectacledVariant = spectacledVariant,
                     modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
                 )
             } else {
@@ -216,6 +220,7 @@ fun AddPrincipalBottomSheet(
                     )
                 } else if (selectedPage == AddPrincipalBottomSheetPage.SELECT_FROM_LIST) {    // SELECT FROM LIST
                     ChooseProviderScreen(
+                        spectacledVariant = spectacledVariant,
                         modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
                     )
                 }
@@ -229,7 +234,8 @@ fun AddPrincipalBottomSheet(
 fun SelectAccountOptionScreen(
     isFirstAccount: Boolean,
     onPageChanged: (AddPrincipalBottomSheetPage) -> Unit,
-    modifier: Modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
+    modifier: Modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState()),
+    spectacledVariant: SpectacledVariant = koinInject()
 ) {
 
     Column(
@@ -238,16 +244,43 @@ fun SelectAccountOptionScreen(
         modifier = modifier
     ) {
 
-        Text(
-            text = stringResource(if(isFirstAccount) Res.string.welcome else Res.string.add_account),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.headlineLarge
-        )
+        // On the very first run this sheet is the first thing the user sees, so it greets them
+        // and explains why an account is needed before offering the two options.
+        if (isFirstAccount) {
 
-        Text(
-            text = stringResource(Res.string.add_account_header_info),
-            textAlign = TextAlign.Center
-        )
+            SplashScreen(
+                spectacledVariant = spectacledVariant,
+                showProgressIndicator = false,
+                size = 72.dp
+            )
+
+            Text(
+                text = stringResource(
+                    Res.string.welcome_to_app,
+                    stringResource(spectacledVariant.appNameStringRes)
+                ),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.headlineLarge
+            )
+
+            Text(
+                text = stringResource(Res.string.welcome_first_account_info),
+                textAlign = TextAlign.Center
+            )
+
+        } else {
+
+            Text(
+                text = stringResource(Res.string.add_account),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.headlineLarge
+            )
+
+            Text(
+                text = stringResource(Res.string.add_account_header_info),
+                textAlign = TextAlign.Center
+            )
+        }
 
         ElevatedCard(
             onClick = { onPageChanged(AddPrincipalBottomSheetPage.USE_EXISTING) }
@@ -701,7 +734,8 @@ private fun AddAccountScreen_Preview_Idle() {
                 processingState = ProcessingState.Idle,
                 isFirstAccount = true,
                 onAction = {},
-                onDismiss = {}
+                onDismiss = {},
+                spectacledVariant = SpectacledVariant.JOURNALS
             )
         }
     }
@@ -718,7 +752,8 @@ private fun AddAccountScreen_Preview_Processing() {
                 processingState = ProcessingState.Processing,
                 isFirstAccount = false,
                 onAction = {},
-                onDismiss = {}
+                onDismiss = {},
+                spectacledVariant = SpectacledVariant.NOTES
             )
         }
     }
