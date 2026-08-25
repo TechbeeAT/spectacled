@@ -1,9 +1,9 @@
 <resources>
     <string name="copyright_info" translatable="false">© Techbee e.U.</string>
 
-    <string name="app_name_spectacled_journals">spectacled Journals</string>
-    <string name="app_name_spectacled_notes">spectacled Notes</string>
-    <string name="app_name_spectacled_tasks">spectacled Tasks</string>
+    <string name="app_name_spectacled_journals" translatable="false">spectacled Journals</string>
+    <string name="app_name_spectacled_notes" translatable="false">spectacled Notes</string>
+    <string name="app_name_spectacled_tasks" translatable="false">spectacled Tasks</string>
 
     <string name="about">About</string>
     <string name="about_version">Version: %1$s (%2$s)</string>
