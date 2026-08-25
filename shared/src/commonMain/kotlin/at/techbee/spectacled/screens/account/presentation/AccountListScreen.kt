@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -19,19 +20,21 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.components.CalendarCard
-import at.techbee.spectacled.screens.account.presentation.components.NoAccountsScreen
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListItem
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
+import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
+import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_folder_calendar
 import spectacled.shared.generated.resources.insufficient_access_rights_create_folder
+import spectacled.shared.generated.resources.no_account_connected_yet
 import spectacled.shared.generated.resources.no_compatible_folders_found
 
 
@@ -50,8 +53,11 @@ fun AccountListScreen(
     ) {
 
         if (state.principals.isEmpty()) {
-            NoAccountsScreen(
+            SplashScreen(
                 spectacledVariant = spectacledVariant,
+                showProgressIndicator = false,
+                text = stringResource(Res.string.no_account_connected_yet),
+                reducedAlpha = true,
                 modifier = Modifier.fillMaxSize()
             )
         } else {
@@ -148,90 +154,115 @@ fun AccountListScreen(
 @Preview
 @Composable
 private fun FolderListScreen_edit_off_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState().copy(
+                    principals = listOf(
+                        Principal.getPrincipalForPreview().copy(
+                            id = 0,
+                            principalUrl = Url("https://example.com"),
+                            displayName = "My Account"
+                        ),
+                        Principal.getPrincipalForPreview().copy(
+                            id = 1,
+                            principalUrl = Url("https://example2.com"),
+                            displayName = "My Account2"
+                        ),
+                    ),
+                    homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                    calendars = listOf(Calendar.getCalendarForPreview())
                 ),
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example2.com"),
-                    displayName = "My Account2"
-                ),
-            ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-            calendars = listOf(Calendar.getCalendarForPreview())
-        ),
-        onAction = { },
-        spectacledVariant = SpectacledVariant.JOURNALS
-    )
+                onAction = { },
+                spectacledVariant = SpectacledVariant.JOURNALS
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_edit_on_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState().copy(
+                    principals = listOf(
+                        Principal.getPrincipalForPreview().copy(
+                            principalUrl = Url("https://example.com"),
+                            displayName = "My Account"
+                        ),
+                    ),
+                    homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                    calendars = listOf(Calendar.getCalendarForPreview()),
+                    editFoldersOfPrincipal = Principal.getPrincipalForPreview()
                 ),
-            ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
-            calendars = listOf(Calendar.getCalendarForPreview()),
-            editFoldersOfPrincipal = Principal.getPrincipalForPreview()
-        ),
-        onAction = { },
-        spectacledVariant = SpectacledVariant.JOURNALS
-    )
+                onAction = { },
+                spectacledVariant = SpectacledVariant.JOURNALS
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_edit_off_empty_without_rights_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState().copy(
+                    principals = listOf(
+                        Principal.getPrincipalForPreview().copy(
+                            principalUrl = Url("https://example.com"),
+                            displayName = "My Account"
+                        ),
+                    ),
+                    homeCollections = listOf(HomeCollection.getHomeCollectionForPreview())
                 ),
-            ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview())
-        ),
-        onAction = { },
-        spectacledVariant = SpectacledVariant.JOURNALS
-    )
+                onAction = { },
+                spectacledVariant = SpectacledVariant.JOURNALS
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_edit_off_empty_with_rights_Preview() {
-    AccountListScreen(
-        state = AccountListState().copy(
-            principals = listOf(
-                Principal.getPrincipalForPreview().copy(
-                    principalUrl = Url("https://example.com"),
-                    displayName = "My Account"
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState().copy(
+                    principals = listOf(
+                        Principal.getPrincipalForPreview().copy(
+                            principalUrl = Url("https://example.com"),
+                            displayName = "My Account"
+                        ),
+                    ),
+                    homeCollections = listOf(
+                        HomeCollection.getHomeCollectionForPreview().copy(
+                            calDavPrivileges = listOf(CalDavPrivilege.WRITE)
+                        )
+                    ),
                 ),
-            ),
-            homeCollections = listOf(HomeCollection.getHomeCollectionForPreview().copy(
-                calDavPrivileges = listOf(CalDavPrivilege.WRITE)
-            )),
-        ),
-        onAction = { },
-        spectacledVariant = SpectacledVariant.JOURNALS
-    )
+                onAction = { },
+                spectacledVariant = SpectacledVariant.JOURNALS
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun FolderListScreen_no_accounts_Preview() {
-    AccountListScreen(
-        state = AccountListState(),
-        onAction = { },
-        spectacledVariant = SpectacledVariant.NOTES
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            AccountListScreen(
+                state = AccountListState(),
+                onAction = { },
+                spectacledVariant = SpectacledVariant.NOTES
+            )
+        }
+    }
 }

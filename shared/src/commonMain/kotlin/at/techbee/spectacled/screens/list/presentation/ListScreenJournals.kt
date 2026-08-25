@@ -23,7 +23,7 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.formatLocalized
-import at.techbee.spectacled.screens.list.presentation.components.EmptyListScreen
+import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.components.listSections
@@ -31,6 +31,10 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilter
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.no_entries_found_in_this_folder
+import spectacled.shared.generated.resources.no_matching_entries_found
 
 
 @Composable
@@ -181,10 +185,17 @@ fun ListScreenJournals(
     }
 
     Crossfade(state.isDisplayEmpty) {
-        if (it)
-            EmptyListScreen(
-                isEmptyFolder = state.icalEntries.isEmpty(),
+
+        if(it)
+            SplashScreen(
                 spectacledVariant = state.spectacledVariant,
+                text = stringResource(
+                    if (state.icalEntries.isEmpty())
+                        Res.string.no_entries_found_in_this_folder
+                    else
+                        Res.string.no_matching_entries_found
+                ),
+                reducedAlpha = true,
                 modifier = Modifier.fillMaxSize()
             )
     }

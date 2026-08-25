@@ -251,7 +251,8 @@ fun SelectAccountOptionScreen(
             SplashScreen(
                 spectacledVariant = spectacledVariant,
                 showProgressIndicator = false,
-                size = 72.dp
+                size = 150.dp,
+                modifier = Modifier.fillMaxWidth()
             )
 
             Text(

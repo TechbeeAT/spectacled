@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -26,19 +27,23 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.list.presentation.components.EmptyListScreen
+import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
 import at.techbee.spectacled.screens.list.presentation.components.ListDragHandle
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.components.listSections
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
-import org.koin.compose.viewmodel.koinViewModel
+import at.techbee.spectacled.theme.AppTheme
+import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.no_entries_found_in_this_folder
+import spectacled.shared.generated.resources.no_matching_entries_found
 
 @Composable
 fun ListScreenNotes(
@@ -203,49 +208,35 @@ fun ListScreenNotes(
 
         Crossfade (state.isDisplayEmpty) {
             if(it)
-                EmptyListScreen(
-                    isEmptyFolder = state.icalEntries.isEmpty(),
+                SplashScreen(
                     spectacledVariant = state.spectacledVariant,
+                    text = stringResource(
+                        if (state.icalEntries.isEmpty())
+                            Res.string.no_entries_found_in_this_folder
+                        else
+                            Res.string.no_matching_entries_found
+                    ),
+                   reducedAlpha = true,
                     modifier = Modifier.fillMaxSize()
                 )
         }
 
 }
 
-@Preview
-@Composable
-private fun ListScreenRoot_Preview() {
-    ListScreenRoot(
-        listViewModel = koinViewModel<ListViewModel>(),
-        onNavigate = { },
-        onNavigateUp = { }
-    )
-}
 
-
-@Preview
-@Composable
-private fun ListScreen_Notes_Preview() {
-
-    val state = ListState(
-        listFilterCriteria = ListFilterCriteria(searchQuery = "test")
-    )
-
-    ListScreenNotes(
-        state = state,
-        dragAndDropList = emptyList(),
-        onAction = {}
-    )
-}
 
 @Preview
 @Composable
 private fun ListScreen_Notes_empty_Preview() {
 
-    ListScreenNotes(
-        state = ListState(),
-        dragAndDropList = emptyList(),
-        onAction = {}
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
+        Scaffold(modifier = Modifier.fillMaxSize()) {
+            ListScreenNotes(
+                state = ListState(),
+                dragAndDropList = emptyList(),
+                onAction = {}
+            )
+        }
+    }
 }
 
