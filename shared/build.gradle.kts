@@ -42,14 +42,16 @@ kotlin {
     iosSimulatorArm64()
     
     jvm()
-    
+
     js {
         browser()
+        binaries.executable()    // see https://github.com/TechbeeAT/spectacled/pull/115
     }
-    
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
+        binaries.executable()   // see https://github.com/TechbeeAT/spectacled/pull/115
     }
     
     sourceSets {
