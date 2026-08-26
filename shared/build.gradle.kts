@@ -42,23 +42,16 @@ kotlin {
     iosSimulatorArm64()
     
     jvm()
-    
-    // `binaries.executable()` is not about shipping :shared as a web app — the compose*App
-    // modules do that. Compose Multiplatform 1.12.0 added checkComposeUiTestConfigurationFor<Target>,
-    // which fails the build when a K/JS-IR target has Compose UI (and therefore Skiko) on its
-    // test compile classpath but declares no executable binary: without one the test bundle is
-    // not run through webpack, so the Skiko runtime cannot be loaded and the browser tests may
-    // fail. Compose UI comes in via commonMain here, so both web targets need the binary even
-    // though the module only has plain kotlin.test tests. See CMP-4906.
+
     js {
         browser()
-        binaries.executable()
+        binaries.executable()    // see https://github.com/TechbeeAT/spectacled/pull/115
     }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
-        binaries.executable()
+        binaries.executable()   // see https://github.com/TechbeeAT/spectacled/pull/115
     }
     
     sourceSets {
