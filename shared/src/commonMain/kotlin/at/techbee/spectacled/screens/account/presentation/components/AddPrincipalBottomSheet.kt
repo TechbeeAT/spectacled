@@ -202,8 +202,8 @@ fun AddPrincipalBottomSheet(
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
-        ) {
-            if (pagerState.currentPage == 0) {
+        ) { page ->
+            if (page == 0) {
                 SelectAccountOptionScreen(
                     isFirstAccount = isFirstAccount,
                     onPageChanged = { selectedPage = it },
@@ -449,6 +449,13 @@ fun AddAccountScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val trimmedServer = server.trim()
+            val isInsecure = trimmedServer.startsWith("http://")
+            val inferred = if (server.isBlank() && username.contains("@")) {
+                val domain = username.substringAfter("@").trim()
+                if (domain.isNotEmpty()) "https://$domain" else null
+            } else null
+
             OutlinedTextField(
                 value = server,
                 onValueChange = { server = it },
@@ -461,15 +468,16 @@ fun AddAccountScreen(
                         if (domain.isNotEmpty()) "https://$domain" else null
                     } else null
 
-                    Column {
-                        AnimatedVisibility(inferred?.isNotBlank() == true) {
-                            Text(stringResource(Res.string.server_inferred, inferred.orEmpty()))
-                        }
-                        AnimatedVisibility(isInsecure) {
-                            Text(
-                                text = stringResource(Res.string.insecure_connection_warning),
-                                color = MaterialTheme.colorScheme.error
-                            )
+                    AnimatedVisibility(inferred?.isNotBlank() == true || isInsecure) {
+                        Column {
+                            if(inferred?.isNotBlank() == true)
+                                Text(stringResource(Res.string.server_inferred, inferred.orEmpty()))
+
+                            if(isInsecure)
+                                Text(
+                                    text = stringResource(Res.string.insecure_connection_warning),
+                                    color = MaterialTheme.colorScheme.error
+                                )
                         }
                     }
                 },
