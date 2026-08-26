@@ -213,7 +213,7 @@ data class ListState(
      */
     private fun buildSections(entries: List<IcalEntry>): List<ListSection> {
         val (trashbin, notTrashbin) = entries.partition { it.syncState.isDeletedState() }
-        val (pinned, rest) = notTrashbin.partition { it.isPinned() }
+        val (pinned, rest) = notTrashbin.partition { it.isPinned() && spectacledVariant == SpectacledVariant.NOTES }  // only notes variant allows pinned entries
         val (noCriteria, grouped) = rest.partition { it.isNoCriteria() }
 
         return buildList {
