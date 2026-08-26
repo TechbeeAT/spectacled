@@ -72,7 +72,7 @@ interface UserAppPreferencesStore {
 
     var listCollapsedGroups: Set<String>
         get() = this.load(LIST_COLLAPSED_GROUPS)
-            ?.split("|")?.toSet() ?: emptySet()
+            ?.split("|")?.toSet() ?: setOf(LIST_COLLAPSED_GROUP_NO_CRITERIA, LIST_COLLAPSED_GROUP_TRASHBIN)
         set(value) = this.save(LIST_COLLAPSED_GROUPS, value.joinToString("|"))
 
 
