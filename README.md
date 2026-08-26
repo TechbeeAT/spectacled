@@ -66,7 +66,7 @@ Spectacled is, and will stay, open source. Maintaining it across five platforms 
 
 - [GitHub Sponsors](https://github.com/sponsors/patrickunterwegs)
 - [Liberapay](https://liberapay.com/techbee.at)
-- <!-- TODO: add Ko-fi / Open Collective / Patreon links here if/when set up -->
+- [PayPal](https://www.paypal.com/ncp/payment/XB7HH4BWXYFKJ)
 
 (See [`.github/FUNDING.yml`](.github/FUNDING.yml) for the current list.)
 
@@ -102,13 +102,14 @@ This project uses the **Gradle Wrapper** and the **Foojay toolchain resolver**. 
  ┣ 📂 androidNotesApp/         ← Android entry point for Notes
  ┣ 📂 androidTasksApp/         ← Android entry point for Tasks
  ┃
- ┣ 📂 iosJournalsApp/          ← iOS Xcode project for Journals
- ┣ 📂 iosNotesApp/             ← iOS Xcode project for Notes
- ┣ 📂 iosTasksApp/             ← iOS Xcode project for Tasks
- ┣ 📄 spectacled.xcworkspace   ← Xcode workspace combining all three iOS apps
+ ┣ 📂 iosApp/                  ← iOS Xcode projects (kept out of the repo root so
+ ┃    ┣ 📂 iosJournalsApp/       Android Studio treats the root as a pure Gradle
+ ┃    ┣ 📂 iosNotesApp/          project; the Kotlin Multiplatform plugin still
+ ┃    ┣ 📂 iosTasksApp/          discovers these for iOS run configurations)
+ ┃    ┗ 📄 spectacled.xcworkspace  ← Xcode workspace combining all three iOS apps
  ┃
- ┣ 📂 server/                  ← Ktor backend scaffold — currently unused template
- ┃                                boilerplate, not required to build or run any app
+ ┣ 📂 server/                  ← Ktor CORS proxy for the Web build (see server/README.md).
+ ┃                                Only the browser needs it; native apps talk CalDAV directly.
  ┃
  ┗ 📂 gradle/
     ┗ 📄 libs.versions.toml    ← ★ All dependency versions live here
@@ -177,13 +178,21 @@ Each command below works for any of the three apps — just swap `composeJournal
 
 Requires a recent browser (Chrome 119+, Firefox 120+, Safari 18.2+).
 
+> **⚠️ The Web build needs the CORS proxy.** Browsers block cross-origin WebDAV requests, so the
+> web app routes CalDAV traffic through the small Ktor proxy in [`server/`](server/README.md), which
+> adds the required CORS headers (native apps talk to CalDAV directly and don't need it). Run it
+> locally with `./gradlew :server:run` and point **Settings → Proxy server** at
+> `http://localhost:8088`. For hosting, **self-host your own** instance (a shared proxy can see your
+> credentials in transit) — see [`server/README.md`](server/README.md) for Docker/Fly.io setup and
+> the trust caveats.
+
 ### 🍎 iOS
 
 Requires macOS + Xcode 16+.
 
 ```
-1. Open spectacled.xcworkspace (or iosJournalsApp/iosJournalsApp.xcodeproj directly)
-   in Xcode.
+1. Open iosApp/spectacled.xcworkspace (or iosApp/iosJournalsApp/iosJournalsApp.xcodeproj
+   directly) in Xcode.
 2. Select a simulator or device.
 3. Click ▶️ Run.
 ```
@@ -199,6 +208,8 @@ DEVELOPMENT_TEAM=YOUR_APPLE_TEAM_ID
 | Command                      | What it does                                                   |
 |------------------------------|----------------------------------------------------------------|
 | `./gradlew :shared:allTests` | Run the shared module's test suite                             |
+| `./gradlew :server:run`      | Run the Web CORS proxy locally on `http://localhost:8088`      |
+| `./gradlew :server:test`     | Run the proxy's test suite                                     |
 | `./gradlew clean`            | Delete all build outputs                                       |
 | `./gradlew --stop`           | Stop all Gradle daemons (useful after a bad incremental build) |
 

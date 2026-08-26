@@ -48,6 +48,7 @@ import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.create_folder
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.folder
+import spectacled.shared.generated.resources.include_support_for_subtasks
 import spectacled.shared.generated.resources.update_folder
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
@@ -167,7 +168,7 @@ fun CreateOrUpdateCalendarBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
-                    Text("Include support for subtasks")
+                    Text(stringResource(Res.string.include_support_for_subtasks))
 
                     Switch(
                         checked = supportedCalendarComponents.contains(CalendarComponent.VTODO),

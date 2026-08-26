@@ -26,13 +26,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
+import at.techbee.spectacled.screens.core.domain.CalendarSyncError
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.formatLocalized
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.entry_copy
+import spectacled.shared.generated.resources.reload_calendars_folders
 import spectacled.shared.generated.resources.retry
+import spectacled.shared.generated.resources.show_more
+import spectacled.shared.generated.resources.sync_info
+import spectacled.shared.generated.resources.update_password
 
 @Composable
 fun CalendarSyncInfoDialog(
@@ -67,7 +73,7 @@ fun CalendarSyncInfoDialog(
         },
         icon = { Icon(Icons.Outlined.SyncProblem, null) },
         title = {
-            Text("Sync Info")
+            Text(stringResource(Res.string.sync_info))
         },
         text = {
 
@@ -79,7 +85,8 @@ fun CalendarSyncInfoDialog(
 
                 Text(calendarSyncStatus.icsDateTime.formatLocalized(IcsDateTimeFormat.DATE_TIME))
 
-                calendarSyncStatus.message?.let {
+                val syncMessage = calendarSyncStatus.messageStringRes?.let { stringResource(it) }
+                syncMessage?.let {
                     Text(
                         text = it,
                         textAlign = TextAlign.Center)
@@ -88,20 +95,20 @@ fun CalendarSyncInfoDialog(
                 if(calendarSyncStatus.type == CalendarSyncStatusType.NOT_AUTHORIZED) {
                     TextButton(
                         onClick = { onShowPrincipalUpdatePassword() }
-                    ) { Text("Update password") }
+                    ) { Text(stringResource(Res.string.update_password)) }
                 }
 
                 if(calendarSyncStatus.type == CalendarSyncStatusType.NOT_FOUND) {
                     TextButton(
                         onClick = { onReloadCalendars() }
-                    ) { Text("Reload calendars/folders") }
+                    ) { Text(stringResource(Res.string.reload_calendars_folders)) }
                 }
 
                 AnimatedVisibility(!calendarSyncStatus.details.isNullOrEmpty() && !showMore) {
                     TextButton(
                         onClick = { showMore = true }
                     ) {
-                        Text("Show more")
+                        Text(stringResource(Res.string.show_more))
                     }
                 }
 
@@ -119,11 +126,11 @@ fun CalendarSyncInfoDialog(
                         TextButton(
                             onClick = {
                                 clipboard.setText(
-                                    AnnotatedString(calendarSyncStatus.message + "\n" + calendarSyncStatus.details)
+                                    AnnotatedString(listOfNotNull(syncMessage, calendarSyncStatus.details).joinToString("\n"))
                                 )
                             }
                         ) {
-                            Text("Copy")
+                            Text(stringResource(Res.string.entry_copy))
                         }
                     }
 
@@ -142,7 +149,7 @@ private fun CalendarSyncStatus_Preview_FAILED() {
     CalendarSyncInfoDialog(
         calendarSyncStatus = CalendarSyncStatus(
             type = CalendarSyncStatusType.FAILED,
-            message = "Connection error. Please check your internet connection and try again.",
+            error = CalendarSyncError.CONNECTION_ERROR,
             details = "Details message"
         ),
         onRetry = { },
@@ -158,7 +165,7 @@ private fun CalendarSyncStatus_Preview_NOT_AUTHORIZED() {
     CalendarSyncInfoDialog(
         calendarSyncStatus = CalendarSyncStatus(
             type = CalendarSyncStatusType.NOT_AUTHORIZED,
-            //message = "Connection error. Please check your internet connection and try again.",
+            //error = CalendarSyncError.CONNECTION_ERROR,
             //details = "Details message"
         ),
         onRetry = { },
@@ -174,7 +181,7 @@ private fun CalendarSyncStatus_Preview_NOT_FOUND() {
     CalendarSyncInfoDialog(
         calendarSyncStatus = CalendarSyncStatus(
             type = CalendarSyncStatusType.NOT_FOUND,
-            //message = "Connection error. Please check your internet connection and try again.",
+            //error = CalendarSyncError.CONNECTION_ERROR,
             //details = "Details message"
         ),
         onRetry = { },

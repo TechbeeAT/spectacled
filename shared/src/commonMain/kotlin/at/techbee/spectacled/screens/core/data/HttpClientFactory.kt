@@ -19,18 +19,26 @@ import kotlinx.serialization.json.Json
 
 object HttpClientFactory {
 
+    /** Proxy the web (WASM) build falls back to when the user hasn't configured one. */
+    const val DEFAULT_WEB_PROXY_URL = "http://localhost:8088"
+
+    /** The proxy URL to use on the current platform when no user setting is present. */
+    fun defaultProxyUrl(): String? =
+        if (getPlatform().platform == Platforms.WASM) DEFAULT_WEB_PROXY_URL else null
+
     fun create(
         engine: HttpClientEngine,
         jsonContentNegotiation: Boolean = true,
-        userProxyUrlProvider: () -> String? = { null }  /** This provider is evaluated for every request within a Ktor interceptor, ensuring that any changes the user makes in the settings are picked up immediately by the HttpClient without requiring an app restart.*/
+        // Resolved per request so the in-app "Proxy server" setting takes effect without an app restart.
+        proxyUrlProvider: () -> String? = { defaultProxyUrl() }
     ): HttpClient {
         return HttpClient(engine) {
             followRedirects = false
 
             install("ProxyInterceptor") {
                 requestPipeline.intercept(HttpRequestPipeline.Transform) {
-                    val proxyUrl = userProxyUrlProvider()
-                    if (proxyUrl?.isNotBlank() == true) {
+                    val proxyUrl = proxyUrlProvider()?.takeIf { it.isNotBlank() }
+                    if (proxyUrl != null) {
                         val originalUrl = context.url.buildString()
                         // Only proxy external requests, not the proxy itself
                         if (originalUrl.startsWith("http") && !originalUrl.startsWith(proxyUrl)) {

@@ -1,9 +1,9 @@
 <resources>
     <string name="copyright_info" translatable="false">© Techbee e.U.</string>
 
-    <string name="app_name_spectacled_journals">spectacled Journals</string>
-    <string name="app_name_spectacled_notes">spectacled Notes</string>
-    <string name="app_name_spectacled_tasks">spectacled Tasks</string>
+    <string name="app_name_spectacled_journals" translatable="false">spectacled Journals</string>
+    <string name="app_name_spectacled_notes" translatable="false">spectacled Notes</string>
+    <string name="app_name_spectacled_tasks" translatable="false">spectacled Tasks</string>
 
     <string name="about">About</string>
     <string name="about_version">Version: %1$s (%2$s)</string>
@@ -11,11 +11,18 @@
     <string name="about_release_notes">Release Notes</string>
     <string name="about_libraries">Libraries</string>
     <string name="about_contributors">Contributors</string>
-    <string name="about_nlnet_thanks">This project was realized with the friendly support of the nlnet foundation</string>
+    <string name="about_nlnet_thanks">This project was realized with the friendly support of the NLnet Foundation</string>
+    <string name="about_sponsor">Sponsor</string>
+    <string name="about_sponsor_info">Spectacled is an open-source software for journals, notes, and tasks - built on open standards (iCalendar + CalDAV), synced to your own server, with no accounts, no proprietary backend, and no tracking. \n\nIt's maintained across Android, iOS, Web, and Desktop as one codebase, which is a lot of ongoing work for a small project. If Spectacled is useful to you, chip in whatever it's worth to you - any amount helps keep development going. \n\nThank you for supporting open source!</string>
+    <string name="about_more_donation_options">More donation options</string>
+    <string name="thank_you">Thank you!</string>
+    <string name="paypal" translatable="false">PayPal</string>
     <string name="more_on_github">More on GitHub.com</string>
     <string name="terms_conditions">Terms &amp; Conditions</string>
     <string name="close">Close</string>
     <string name="settings">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+
 
     <string name="edit">Edit</string>
     <string name="done">Done</string>
@@ -23,12 +30,15 @@
     <string name="ok">OK</string>
     <string name="restore">Restore</string>
     <string name="discard">Discard</string>
+    <string name="nothing_here">Nothing here</string>
 
     <string name="menu">Menu</string>
     <string name="accounts">Accounts</string>
     <string name="folders">Folders</string>
     <string name="folder">Folder</string>
     <string name="open_foldername">Open %1$s</string>
+    <string name="open_in_browser">Open in browser</string>
+    <string name="welcome">Welcome</string>
     <string name="add_account">Add account</string>
     <string name="remove_account">Remove account</string>
     <string name="insecure_connection_warning">Warning: Insecure connection (HTTP)</string>
@@ -38,16 +48,20 @@
     <string name="create_folder">Create folder</string>
     <string name="update_folder">Update folder</string>
     <string name="edit_folders">Edit folders</string>
+    <string name="server_optional">Server (optional)</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="show_hide_password">Show/hide password</string>
-    <string name="update_passowrd_button">Update</string>
+    <string name="update_password_button">Update</string>
     <string name="update_password">Update password</string>
     <string name="no_entries_found_in_this_folder">No entries found in this folder</string>
     <string name="no_matching_entries_found">No matching entries found</string>
     <string name="no_summary_description">No summary/description</string>
     <string name="categories">Categories</string>
     <string name="read_only">Read only</string>
+    <string name="recurring_entry_read_only_title">Recurring entry</string>
+    <string name="recurring_entry_read_only_message">This entry is part of a recurring series, which isn't supported. It's shown read-only so its recurrence isn't accidentally changed.</string>
+    <string name="recurring_entry_read_only_snackbar">Recurring entries are read-only and can't be selected.</string>
     <string name="sync_problem">Sync problem</string>
     <string name="sync_conflict_detected">Sync conflict detected</string>
     <string name="refresh">Refresh</string>
@@ -56,10 +70,14 @@
     <string name="expand">Expand</string>
     <string name="collapse">Collapse</string>
     <string name="clear_selection">Clear selection</string>
-    <string name="x_selected">%1$d selected</string>
+    <plurals name="x_selected">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
     <string name="select_all">Select all</string>
     <string name="select_multiple">Select multiple</string>
     <string name="show_error_details">Show error details</string>
+    <string name="undo">Undo</string>
 
     <string name="grouping_last_x_hours">Last %1$d hours</string>
     <string name="grouping_last_x_days">Last %1$d days</string>
@@ -77,10 +95,11 @@
     <string name="grouping_start_in_past">Start in past</string>
 
     <string name="grouping_no_date">No date</string>
+    <string name="grouping_other">Other</string>
 
-    <string name="trashbin">Trashbin</string>
+    <string name="trashbin_x">Trashbin (%1$d)</string>
 
-    <string name="search">Search...</string>
+    <string name="search">Search…</string>
     <string name="add_journal">Add journal</string>
     <string name="add_note">Add note</string>
     <string name="add_task">Add task</string>
@@ -103,6 +122,7 @@
     <string name="create_category">Create "%1$s"</string>
     <string name="search_add_category">Search/add category</string>
     <string name="delete">Delete</string>
+    <string name="move">Move</string>
     <string name="remove">Remove</string>
     <string name="sync_disabled">Sync disabled</string>
     <string name="sync_enabled">Sync enabled</string>
@@ -125,9 +145,13 @@
     <string name="subtasks_not_supported_in_collection">Not supported in this collection</string>
     <string name="url">URL</string>
     <string name="add_url">Add URL</string>
+    <string name="add">Add</string>
+    <string name="link_file_by_url">Link file by URL</string>
+    <string name="link_file_by_url_hint">The file stays on its server - Spectacled only stores the link and downloads it when opened.</string>
     <string name="add_attachment">Add attachment</string>
     <string name="attachment">Attachment</string>
-    <string name="attachment_not_supported_by_server">Not supported by server</string>
+    <string name="attachment_too_large">Attachment is too large to sync (max %1$d MB) and was not added.</string>
+    <string name="attachment_large_warning">Large attachment — it's embedded in the entry and re-uploaded on every edit, which some servers may reject.</string>
     <string name="add_photo">Add photo</string>
     <string name="add_from_gallery">Add from gallery</string>
     <string name="add_drawing">Add drawing</string>
@@ -157,7 +181,17 @@
     <string name="delete_entry_x">Delete entry "%1$s"?</string>
     <string name="delete_entry_warning">Are you sure you want to delete this entry?</string>
     <string name="delete_selected">Delete selected</string>
-    <string name="delete_selected_warning">Are you sure you want to delete the selected %1$d entry/entries?</string>
+    <plurals name="delete_selected_warning">
+        <item quantity="one">Are you sure you want to delete the selected entry?</item>
+        <item quantity="other">Are you sure you want to delete the selected %1$d entries?</item>
+    </plurals>
+    <string name="move_entry_x">Move entry "%1$s"?</string>
+    <string name="move_entry_warning">This creates a copy of this entry in the new calendar and deletes the current one.</string>
+    <string name="move_selected">Move selected</string>
+    <plurals name="move_selected_warning">
+        <item quantity="one">This moves the selected entry to the chosen calendar and removes it from the current one.</item>
+        <item quantity="other">This moves the selected %1$d entries to the chosen calendar and removes them from the current one.</item>
+    </plurals>
     <string name="pin">Pin</string>
     <string name="unpin">Unpin</string>
     <string name="pinned">Pinned</string>
@@ -177,6 +211,10 @@
     <string name="view_grid">Grid</string>
     <string name="drag_handle">Drag handle</string>
 
+    <string name="format_bold">Bold</string>
+    <string name="format_italic">Italic</string>
+    <string name="format_underline">Underline</string>
+
     <string name="theme">Theme</string>
     <string name="theme_system">Default (System)</string>
     <string name="theme_light">Light</string>
@@ -191,10 +229,157 @@
     <string name="status_final">Final</string>
     <string name="status_draft">Draft</string>
     <string name="status_cancelled">Cancelled</string>
-    <string name="status_needs_action">Needs actions</string>
+    <string name="status_needs_action">Needs action</string>
     <string name="status_in_process">In process</string>
     <string name="status_completed">Completed</string>
 
     <string name="login_message_forbidden">Not authorized. Please check your server, username and password.</string>
+
+    <string name="welcome_to_app">Welcome to %1$s</string>
+    <string name="welcome_first_account_info">Your entries live on your own CalDAV server — no account with us, no lock-in. To get started, connect the server you want to sync with.</string>
+    <string name="no_account_connected_yet">No account connected yet</string>
+
+    <string name="add_account_header_info">Spectacled works with CalDAV-compatible providers. You can either sign in with an existing account or create a new account with one of our recommended providers.</string>
+    <string name="add_account_option_x">Option %1$d</string>
+    <string name="add_account_option1_headline">Have an account?</string>
+    <string name="add_account_option1_text">Connect any CalDAV-compatible server using your existing credentials.</string>
+    <string name="add_account_option2_headline">Need an account?</string>
+    <string name="add_account_option2_text">Choose from a selection of privacy-focused providers that work well with Spectacled.</string>
+    <string name="add_account_spectacled_is_provider_independent">Spectacled is provider-independent</string>
+    <string name="add_account_option2_recommendation_info">We recommend services based on privacy, reliability, and compatibility. Some links may generate a referral commission, which helps fund ongoing development. Recommendations are never influenced solely by referral agreements.</string>
+    <string name="add_account_option2_recommended_providers">Recommended providers</string>
+    <string name="add_account_provider_tasks_only_warning">This provider only supports tasks and cannot be used for Spectacled Notes and Journals.</string>
+    <string name="provider_category_nextcloud">Nextcloud providers</string>
+    <string name="provider_category_self_hosted">Self-hosted solutions</string>
+    <string name="provider_category_email">Email providers with CalDAV support</string>
+
+    <!-- Country/region flags shown as provider badges; symbols, not translatable text. -->
+    <string name="provider_flag_australia" translatable="false">🇦🇺</string>
+    <string name="provider_flag_belgium" translatable="false">🇧🇪</string>
+    <string name="provider_flag_european_union" translatable="false">🇪🇺</string>
+    <string name="provider_flag_france" translatable="false">🇫🇷</string>
+    <string name="provider_flag_germany" translatable="false">🇩🇪</string>
+    <string name="provider_flag_netherlands" translatable="false">🇳🇱</string>
+    <string name="provider_flag_norway" translatable="false">🇳🇴</string>
+    <string name="provider_flag_switzerland" translatable="false">🇨🇭</string>
+
+    <string name="provider_tag_nextcloud" translatable="false">Nextcloud</string>
+    <string name="provider_tag_gdpr" translatable="false">GDPR</string>
+    <string name="provider_tag_privacy">Privacy</string>
+    <string name="provider_tag_open_source">Open Source</string>
+    <string name="provider_tag_self_hosted">Self-hosted</string>
+    <string name="provider_tag_power_users">Power users</string>
+    <string name="provider_tag_free_plan">Free plan</string>
+    <string name="provider_tag_free_trial">Free trial</string>
+    <string name="provider_tag_anonymous_payments">Anonymous payments</string>
+
+    <string name="provider_murena_description">Privacy-focused, deGoogled online workspace from France built on Nextcloud and OnlyOffice, including calendars, tasks, journals, and contacts, with a free tier to get started.</string>
+    <string name="provider_tabdigital_description">Managed Nextcloud hosting in the EU with calendars, tasks, journals, contacts, and files. Offers a free account to get started without a credit card.</string>
+    <string name="provider_hetzner_description">Managed Nextcloud hosting from Germany with full calendar, tasks, journals, contacts, and file synchronization.</string>
+    <string name="provider_woelkli_description">Secure Nextcloud-based cloud storage hosted in Switzerland, including calendars, tasks, journals, and contacts. Includes a free tier.</string>
+    <string name="provider_disroot_description">Community-run, donation-funded platform from the Netherlands built on Nextcloud, offering calendars, tasks, journals, and more for free.</string>
+    <string name="provider_nextcloud_description">Host your own calendar, contacts, tasks, and notes while maintaining full control over your data.</string>
+    <string name="provider_baikal_description">Lightweight open-source CalDAV and CardDAV server designed for self-hosting.</string>
+    <string name="provider_radicale_description">Lightweight open-source CalDAV and CardDAV server designed for self-hosting, supporting events, tasks, and journals.</string>
+    <string name="provider_mailbox_org_description">Privacy-focused email, calendar, contacts, and task management hosted in Germany with excellent CalDAV support.</string>
+    <string name="provider_fastmail_description">Fast and reliable email, calendar, and contact synchronization with excellent standards support.</string>
+    <string name="provider_infomaniak_description">Swiss-hosted productivity services with strong privacy protections and excellent value.</string>
+    <string name="provider_mailfence_description">Privacy-focused email and collaboration services hosted in Belgium.</string>
+    <string name="provider_runbox_description">Norwegian email and collaboration platform focused on privacy and sustainability.</string>
+    <string name="provider_migadu_description">Swiss email hosting designed for custom domains and technical users.</string>
+    <string name="provider_posteo_description">Privacy-first email, calendar, and contacts provider from Germany.</string>
+
+    <string name="attachment_sync_state_pending_upload">Pending upload</string>
+    <string name="attachment_sync_state_pending_download">Pending download</string>
+    <string name="attachment_sync_state_synchronized">Synchronized</string>
+    <string name="attachment_sync_state_sync_error">Sync error</string>
+
+    <string name="advanced">Advanced</string>
+    <string name="anthropic_api_key">Anthropic API key</string>
+    <string name="anthropic_api_key_info">Used only for the "Create with AI" action, stored on this device only.</string>
+    <string name="get_an_api_key">Get an API key</string>
+    <string name="ai_provider">AI provider</string>
+    <string name="ai_provider_claude">Claude (Anthropic)</string>
+    <string name="ai_provider_openai">Open-source model (custom endpoint)</string>
+    <string name="ai_provider_none">None</string>
+    <string name="ai_provider_not_configured">Configure your AI provider in the settings to use this feature.</string>
+    <string name="ai_model">Model</string>
+    <string name="openai_base_url">Server URL</string>
+    <string name="openai_api_key">API key (optional)</string>
+    <string name="openai_info">Point this at a local or self-hosted server that speaks the OpenAI API (Ollama, LM Studio, llama.cpp, LocalAI).</string>
+
+    <string name="sync_info">Sync info</string>
+    <string name="reload_calendars_folders">Reload calendars/folders</string>
+    <string name="reload_folders">Reload folders</string>
+    <string name="show_more">Show more</string>
+
+    <string name="calendar_could_not_be_deleted">Calendar could not be deleted: %1$s</string>
+    <string name="include_support_for_subtasks">Include support for subtasks</string>
+    <string name="no_compatible_folders_found">No compatible folders/calendars found</string>
+    <string name="add_folder_calendar">Add folder/calendar</string>
+    <string name="insufficient_access_rights_create_folder">Insufficient access rights to create a new folder/calendar.</string>
+
+    <string name="selected_calendar">Selected calendar</string>
+    <string name="select_calendar">Select calendar</string>
+    <string name="no_account_name">No account name</string>
+    <string name="unnamed_calendar">Unnamed calendar</string>
+    <string name="unknown">Unknown</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="percent_complete">%1$d %%</string>
+
+    <string name="ai_create_entries">Create with AI</string>
+    <string name="ai_paste_text_placeholder">Paste text to create entries…</string>
+    <string name="ai_create_subtasks">Create subtasks</string>
+    <string name="create">Create</string>
+
+    <string name="account_added_updated">Account added/updated</string>
+    <string name="account_successfully_removed">Account successfully removed</string>
+    <string name="calendar_successfully_added_updated">Calendar successfully added/updated</string>
+    <string name="calendar_successfully_deleted">Calendar successfully deleted</string>
+    <string name="calendars_synced">Calendars synced</string>
+    <string name="credentials_not_found_readd_account">Credentials not found, please remove this account and add it again.</string>
+    <string name="login_message_not_authorized">Not authorized. Please check your username and password.</string>
+    <string name="server_not_found">Server not found.</string>
+    <string name="some_calendars_failed_to_sync">Some calendars failed to sync. Please check the calendars for details.</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="unknown_error_occurred">Unknown error occurred.</string>
+
+    <string name="sync_status_failed">Sync failed. Please try again.</string>
+    <string name="sync_status_not_authorized">Not authorized</string>
+    <string name="sync_status_not_found">Not found</string>
+    <string name="sync_error_connection_timed_out">Connection timed out. Please check your internet connection and try again.</string>
+    <string name="sync_error_connection_error">Connection error. Please check your internet connection and try again.</string>
+    <string name="sync_error_server_error">An unexpected server error occurred. Please try again.</string>
+    <string name="sync_error_request_failed">Request error. Please check your server, username and password and try again.</string>
+    <string name="sync_error_calendar_not_fetchable">Calendar couldn't be fetched.</string>
+    <string name="sync_error_calendar_not_parsable">Calendar couldn't be parsed.</string>
+
+    <string name="calendar_create_failed">Creating collection failed.</string>
+    <string name="calendar_update_failed">Calendar couldn't be updated.</string>
+    <string name="calendar_delete_failed">Calendar couldn't be deleted.</string>
+    <string name="calendar_create_failed_privileges">Calendar couldn't be created due to missing privileges.</string>
+    <string name="calendar_create_failed_conflict">Parent does not exist or calendar already exists.</string>
+    <string name="calendar_create_failed_unsupported">Server doesn't support creation of new collections.</string>
+    <string name="calendar_create_failed_component">Creation of calendar with supported component failed.</string>
+    <string name="calendar_fetch_failed">Calendar couldn't be fetched.</string>
+    <string name="calendar_parse_failed">Calendar couldn't be parsed.</string>
+    <string name="calendar_update_failed_privileges">Calendar couldn't be updated due to missing privileges.</string>
+    <string name="calendar_update_failed_conflict">Calendar couldn't be updated due to conflict.</string>
+    <string name="calendar_delete_failed_privileges">Calendar couldn't be deleted due to missing privileges</string>
+    <string name="calendar_delete_forbidden">Server forbids deleting this calendar</string>
+    <string name="calendar_delete_forbidden_locked">Server forbids deleting this calendar. Locked or server-side constraint.</string>
+
+    <string name="ai_response_failed">Fetching AI response failed</string>
+    <string name="ai_response_no_text">AI response contained no text</string>
+    <string name="ai_create_without_ai">Create without AI</string>
+
+    <string name="server_inferred">Inferred: %1$s</string>
+    <string name="settings_proxy_server">Proxy server</string>
+    <string name="settings_proxy_server_info">Web only. Browsers block cross-origin CalDAV (WebDAV) requests, so the web app routes them through this proxy, which adds the required CORS headers. The proxy can see your credentials in transit — prefer one you host yourself. Setup: github.com/TechbeeAT/spectacled/tree/main/server</string>
+
+    <string name="widget_configuration">Widget configuration</string>
+
+    <!-- Label/value pair, e.g. "Created: 5 Jan 2026". Some locales space the colon differently. -->
+    <string name="label_value">%1$s: %2$s</string>
 
 </resources>

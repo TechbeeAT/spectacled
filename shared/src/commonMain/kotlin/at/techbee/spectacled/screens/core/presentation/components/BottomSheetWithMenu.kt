@@ -24,10 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.theme.AppTheme
-import org.jetbrains.compose.resources.stringResource
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.close
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,7 +86,9 @@ fun BottomSheetWithMenu(
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = modifier
+            // Keeps text fields in sheets visible above the keyboard. On iOS this is a no-op
+            // because SwiftUI resizes the view for the keyboard natively (see imeAwarePadding).
+            modifier = modifier.imeAwarePadding()
         ) {
 
             headline?.let {

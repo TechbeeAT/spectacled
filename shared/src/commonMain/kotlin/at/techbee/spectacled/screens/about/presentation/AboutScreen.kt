@@ -7,6 +7,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
+import at.techbee.spectacled.theme.AppTheme
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -32,7 +34,8 @@ fun AboutScreen(
     val state by viewModel.state.collectAsState()
     val screens = listOf(
         AboutTabDestination.Jtx,
-        AboutTabDestination.Releasenotes,
+        AboutTabDestination.Sponsor,
+        AboutTabDestination.ReleaseNotes,
         AboutTabDestination.Contributors,
         AboutTabDestination.Libraries
     )
@@ -64,7 +67,8 @@ fun AboutScreen(
         ) { page ->
             when (page) {
                 screens.indexOf(AboutTabDestination.Jtx) -> AboutApp(viewModel.spectacledVariant)
-                screens.indexOf(AboutTabDestination.Releasenotes) -> GitHubReleases(state.gitHubReleases)
+                screens.indexOf(AboutTabDestination.Sponsor) -> SponsorApp(viewModel.spectacledVariant)
+                screens.indexOf(AboutTabDestination.ReleaseNotes) -> GitHubReleases(state.gitHubReleases)
                 screens.indexOf(AboutTabDestination.Contributors) -> GitHubContributors(state.gitHubContributors)
                 screens.indexOf(AboutTabDestination.Libraries) -> AboutLibraries(state.libraries)
             }
@@ -77,12 +81,16 @@ fun AboutScreen(
 @Preview
 @Composable
 private fun AboutScreen_Preview() {
-    AboutScreen(
-        AboutViewModel(
-            client = HttpClientFactory.create(getPlatformEngine()),
-            spectacledVariant = SpectacledVariant.JOURNALS
-        )
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            AboutScreen(
+                AboutViewModel(
+                    client = HttpClientFactory.create(getPlatformEngine()),
+                    spectacledVariant = SpectacledVariant.JOURNALS
+                )
+            )
+        }
+    }
 }
 
 

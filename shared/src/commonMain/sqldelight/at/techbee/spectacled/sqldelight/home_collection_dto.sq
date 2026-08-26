@@ -9,15 +9,16 @@ CREATE TABLE HomeCollectionDto (
 getAllHomeCollections:
 SELECT * FROM HomeCollectionDto;
 
-getHomeCollectionsByPrincipal:
-SELECT * FROM HomeCollectionDto WHERE principalId = ?;
-
 getHomeCollectionsByUrl:
 SELECT * FROM HomeCollectionDto WHERE url = ?;
 
+/**
+getHomeCollectionsByPrincipal:
+SELECT * FROM HomeCollectionDto WHERE principalId = ?;
+
 getHomeCollectionsById:
 SELECT * FROM HomeCollectionDto WHERE id = ?;
-
+*/
 
 updateHomeCollection:
 UPDATE HomeCollectionDto

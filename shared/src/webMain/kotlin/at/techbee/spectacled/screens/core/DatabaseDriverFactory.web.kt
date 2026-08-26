@@ -20,7 +20,9 @@ fun jsWorker(): Worker =
     // js() and wasmJs() browser targets automatically - shared/src/webMain/resources
     // does NOT get bundled into the final app the same way, so it has to live in the
     // app module, not here, even though this factory itself is shared code.
-    js("""new Worker("/spectacledSqlWorker.js")""")
+    // Relative (no leading slash) so it resolves against the page's base URL and works whether the
+    // app is served at the site root or under a subpath (e.g. /journals/ on GitHub Pages).
+    js("""new Worker("spectacledSqlWorker.js")""")
 
 actual class DatabaseDriverFactory {
 

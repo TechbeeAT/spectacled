@@ -12,15 +12,16 @@ import spectacled.shared.generated.resources.last_modified
 import spectacled.shared.generated.resources.summary
 
 enum class ListSortedBy(
-    val displayName: StringResource
+    val displayName: StringResource,
+    val defaultAsc: Boolean
 ) {
-    CREATED(Res.string.created),
-    LAST_MODIFIED(Res.string.last_modified),
-    DATE(Res.string.date),
-    START(Res.string.date_start),
-    DUE(Res.string.date_due),
-    SUMMARY(Res.string.summary),
-    DRAGANDDROP(Res.string.drag_and_drop);
+    CREATED(Res.string.created, false),
+    LAST_MODIFIED(Res.string.last_modified, false),
+    DATE(Res.string.date, false),
+    START(Res.string.date_start, false),
+    DUE(Res.string.date_due, false),
+    SUMMARY(Res.string.summary, true),
+    DRAGANDDROP(Res.string.drag_and_drop, true);
 
     companion object {
         fun entriesFor(spectacledVariant: SpectacledVariant): List<ListSortedBy> {

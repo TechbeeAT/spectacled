@@ -14,7 +14,9 @@ actual class PlatformShareManager(private val context: Context): ShareManager {
             putExtra(Intent.EXTRA_SUBJECT, content.subject)
             putExtra(Intent.EXTRA_TEXT, content.body)
         }
-        val chooser = Intent.createChooser(intent, content.subject)
+        val chooser = Intent.createChooser(intent, content.subject).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         context.startActivity(chooser)
     }
 }

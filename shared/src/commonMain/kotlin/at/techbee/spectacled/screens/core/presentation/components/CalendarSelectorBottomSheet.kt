@@ -17,8 +17,8 @@ import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.done
+import spectacled.shared.generated.resources.select_calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +28,7 @@ fun CalendarSelectorBottomSheet(
     homeCollections: List<HomeCollection>,
     calendars: List<Calendar>,
     selectedCalendarId: Long?,
+    headlineText: String = stringResource(Res.string.select_calendar),
     onCalendarIdSelected: (Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -35,7 +36,7 @@ fun CalendarSelectorBottomSheet(
     BottomSheetWithMenu(
         sheetState = sheetState,
         onDismiss = { onDismiss() },
-        headline = "Select calendar/folder",
+        headline = headlineText,
         menuActionRight = {
             TextButton(
                 onClick = { onDismiss() },

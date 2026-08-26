@@ -16,7 +16,6 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.no_date
 

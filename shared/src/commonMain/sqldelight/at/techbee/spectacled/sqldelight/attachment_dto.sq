@@ -20,6 +20,7 @@ SELECT * FROM AttachmentDto WHERE icalEntryId = ?;
 getAttachmentsForEntries:
 SELECT * FROM AttachmentDto WHERE icalEntryId IN ?;
 
+/**
 getAttachmentById:
 SELECT * FROM AttachmentDto WHERE id = ?;
 
@@ -31,6 +32,7 @@ SELECT * FROM AttachmentDto WHERE remoteUrl = ?;
 
 getDirtyAttachmentsByEntry:
 SELECT * FROM AttachmentDto WHERE icalEntryId = ? AND syncState != 'SYNCED';
+*/
 
 insertAttachment:
 INSERT OR REPLACE INTO AttachmentDto (
@@ -46,11 +48,13 @@ INSERT OR REPLACE INTO AttachmentDto (
     syncErrorMessage
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
+/**
 updateAttachmentSyncState:
 UPDATE AttachmentDto SET syncState = ?, syncErrorMessage = ? WHERE id = ?;
 
 updateAttachmentRemoteUrl:
 UPDATE AttachmentDto SET remoteUrl = ?, syncState = ? WHERE id = ?;
+*/
 
 deleteAttachment:
 DELETE FROM AttachmentDto WHERE id = ?;

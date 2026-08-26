@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.data.webdav
 
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.CalendarSyncError
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
@@ -30,11 +31,15 @@ sealed class DiscoverCalendarsResult {
     data class Failed(val status: HttpStatusCode, val message: String, val details: String? = null) : DiscoverCalendarsResult()
 }
 
+// MultigetResourceHrefETagResult and MultigetSyncCollectionResult failures are persisted by
+// SyncCoordinator as CalendarSyncStatus, so they carry a CalendarSyncError code instead of a
+// message: the text is resolved at render time and follows the current language. The other
+// result types feed transient UI state, where an already-localized message is fine.
 sealed class MultigetResourceHrefETagResult {
     data class Success(val hrefs: Map<Url, String?>, val syncToken: String?) : MultigetResourceHrefETagResult()
     data object NotFound : MultigetResourceHrefETagResult()
     data object NotAuthorized : MultigetResourceHrefETagResult()
-    data class Failed(val status: HttpStatusCode, val message: String, val details: String? = null) : MultigetResourceHrefETagResult()
+    data class Failed(val status: HttpStatusCode, val error: CalendarSyncError, val details: String? = null) : MultigetResourceHrefETagResult()
 }
 
 sealed class MultigetResourceResult {
@@ -48,7 +53,7 @@ sealed class MultigetSyncCollectionResult {
     data class Success(val syncToken: String?, val hrefs: Map<Url, String?>) : MultigetSyncCollectionResult()
     data object NotFound : MultigetSyncCollectionResult()
     data object NotAuthorized : MultigetSyncCollectionResult()
-    data class Failed(val status: HttpStatusCode, val message: String, val details: String? = null) : MultigetSyncCollectionResult()
+    data class Failed(val status: HttpStatusCode, val error: CalendarSyncError, val details: String? = null) : MultigetSyncCollectionResult()
 }
 
 sealed class UpsertCalendarResult {

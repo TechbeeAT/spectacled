@@ -8,8 +8,7 @@ import io.ktor.client.request.get
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
-//TODO: Change for release!!!
-private const val BASE_URL = "https://api.github.com/repos/TechbeeAT/jtxBoard/contributors"
+private const val BASE_URL = "https://api.github.com/repos/TechbeeAT/spectacled/contributors"
 
 class KtorRemoteGitHubContributorDataSource(
     val client: HttpClient
