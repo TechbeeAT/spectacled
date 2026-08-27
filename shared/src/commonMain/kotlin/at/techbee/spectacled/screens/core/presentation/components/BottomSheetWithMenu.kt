@@ -77,13 +77,16 @@ fun BottomSheetWithMenu(
         }
     }
 
-
     ModalBottomSheet(
         onDismissRequest = { onDismiss() },
         sheetState = sheetState,
-        dragHandle = header,
+        dragHandle = if (gesturesEnabled) header else null,
         sheetGesturesEnabled = gesturesEnabled
     ) {
+
+        if (!gesturesEnabled)
+            header()
+
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -159,3 +162,34 @@ private fun BottomSheetWithMenu_Headline_Preview() {
         }
     }
 }
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+private fun BottomSheetWithMenu_GesturesDisabled_Preview() {
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+
+            BottomSheetWithMenu(
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
+                headline = "Headline",
+                showLoadingIndicator = true,
+                menuActionRight = {
+                    TextButton(
+                        onClick = { },
+                    ) {
+                        Text("Action")
+                    }
+
+                },
+                gesturesEnabled = false,
+                onDismiss = {}
+            ) {
+                Text("Sample content")
+            }
+        }
+    }
+}
+
