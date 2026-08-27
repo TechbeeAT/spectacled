@@ -449,12 +449,6 @@ fun AddAccountScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val trimmedServer = server.trim()
-            val isInsecure = trimmedServer.startsWith("http://")
-            val inferred = if (server.isBlank() && username.contains("@")) {
-                val domain = username.substringAfter("@").trim()
-                if (domain.isNotEmpty()) "https://$domain" else null
-            } else null
 
             OutlinedTextField(
                 value = server,
