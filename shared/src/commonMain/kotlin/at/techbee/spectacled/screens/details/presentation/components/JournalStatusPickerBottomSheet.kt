@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
@@ -63,7 +62,7 @@ fun JournalStatusPickerBottomSheet(
 
                 statusSet.forEach { selectableStatus ->
                     FilterChip(
-                        leadingIcon = { Icon(selectableStatus.vectorIcon!!, null) },
+                        leadingIcon = { selectableStatus.StatusIcon(null) },
                         selected = selectableStatus == status,
                         onClick = { onStatusUpdated(selectableStatus) },
                         label = { Text(stringResource(selectableStatus.stringRes)) }

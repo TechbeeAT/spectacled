@@ -1,19 +1,15 @@
 package at.techbee.spectacled.screens.core.domain
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Cancel
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Unpublished
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
+import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import io.ktor.http.Url
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -229,16 +225,15 @@ data class IcalEntry(
 
 enum class Status(
     val rfcName: String,
-    val stringRes: StringResource,
-    val vectorIcon: ImageVector?
+    val stringRes: StringResource
 ) {
-    FINAL("FINAL", Res.string.status_final, Icons.Outlined.CheckCircle),
-    DRAFT("DRAFT", Res.string.status_draft, Icons.Outlined.Unpublished),
+    FINAL("FINAL", Res.string.status_final),
+    DRAFT("DRAFT", Res.string.status_draft),
 
-    NEEDS_ACTION("NEEDS-ACTION", Res.string.status_needs_action, null),
-    IN_PROCESS("IN-PROCESS", Res.string.status_in_process, null),
-    COMPLETED("COMPLETED", Res.string.status_completed, null),
-    CANCELLED("CANCELLED", Res.string.status_cancelled, Icons.Outlined.Cancel);
+    NEEDS_ACTION("NEEDS-ACTION", Res.string.status_needs_action),
+    IN_PROCESS("IN-PROCESS", Res.string.status_in_process),
+    COMPLETED("COMPLETED", Res.string.status_completed),
+    CANCELLED("CANCELLED", Res.string.status_cancelled);
 
     companion object {
         fun entriesForComponent(calendarComponent: CalendarComponent): List<Status> {
@@ -250,7 +245,10 @@ enum class Status(
         }
     }
 
-
+    @Composable
+    fun StatusIcon(progress: Long?) {
+        return StatusWithProgressIcon(this, progress)
+    }
 }
 
 enum class Classification {

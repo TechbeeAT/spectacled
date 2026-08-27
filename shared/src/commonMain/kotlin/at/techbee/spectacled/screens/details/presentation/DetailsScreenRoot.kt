@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
@@ -29,7 +28,6 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Restore
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,7 +35,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -59,7 +56,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.Platforms
@@ -72,6 +68,7 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.core.rememberFilePicker
 import at.techbee.spectacled.screens.core.rememberImagePicker
@@ -366,44 +363,22 @@ fun DetailsScreenRoot(
                                 )
                             }
 
-                            if (detailsState.icalEntry.isJournal()) {
+                            if (detailsState.icalEntry.isTask() || detailsState.icalEntry.isJournal()) {
 
                                 IconButton(
-                                    onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.JOURNAL_STATUS_PICKER)) },
+                                    onClick = {
+                                        if (detailsState.icalEntry.isTask())
+                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.TASK_STATUS_PICKER))
+                                        else
+                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.JOURNAL_STATUS_PICKER))
+                                    },
                                     enabled = detailsState.allowEditing() && !detailsState.isLoading
                                 ) {
-                                    Icon(
-                                        imageVector = detailsState.icalEntry.status?.vectorIcon ?: Status.FINAL.vectorIcon!!,
-                                        contentDescription = stringResource(Res.string.more),
-                                        tint = when (detailsState.icalEntry.status) {
-                                            Status.DRAFT -> MaterialTheme.colorScheme.error
-                                            Status.CANCELLED -> MaterialTheme.colorScheme.onSurface
-                                            else -> LocalContentColor.current
-                                        }
+                                    StatusWithProgressIcon(
+                                        status = detailsState.icalEntry.status
+                                            ?: if(detailsState.icalEntry.isTask()) Status.NEEDS_ACTION else Status.FINAL,
+                                        percent = detailsState.icalEntry.percentComplete
                                     )
-                                }
-                            }
-
-                            if (detailsState.icalEntry.isTask()) {
-
-                                IconButton(
-                                    onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.TASK_STATUS_PICKER)) },
-                                    enabled = detailsState.allowEditing() && !detailsState.isLoading
-                                ) {
-
-                                    Box(contentAlignment = Alignment.Center) {
-
-                                        Text(
-                                            text = detailsState.icalEntry.percentComplete.toString(),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontSize = 8.sp
-                                        )
-
-                                        CircularProgressIndicator(
-                                            progress = { detailsState.icalEntry.percentComplete.toFloat() / 100 },
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
                                 }
                             }
 
@@ -522,7 +497,7 @@ fun DetailsScreenRoot(
                 }
             },
             // Drop the bottom safe-area inset so the content fills to the screen edge and there
-            // is no empty strip (the "white gap") over the iOS home indicator. In landscape we
+            // is no empty strip (the "white gap") over the iOS home indicator. In landscape, we
             // additionally drop the horizontal insets so the content fills the sides; the top bar
             // keeps its own vertical insets in either case.
             contentWindowInsets = if (removeSafeAreaPaddingValues)

@@ -97,6 +97,7 @@ fun TaskStatusProgressPickerBottomSheet(
 
                 statusSet.forEach { selectableStatus ->
                     FilterChip(
+                        leadingIcon = { selectableStatus.StatusIcon(null) },
                         selected = selectableStatus == status,
                         onClick = { onStatusUpdated(selectableStatus) },
                         label = { Text(stringResource(selectableStatus.stringRes)) }

@@ -243,8 +243,8 @@ fun DetailsScreen(
 
                     AnimatedVisibility(state.icalEntry.status in listOf(Status.DRAFT, Status.CANCELLED)) {
                         MetaInfoCard(
-                            icon = state.icalEntry.status?.vectorIcon ?: Status.DRAFT.vectorIcon!!,
-                            iconContentDescription = stringResource(state.icalEntry.status?.stringRes ?: Status.DRAFT.stringRes),
+                            icon = null,
+                            iconContentDescription = null,
                             text = stringResource(state.icalEntry.status?.stringRes ?: Status.DRAFT.stringRes)
                         )
                     }

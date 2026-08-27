@@ -164,8 +164,8 @@ fun ListItem(
 
                                 if (icalEntry.status in listOf(Status.CANCELLED, Status.DRAFT)) {
                                     MetaInfoCard(
-                                        icon = icalEntry.status?.vectorIcon,
-                                        iconContentDescription = icalEntry.status?.stringRes?.let { stringResource(it) },
+                                        icon = null,
+                                        iconContentDescription = null,
                                         text = stringResource(icalEntry.status?.stringRes ?: Status.FINAL.stringRes)
                                     )
                                 }

@@ -119,9 +119,7 @@ fun ListFilterRow(
                 onClick = {
                     statusDropdownExpanded = !statusDropdownExpanded
                 },
-                leadingIcon = {
-                    Icon(Status.FINAL.vectorIcon!!, stringResource(Res.string.status))
-                },
+                leadingIcon = { listFilterCriteria.filterStatus?.StatusIcon(0) ?: Status.DRAFT.StatusIcon(0) },
                 trailingIcon = {
                     if (listFilterCriteria.filterStatus != null)
                         IconButton(
