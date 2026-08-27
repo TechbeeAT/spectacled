@@ -163,7 +163,7 @@ fun SpectacledApp(
                         LaunchedEffect(icalEntryId, calendarId, initialDescription, initialAction) {
                             if (initialDescription != null || icalEntryId == 0L)
                                 detailsViewModel.loadNew(calendarId = calendarId, initialDescription = initialDescription, detailsInitialAction = initialAction)
-                            else if(detailsViewModel.state.value.icalEntry.id != icalEntryId)
+                            else
                                 detailsViewModel.load(icalEntryId)
                         }
 
