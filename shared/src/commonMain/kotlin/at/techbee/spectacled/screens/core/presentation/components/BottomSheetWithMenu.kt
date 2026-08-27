@@ -81,9 +81,17 @@ fun BottomSheetWithMenu(
     ModalBottomSheet(
         onDismissRequest = { onDismiss() },
         sheetState = sheetState,
-        dragHandle = header,
+        // Material3 wraps whatever is passed as dragHandle in a clickable that dismisses an
+        // expanded sheet - and that clickable is not covered by sheetGesturesEnabled. So when
+        // gestures are disabled the header is rendered as ordinary sheet content instead, and
+        // tapping the empty space next to the menu actions can no longer close the sheet by
+        // accident. The only ways out are then the menu actions and (on wide screens) the scrim.
+        dragHandle = if (gesturesEnabled) header else null,
         sheetGesturesEnabled = gesturesEnabled
     ) {
+        if (!gesturesEnabled)
+            header()
+
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
