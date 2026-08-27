@@ -12,10 +12,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -241,7 +242,7 @@ private fun CreateOrUpdateCalendarBottomSheet_create_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             CreateOrUpdateCalendarBottomSheet(
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
                 homeCollection = HomeCollection.getHomeCollectionForPreview(),
                 calendar = Calendar.getCalendarForPreview(),
@@ -263,7 +264,7 @@ private fun CreateOrUpdateCalendarBottomSheet_update_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             CreateOrUpdateCalendarBottomSheet(
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
                 homeCollection = HomeCollection.getHomeCollectionForPreview(),
                 calendar = Calendar.getCalendarForPreview().copy(id = 1L),

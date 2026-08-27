@@ -20,10 +20,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,7 +70,7 @@ fun DateTimeCard(
     if (showDatePickerBottomSheet) {
         DatePickerBottomSheet(
             icsDateTime = icsDateTime ?: if (initializeWithDateOnly) IcsDateTime.today() else IcsDateTime.todayAtStartOfDay(),
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
             allowNoDate = allowNoDate,
             selectableDates = selectableDates,
             onDateSelected = {
@@ -83,7 +84,7 @@ fun DateTimeCard(
     if (showTimePickerBottomSheet && icsDateTime != null) {
         TimePickerBottomSheet(
             icsDateTime = icsDateTime,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
             suggestedTimezones = suggestedTimezones,
             onTimeUpdated = { onIcsDateTimeUpdated(it) },
             onDismiss = { showTimePickerBottomSheet = false }

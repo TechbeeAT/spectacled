@@ -10,12 +10,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TriStateCheckbox
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -117,7 +118,7 @@ private fun TaskStatusProgressPickerBottomSheet_Preview() {
             TaskStatusProgressPickerBottomSheet(
                 status = null,
                 percentComplete = 0L,
-                sheetState = rememberModalBottomSheetState(),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 onStatusUpdated = {},
                 onProgressUpdated = {},
                 onDismiss = {}
@@ -135,7 +136,7 @@ private fun TaskStatusProgressPickerBottomSheet_inprocess_Preview() {
             TaskStatusProgressPickerBottomSheet(
                 status = Status.IN_PROCESS,
                 percentComplete = 33,
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 onStatusUpdated = {},
                 onProgressUpdated = {},
                 onDismiss = {}

@@ -19,9 +19,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -174,7 +175,7 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Idle() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             UpdatePrincipalPasswordBottomSheet(
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
                 //credentials = Credentials("https://localhost/dav", "my username", "my password"),
                 processingState = ProcessingState.Idle,
@@ -193,7 +194,7 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Processing() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             UpdatePrincipalPasswordBottomSheet(
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
                 //credentials = Credentials("https://localhost/dav", "my username", "my password"),
                 processingState = ProcessingState.Processing,
@@ -212,7 +213,7 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Error() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             UpdatePrincipalPasswordBottomSheet(
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
                 //credentials = Credentials("https://localhost/dav", "my username", "my password"),
                 processingState = ProcessingState.Error("This is an error", "Here are the details"),

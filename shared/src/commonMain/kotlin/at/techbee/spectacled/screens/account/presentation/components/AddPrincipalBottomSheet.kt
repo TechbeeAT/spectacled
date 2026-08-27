@@ -43,9 +43,10 @@ import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -465,7 +466,7 @@ fun AddAccountScreen(
                     AnimatedVisibility(inferred?.isNotBlank() == true || isInsecure) {
                         Column {
                             if(inferred?.isNotBlank() == true)
-                                Text(stringResource(Res.string.server_inferred, inferred.orEmpty()))
+                                Text(stringResource(Res.string.server_inferred, inferred))
 
                             if(isInsecure)
                                 Text(
@@ -733,7 +734,7 @@ private fun AddAccountScreen_Preview_Idle() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             AddPrincipalBottomSheet(
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                 processingState = ProcessingState.Idle,
                 isFirstAccount = true,
                 onAction = {},
@@ -751,7 +752,7 @@ private fun AddAccountScreen_Preview_Processing() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
         Scaffold {
             AddPrincipalBottomSheet(
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                 processingState = ProcessingState.Processing,
                 isFirstAccount = false,
                 onAction = {},

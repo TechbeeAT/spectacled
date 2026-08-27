@@ -46,7 +46,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -230,7 +230,7 @@ fun DetailsScreenRoot(
             DetailsSheetOrDialog.JOURNAL_STATUS_PICKER ->
                 JournalStatusPickerBottomSheet(
                     status = detailsState.icalEntry.status,
-                    sheetState = rememberModalBottomSheetState(),
+                    sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                     onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
@@ -238,7 +238,7 @@ fun DetailsScreenRoot(
                 TaskStatusProgressPickerBottomSheet(
                     status = detailsState.icalEntry.status,
                     percentComplete = detailsState.icalEntry.percentComplete,
-                    sheetState = rememberModalBottomSheetState(),
+                    sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                     onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
                     onProgressUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateProgress(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
@@ -277,7 +277,7 @@ fun DetailsScreenRoot(
 
         if(detailsState.icalEntry.calendarId == 0L && detailsState.isInitialized) {
             CalendarSelectorBottomSheet(
-                sheetState = rememberModalBottomSheetState(confirmValueChange = { it != SheetValue.Hidden }),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, confirmValueChange = { it != SheetValue.Hidden }),
                 principals = detailsState.allPrincipals,
                 homeCollections = detailsState.allHomeCollections,
                 calendars = detailsState.allCalendars.filter { it.canWriteContent() },

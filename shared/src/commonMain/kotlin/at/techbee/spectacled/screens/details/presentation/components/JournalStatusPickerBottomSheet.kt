@@ -9,9 +9,10 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,7 +83,7 @@ private fun JournalStatusPickerBottomSheet_Preview() {
         Scaffold {
             JournalStatusPickerBottomSheet(
                 status = Status.FINAL,
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 onStatusUpdated = {},
                 onDismiss = {}
             )
