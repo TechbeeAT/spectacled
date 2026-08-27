@@ -491,10 +491,7 @@ fun ListScreenRoot(
                     }
 
                 }
-                CustomBottomSnackbarHost(
-                    snackbarHostState = snackbarHostState,
-                    keepSpaceForFAB = true
-                )
+                CustomBottomSnackbarHost(snackbarHostState = snackbarHostState)
             }
         }
     }

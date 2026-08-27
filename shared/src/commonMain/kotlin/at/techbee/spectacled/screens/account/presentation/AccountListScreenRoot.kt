@@ -21,10 +21,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -68,11 +69,11 @@ fun AccountListScreenRoot(
 
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val aboutBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val addPrincipalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val createCalendarBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val updatePrincipalPasswordBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val settingsBottomSheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val aboutBottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val addPrincipalBottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val createCalendarBottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val updatePrincipalPasswordBottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val settingsBottomSheet = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     val scope = rememberCoroutineScope()
 
 
@@ -228,10 +229,7 @@ fun AccountListScreenRoot(
                 modifier = Modifier.fillMaxSize()
             )
 
-            CustomBottomSnackbarHost(
-                snackbarHostState = snackbarHostState,
-                keepSpaceForFAB = true
-            )
+            CustomBottomSnackbarHost(snackbarHostState = snackbarHostState)
         }
 
 

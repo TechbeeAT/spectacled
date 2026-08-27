@@ -548,10 +548,7 @@ fun DetailsScreenRoot(
                     onEditorFocusChanged = { isEditorFocused = it }
                 )
 
-                CustomBottomSnackbarHost(
-                    snackbarHostState = snackbarHostState,
-                    keepSpaceForFAB = false
-                )
+                CustomBottomSnackbarHost(snackbarHostState = snackbarHostState)
             }
         }
     }

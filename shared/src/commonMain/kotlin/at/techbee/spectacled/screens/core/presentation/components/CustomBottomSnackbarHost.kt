@@ -18,12 +18,11 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun CustomBottomSnackbarHost(
     snackbarHostState: SnackbarHostState,
-    keepSpaceForFAB: Boolean
 ) {
     SnackbarHost(snackbarHostState) {
         Snackbar(
-            modifier = Modifier.padding(bottom = if(keepSpaceForFAB) 88.dp else 20.dp),
-            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.padding(bottom = 112.dp),
+            shape = RoundedCornerShape(16.dp),
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ) {
@@ -36,33 +35,15 @@ fun CustomBottomSnackbarHost(
 
 @Preview
 @Composable
-private fun CustomBottomSnackbarHost_space_for_FAB_Preview() {
+private fun CustomBottomSnackbarHost_Preview() {
     val snackbarHostState = remember { SnackbarHostState() }
 
     MaterialTheme {
         CustomBottomSnackbarHost(
-            snackbarHostState = snackbarHostState,
-            keepSpaceForFAB = true
+            snackbarHostState = snackbarHostState
         )
     }
     LaunchedEffect(Unit) {
         snackbarHostState.showSnackbar("This is a snackbar")
     }
 }
-
-@Preview
-@Composable
-private fun CustomBottomSnackbarHost_no_space_for_FAB_Preview() {
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    MaterialTheme {
-        CustomBottomSnackbarHost(
-            snackbarHostState = snackbarHostState,
-            keepSpaceForFAB = false
-        )
-    }
-    LaunchedEffect(Unit) {
-        snackbarHostState.showSnackbar("This is a snackbar")
-    }
-}
-
