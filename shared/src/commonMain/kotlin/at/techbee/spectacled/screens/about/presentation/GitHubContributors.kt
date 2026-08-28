@@ -2,18 +2,22 @@ package at.techbee.spectacled.screens.about.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.Button
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -30,19 +34,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.about.domain.GitHubContributor
-import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.AppTheme
 import coil3.compose.AsyncImage
 import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.about_code_contributions
+import spectacled.shared.generated.resources.about_code_contributions_info
 import spectacled.shared.generated.resources.about_contributors
+import spectacled.shared.generated.resources.about_translate_on_weblate
+import spectacled.shared.generated.resources.about_translations
+import spectacled.shared.generated.resources.about_translations_info
 import spectacled.shared.generated.resources.more_on_github
 
 
-//TODO: Change for Release!!!
-private const val GITHUB_CONTRIBUTORS_URL = "https://github.com/TechbeeAT/jtxBoard/graphs/contributors"
-
+private const val GITHUB_CONTRIBUTORS_URL = "https://github.com/TechbeeAT/spectacled/graphs/contributors"
+private const val WEBLATE_URL = "https://hosted.weblate.org/engage/spectacled/"
 
 
 @Composable
@@ -52,7 +59,7 @@ fun GitHubContributors(
     val uriHandler = LocalUriHandler.current
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
     ) {
         Text(
             text = stringResource(Res.string.about_contributors),
@@ -61,50 +68,116 @@ fun GitHubContributors(
             modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp, start = 8.dp, end = 8.dp)
         )
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize()
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
         ) {
+            Column(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
 
-            itemsIndexed(contributors) { index, contributor ->
-                SpecialRoundedCard(
-                    isFirst = index == 0,
-                    isLast = index == contributors.lastIndex,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Translate,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Text(
+                        text = stringResource(Res.string.about_translations),
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                }
+
+                Text(
+                    text = stringResource(Res.string.about_translations_info),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+
+                Button(
                     onClick = {
                         try {
-                            contributor.url?.let { uriHandler.openUri(it) }
+                            uriHandler.openUri(WEBLATE_URL)
                         } catch (e: Exception) {
                             Napier.w(e.stackTraceToString())
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.padding(top = 8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp).fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-
-                        AsyncImage(
-                            model = contributor.avatarUrl,
-                            contentDescription = null,
-                            placeholder = rememberVectorPainter(Icons.Outlined.Person),
-                            error = rememberVectorPainter(Icons.Outlined.Person),
-                            fallback = rememberVectorPainter(Icons.Outlined.Person),
-                            modifier = Modifier.size(80.dp).clip(CircleShape).shadow(2.dp)
-                        )
-
-                        Text(
-                            text = contributor.login,
-                            style = MaterialTheme.typography.titleSmall
-                        )
-
+                        Text(stringResource(Res.string.about_translate_on_weblate))
+                        Icon(Icons.AutoMirrored.Outlined.OpenInNew, null)
                     }
                 }
             }
+        }
 
-            item {
+        ElevatedCard {
+
+            Column(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Code,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Text(
+                        text = stringResource(Res.string.about_code_contributions),
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                }
+
+                Text(
+                    text = stringResource(Res.string.about_code_contributions_info),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.Center
+                ) {
+
+                    contributors.forEach { contributor ->
+
+                        Column(
+                            modifier = Modifier.padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+
+                            AsyncImage(
+                                model = contributor.avatarUrl,
+                                contentDescription = null,
+                                placeholder = rememberVectorPainter(Icons.Outlined.Person),
+                                error = rememberVectorPainter(Icons.Outlined.Person),
+                                fallback = rememberVectorPainter(Icons.Outlined.Person),
+                                modifier = Modifier.size(80.dp).clip(CircleShape).shadow(2.dp)
+                            )
+
+                            Text(
+                                text = contributor.login,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
+
+                    }
+                }
+
                 Button(
                     onClick = {
                         try {
@@ -124,7 +197,9 @@ fun GitHubContributors(
                     }
                 }
             }
+
         }
+
     }
 }
 

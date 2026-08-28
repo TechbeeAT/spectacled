@@ -15,6 +15,11 @@
     <string name="about_sponsor">Sponsor</string>
     <string name="about_sponsor_info">Spectacled is an open-source software for journals, notes, and tasks - built on open standards (iCalendar + CalDAV), synced to your own server, with no accounts, no proprietary backend, and no tracking. \n\nIt's maintained across Android, iOS, Web, and Desktop as one codebase, which is a lot of ongoing work for a small project. If Spectacled is useful to you, chip in whatever it's worth to you - any amount helps keep development going. \n\nThank you for supporting open source!</string>
     <string name="about_more_donation_options">More donation options</string>
+    <string name="about_translations">Translations</string>
+    <string name="about_translations_info">Spectacled is translated by the community on Weblate, a libre translation platform. \n\nYou don't need a development environment or any Git knowledge - just sign in, pick your language and start translating right in your browser. Every translation is shared by all Spectacled apps on all platforms.</string>
+    <string name="about_translate_on_weblate">Translate on Weblate</string>
+    <string name="about_code_contributions">Code</string>
+    <string name="about_code_contributions_info">Spectacled is developed in the open on GitHub - one shared Kotlin Multiplatform codebase for Android, iOS, Web and Desktop. \n\nBug reports and feature ideas are just as welcome as pull requests. Have a look at the open issues to see what is currently being worked on, or where you could jump in.</string>
     <string name="thank_you">Thank you!</string>
     <string name="paypal" translatable="false">PayPal</string>
     <string name="more_on_github">More on GitHub.com</string>
