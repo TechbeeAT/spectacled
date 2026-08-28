@@ -217,13 +217,33 @@ DEVELOPMENT_TEAM=YOUR_APPLE_TEAM_ID
 
 ---
 
+## 🌍 Translations
+
+Spectacled is translated with [Weblate](https://weblate.org/), a libre web-based
+translation platform — thanks to Weblate for hosting our translations free of charge for
+open-source projects.
+
+Help translate the apps into your language at
+**[hosted.weblate.org/projects/spectacled](https://hosted.weblate.org/projects/spectacled/)**.
+No development setup and no Git knowledge required: sign in, pick your language, and start
+translating in the browser. Weblate opens the pull requests against this repository for you.
+
+[![Translation status](https://hosted.weblate.org/widget/spectacled/multi-auto.svg)](https://hosted.weblate.org/engage/spectacled/)
+
+The source strings live in [`shared/src/commonMain/composeResources/values/strings.xml`](shared/src/commonMain/composeResources/values/strings.xml)
+and are shared by all three apps on every platform. Translations land in sibling
+`values-<lang>/strings.xml` directories — please don't edit those by hand, let Weblate
+manage them so nothing gets overwritten on the next sync.
+
+---
+
 ## Contributing
 
 Issues and pull requests are welcome — this is an open-source project and stays that way. A few starting points:
 
 - **Bug reports / feature requests:** open a [GitHub Issue](../../issues)
 - **Questions / discussion:** [GitHub Discussions](../../discussions)
-- **Translations:** not yet set up — planned via Crowdin or Weblate; watch this space
+- **Translations:** join us on [Weblate](https://hosted.weblate.org/projects/spectacled/) — see [Translations](#-translations) above
 - **Chat / updates:** Mastodon handle coming soon
 
 If you're touching CalDAV sync or iCalendar parsing, start in `shared/src/commonMain/kotlin/at/techbee/spectacled/screens/core/` — that's where the platform-independent logic lives, and it's the part every app and every platform depends on.
