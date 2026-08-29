@@ -48,7 +48,7 @@
     <string name="remove_account">Remove account</string>
     <string name="insecure_connection_warning">Warning: Insecure connection (HTTP)</string>
     <string name="insecure_connection_title">Connect to "%1$s" without encryption?</string>
-    <string name="insecure_connection_message">Your password and everything you sync will be sent in plain text — visible to anyone else on this network. Only continue if you trust the network this server is on, for example your home Wi-Fi.</string>
+    <string name="insecure_connection_message">Your password and everything you sync will be sent in plain text - visible to anyone else on this network. Only continue if you trust the network this server is on, for example your home Wi-Fi.</string>
     <string name="insecure_connection_connect_anyway">Connect anyway</string>
     <string name="create_folder">Create folder</string>
     <string name="update_folder">Update folder</string>
@@ -156,7 +156,7 @@
     <string name="add_attachment">Add attachment</string>
     <string name="attachment">Attachment</string>
     <string name="attachment_too_large">Attachment is too large to sync (max %1$d MB) and was not added.</string>
-    <string name="attachment_large_warning">Large attachment — it's embedded in the entry and re-uploaded on every edit, which some servers may reject.</string>
+    <string name="attachment_large_warning">Large attachment - it's embedded in the entry and re-uploaded on every edit, which some servers may reject.</string>
     <string name="add_photo">Add photo</string>
     <string name="add_from_gallery">Add from gallery</string>
     <string name="add_drawing">Add drawing</string>
@@ -241,7 +241,7 @@
     <string name="login_message_forbidden">Not authorized. Please check your server, username and password.</string>
 
     <string name="welcome_to_app">Welcome to %1$s</string>
-    <string name="welcome_first_account_info">Your entries live on your own CalDAV server — no account with us, no lock-in. To get started, connect the server you want to sync with.</string>
+    <string name="welcome_first_account_info">Your entries live on your own CalDAV server - no account with us, no lock-in. To get started, connect the server you want to sync with.</string>
     <string name="no_account_connected_yet">No account connected yet</string>
 
     <string name="add_account_header_info">Spectacled works with CalDAV-compatible providers. You can either sign in with an existing account or create a new account with one of our recommended providers.</string>
@@ -380,7 +380,7 @@
 
     <string name="server_inferred">Inferred: %1$s</string>
     <string name="settings_proxy_server">Proxy server</string>
-    <string name="settings_proxy_server_info">Web only. Browsers block cross-origin CalDAV (WebDAV) requests, so the web app routes them through this proxy, which adds the required CORS headers. The proxy can see your credentials in transit — prefer one you host yourself. Setup: github.com/TechbeeAT/spectacled/tree/main/server</string>
+    <string name="settings_proxy_server_info">Web only. Browsers block cross-origin CalDAV (WebDAV) requests, so the web app routes them through this proxy, which adds the required CORS headers. The proxy can see your credentials in transit - prefer one you host yourself. Setup: github.com/TechbeeAT/spectacled/tree/main/server</string>
 
     <string name="widget_configuration">Widget configuration</string>
 
