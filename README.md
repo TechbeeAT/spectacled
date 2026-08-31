@@ -47,22 +47,10 @@ Spectacled aims to close that gap: a single, standards-based app for journals, n
 - Sync runs in the background and locally caches everything, so the app stays usable offline
 - Light/dark theme, one consistent UI across every platform
 
-## Download
+## 📥 Download
 
 Every available build is listed on the download page:
-
-### 📥 [spectacled.techbee.at/download](https://spectacled.techbee.at/download/)
-
-Spectacled is under active development. Planned distribution channels:
-
-| Platform | Where                                                                                         |
-|----------|-----------------------------------------------------------------------------------------------|
-| Android  | Google Play *(link coming soon)* · [F-Droid](https://f-droid.org/) *(link coming soon)*       |
-| iOS      | Apple App Store *(link coming soon)*                                                          |
-| Web      | [spectacled.techbee.at](https://spectacled.techbee.at) *(coming soon)*                        |
-| Desktop  | Build it yourself for now — see [Building & Running](#-building--running-each-platform) below |
-
-Until then, building from source (see below) is the way to run it.
+**[spectacled.techbee.at/download](https://spectacled.techbee.at/download/)**
 
 ---
 
