@@ -18,6 +18,7 @@ import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.PendingRemoteFileDeletion
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
@@ -379,6 +380,7 @@ private class FakeRemote(
     override suspend fun uploadFile(targetUrl: Url, bytes: ByteArray, mimeType: String?, credentials: Credentials?) = HttpStatusCode.Created
     override suspend fun downloadFile(sourceUrl: Url, credentials: Credentials?): ByteArray =
         throw AssertionError("downloadFile not expected in a sync test")
+    override suspend fun deleteFile(targetUrl: Url, credentials: Credentials?) = HttpStatusCode.NoContent
 }
 
 private data class SyncMetadataUpdate(val etag: String?, val href: Url?, val syncState: SyncState?, val id: Long)
@@ -433,6 +435,11 @@ private class FakeIcalEntryRepository(
     override suspend fun deleteTrashed(cutoffDateTime: IcsDateTime) = TODO()
     override suspend fun deleteAttachment(id: Long) = TODO()
     override suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment> = TODO()
+    override suspend fun enqueueRemoteFileDeletions(calendarId: Long, remoteUrls: List<String>) = TODO()
+    override suspend fun deletePendingRemoteFileDeletion(id: Long) = TODO()
+
+    // Drained on every sync - return nothing so the sync path issues no remote deletions.
+    override suspend fun getPendingRemoteFileDeletions(calendarId: Long): List<PendingRemoteFileDeletion> = emptyList()
 }
 
 private class FakeCalendarRepository : CalendarRepository {
