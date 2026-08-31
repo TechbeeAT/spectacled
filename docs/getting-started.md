@@ -52,7 +52,7 @@ used with Spectacled Tasks. If you're picking a host yourself, confirm
 On first launch, Spectacled asks for exactly one thing: where your data should
 live. A welcome sheet appears over the app with two options.
 
-![App welcome screen](screenshots/s1_add_account.png)
+![App welcome screen](screenshots/s1_add_account_280.png)
 
 - **Option 1 - "Have an account?"** connects an existing CalDAV account.
 - **Option 2 - "Need an account?"** shows a short list of providers that work
@@ -69,7 +69,7 @@ Tap **"Need an account?"**. Spectacled shows providers grouped into categories -
 Nextcloud providers, self-hosted solutions, and, in Spectacled Tasks, email
 providers with CalDAV support.
 
-![Providers screen](screenshots/s2_providers.png)
+![Providers screen](screenshots/s2_providers_280.png)
 
 Each provider card carries badges summarising what matters at a glance: where
 it's hosted, what it's built on, whether there's a free plan. These are
@@ -94,7 +94,7 @@ chose, and return to Spectacled.
 
 Back in the app, tap **Back**, then **"Have an account?"**.
 
-![Login screen](screenshots/s3_login.png)
+![Login screen](screenshots/s3_login_280.png)
 
 There are three fields, and you often only need two of them:
 
@@ -131,7 +131,7 @@ unencrypted connection unless you genuinely know why you're doing it.
 A new account usually has nowhere to put notes yet. On the **Accounts** screen,
 open the **⋮** menu on your account and choose **Create folder**.
 
-![Create folder screen](screenshots/s4_create_folder.png)
+![Create folder screen](screenshots/s4_create_folder_280.png)
 
 - **Folder** - the name, and the only required field.
 - **Description** - optional.
@@ -157,7 +157,7 @@ permissions with your provider.
 Tap the new folder to open it, then tap **Add note** (or **Add journal** /
 **Add task**, depending on which app you're using).
 
-![Add entry screen](screenshots/s5_add_entry.png)
+![Add entry screen](screenshots/s5_add_entry_280.png)
 
 Type a summary at the top and your text below it. To tag the entry, use the
 label icon in the bottom bar to open the category selector.
