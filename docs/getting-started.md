@@ -9,8 +9,21 @@ This guide takes you from a freshly installed app to your first saved entry.
 It takes about five minutes, most of which is creating an account with a
 provider.
 
-> **Prefer to watch?** The same walkthrough is available as a video at the top
-> of this page.
+> **Prefer to watch?** The same walkthrough is available as a video:
+> <https://youtu.be/lu-Grqnp4no>
+
+---
+
+## Install Spectacled
+
+Spectacled runs on Android, iOS, the web, and desktop. Every available build is
+listed on the download page:
+
+### 📥 [spectacled.techbee.at/download](https://spectacled.techbee.at/download/)
+
+All three apps are there — Journals, Notes, and Tasks. They install and connect
+independently, so you can use one, two, or all three. This guide uses
+**Spectacled Notes** for its examples; the steps are identical in the others.
 
 ---
 
@@ -220,8 +233,9 @@ store notes or journals.
 
 ## Next steps
 
-- Connect a second device, or the [web app](https://spectacled.techbee.at), and
-  your folders appear there automatically.
+- Connect a second device, or the web app, and your folders appear there
+  automatically — every build is on the
+  [download page](https://spectacled.techbee.at/download/).
 - Add more accounts — Spectacled handles several servers side by side.
 - Found a bug, or a server that misbehaves?
   [Open an issue](https://github.com/TechbeeAT/spectacled/issues).

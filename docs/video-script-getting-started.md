@@ -1,6 +1,7 @@
 # Getting Started with Spectacled — voice-over script
 
 **Video:** "Getting started with Spectacled" (onboarding walkthrough)
+**Published:** https://youtu.be/lu-Grqnp4no
 **Runtime target:** ~3:52
 **Example app used on screen:** Spectacled Notes
 **Example provider:** Murena Workspace
