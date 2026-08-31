@@ -52,7 +52,7 @@ used with Spectacled Tasks. If you're picking a host yourself, confirm
 On first launch, Spectacled asks for exactly one thing: where your data should
 live. A welcome sheet appears over the app with two options.
 
-<!-- screenshot: welcome sheet with both option cards -->
+![App welcome screen](screenshots/s1_add_account.png)
 
 - **Option 1 - "Have an account?"** connects an existing CalDAV account.
 - **Option 2 - "Need an account?"** shows a short list of providers that work
@@ -69,7 +69,7 @@ Tap **"Need an account?"**. Spectacled shows providers grouped into categories -
 Nextcloud providers, self-hosted solutions, and, in Spectacled Tasks, email
 providers with CalDAV support.
 
-<!-- screenshot: provider list showing the Murena Workspace card -->
+![Providers screen](screenshots/s2_providers.png)
 
 Each provider card carries badges summarising what matters at a glance: where
 it's hosted, what it's built on, whether there's a free plan. These are
@@ -94,7 +94,7 @@ chose, and return to Spectacled.
 
 Back in the app, tap **Back**, then **"Have an account?"**.
 
-<!-- screenshot: the add-account form -->
+![Login screen](screenshots/s3_login.png)
 
 There are three fields, and you often only need two of them:
 
@@ -118,7 +118,7 @@ type any address by hand.
 Tap **Add account**. Spectacled connects, asks the server what it supports, and
 lists the folders it finds. Only folders that can actually hold your entries
 appear - anything calendar-only or task-only is filtered out, which is expected
-behaviour rather than a failure.
+behavior rather than a failure.
 
 If you typed an address beginning with `http://` rather than `https://`,
 Spectacled warns you before continuing. Don't send your password over an
@@ -131,7 +131,7 @@ unencrypted connection unless you genuinely know why you're doing it.
 A new account usually has nowhere to put notes yet. On the **Accounts** screen,
 open the **⋮** menu on your account and choose **Create folder**.
 
-<!-- screenshot: create-folder sheet -->
+![Create folder screen](screenshots/s4_create_folder.png)
 
 - **Folder** - the name, and the only required field.
 - **Description** - optional.
@@ -157,7 +157,7 @@ permissions with your provider.
 Tap the new folder to open it, then tap **Add note** (or **Add journal** /
 **Add task**, depending on which app you're using).
 
-<!-- screenshot: details screen with a summary and description filled in -->
+![Add entry screen](screenshots/s5_add_entry.png)
 
 Type a summary at the top and your text below it. To tag the entry, use the
 label icon in the bottom bar to open the category selector.
