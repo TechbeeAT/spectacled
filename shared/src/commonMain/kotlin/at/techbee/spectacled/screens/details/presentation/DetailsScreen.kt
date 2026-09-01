@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
@@ -43,7 +42,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +50,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -62,6 +61,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
@@ -70,6 +70,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.Attachment
@@ -110,8 +111,10 @@ fun DetailsScreen(
     modifier: Modifier = Modifier,
     onEditorFocusChanged: (Boolean) -> Unit = {}
 ) {
-    var summaryIsFocused by rememberSaveable { mutableStateOf(false) }
-    var descriptionIsFocused by rememberSaveable { mutableStateOf(false) }
+    // Deliberately not rememberSaveable: focus itself is not restored after process death, so a
+    // saved `true` would show the formatting bar and hide the FAB with no keyboard up.
+    var summaryIsFocused by remember { mutableStateOf(false) }
+    var descriptionIsFocused by remember { mutableStateOf(false) }
 
     // Report whether a text field is being edited so the caller can hide the FAB, which would
     // otherwise sit right above the keyboard and cover the field (SwiftUI resizes the view on iOS).
@@ -147,13 +150,21 @@ fun DetailsScreen(
     val descriptionFocusRequester = remember { FocusRequester() }
     var lastFocusedField by remember { mutableStateOf<EditorField?>(null) }
 
-    // removes the keyboard when user scrolls to the top
-    val nestedScrollConnection = remember {
+    // Removes the keyboard when the user deliberately pulls down while already at the very top.
+    val nestedScrollConnection = remember(scrollState, focusManager, keyboardController) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // available.y > 0 means pulling DOWN.
-                // If we are at the top (scrollState.value <= 0) and pulling more down
-                if (available.y > 0 && scrollState.value <= 0) {
+                // available.y > 0 means pulling DOWN. Only a real finger drag counts: layout-driven
+                // scrolls arrive as NestedScrollSource.SideEffect, and on iOS the keyboard appearing
+                // makes SwiftUI resize the hosting ComposeView, which re-measures this scroll
+                // container and dispatches exactly such a scroll to bring the just-focused field
+                // back into view. Without the source check that would clear focus and close the
+                // keyboard again the instant it opened. The threshold additionally ignores the few
+                // pixels of finger drift a plain tap produces.
+                if (source == NestedScrollSource.UserInput
+                    && available.y > KEYBOARD_DISMISS_DRAG_THRESHOLD_PX
+                    && scrollState.value == 0
+                ) {
                     focusManager.clearFocus()
                     keyboardController?.hide()
                 }
@@ -164,7 +175,6 @@ fun DetailsScreen(
 
 
     Box(modifier = modifier) {
-      SelectionContainer {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -302,33 +312,7 @@ fun DetailsScreen(
                             if (it.isFocused) lastFocusedField = EditorField.SUMMARY
                         }
                         .weight(1f)
-                        .pointerInput(uriHandler) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    val event = awaitPointerEvent(PointerEventPass.Initial)
-                                    if (event.changes.any { it.changedToUp() }) {
-                                        val position = event.changes.first().position
-                                        summaryLayoutResult?.let { layoutResult ->
-                                            val offset = layoutResult.getOffsetForPosition(position)
-                                            val text = layoutResult.layoutInput.text
-                                            val range = text.getLinkAnnotations(0, text.length)
-                                                .firstOrNull { offset >= it.start && offset < it.end }
-
-                                            if (range != null) {
-                                                (range.item as? LinkAnnotation.Url)?.let { urlAnnotation ->
-                                                    try {
-                                                        uriHandler.openUri(urlAnnotation.url)
-                                                        event.changes.forEach { it.consume() }
-                                                    } catch (_: Throwable) {
-                                                        // ignore
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        .openLinkOnTap(uriHandler) { summaryLayoutResult }
                 )
 
                 if (state.icalEntry.isTask()) {
@@ -375,36 +359,8 @@ fun DetailsScreen(
                         descriptionIsFocused = it.isFocused
                         if (it.isFocused) lastFocusedField = EditorField.DESCRIPTION
                     }
-                    .pointerInput(uriHandler) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent(PointerEventPass.Initial)
-                                if (event.changes.any { it.changedToUp() }) {
-                                    val position = event.changes.first().position
-                                    descriptionLayoutResult?.let { layoutResult ->
-                                        val offset = layoutResult.getOffsetForPosition(position)
-                                        val text = layoutResult.layoutInput.text
-                                        val range = text.getLinkAnnotations(0, text.length)
-                                            .firstOrNull { offset >= it.start && offset < it.end }
-
-                                        if (range != null) {
-                                            (range.item as? LinkAnnotation.Url)?.let { urlAnnotation ->
-                                                try {
-                                                    uriHandler.openUri(urlAnnotation.url)
-                                                    event.changes.forEach { it.consume() }
-                                                } catch (_: Throwable) {
-                                                    // ignore
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    .openLinkOnTap(uriHandler) { descriptionLayoutResult }
             )
-
-
 
             AnimatedVisibility(state.icalEntry.url != null) {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -526,7 +482,6 @@ fun DetailsScreen(
 
             Spacer(modifier = Modifier.height(112.dp))  // scroll until all is above fab
         }
-      }
 
         // Formatting toolbar anchored to the bottom of the (IME-inset) content area, i.e. just above
         // the software keyboard. Shown only while an editor is focused; a tap applies the format to
@@ -597,6 +552,55 @@ private fun RecurringReadOnlyBanner(modifier: Modifier = Modifier) {
 
 /** The two rich-text editors on the details screen; used to route formatting-bar taps. */
 private enum class EditorField { SUMMARY, DESCRIPTION }
+
+/**
+ * How far the user has to pull down in one step, while already at the very top, before the keyboard
+ * is dismissed. Large enough to ignore the finger drift of an ordinary tap.
+ */
+private const val KEYBOARD_DISMISS_DRAG_THRESHOLD_PX = 16f
+
+/**
+ * Opens a [LinkAnnotation.Url] when the user taps directly on it.
+ *
+ * The tap position is validated against the laid-out text before the link is resolved:
+ * [TextLayoutResult.getOffsetForPosition] clamps out-of-bounds positions to the nearest character,
+ * so without these guards a tap in the empty area of a tall editor (the description box is at least
+ * 200.dp high) would resolve to the trailing character and open the browser instead of just placing
+ * the caret — which on iOS sends the app to the background and takes the keyboard with it.
+ */
+private fun Modifier.openLinkOnTap(
+    uriHandler: UriHandler,
+    layoutResult: () -> TextLayoutResult?
+): Modifier = this.pointerInput(uriHandler) {
+    awaitPointerEventScope {
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            val position = event.changes.firstOrNull { it.changedToUp() && !it.isConsumed }?.position
+                ?: continue
+            val result = layoutResult() ?: continue
+            val text = result.layoutInput.text
+            if (text.isEmpty()) continue
+
+            // The tap has to land inside the text block, and inside the glyph box of the character
+            // it resolves to — otherwise it is a tap on empty space, not on a link.
+            if (!Rect(Offset.Zero, result.size.toSize()).contains(position)) continue
+            val offset = result.getOffsetForPosition(position)
+            if (offset !in text.indices) continue
+            if (!result.getBoundingBox(offset).contains(position)) continue
+
+            val url = (text.getLinkAnnotations(0, text.length)
+                .firstOrNull { offset >= it.start && offset < it.end }
+                ?.item as? LinkAnnotation.Url) ?: continue
+
+            try {
+                uriHandler.openUri(url.url)
+                event.changes.forEach { it.consume() }
+            } catch (_: Throwable) {
+                // ignore
+            }
+        }
+    }
+}
 
 /**
  * Slim formatting bar (bold / italic / underline) meant to sit just above the software keyboard.
