@@ -52,7 +52,7 @@ used with Spectacled Tasks. If you're picking a host yourself, confirm
 On first launch, Spectacled asks for exactly one thing: where your data should
 live. A welcome sheet appears over the app with two options.
 
-![App welcome screen](screenshots/s1_add_account.png)
+<img src="screenshots/s1_add_account.png" width="320" alt="App welcome screen">
 
 - **Option 1 - "Have an account?"** connects an existing CalDAV account.
 - **Option 2 - "Need an account?"** shows a short list of providers that work
@@ -69,7 +69,7 @@ Tap **"Need an account?"**. Spectacled shows providers grouped into categories -
 Nextcloud providers, self-hosted solutions, and, in Spectacled Tasks, email
 providers with CalDAV support.
 
-![Providers screen](screenshots/s2_providers.png)
+<img src="screenshots/s2_providers.png" width="320" alt="Providers screen">
 
 Each provider card carries badges summarising what matters at a glance: where
 it's hosted, what it's built on, whether there's a free plan. These are
@@ -94,7 +94,7 @@ chose, and return to Spectacled.
 
 Back in the app, tap **Back**, then **"Have an account?"**.
 
-![Login screen](screenshots/s3_login.png)
+<img src="screenshots/s3_login.png" width="320" alt="Login screen">
 
 There are three fields, and you often only need two of them:
 
@@ -131,7 +131,7 @@ unencrypted connection unless you genuinely know why you're doing it.
 A new account usually has nowhere to put notes yet. On the **Accounts** screen,
 open the **⋮** menu on your account and choose **Create folder**.
 
-![Create folder screen](screenshots/s4_create_folder.png)
+<img src="screenshots/s4_create_folder.png" width="320" alt="Create folder screen">
 
 - **Folder** - the name, and the only required field.
 - **Description** - optional.
@@ -157,7 +157,7 @@ permissions with your provider.
 Tap the new folder to open it, then tap **Add note** (or **Add journal** /
 **Add task**, depending on which app you're using).
 
-![Add entry screen](screenshots/s5_add_entry.png)
+<img src="screenshots/s5_add_entry.png" width="320" alt="Add entry screen">
 
 Type a summary at the top and your text below it. To tag the entry, use the
 label icon in the bottom bar to open the category selector.
@@ -193,18 +193,18 @@ Spectacled, your entries stay exactly where they already are.
 
 ## If something goes wrong
 
-| What you see                                                   | What it usually means                                                                                                                                                      |
-|----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Not authorized**                                             | Wrong username or password - or two-factor authentication is enabled and you need an app password (see step 3).                                                            |
-| **Not found**                                                  | The server address is wrong, or the account has no CalDAV endpoint at that address. Try the **⋮** menu's ready-made address for your provider.                             |
-| **No compatible folders/calendars found**                      | The server has no collection that can store this app's entries. On a server without `VJOURNAL` support, Notes and Journals will find nothing even though Tasks might work. |
-| **Request error**                                              | Check your server, username, and password.                                                                                                                                 |
-| **Connection error / Connection timed out**                    | Network problem, or the server is unreachable.                                                                                                                             |
-| **Insufficient access rights to create a new folder/calendar** | Your account can read but not create collections here.                                                                                                                     |
-| **Warning: Insecure connection (HTTP)**                        | The address starts with `http://`. Use `https://` wherever your server supports it.                                                                                        |
-| **Sync problem** on a folder card                              | Tap the folder's sync indicator for the specific error and technical detail.                                                                                               |
-| **Read only** on a folder                                      | The server grants you read access only; entries there can't be edited.                                                                                                     |
-| **Credentials not found**                                      | Remove the account and add it again.                                                                                                                                       |
+| What you see                                                   | What it usually means                                                                                                                                |
+|----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Not authorized**                                             | Wrong username or password - or two-factor authentication is enabled and you need an app password (see step 3).                                      |
+| **Not found**                                                  | The server address is wrong, or the account has no CalDAV endpoint at that address. Try the **⋮** menu's ready-made address for your provider.       |
+| **No compatible folders/calendars found**                      | The server has no collection that can store this app's entries. On a server without `VJOURNAL` support, Notes and Journals will find nothing.       |
+| **Request error**                                              | Check your server, username, and password.                                                                                                           |
+| **Connection error / Connection timed out**                    | Network problem, or the server is unreachable.                                                                                                       |
+| **Insufficient access rights to create a new folder/calendar** | Your account can read but not create collections here.                                                                                               |
+| **Warning: Insecure connection (HTTP)**                        | The address starts with `http://`. Use `https://` wherever your server supports it.                                                                  |
+| **Sync problem** on a folder card                              | Tap the folder's sync indicator for the specific error and technical detail.                                                                         |
+| **Read only** on a folder                                      | The server grants you read access only; entries there can't be edited.                                                                               |
+| **Credentials not found**                                      | Remove the account and add it again.                                                                                                                 |
 
 To force a sync at any time, use the refresh icon in a list's top bar, or
 **Refresh all** from the **⋮** menu on the account. **Reload folders** re-runs
