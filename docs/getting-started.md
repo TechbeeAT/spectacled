@@ -84,7 +84,7 @@ email-provider category doesn't appear there at all.
 > on the screen itself and helps fund development. Recommendations are not
 > determined by those agreements.
 
-To follow this guide, tap **Murena Workspace**. Your browser opens Murena's
+To follow this guide, tap **[Murena Workspace](https://murena.com/workspace/partner/techbee/)**. Your browser opens Murena's
 sign-up page. Create your account there, note the username and password you
 chose, and return to Spectacled.
 
