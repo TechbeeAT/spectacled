@@ -61,7 +61,7 @@ fun SplashScreen(
                 modifier = Modifier
                     .size(size)
                     .clip(CircleShape)
-                    .background(spectacledVariant.themeSeedColor),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
 
@@ -79,7 +79,7 @@ fun SplashScreen(
         text?.let {
             Text(
                 text = it,
-                color = spectacledVariant.themeSeedColor,
+                color = MaterialTheme.colorScheme.primary,
                 fontStyle = FontStyle.Italic,
                 modifier = Modifier
                     .alpha(alpha * 2)
