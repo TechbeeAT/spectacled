@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.selection.DisableSelection
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
@@ -177,7 +175,6 @@ fun DetailsScreen(
 
 
     Box(modifier = modifier) {
-      SelectionContainer {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -276,75 +273,21 @@ fun DetailsScreen(
                 }
             }
 
-            // The editors must stay out of the surrounding SelectionContainer: it is meant for read-only
-            // text and is focusable itself, so on iOS a tap first focuses the field (keyboard opens)
-            // and the selection container then takes focus back (keyboard closes again). An editable
-            // BasicTextField brings its own selection, handles and copy support anyway.
-            DisableSelection {
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(vertical = 8.dp)
-                ) {
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
 
-                    BasicTextField(
-                        value = summaryValue,
-                        onValueChange = {
-                            summaryValue = it
-                            onAction(DetailsAction.OnUpdateSummary(it.text))
-                        },
-                        textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current),
-                        enabled = state.allowEditing(),
-                        onTextLayout = { summaryLayoutResult = it },
-                        visualTransformation = MarkdownVisualTransformation(
-                            localContentColor = LocalContentColor.current,
-                            linkColor = MaterialTheme.colorScheme.primary
-                        ),
-                        cursorBrush = SolidColor(LocalContentColor.current),
-                        decorationBox = { innerTextField ->
-                            Box {
-                                if (summaryValue.text.isEmpty()) {
-                                    Text(
-                                        text = stringResource(Res.string.summary),
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        color = LocalContentColor.current.copy(alpha = 0.5f)
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        },
-                        modifier = Modifier
-                            .focusRequester(summaryFocusRequester)
-                            .onFocusChanged {
-                                summaryIsFocused = it.isFocused
-                                if (it.isFocused) lastFocusedField = EditorField.SUMMARY
-                            }
-                            .weight(1f)
-                            .openLinkOnTap(uriHandler) { summaryLayoutResult }
-                    )
-
-                    if (state.icalEntry.isTask()) {
-                        val entryTriState = state.icalEntry.getProgressTriState()
-                        TriStateCheckbox(
-                            state = entryTriState,
-                            enabled = state.allowEditing(),
-                            onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 0 else 100)) }
-                        )
-                    }
-                }
-            }
-
-            // Kept out of the SelectionContainer for the same reason as the summary above.
-            DisableSelection {
                 BasicTextField(
-                    value = descriptionValue,
+                    value = summaryValue,
                     onValueChange = {
-                        descriptionValue = it
-                        onAction(DetailsAction.OnUpdateDescription(it.text))
+                        summaryValue = it
+                        onAction(DetailsAction.OnUpdateSummary(it.text))
                     },
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current),
+                    textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current),
                     enabled = state.allowEditing(),
-                    onTextLayout = { descriptionLayoutResult = it },
+                    onTextLayout = { summaryLayoutResult = it },
                     visualTransformation = MarkdownVisualTransformation(
                         localContentColor = LocalContentColor.current,
                         linkColor = MaterialTheme.colorScheme.primary
@@ -352,10 +295,10 @@ fun DetailsScreen(
                     cursorBrush = SolidColor(LocalContentColor.current),
                     decorationBox = { innerTextField ->
                         Box {
-                            if (descriptionValue.text.isEmpty()) {
+                            if (summaryValue.text.isEmpty()) {
                                 Text(
-                                    text = stringResource(Res.string.description),
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    text = stringResource(Res.string.summary),
+                                    style = MaterialTheme.typography.headlineMedium,
                                     color = LocalContentColor.current.copy(alpha = 0.5f)
                                 )
                             }
@@ -363,16 +306,61 @@ fun DetailsScreen(
                         }
                     },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 200.dp)
-                        .focusRequester(descriptionFocusRequester)
+                        .focusRequester(summaryFocusRequester)
                         .onFocusChanged {
-                            descriptionIsFocused = it.isFocused
-                            if (it.isFocused) lastFocusedField = EditorField.DESCRIPTION
+                            summaryIsFocused = it.isFocused
+                            if (it.isFocused) lastFocusedField = EditorField.SUMMARY
                         }
-                        .openLinkOnTap(uriHandler) { descriptionLayoutResult }
+                        .weight(1f)
+                        .openLinkOnTap(uriHandler) { summaryLayoutResult }
                 )
+
+                if (state.icalEntry.isTask()) {
+                    val entryTriState = state.icalEntry.getProgressTriState()
+                    TriStateCheckbox(
+                        state = entryTriState,
+                        enabled = state.allowEditing(),
+                        onClick = { onAction(DetailsAction.OnUpdateProgress(if (entryTriState == ToggleableState.On) 0 else 100)) }
+                    )
+                }
             }
+
+            BasicTextField(
+                value = descriptionValue,
+                onValueChange = {
+                    descriptionValue = it
+                    onAction(DetailsAction.OnUpdateDescription(it.text))
+                },
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current),
+                enabled = state.allowEditing(),
+                onTextLayout = { descriptionLayoutResult = it },
+                visualTransformation = MarkdownVisualTransformation(
+                    localContentColor = LocalContentColor.current,
+                    linkColor = MaterialTheme.colorScheme.primary
+                ),
+                cursorBrush = SolidColor(LocalContentColor.current),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (descriptionValue.text.isEmpty()) {
+                            Text(
+                                text = stringResource(Res.string.description),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = LocalContentColor.current.copy(alpha = 0.5f)
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 200.dp)
+                    .focusRequester(descriptionFocusRequester)
+                    .onFocusChanged {
+                        descriptionIsFocused = it.isFocused
+                        if (it.isFocused) lastFocusedField = EditorField.DESCRIPTION
+                    }
+                    .openLinkOnTap(uriHandler) { descriptionLayoutResult }
+            )
 
             AnimatedVisibility(state.icalEntry.url != null) {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -494,7 +482,6 @@ fun DetailsScreen(
 
             Spacer(modifier = Modifier.height(112.dp))  // scroll until all is above fab
         }
-      }
 
         // Formatting toolbar anchored to the bottom of the (IME-inset) content area, i.e. just above
         // the software keyboard. Shown only while an editor is focused; a tap applies the format to
