@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.RestoreFromTrash
+import androidx.compose.material.icons.outlined.SwipeDown
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -507,6 +508,10 @@ fun DetailsScreen(
                         }
                         null -> {}
                     }
+                },
+                onReleaseFocus = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
                 }
             )
         }
@@ -610,6 +615,7 @@ private fun Modifier.openLinkOnTap(
 @Composable
 private fun FormattingBar(
     onFormat: (MarkdownFormat) -> Unit,
+    onReleaseFocus: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -641,6 +647,16 @@ private fun FormattingBar(
             ) {
                 Icon(Icons.Default.FormatUnderlined, contentDescription = stringResource(Res.string.format_underline))
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            IconButton(
+                onClick = { onReleaseFocus() },
+                modifier = Modifier.focusProperties { canFocus = false }
+            ) {
+                Icon(Icons.Outlined.SwipeDown, null)
+            }
+
         }
     }
 }
