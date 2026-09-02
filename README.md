@@ -1,4 +1,14 @@
-﻿# Spectacled
+
+
+> [!NOTE]
+> **Status: internal beta.** All three apps are currently in a closed beta round with a small
+> group of testers, and the **public beta starts soon**. Development moves quickly
+> right now — expect rough edges, frequent releases, and the occasional breaking
+> change. Feedback is what the beta is for: open an
+> [issue](https://github.com/TechbeeAT/spectacled/issues/new/choose) or write to
+> [spectacled@techbee.at](mailto:spectacled@techbee.at).
+
+# Spectacled
 
 **Open, standards-based journals, notes, and tasks — synced over CalDAV, on your own server.**
 
@@ -152,6 +162,10 @@ Each command below works for any of the three apps — just swap `composeJournal
 
 ```bash
 # Debug build
+# Requires Android SDK available on the machine. Simplest way is to setup
+# Android Studio. As the installer sets up SDK, note the path.
+# Create a local.properties file in the project root directory with the content
+# `sdk.dir=<absolute path of SDK location>`
 ./gradlew :androidJournalsApp:assembleDebug
 # APK: androidJournalsApp/build/outputs/apk/debug/
 
