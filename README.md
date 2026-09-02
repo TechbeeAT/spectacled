@@ -47,18 +47,31 @@ Spectacled aims to close that gap: a single, standards-based app for journals, n
 - Sync runs in the background and locally caches everything, so the app stays usable offline
 - Light/dark theme, one consistent UI across every platform
 
-## Download
+## 📥 Download
 
-Spectacled is under active development. Planned distribution channels:
+Every available build is listed on the download page:
+**[spectacled.techbee.at/download](https://spectacled.techbee.at/download/)**
 
-| Platform | Where                                                                                         |
-|----------|-----------------------------------------------------------------------------------------------|
-| Android  | Google Play *(link coming soon)* · [F-Droid](https://f-droid.org/) *(link coming soon)*       |
-| iOS      | Apple App Store *(link coming soon)*                                                          |
-| Web      | [spectacled.techbee.at](https://spectacled.techbee.at) *(coming soon)*                        |
-| Desktop  | Build it yourself for now — see [Building & Running](#-building--running-each-platform) below |
+---
 
-Until then, building from source (see below) is the way to run it.
+## 🚀 Getting started
+
+New to Spectacled? Connecting your first server takes about five minutes.
+
+**[📖 Getting started guide](docs/getting-started.md)** — the whole setup in
+writing: choosing a provider, connecting your account, creating a folder, and
+writing your first entry, plus a troubleshooting table for when a server doesn't
+behave.
+
+**[🎬 Watch the walkthrough](https://youtu.be/lu-Grqnp4no)** — the same thing as
+a four-minute video.
+
+One thing worth knowing before you pick a server: notes and journals are stored
+as `VJOURNAL`, which far fewer CalDAV servers implement than the calendar and
+task parts of the standard. Nextcloud-based servers handle it; several
+CalDAV-capable mail providers don't, and can only be used with Spectacled Tasks.
+The app suggests providers that are known to work, and the guide covers this in
+more detail.
 
 ## Support the project
 
