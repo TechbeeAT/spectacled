@@ -139,6 +139,10 @@ Each command below works for any of the three apps — just swap `composeJournal
 
 ```bash
 # Debug build
+# Requires Android SDK available on the machine. Simplest way is to setup
+# Android Studio. As the installer sets up SDK, note the path.
+# Create a local.properties file in the project root directory with the content
+# `sdk.dir=<absolute path of SDK location>`
 ./gradlew :androidJournalsApp:assembleDebug
 # APK: androidJournalsApp/build/outputs/apk/debug/
 
