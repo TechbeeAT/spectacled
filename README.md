@@ -1,5 +1,15 @@
 ﻿# Spectacled
 
+
+> [!NOTE]
+> **Status: internal beta.** All three apps are currently in a closed beta round with a small
+> group of testers, and the **public beta starts soon**. Development moves quickly
+> right now — expect rough edges, frequent releases, and the occasional breaking
+> change. Feedback is what the beta is for: open an
+> [issue](https://github.com/TechbeeAT/spectacled/issues/new/choose) or write to
+> [spectacled@techbee.at](mailto:spectacled@techbee.at).
+
+
 **Open, standards-based journals, notes, and tasks — synced over CalDAV, on your own server.**
 
 Spectacled is a family of apps for Android, iOS, Web, and Desktop, built on the `VJOURNAL` and `VTODO` components of the iCalendar standard and synced over CalDAV. No proprietary backend, no account required — your data lives on whatever CalDAV server you already trust (Nextcloud, Radicale, or anything else that speaks CalDAV), and Spectacled is just the client.
