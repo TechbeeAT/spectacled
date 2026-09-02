@@ -1,4 +1,3 @@
-﻿# Spectacled
 
 
 > [!NOTE]
@@ -9,6 +8,7 @@
 > [issue](https://github.com/TechbeeAT/spectacled/issues/new/choose) or write to
 > [spectacled@techbee.at](mailto:spectacled@techbee.at).
 
+# Spectacled
 
 **Open, standards-based journals, notes, and tasks — synced over CalDAV, on your own server.**
 
