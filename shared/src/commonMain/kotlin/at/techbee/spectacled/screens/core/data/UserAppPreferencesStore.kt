@@ -31,6 +31,7 @@ const val THEME_FONT = "theme_font"
 
 const val CLAUDE_USER_API_KEY = "claude_user_api_key"
 const val USER_PROXY_SERVER = "user_proxy_server"
+const val HOSTED_PROXY_CONSENT_URL = "hosted_proxy_consent_url"
 
 const val AI_PROVIDER = "ai_provider"
 const val CLAUDE_MODEL = "claude_model"
@@ -121,6 +122,16 @@ interface UserAppPreferencesStore {
         get() = this.load(USER_PROXY_SERVER)?.ifEmpty { null }
         set(value) = if(value == null) this.remove(USER_PROXY_SERVER) else this.save(USER_PROXY_SERVER, value)
     fun getUserProxyServerAsFlow(): Flow<String?> = this.loadAsFlow(USER_PROXY_SERVER)
+
+    /**
+     * The hosted proxy URL the user explicitly agreed to send their credentials through, or `null` if they
+     * never did. Stored as the URL (not a boolean) so that consent given for one instance doesn't silently
+     * carry over to another one if [HttpClientFactory.HOSTED_WEB_PROXY_URL] ever changes.
+     */
+    var hostedProxyConsentUrl: String?
+        get() = this.load(HOSTED_PROXY_CONSENT_URL)?.ifEmpty { null }
+        set(value) = if(value.isNullOrBlank()) this.remove(HOSTED_PROXY_CONSENT_URL) else this.save(HOSTED_PROXY_CONSENT_URL, value)
+    fun getHostedProxyConsentUrlAsFlow(): Flow<String?> = this.loadAsFlow(HOSTED_PROXY_CONSENT_URL)
 
     /** Which backend fulfils the "derive entries from text" AI feature. Defaults to [AiProvider.CLAUDE]. */
     var aiProvider: AiProvider

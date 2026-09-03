@@ -382,6 +382,28 @@
     <string name="settings_proxy_server">Proxy server</string>
     <string name="settings_proxy_server_info">Web only. Browsers block cross-origin CalDAV (WebDAV) requests, so the web app routes them through this proxy, which adds the required CORS headers. The proxy can see your credentials in transit - prefer one you host yourself.</string>
 
+    <string name="settings_proxy_option_own">My own proxy server</string>
+    <string name="settings_proxy_option_own_info">You run the proxy, so nobody else is in the path. Recommended.</string>
+    <string name="settings_proxy_option_hosted">Spectacled proxy (hosted by us)</string>
+    <string name="settings_proxy_option_hosted_info">No setup needed, but your CalDAV user name and password pass through a server we operate.</string>
+    <string name="settings_proxy_option_hosted_badge">Sees your credentials</string>
+    <string name="settings_proxy_option_own_recommended">Recommended</string>
+    <string name="settings_proxy_use_localhost">Use local development proxy (%1$s)</string>
+    <string name="settings_proxy_setup_instructions">Proxy setup info</string>
+    <string name="settings_proxy_hosted_active_title">Your credentials pass through our server</string>
+    <string name="settings_proxy_hosted_active_message">The web app sends every CalDAV request - including your user name and password - through %1$s, which is operated by Techbee.</string>
+    <string name="settings_proxy_hosted_review">What this means</string>
+    <string name="settings_proxy_hosted_switch_to_own">Switch to my own server</string>
+
+    <string name="proxy_trust_title">Use the proxy we host?</string>
+    <string name="proxy_trust_intro">%1$s is operated by Techbee, the makers of Spectacled, on Fly.io. Using it means you do not have to set anything up - but it also means trusting us with your CalDAV login.</string>
+    <string name="proxy_trust_point_credentials">The proxy terminates the encrypted connection, so your CalDAV user name and password - and everything you sync - are readable on that machine while a request passes through.</string>
+    <string name="proxy_trust_point_promise">We do not log or store your credentials or your entries, and the proxy is open source so you can read exactly what it does. You cannot verify from here what we actually run, though - that part is trust.</string>
+    <string name="proxy_trust_point_alternatives">Safer options: host the same proxy yourself (one container, takes a few minutes), or create an app-specific password on your CalDAV server that you can revoke at any time.</string>
+    <string name="proxy_trust_confirmation">I understand that my CalDAV credentials pass through a server operated by Techbee.</string>
+    <string name="proxy_trust_confirm_button">Use hosted proxy</string>
+    <string name="proxy_trust_self_host_button">How to host it myself</string>
+
     <string name="widget_configuration">Widget configuration</string>
 
     <!-- Label/value pair, e.g. "Created: 5 Jan 2026". Some locales space the colon differently. -->

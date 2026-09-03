@@ -211,7 +211,8 @@ Requires a recent browser (Chrome 119+, Firefox 120+, Safari 18.2+).
 > locally with `./gradlew :server:run` and point **Settings → Proxy server** at
 > `http://localhost:8088`. For hosting, **self-host your own** instance (a shared proxy can see your
 > credentials in transit) — see [`server/README.md`](server/README.md) for Docker/Fly.io setup and
-> the trust caveats.
+> the trust caveats. Users who can't do that can opt into the instance we host, but only after
+> confirming a dialog that explains what its operator can see.
 
 ### 🍎 iOS
 

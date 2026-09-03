@@ -22,6 +22,17 @@ object HttpClientFactory {
     /** Proxy the web (WASM) build falls back to when the user hasn't configured one. */
     const val DEFAULT_WEB_PROXY_URL = "http://localhost:8088"
 
+    /**
+     * Instance of [the CORS proxy](https://github.com/TechbeeAT/spectacled/tree/main/server) that Techbee
+     * hosts for users who can't run their own. It terminates TLS and therefore sees the CalDAV credentials
+     * of everyone using it, so it must only ever be set after the user confirmed the trust dialog
+     * (see `ProxyTrustDialog` / `UserAppPreferencesStore.hostedProxyConsentUrl`).
+     */
+    const val HOSTED_WEB_PROXY_URL = "https://spectacled-proxy.fly.dev"
+
+    /** Where the self-hosting instructions for the proxy live. */
+    const val PROXY_SETUP_INFO_URL = "https://github.com/TechbeeAT/spectacled/tree/main/server"
+
     /** The proxy URL to use on the current platform when no user setting is present. */
     fun defaultProxyUrl(): String? =
         if (getPlatform().platform == Platforms.WASM) DEFAULT_WEB_PROXY_URL else null
