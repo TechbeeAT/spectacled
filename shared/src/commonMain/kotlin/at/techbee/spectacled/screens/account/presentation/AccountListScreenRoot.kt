@@ -69,11 +69,6 @@ fun AccountListScreenRoot(
 
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val aboutBottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-    val addPrincipalBottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-    val createCalendarBottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-    val updatePrincipalPasswordBottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-    val settingsBottomSheet = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     val scope = rememberCoroutineScope()
 
 
@@ -81,42 +76,6 @@ fun AccountListScreenRoot(
         state.snackbarText?.let { message ->
             snackbarHostState.showSnackbar(message)
             viewModel.onAction(AccountListAction.OnUpdateSnackbar(null))
-        }
-    }
-
-    LaunchedEffect(state.showAboutBottomSheet) {
-        scope.launch {
-            if(state.showAboutBottomSheet) aboutBottomSheetState.show() else aboutBottomSheetState.hide()
-        }
-    }
-
-    LaunchedEffect(state.showAddPrincipalBottomSheet) {
-        scope.launch {
-            if(state.showAddPrincipalBottomSheet) addPrincipalBottomSheetState.show() else addPrincipalBottomSheetState.hide()
-        }
-    }
-
-    LaunchedEffect(state.showUpdatePrincipalPasswordBottomSheet) {
-        scope.launch {
-            if(state.showUpdatePrincipalPasswordBottomSheet != null) updatePrincipalPasswordBottomSheetState.show() else updatePrincipalPasswordBottomSheetState.hide()
-        }
-    }
-
-    LaunchedEffect(state.showAddOrUpdateCalendarBottomSheet) {
-        scope.launch {
-            if (state.showAddOrUpdateCalendarBottomSheet != null)
-                createCalendarBottomSheetState.show()
-            else
-                createCalendarBottomSheetState.hide()
-        }
-    }
-
-    LaunchedEffect(state.showSettingsBottomSheet) {
-        scope.launch {
-            if (state.showSettingsBottomSheet)
-                settingsBottomSheet.show()
-            else
-                settingsBottomSheet.hide()
         }
     }
 
@@ -233,9 +192,12 @@ fun AccountListScreenRoot(
         }
 
 
-        if (addPrincipalBottomSheetState.isVisible) {
+        // Every sheet below is gated on the ViewModel state, never on its SheetState: the sheet
+        // states start out expanded (see rememberExpandedSheetState), so gating on their
+        // visibility would pop all of them open on the very first frame.
+        if (state.showAddPrincipalBottomSheet) {
             AddPrincipalBottomSheet(
-                sheetState = addPrincipalBottomSheetState,
+                sheetState = rememberExpandedSheetState(),
                 processingState = state.processingState,
                 isFirstAccount = state.principals.isEmpty(),
                 onAction = { viewModel.onAction(it) },
@@ -243,23 +205,20 @@ fun AccountListScreenRoot(
             )
         }
 
-        if (updatePrincipalPasswordBottomSheetState.isVisible && state.showUpdatePrincipalPasswordBottomSheet != null) {
-            state.showUpdatePrincipalPasswordBottomSheet?.principal?.let { principal ->
-                UpdatePrincipalPasswordBottomSheet(
-                    sheetState = updatePrincipalPasswordBottomSheetState,
-                    processingState = state.processingState,
-                    principal = principal,
-                    onAction = { action -> viewModel.onAction(action) },
-                    onDismiss = { viewModel.onAction(AccountListAction.OnDismissUpdatePrincipalPasswordBottomSheet) }
-                )
-            }
-
+        state.showUpdatePrincipalPasswordBottomSheet?.principal?.let { principal ->
+            UpdatePrincipalPasswordBottomSheet(
+                sheetState = rememberExpandedSheetState(),
+                processingState = state.processingState,
+                principal = principal,
+                onAction = { action -> viewModel.onAction(action) },
+                onDismiss = { viewModel.onAction(AccountListAction.OnDismissUpdatePrincipalPasswordBottomSheet) }
+            )
         }
 
 
-        if (aboutBottomSheetState.isVisible) {
+        if (state.showAboutBottomSheet) {
             BottomSheetWithMenu(
-                sheetState = aboutBottomSheetState,
+                sheetState = rememberExpandedSheetState(),
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
                 menuActionRight = {
                     TextButton(
@@ -274,9 +233,9 @@ fun AccountListScreenRoot(
             }
         }
 
-        if (settingsBottomSheet.isVisible) {
+        if (state.showSettingsBottomSheet) {
             SettingsBottomSheet(
-                sheetState = settingsBottomSheet,
+                sheetState = rememberExpandedSheetState(),
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) }
             )
@@ -284,7 +243,7 @@ fun AccountListScreenRoot(
 
         state.showAddOrUpdateCalendarBottomSheet?.let {
             CreateOrUpdateCalendarBottomSheet(
-                sheetState = createCalendarBottomSheetState,
+                sheetState = rememberExpandedSheetState(),
                 principal = it.principal,
                 homeCollection = it.homeCollection,
                 calendar = it.calendar,
@@ -300,3 +259,18 @@ fun AccountListScreenRoot(
         }
     }
 }
+
+
+/**
+ * A sheet state that starts out expanded, so the sheet is fully shown as soon as it enters
+ * composition, and that skips the partially expanded detent.
+ *
+ * Created per sheet inside the block that shows it: a sheet state hoisted across open/close cycles
+ * would keep the [SheetValue.Hidden] left behind by a swipe-dismissal and reopen the sheet invisibly.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun rememberExpandedSheetState() = rememberBottomSheetState(
+    initialValue = SheetValue.Expanded,
+    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+)
