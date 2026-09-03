@@ -27,7 +27,8 @@ val sharedModule = module {
         val preferences = get<UserAppPreferencesStore>()
         HttpClientFactory.create(
             engine = getPlatformEngine(),
-            // Prefer the user-configured proxy, falling back to the platform default (web only).
+            // No proxy until the user picks one: on the web that makes an unconfigured app fail
+            // visibly at the browser instead of quietly aiming at a localhost that is not running.
             proxyUrlProvider = { preferences.userProxyServer }
         )
     }
