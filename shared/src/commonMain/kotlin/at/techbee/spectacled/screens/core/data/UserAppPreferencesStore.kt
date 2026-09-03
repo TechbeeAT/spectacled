@@ -126,7 +126,7 @@ interface UserAppPreferencesStore {
     /**
      * The hosted proxy URL the user explicitly agreed to send their credentials through, or `null` if they
      * never did. Stored as the URL (not a boolean) so that consent given for one instance doesn't silently
-     * carry over to another one if [HttpClientFactory.HOSTED_WEB_PROXY_URL] ever changes.
+     * carry over to another one if [HttpClientFactory.HOSTED_FLYIO_PROXY_URL] ever changes.
      */
     var hostedProxyConsentUrl: String?
         get() = this.load(HOSTED_PROXY_CONSENT_URL)?.ifEmpty { null }

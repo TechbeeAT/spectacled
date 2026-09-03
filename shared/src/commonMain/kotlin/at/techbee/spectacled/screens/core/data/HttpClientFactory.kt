@@ -26,7 +26,7 @@ object HttpClientFactory {
      * of everyone using it, so it must only ever be set after the user confirmed the trust dialog
      * (see `ProxyTrustDialog` / `UserAppPreferencesStore.hostedProxyConsentUrl`).
      */
-    const val HOSTED_WEB_PROXY_URL = "https://spectacled-proxy.fly.dev"
+    const val HOSTED_FLYIO_PROXY_URL = "https://spectacled-proxy.fly.dev"
 
     /** Where the self-hosting instructions for the proxy live. */
     const val PROXY_SETUP_INFO_URL = "https://github.com/TechbeeAT/spectacled/tree/main/server"

@@ -137,7 +137,7 @@ private fun ProxyTrustDialog_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             ProxyTrustDialog(
-                proxyUrl = HttpClientFactory.HOSTED_WEB_PROXY_URL,
+                proxyUrl = HttpClientFactory.HOSTED_FLYIO_PROXY_URL,
                 onConfirm = {},
                 onDismiss = {},
                 onOpenSelfHostingInfo = {}

@@ -84,7 +84,7 @@ fun ProxyServerSetup(
     val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
     val hostedProxyConsentUrl by userAppPreferencesStore.getHostedProxyConsentUrlAsFlow().collectAsState(userAppPreferencesStore.hostedProxyConsentUrl)
 
-    val hostedProxyUrl = HttpClientFactory.HOSTED_WEB_PROXY_URL
+    val hostedProxyUrl = HttpClientFactory.HOSTED_FLYIO_PROXY_URL
     val hostedProxySelected = userProxyServer?.trim() == hostedProxyUrl
 
     // Kept around while the hosted proxy is selected so switching back restores what the user had typed.
