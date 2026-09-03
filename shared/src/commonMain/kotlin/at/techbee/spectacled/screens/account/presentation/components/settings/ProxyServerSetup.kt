@@ -94,13 +94,6 @@ fun ProxyServerSetup(
 
     val uriHandler = LocalUriHandler.current
 
-    fun selectHostedProxy() {
-        // Consent is per URL: an instance the user never agreed to always asks first.
-        if (hostedProxyConsentUrl == hostedProxyUrl)
-            userAppPreferencesStore.userProxyServer = hostedProxyUrl
-        else
-            trustDialogVisible = true
-    }
 
     fun selectOwnProxy() {
         userAppPreferencesStore.userProxyServer = ownProxyServerDraft.ifBlank { null }
@@ -204,7 +197,13 @@ fun ProxyServerSetup(
             badge = stringResource(Res.string.settings_proxy_option_hosted_badge),
             badgeColor = MaterialTheme.colorScheme.error,
             supportingText = hostedProxyUrl,
-            onClick = { selectHostedProxy() }
+            onClick = {
+                // Consent is per URL: an instance the user never agreed to always asks first.
+                if (hostedProxyConsentUrl == hostedProxyUrl)
+                    userAppPreferencesStore.userProxyServer = hostedProxyUrl
+                else
+                    trustDialogVisible = true
+            }
         )
 
         // While the hosted proxy is in use the disclosure stays on screen - consent is given once,
