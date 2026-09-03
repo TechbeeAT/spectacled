@@ -388,7 +388,8 @@
     <string name="settings_proxy_option_hosted_info">No setup needed, but your CalDAV user name and password pass through a server we operate.</string>
     <string name="settings_proxy_option_hosted_badge">Sees your credentials</string>
     <string name="settings_proxy_option_own_recommended">Recommended</string>
-    <string name="settings_proxy_use_localhost">Use local development proxy (%1$s)</string>
+    <string name="settings_proxy_presets">Proxy presets</string>
+    <string name="settings_proxy_preset_local_development">Local development server</string>
     <string name="settings_proxy_setup_instructions">Proxy setup info</string>
     <string name="settings_proxy_hosted_active_title">Your credentials pass through our server</string>
     <string name="settings_proxy_hosted_active_message">The web app sends every CalDAV request - including your user name and password - through %1$s, which is operated by Techbee.</string>

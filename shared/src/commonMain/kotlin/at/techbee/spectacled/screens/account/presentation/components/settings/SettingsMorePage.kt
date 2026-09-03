@@ -11,12 +11,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
@@ -60,8 +64,9 @@ import spectacled.shared.generated.resources.settings_proxy_option_own_info
 import spectacled.shared.generated.resources.settings_proxy_option_own_recommended
 import spectacled.shared.generated.resources.settings_proxy_server
 import spectacled.shared.generated.resources.settings_proxy_server_info
+import spectacled.shared.generated.resources.settings_proxy_preset_local_development
+import spectacled.shared.generated.resources.settings_proxy_presets
 import spectacled.shared.generated.resources.settings_proxy_setup_instructions
-import spectacled.shared.generated.resources.settings_proxy_use_localhost
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,6 +85,7 @@ fun SettingsMorePage(
     // Kept around while the hosted proxy is selected so switching back restores what the user had typed.
     var ownProxyServerDraft by remember { mutableStateOf(userProxyServer?.takeIf { it.trim() != hostedProxyUrl } ?: "") }
     var trustDialogVisible by remember { mutableStateOf(false) }
+    var proxyPresetsExpanded by remember { mutableStateOf(false) }
 
     val uriHandler = LocalUriHandler.current
 
@@ -150,17 +156,40 @@ fun SettingsMorePage(
                             }
                         },
                         label = { Text(stringResource(Res.string.settings_proxy_server)) },
+                        // Presets for this field only - the hosted proxy is deliberately not among them,
+                        // since selecting it has to go through the consent dialog.
+                        trailingIcon = {
+                            IconButton(onClick = { proxyPresetsExpanded = !proxyPresetsExpanded }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = stringResource(Res.string.settings_proxy_presets)
+                                )
+
+                                DropdownMenu(
+                                    expanded = proxyPresetsExpanded,
+                                    onDismissRequest = { proxyPresetsExpanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(stringResource(Res.string.settings_proxy_preset_local_development))
+                                                Text(
+                                                    text = HttpClientFactory.DEFAULT_WEB_PROXY_URL,
+                                                    style = MaterialTheme.typography.bodySmall
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            ownProxyServerDraft = HttpClientFactory.DEFAULT_WEB_PROXY_URL
+                                            userAppPreferencesStore.userProxyServer = HttpClientFactory.DEFAULT_WEB_PROXY_URL
+                                            proxyPresetsExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
-
-                    TextButton(
-                        onClick = {
-                            ownProxyServerDraft = HttpClientFactory.DEFAULT_WEB_PROXY_URL
-                            userAppPreferencesStore.userProxyServer = HttpClientFactory.DEFAULT_WEB_PROXY_URL
-                        }
-                    ) {
-                        Text(stringResource(Res.string.settings_proxy_use_localhost, HttpClientFactory.DEFAULT_WEB_PROXY_URL))
-                    }
 
                     TextButton(onClick = { uriHandler.openUri(HttpClientFactory.PROXY_SETUP_INFO_URL) }) {
                         Row(
