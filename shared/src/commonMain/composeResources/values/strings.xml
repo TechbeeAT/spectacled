@@ -380,7 +380,7 @@
 
     <string name="server_inferred">Inferred: %1$s</string>
     <string name="settings_proxy_server">Proxy server</string>
-    <string name="settings_proxy_server_info">Web only. Browsers block cross-origin CalDAV (WebDAV) requests, so the web app routes them through this proxy, which adds the required CORS headers. The proxy can see your credentials in transit - prefer one you host yourself. Setup: github.com/TechbeeAT/spectacled/tree/main/server</string>
+    <string name="settings_proxy_server_info">Web only. Browsers block cross-origin CalDAV (WebDAV) requests, so the web app routes them through this proxy, which adds the required CORS headers. The proxy can see your credentials in transit - prefer one you host yourself.</string>
 
     <string name="widget_configuration">Widget configuration</string>
 

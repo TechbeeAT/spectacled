@@ -3,10 +3,12 @@ package at.techbee.spectacled.screens.account.presentation.components.settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -26,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
@@ -51,6 +54,8 @@ fun SettingsMorePage(
     var userProxyServerDropdownExpanded by remember { mutableStateOf(false) }
     val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
 
+    val uriHandler = LocalUriHandler.current
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -72,7 +77,7 @@ fun SettingsMorePage(
                     val trimmedServer = userProxyServer?.trim() ?: ""
                     val isInsecure = trimmedServer.startsWith("http://")
 
-                    Column {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         AnimatedVisibility(isInsecure) {
                             Text(
                                 text = stringResource(Res.string.insecure_connection_warning),
@@ -80,6 +85,21 @@ fun SettingsMorePage(
                             )
                         }
                         Text(stringResource(Res.string.settings_proxy_server_info))
+
+                        TextButton(
+                            onClick = {
+                                uriHandler.openUri("https://github.com/TechbeeAT/spectacled/tree/main/server")
+                            }
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text("Proxy setup info")
+                                Icon(Icons.AutoMirrored.Outlined.OpenInNew, null)
+                            }
+
+                        }
                     }
                 },
                 label = { Text(stringResource(Res.string.settings_proxy_server)) },
@@ -102,6 +122,19 @@ fun SettingsMorePage(
                                 },
                                 onClick = {
                                     userAppPreferencesStore.userProxyServer = "http://localhost:8088"
+                                    userProxyServerDropdownExpanded = false
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text("spectacled Proxy on Fly.io")
+                                        Text("https://spectacled-proxy.fly.dev")
+                                    }
+                                },
+                                onClick = {
+                                    userAppPreferencesStore.userProxyServer = "https://spectacled-proxy.fly.dev"
                                     userProxyServerDropdownExpanded = false
                                 }
                             )
