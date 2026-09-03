@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
@@ -108,6 +109,7 @@ fun ProxyServerSetup(
         Text(
             text = stringResource(Res.string.settings_proxy_server_info),
             style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
             modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
         )
 
@@ -214,7 +216,7 @@ fun ProxyServerSetup(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 ),
-                modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth().padding(start = 16.dp)
+                modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth().padding(horizontal = 16.dp)
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -298,7 +300,7 @@ private fun ProxyOptionCard(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp).fillMaxWidth()
         ) {
             RadioButton(
                 selected = selected,

@@ -2,9 +2,7 @@ package at.techbee.spectacled.screens.account.presentation.components.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -49,8 +47,7 @@ fun SettingsMorePage(
 
             Text(
                 text = stringResource(Res.string.settings_proxy_server),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
+                style = MaterialTheme.typography.titleMedium
             )
 
             ProxyServerSetup(userAppPreferencesStore)
