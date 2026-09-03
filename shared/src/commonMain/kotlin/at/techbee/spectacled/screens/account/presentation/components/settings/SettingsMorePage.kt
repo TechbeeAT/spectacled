@@ -126,6 +126,16 @@ fun SettingsMorePage(
                 modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
             )
 
+            TextButton(onClick = { uriHandler.openUri(HttpClientFactory.PROXY_SETUP_INFO_URL) }) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(stringResource(Res.string.settings_proxy_setup_instructions))
+                    Icon(Icons.AutoMirrored.Outlined.OpenInNew, null)
+                }
+            }
+
             ProxyOptionCard(
                 selected = !hostedProxySelected,
                 icon = Icons.Outlined.Dns,
@@ -137,9 +147,10 @@ fun SettingsMorePage(
 
             AnimatedVisibility(!hostedProxySelected) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth().padding(start = 16.dp)
                 ) {
+
                     OutlinedTextField(
                         value = ownProxyServerDraft,
                         onValueChange = {
@@ -190,16 +201,6 @@ fun SettingsMorePage(
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
-
-                    TextButton(onClick = { uriHandler.openUri(HttpClientFactory.PROXY_SETUP_INFO_URL) }) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(stringResource(Res.string.settings_proxy_setup_instructions))
-                            Icon(Icons.AutoMirrored.Outlined.OpenInNew, null)
-                        }
-                    }
                 }
             }
 
