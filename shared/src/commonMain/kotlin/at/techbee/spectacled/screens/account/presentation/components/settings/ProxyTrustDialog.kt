@@ -71,6 +71,7 @@ fun ProxyTrustDialog(
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
                 Text(stringResource(Res.string.proxy_trust_intro, proxyUrl))
