@@ -28,7 +28,7 @@ val sharedModule = module {
         HttpClientFactory.create(
             engine = getPlatformEngine(),
             // Prefer the user-configured proxy, falling back to the platform default (web only).
-            proxyUrlProvider = { preferences.userProxyServer ?: HttpClientFactory.defaultProxyUrl() }
+            proxyUrlProvider = { preferences.userProxyServer }
         )
     }
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
