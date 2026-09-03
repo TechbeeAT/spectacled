@@ -200,6 +200,7 @@ fun AccountListScreenRoot(
                 sheetState = rememberExpandedSheetState(),
                 processingState = state.processingState,
                 isFirstAccount = state.principals.isEmpty(),
+                userAppPreferencesStore = viewModel.userAppPreferencesStore,
                 onAction = { viewModel.onAction(it) },
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAddPrincipalBottomSheet(false)) }
             )

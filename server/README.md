@@ -21,8 +21,15 @@ apps don't use this proxy at all.
 > The proxy terminates TLS, so it sees the `Authorization` header (your CalDAV credentials) in
 > transit. **Whoever runs the proxy could read those credentials.** For that reason:
 > - **Self-host your own instance** whenever you can — then you are the only one in the path.
-> - Any shared/public instance (including a project demo) should be treated as **evaluation only —
->   do not use real credentials** against a proxy you don't control.
+> - Any other shared/public instance should be treated as **evaluation only — do not use real
+>   credentials** against a proxy you don't control.
+>
+> For users who can't run a container, the web app also offers `https://spectacled-proxy.fly.dev`,
+> an instance of exactly this code operated by Techbee. It is off by default and can only be
+> selected after confirming a dialog that spells out what the operator can see; while it is
+> active, the settings page keeps that disclosure on screen. It logs the request method and the
+> target hostname only — never credentials, headers, or entry content — but you cannot verify that
+> from the outside, which is precisely why self-hosting is still the recommended path.
 
 ## How it works
 

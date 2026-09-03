@@ -1,8 +1,6 @@
 package at.techbee.spectacled.screens.core.data
 
 
-import at.techbee.spectacled.screens.core.Platforms
-import at.techbee.spectacled.screens.core.getPlatform
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
@@ -11,26 +9,33 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.http.HttpHeaders
 import io.ktor.client.request.HttpRequestPipeline
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 
 object HttpClientFactory {
 
-    /** Proxy the web (WASM) build falls back to when the user hasn't configured one. */
+    /** Proxy for the web (WASM) build if the server is started locally. */
     const val DEFAULT_WEB_PROXY_URL = "http://localhost:8088"
 
-    /** The proxy URL to use on the current platform when no user setting is present. */
-    fun defaultProxyUrl(): String? =
-        if (getPlatform().platform == Platforms.WASM) DEFAULT_WEB_PROXY_URL else null
+    /**
+     * Instance of [the CORS proxy](https://github.com/TechbeeAT/spectacled/tree/main/server) that Techbee
+     * hosts for users who can't run their own. It terminates TLS and therefore sees the CalDAV credentials
+     * of everyone using it, so it must only ever be set after the user confirmed the trust dialog
+     * (see `ProxyTrustDialog` / `UserAppPreferencesStore.hostedProxyConsentUrl`).
+     */
+    const val HOSTED_FLYIO_PROXY_URL = "https://spectacled-proxy.fly.dev"
+
+    /** Where the self-hosting instructions for the proxy live. */
+    const val PROXY_SETUP_INFO_URL = "https://github.com/TechbeeAT/spectacled/tree/main/server"
 
     fun create(
         engine: HttpClientEngine,
         jsonContentNegotiation: Boolean = true,
         // Resolved per request so the in-app "Proxy server" setting takes effect without an app restart.
-        proxyUrlProvider: () -> String? = { defaultProxyUrl() }
+        proxyUrlProvider: () -> String? = { null }
     ): HttpClient {
         return HttpClient(engine) {
             followRedirects = false
