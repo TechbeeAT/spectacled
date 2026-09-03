@@ -396,6 +396,11 @@
     <string name="settings_proxy_hosted_review">What this means</string>
     <string name="settings_proxy_hosted_switch_to_own">Switch to my own server</string>
 
+    <string name="add_account_proxy_required_title">First: choose a proxy server</string>
+    <string name="add_account_proxy_required_info">The web version reaches CalDAV servers through a proxy. Pick one here before connecting an account - without it, the app cannot reach any server.</string>
+    <string name="add_account_proxy_ready">Proxy: %1$s</string>
+    <string name="add_account_proxy_change">Change</string>
+
     <string name="proxy_trust_title">Use the proxy we host?</string>
     <string name="proxy_trust_intro">%1$s is operated by Techbee, the makers of Spectacled, on Fly.io. Using it means you do not have to set anything up - but it also means trusting us with your CalDAV login.</string>
     <string name="proxy_trust_point_credentials">The proxy terminates the encrypted connection, so your CalDAV user name and password - and everything you sync - are readable on that machine while a request passes through.</string>

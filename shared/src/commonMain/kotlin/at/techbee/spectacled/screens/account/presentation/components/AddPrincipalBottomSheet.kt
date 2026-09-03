@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.MoreVert
@@ -49,6 +50,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +60,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -71,7 +74,11 @@ import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProvider
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProviderCategory
+import at.techbee.spectacled.screens.account.presentation.components.settings.ProxyServerSetup
+import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.Credentials
+import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
 import at.techbee.spectacled.theme.AppTheme
@@ -89,6 +96,10 @@ import spectacled.shared.generated.resources.add_account_option2_recommendation_
 import spectacled.shared.generated.resources.add_account_option2_recommended_providers
 import spectacled.shared.generated.resources.add_account_option2_text
 import spectacled.shared.generated.resources.add_account_option_x
+import spectacled.shared.generated.resources.add_account_proxy_change
+import spectacled.shared.generated.resources.add_account_proxy_ready
+import spectacled.shared.generated.resources.add_account_proxy_required_info
+import spectacled.shared.generated.resources.add_account_proxy_required_title
 import spectacled.shared.generated.resources.add_account_provider_tasks_only_warning
 import spectacled.shared.generated.resources.add_account_spectacled_is_provider_independent
 import spectacled.shared.generated.resources.back
@@ -111,6 +122,7 @@ fun AddPrincipalBottomSheet(
     sheetState: SheetState,
     processingState: ProcessingState,
     isFirstAccount: Boolean,
+    userAppPreferencesStore: UserAppPreferencesStore,
     onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onDismiss: () -> Unit,
     spectacledVariant: SpectacledVariant = koinInject()
@@ -207,6 +219,7 @@ fun AddPrincipalBottomSheet(
             if (page == 0) {
                 SelectAccountOptionScreen(
                     isFirstAccount = isFirstAccount,
+                    userAppPreferencesStore = userAppPreferencesStore,
                     onPageChanged = { selectedPage = it },
                     spectacledVariant = spectacledVariant,
                     modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
@@ -234,10 +247,18 @@ fun AddPrincipalBottomSheet(
 @Composable
 fun SelectAccountOptionScreen(
     isFirstAccount: Boolean,
+    userAppPreferencesStore: UserAppPreferencesStore,
     onPageChanged: (AddPrincipalBottomSheetPage) -> Unit,
     modifier: Modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState()),
     spectacledVariant: SpectacledVariant = koinInject()
 ) {
+
+    // Only the web build talks to CalDAV through a proxy, and until one is picked it can reach no
+    // server at all - so on the web the options stay closed until that choice is made.
+    val proxyRequired = getPlatform().platform == Platforms.WASM || LocalInspectionMode.current
+    val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
+    val proxyConfigured = !userProxyServer.isNullOrBlank()
+    var proxySetupExpanded by rememberSaveable { mutableStateOf(false) }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
@@ -284,7 +305,52 @@ fun SelectAccountOptionScreen(
             )
         }
 
+        if (proxyRequired) {
+            // Configured already: a one-line confirmation, expandable if they want to change it.
+            // Not configured: the full picker, since nothing below it can work until it is answered.
+            if (proxyConfigured && !proxySetupExpanded) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(Icons.Outlined.Check, null, tint = MaterialTheme.colorScheme.primary)
+                    Text(
+                        text = stringResource(Res.string.add_account_proxy_ready, userProxyServer.orEmpty()),
+                        style = MaterialTheme.typography.bodySmall,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    TextButton(onClick = { proxySetupExpanded = true }) {
+                        Text(stringResource(Res.string.add_account_proxy_change))
+                    }
+                }
+            } else {
+                ElevatedCard {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.add_account_proxy_required_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = stringResource(Res.string.add_account_proxy_required_info),
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center
+                        )
+
+                        ProxyServerSetup(userAppPreferencesStore)
+                    }
+                }
+            }
+        }
+
         ElevatedCard(
+            enabled = !proxyRequired || proxyConfigured,
             onClick = { onPageChanged(AddPrincipalBottomSheetPage.USE_EXISTING) }
         ) {
 
@@ -323,6 +389,7 @@ fun SelectAccountOptionScreen(
 
 
         ElevatedCard(
+            enabled = !proxyRequired || proxyConfigured,
             onClick = { onPageChanged(AddPrincipalBottomSheetPage.SELECT_FROM_LIST) }
         ) {
 
@@ -737,6 +804,7 @@ private fun AddAccountScreen_Preview_Idle() {
                 sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                 processingState = ProcessingState.Idle,
                 isFirstAccount = true,
+                userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
                 onAction = {},
                 onDismiss = {},
                 spectacledVariant = SpectacledVariant.JOURNALS
@@ -755,6 +823,7 @@ private fun AddAccountScreen_Preview_Processing() {
                 sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                 processingState = ProcessingState.Processing,
                 isFirstAccount = false,
+                userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.NOTES),
                 onAction = {},
                 onDismiss = {},
                 spectacledVariant = SpectacledVariant.NOTES
