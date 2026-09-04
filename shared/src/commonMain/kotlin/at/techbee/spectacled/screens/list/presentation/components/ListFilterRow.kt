@@ -28,13 +28,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.Status
-import at.techbee.spectacled.screens.list.presentation.ListAction
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.clear_selection
+import spectacled.shared.generated.resources.hide_completed_tasks
 import spectacled.shared.generated.resources.ic_completed_hidden
 import spectacled.shared.generated.resources.ic_completed_visible
 import spectacled.shared.generated.resources.status
@@ -45,7 +45,7 @@ fun ListFilterRow(
     listFilterCriteria: ListFilterCriteria,
     allCategories: List<String>,
     calendarComponent: CalendarComponent,
-    onAction: (ListAction) -> Unit,
+    onListFilterCriteriaChanged: (ListFilterCriteria) -> Unit,
     modifier: Modifier = Modifier,
 ) {
 
@@ -62,7 +62,7 @@ fun ListFilterRow(
             //Hide completed
             ElevatedFilterChip(
                 selected = listFilterCriteria.hideCompletedTasks,
-                onClick = { onAction(ListAction.OnListFilterCriteriaChanged(listFilterCriteria.copy(hideCompletedTasks = !listFilterCriteria.hideCompletedTasks))) },
+                onClick = { onListFilterCriteriaChanged(listFilterCriteria.copy(hideCompletedTasks = !listFilterCriteria.hideCompletedTasks)) },
                 leadingIcon = {
                     Crossfade(listFilterCriteria.hideCompletedTasks) { hidden ->
                         if (hidden)
@@ -71,7 +71,7 @@ fun ListFilterRow(
                             Icon(painterResource(Res.drawable.ic_completed_visible), null)
                     }
                 },
-                label = { Text("Hide completed tasks") },
+                label = { Text(stringResource(Res.string.hide_completed_tasks)) },
                 modifier = Modifier.padding(horizontal = 4.dp)
             )
 
@@ -88,7 +88,7 @@ fun ListFilterRow(
                     if (!listFilterCriteria.searchCategory.isNullOrBlank())
                         IconButton(
                             onClick = {
-                                onAction(ListAction.OnListFilterCriteriaChanged(listFilterCriteria.copy(searchCategory = null)))
+                                onListFilterCriteriaChanged(listFilterCriteria.copy(searchCategory = null))
                             },
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -107,7 +107,7 @@ fun ListFilterRow(
                             DropdownMenuItem(
                                 text = { Text(category) },
                                 onClick = {
-                                    onAction(ListAction.OnListFilterCriteriaChanged(listFilterCriteria.copy(searchCategory = category)))
+                                    onListFilterCriteriaChanged(listFilterCriteria.copy(searchCategory = category))
                                     categoryDropdownExpanded = false
                                 }
                             )
@@ -129,7 +129,7 @@ fun ListFilterRow(
                     if (listFilterCriteria.filterStatus != null)
                         IconButton(
                             onClick = {
-                                onAction(ListAction.OnListFilterCriteriaChanged(listFilterCriteria.copy(filterStatus = null)))
+                                onListFilterCriteriaChanged(listFilterCriteria.copy(filterStatus = null))
                             },
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -148,7 +148,7 @@ fun ListFilterRow(
                             DropdownMenuItem(
                                 text = { Text(stringResource(status.stringRes)) },
                                 onClick = {
-                                    onAction(ListAction.OnListFilterCriteriaChanged(listFilterCriteria.copy(filterStatus = status)))
+                                    onListFilterCriteriaChanged(listFilterCriteria.copy(filterStatus = status))
                                     statusDropdownExpanded = false
                                 }
                             )
@@ -169,7 +169,7 @@ fun ListFilterRow_Preview() {
         listFilterCriteria = ListFilterCriteria(),
         allCategories = emptyList(),
         calendarComponent = CalendarComponent.VJOURNAL,
-        onAction = { }
+        onListFilterCriteriaChanged = { }
     )
 }
 
@@ -181,6 +181,6 @@ fun ListFilterRow_search_and_category_Preview() {
         listFilterCriteria = ListFilterCriteria(searchQuery = "preview", searchCategory = "my category", filterStatus = Status.FINAL),
         allCategories = emptyList(),
         calendarComponent = CalendarComponent.VJOURNAL,
-        onAction = { }
+        onListFilterCriteriaChanged = { }
     )
 }

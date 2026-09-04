@@ -65,6 +65,7 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.getAndroidLogoResId
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.shared.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,18 +89,19 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
         provideContent {
             val prefs = currentState<Preferences>()
             val calendarId = prefs[longPreferencesKey(CALENDAR_ID_KEY)]
+            val listFilterCriteria = prefs.getListFilterCriteria()
 
 
             val calendar by produceState<Calendar?>(initialValue = null, key1 = calendarId) {
                 value = calendarId?.let { calendarRepository.getCalendarById(it) }
             }
 
-            val entries by remember(calendarId) {
+            val entries by remember(calendarId, listFilterCriteria) {
                 if (calendarId != null) {
                     icalEntryRepository
                         .getIcalEntriesByCalendarFlow(calendarId)
                         .map { list ->
-                            list.filter { !it.syncState.isDeletedState() }
+                            list.filter { !it.syncState.isDeletedState() && it.matchesWidgetFilter(listFilterCriteria) }
                                 .sortedByDescending { it.dtStart?.instant?.toEpochMilliseconds() ?: it.created.instant.toEpochMilliseconds() }
                                 .groupBy { it.parentUid }
                         }
@@ -310,6 +312,17 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         } ?: Intent()
     }
+
+    /**
+     * Like the list screen, the full criteria only apply to top level entries: a subtask is shown
+     * with its parent as long as it isn't hidden as completed, even if it carries no category or
+     * status of its own.
+     */
+    private fun IcalEntry.matchesWidgetFilter(listFilterCriteria: ListFilterCriteria): Boolean =
+        if (parentUid == null)
+            listFilterCriteria.matches(this)
+        else
+            !(listFilterCriteria.hideCompletedTasks && isDone())
 
     companion object {
         const val CALENDAR_ID_KEY = "calendar_id"

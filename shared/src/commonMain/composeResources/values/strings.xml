@@ -106,6 +106,7 @@
 
     <string name="search">Search…</string>
     <string name="filter">Filter…</string>
+    <string name="hide_completed_tasks">Hide completed tasks</string>
     <string name="add_journal">Add journal</string>
     <string name="add_note">Add note</string>
     <string name="add_task">Add task</string>
@@ -414,6 +415,7 @@
     <string name="proxy_trust_self_host_button">How to host it myself</string>
 
     <string name="widget_configuration">Widget configuration</string>
+    <string name="widget_filter_criteria">Filter criteria</string>
 
     <!-- Label/value pair, e.g. "Created: 5 Jan 2026". Some locales space the colon differently. -->
     <string name="label_value">%1$s: %2$s</string>
