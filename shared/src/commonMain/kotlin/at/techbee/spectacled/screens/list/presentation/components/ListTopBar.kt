@@ -14,18 +14,19 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material.icons.automirrored.outlined.Label
-import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.outlined.ArrowCircleUp
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -34,6 +35,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -47,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -71,10 +74,13 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_selection
 import spectacled.shared.generated.resources.date_selector
 import spectacled.shared.generated.resources.delete_selected
+import spectacled.shared.generated.resources.filter
 import spectacled.shared.generated.resources.folders
 import spectacled.shared.generated.resources.ic_gotodate
 import spectacled.shared.generated.resources.ic_pin
 import spectacled.shared.generated.resources.ic_unpin
+import spectacled.shared.generated.resources.list_layout
+import spectacled.shared.generated.resources.list_sorting
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.pin
@@ -98,10 +104,10 @@ fun IcalEntryListTopBar(
     modifier: Modifier = Modifier,
     spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>(),
     removeHorizontalWindowInsets: Boolean = false
-    ) {
+) {
 
-    var sortedByDropdownExpanded by remember { mutableStateOf(false) }
     var multiselectMoreDropdownExpanded by remember { mutableStateOf(false) }
+    var generalMoreDropdownExpanded by remember { mutableStateOf(false) }
 
     val calendar = state.calendar
 
@@ -113,8 +119,7 @@ fun IcalEntryListTopBar(
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
-            Crossfade(state.multiselectItems != null) { multiselectEnabled ->
-
+                Crossfade(state.showMultiselectBar) { multiselectEnabled ->
 
                     if (!multiselectEnabled) {
                         TextButton(
@@ -131,7 +136,7 @@ fun IcalEntryListTopBar(
                                     contentDescription = stringResource(Res.string.folders)
                                 )
                                 Text(
-                                    text = calendar.displayName?:calendar.url.toString(),
+                                    text = calendar.displayName ?: calendar.url.toString(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(end = 4.dp)
@@ -189,33 +194,120 @@ fun IcalEntryListTopBar(
                 Row {
                     TextButton(
                         onClick = {
-                            if (state.isSearchBarExpanded) {
-                                onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.cleared()))
+                            if (state.showSearchBar) {
+                                onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchQuery = null)))
                             } else {
                                 onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchQuery = "")))
                             }
-                        }
+                        },
+                        //elevation = if (state.showSearchBar) ButtonDefaults.buttonElevation(defaultElevation = 1.dp) else null,
+                        colors = if (state.showSearchBar) ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) else ButtonDefaults.textButtonColors(),
                     ) {
                         Icon(
-                            imageVector = if (state.isSearchBarExpanded) Icons.Outlined.SearchOff else Icons.Outlined.Search,
+                            imageVector = if (state.showSearchBar) Icons.Outlined.SearchOff else Icons.Outlined.Search,
                             contentDescription = stringResource(Res.string.search)
                         )
                     }
 
-                    // No sorting option for Journals
-                    if(spectacledVariant != SpectacledVariant.JOURNALS) {
+                    TextButton(
+                        onClick = { onAction(ListAction.OnToggleFilterBar) },
+                        //elevation = if (state.showListFilterRow) ButtonDefaults.buttonElevation(defaultElevation = 1.dp) else null,
+                        colors = if (state.showListFilterRow) ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) else ButtonDefaults.textButtonColors(),
+                        ) {
+                        Icon(
+                            imageVector = Icons.Outlined.FilterAlt,
+                            contentDescription = stringResource(Res.string.filter)
+                        )
+                    }
+
+                    if (spectacledVariant == SpectacledVariant.JOURNALS) {
                         TextButton(
-                            onClick = { sortedByDropdownExpanded = !sortedByDropdownExpanded }
+                            onClick = { onAction(ListAction.OnShowDateSelectorBottomSheet(true)) },
+                            colors = if (state.showDateSelectorBottomSheet) ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) else ButtonDefaults.textButtonColors(),
+                            ) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_gotodate),
+                                contentDescription = stringResource(Res.string.date_selector)
+                            )
+                        }
+                    }
+
+                    if (getPlatform().platform == Platforms.DESKTOP || getPlatform().platform == Platforms.WASM) {
+
+                        TextButton(
+                            onClick = { onAction(ListAction.OnToggleMultiselectItem(null)) },
+                            colors = if (state.showMultiselectBar) ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) else ButtonDefaults.textButtonColors(),
+                            ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Checklist,
+                                contentDescription = stringResource(Res.string.select_multiple)
+                            )
+                        }
+
+                        TextButton(
+                            onClick = { onAction(ListAction.OnTriggerSync) }
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.Sort,
-                                contentDescription = stringResource(state.listSortedBy.displayName)
+                                imageVector = Icons.Outlined.Refresh,
+                                contentDescription = stringResource(Res.string.refresh)
                             )
+                        }
+                    }
 
-                            DropdownMenu(
-                                expanded = sortedByDropdownExpanded,
-                                onDismissRequest = { sortedByDropdownExpanded = false }
-                            ) {
+
+                    TextButton(
+                        onClick = { generalMoreDropdownExpanded = !generalMoreDropdownExpanded }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MoreVert,
+                            contentDescription = stringResource(Res.string.more)
+                        )
+
+                        DropdownMenu(
+                            expanded = generalMoreDropdownExpanded,
+                            onDismissRequest = { generalMoreDropdownExpanded = false }
+                        ) {
+
+                            // No staggered grid option for Journals and Tasks
+                            if (spectacledVariant == SpectacledVariant.NOTES) {
+
+                                Text(
+                                    text = stringResource(Res.string.list_layout),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+
+                                ListLayout.entries.forEach { listLayout ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = stringResource(listLayout.displayName)) },
+                                        onClick = { onAction(ListAction.OnViewModeChanged(listLayout)) },
+                                        leadingIcon = {
+                                            Icon(imageVector = listLayout.displayIcon, contentDescription = null)
+                                        },
+                                        colors = if (state.listLayout == listLayout)
+                                            MenuDefaults.itemColors(
+                                                textColor = MaterialTheme.colorScheme.primary,
+                                                leadingIconColor = MaterialTheme.colorScheme.primary
+                                            )
+                                        else
+                                            MenuDefaults.itemColors()
+                                    )
+                                }
+
+                                HorizontalDivider()
+                            }
+
+                            // No sorting option for Journals
+                            if (spectacledVariant != SpectacledVariant.JOURNALS) {
+
+                                Text(
+                                    text = stringResource(Res.string.list_sorting),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+
                                 ListSortedBy.entriesFor(spectacledVariant).forEach { sortedByOption ->
 
                                     DropdownMenuItem(
@@ -243,73 +335,24 @@ fun IcalEntryListTopBar(
                                         }
                                     )
                                 }
+
+                                //HorizontalDivider()
                             }
-                        }
-                    }
-
-                    // No staggered grid option for Journals and Tasks
-                    if(spectacledVariant == SpectacledVariant.NOTES) {
-                        TextButton(
-                            onClick = {
-                                onAction(
-                                    ListAction.OnViewModeChanged(
-                                        when (state.listLayout) {
-                                            ListLayout.LIST -> ListLayout.STAGGERED_GRID
-                                            ListLayout.STAGGERED_GRID -> ListLayout.LIST
-                                        }
-                                    )
-                                )
-                            }
-                        ) {
-                            Icon(
-                                imageVector = state.listLayout.displayIcon,
-                                contentDescription = stringResource(state.listLayout.displayName)
-                            )
-                        }
-                    }
-
-                    if (spectacledVariant == SpectacledVariant.JOURNALS) {
-                        TextButton(
-                            onClick = { onAction(ListAction.OnShowDateSelectorBottomSheet(true)) }
-                        ) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_gotodate),
-                                contentDescription = stringResource(Res.string.date_selector)
-                            )
-                        }
-                    }
-
-                    if (getPlatform().platform == Platforms.DESKTOP || getPlatform().platform == Platforms.WASM) {
-
-                        TextButton(
-                            onClick = { onAction(ListAction.OnToggleMultiselectItem(null)) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Checklist,
-                                contentDescription = stringResource(Res.string.select_multiple)
-                            )
-                        }
-
-                        TextButton(
-                            onClick = { onAction(ListAction.OnTriggerSync) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Refresh,
-                                contentDescription = stringResource(Res.string.refresh)
-                            )
                         }
                     }
                 }
             }
 
-            AnimatedVisibility(state.multiselectItems != null) {
+
+            AnimatedVisibility(state.showMultiselectBar) {
                 Row {
 
-                    if(spectacledVariant == SpectacledVariant.NOTES) {
+                    if (spectacledVariant == SpectacledVariant.NOTES) {
                         TextButton(
                             onClick = { onAction(ListAction.OnTogglePinEntry(!allSelectedPinned)) },
-                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent()
-                        ) {
+                            enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
+                            colors = if (allSelectedPinned) ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) else ButtonDefaults.textButtonColors(),
+                            ) {
                             if (allSelectedPinned)
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_unpin),
@@ -392,7 +435,7 @@ fun IcalEntryListTopBar(
                                 )
                             },
                             enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
-                            onClick = { onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))  },
+                            onClick = { onAction(ListAction.OnShowDeleteSelectedItemsDialog(true)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.DeleteOutline,
@@ -421,7 +464,7 @@ private fun ListTopBar_Journal_Preview() {
                 listSortedByAscending = true,
                 listLayout = ListLayout.LIST,
                 multiselectItems = null,
-                listFilterCriteria = ListFilterCriteria()
+                listFilterCriteria = ListFilterCriteria(hideCompletedTasks = true)
             ),
             onAction = {},
             spectacledVariant = SpectacledVariant.JOURNALS,
@@ -480,44 +523,45 @@ private fun ListTopBar_Tasks_Preview() {
 @Preview
 @Composable
 private fun ListTopBar_blue_Preview() {
-        MaterialTheme(colorScheme = dynamicColorScheme(Color.Blue, false)) {
+    MaterialTheme(colorScheme = dynamicColorScheme(Color.Blue, false)) {
 
-            IcalEntryListTopBar(
-                state = ListState(
-                    calendar = Calendar.getCalendarForPreview().copy(displayName = "This is a very long folder name that shouldn't cause troubles"),
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.STAGGERED_GRID,
-                    multiselectItems = null,
-                    listFilterCriteria = ListFilterCriteria(searchQuery = "")
-                    ),
-                onAction = {},
-                spectacledVariant = SpectacledVariant.NOTES,
-                allSelectedPinned = false
-            )
-        }
+        IcalEntryListTopBar(
+            state = ListState(
+                calendar = Calendar.getCalendarForPreview()
+                    .copy(displayName = "This is a very long folder name that shouldn't cause troubles"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.STAGGERED_GRID,
+                multiselectItems = null,
+                listFilterCriteria = ListFilterCriteria(searchQuery = "")
+            ),
+            onAction = {},
+            spectacledVariant = SpectacledVariant.NOTES,
+            allSelectedPinned = false
+        )
+    }
 }
 
 
 @Preview
 @Composable
 private fun ListTopBar_Journals_Multiselect_Preview() {
-        AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
 
-            IcalEntryListTopBar(
-                state = ListState(
-                    calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.LIST,
-                    multiselectItems = listOf(1, 2, 3),
-                    listFilterCriteria = ListFilterCriteria()
-                ),
-                onAction = {},
-                spectacledVariant = SpectacledVariant.JOURNALS,
-                allSelectedPinned = false
-            )
-        }
+        IcalEntryListTopBar(
+            state = ListState(
+                calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
+                multiselectItems = listOf(1, 2, 3),
+                listFilterCriteria = ListFilterCriteria()
+            ),
+            onAction = {},
+            spectacledVariant = SpectacledVariant.JOURNALS,
+            allSelectedPinned = false
+        )
+    }
 }
 
 @Preview
@@ -561,7 +605,6 @@ private fun ListTopBar_Tasks_Multiselect_Preview() {
         )
     }
 }
-
 
 
 @Preview

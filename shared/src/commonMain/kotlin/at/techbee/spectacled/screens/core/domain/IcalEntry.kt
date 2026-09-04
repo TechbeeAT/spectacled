@@ -148,6 +148,8 @@ data class IcalEntry(
 
     fun isPinned() = categories.any { category -> category == PINNED_CATEGORY}
 
+    fun isDone() = isTask() && (percentComplete == 100L || status == Status.COMPLETED)
+
     val categoriesWithoutPinned: List<String>
         get() = categories.filterNot { it == PINNED_CATEGORY }
 

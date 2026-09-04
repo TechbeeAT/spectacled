@@ -105,6 +105,7 @@
     <string name="trashbin_x">Trashbin (%1$d)</string>
 
     <string name="search">Search…</string>
+    <string name="filter">Filter…</string>
     <string name="add_journal">Add journal</string>
     <string name="add_note">Add note</string>
     <string name="add_task">Add task</string>
@@ -212,8 +213,10 @@
     <string name="back">Back</string>
     <string name="more">More</string>
 
-    <string name="view_list">List</string>
-    <string name="view_grid">Grid</string>
+    <string name="list_layout">List layout</string>
+    <string name="view_list">List view</string>
+    <string name="view_grid">Grid view</string>
+    <string name="list_sorting">List sorting</string>
     <string name="drag_handle">Drag handle</string>
 
     <string name="format_bold">Bold</string>

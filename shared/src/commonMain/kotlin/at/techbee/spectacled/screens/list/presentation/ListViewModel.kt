@@ -191,6 +191,7 @@ class ListViewModel(
             is ListAction.OnListFilterCriteriaChanged -> {
                 updateList(_state.value.listSortedBy, _state.value.listSortedByAscending, action.listFilterCriteria)
             }
+            is ListAction.OnToggleFilterBar -> { _state.update { it.copy(showListFilterRow = !_state.value.showListFilterRow) } }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             is ListAction.OnIcalEntryClicked -> {  _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is ListAction.OnSortedByChanged -> {

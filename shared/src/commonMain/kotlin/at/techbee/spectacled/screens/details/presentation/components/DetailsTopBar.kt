@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.EditOff
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -100,8 +101,9 @@ fun DetailsTopBar(
                     SpectacledVariant.JOURNALS -> {}
                     SpectacledVariant.NOTES -> {
                         TextButton(
-                            onClick = { onAction(DetailsAction.OnPin(!isPinned)) }
-                        ) {
+                            onClick = { onAction(DetailsAction.OnPin(!isPinned)) },
+                            colors = if (isPinned) ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) else ButtonDefaults.textButtonColors(),
+                            ) {
                             Crossfade(isPinned) { pinned ->
                                 if (!pinned)
                                     Icon(

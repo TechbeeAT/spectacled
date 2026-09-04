@@ -77,6 +77,7 @@ import at.techbee.spectacled.screens.list.presentation.components.DeleteSelected
 import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
+import at.techbee.spectacled.screens.list.presentation.components.ListSearchBar
 import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import kotlinx.coroutines.delay
@@ -148,8 +149,8 @@ fun ListScreenRoot(
             }
         }
 
-        LaunchedEffect(state.isSearchBarExpanded) {
-            if (state.isSearchBarExpanded) {
+        LaunchedEffect(state.showSearchBar) {
+            if (state.showSearchBar) {
                 delay(300.milliseconds)
                 searchBarFocusRequester.requestFocus()
                 keyboardController?.show()
@@ -434,13 +435,20 @@ fun ListScreenRoot(
 
                 Column(modifier = Modifier.fillMaxSize()) {
 
-                    AnimatedVisibility(state.isSearchBarExpanded) {
+                    AnimatedVisibility(state.showSearchBar) {
+                        ListSearchBar(
+                            listFilterCriteria = state.listFilterCriteria,
+                            onAction = { listViewModel.onAction(it) },
+                            searchBarFocusRequester = searchBarFocusRequester
+                        )
+                    }
+
+                    AnimatedVisibility(state.showListFilterRow) {
                         ListFilterRow(
                             listFilterCriteria = state.listFilterCriteria,
                             allCategories = state.icalEntries.flatMap { it.categories }.distinct(),
                             calendarComponent = state.spectacledVariant.mainCalendarComponent,
-                            onAction = { listViewModel.onAction(it) },
-                            searchBarFocusRequester = searchBarFocusRequester
+                            onAction = { listViewModel.onAction(it) }
                         )
                     }
 

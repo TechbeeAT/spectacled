@@ -8,6 +8,7 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListSorted
 
 sealed interface ListAction {
     data class OnListFilterCriteriaChanged(val listFilterCriteria: ListFilterCriteria): ListAction
+    object OnToggleFilterBar: ListAction
     data class OnIcalEntryClicked(val id: Long?): ListAction
     data class OnSortedByChanged(val listSortedBy: ListSortedBy, val listSortedByAscending: Boolean): ListAction
     data class OnViewModeChanged(val listLayout: ListLayout): ListAction

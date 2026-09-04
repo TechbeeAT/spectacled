@@ -136,9 +136,7 @@ fun ListScreenNotes(
 
         // using mutableStateList instead of grouped list for drag and drop
         // this allows us to directly manipulate the list and avoid jitter
-        if(state.listSortedBy == ListSortedBy.DRAGANDDROP
-            && !state.listFilterCriteria.anyFilterActive()
-        ) {
+        if(state.listSortedBy == ListSortedBy.DRAGANDDROP && !state.showSearchBar) {
             itemsIndexed(dragAndDropList, key = { _, note -> note.uid }) { index, icalEntry ->
 
                 ReorderableItem(

@@ -1,7 +1,8 @@
 package at.techbee.spectacled.screens.list.presentation.components
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,26 +18,25 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.list.presentation.ListAction
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.clear_selection
-import spectacled.shared.generated.resources.search
+import spectacled.shared.generated.resources.ic_completed_hidden
+import spectacled.shared.generated.resources.ic_completed_visible
 import spectacled.shared.generated.resources.status
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,28 +47,33 @@ fun ListFilterRow(
     calendarComponent: CalendarComponent,
     onAction: (ListAction) -> Unit,
     modifier: Modifier = Modifier,
-    searchBarFocusRequester: FocusRequester = remember { FocusRequester() }
 ) {
 
     var categoryDropdownExpanded by remember { mutableStateOf(false) }
     var statusDropdownExpanded by remember { mutableStateOf(false) }
 
 
-    Column(modifier = modifier) {
-
-        TextField(
-            placeholder = { Text(stringResource(Res.string.search)) },
-            value = listFilterCriteria.searchQuery ?: "",
-            onValueChange = { onAction(ListAction.OnListFilterCriteriaChanged(listFilterCriteria.copy(searchQuery = it))) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .focusRequester(searchBarFocusRequester)
-        )
+    Box(modifier = modifier) {
 
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
         ) {
+
+            //Hide completed
+            ElevatedFilterChip(
+                selected = listFilterCriteria.hideCompletedTasks,
+                onClick = { onAction(ListAction.OnListFilterCriteriaChanged(listFilterCriteria.copy(hideCompletedTasks = !listFilterCriteria.hideCompletedTasks))) },
+                leadingIcon = {
+                    Crossfade(listFilterCriteria.hideCompletedTasks) { hidden ->
+                        if (hidden)
+                            Icon(painterResource(Res.drawable.ic_completed_hidden), null)
+                        else
+                            Icon(painterResource(Res.drawable.ic_completed_visible), null)
+                    }
+                },
+                label = { Text("Hide completed tasks") },
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
 
             //Category
             ElevatedFilterChip(

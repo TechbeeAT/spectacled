@@ -75,6 +75,7 @@ data class ListState(
     val navigateUp: Boolean = false,
     val navigateToIcalEntryId: Long? = null,
     val multiselectItems: List<Long>? = null,
+    val showListFilterRow: Boolean = false,
 
     val showDeleteSelectedItemsDialog: Boolean = false,
     val showMoveSelectedItemsDialog: Boolean = false,
@@ -100,8 +101,11 @@ data class ListState(
     val subtasks: Map<String, List<IcalEntry>> = emptyMap()
 ) {
 
-    val isSearchBarExpanded: Boolean
-        get() = listFilterCriteria.anyFilterActive()
+    val showSearchBar: Boolean
+        get() = listFilterCriteria.searchQuery != null
+
+    val showMultiselectBar: Boolean
+        get() = multiselectItems != null
 
     /**
      * All entries currently shown in the grouped/no-criteria body (everything except pinned and the
@@ -141,7 +145,15 @@ data class ListState(
 
     private fun getSubtasksLogic(icalEntries: List<IcalEntry>) =
         icalEntries
-                    .filter { !it.syncState.isDeletedState() && it.parentUid != null }
+                    .filter {
+                        if(it.syncState.isDeletedState() || it.parentUid == null)
+                            return@filter false
+
+                        if(listFilterCriteria.hideCompletedTasks && it.isDone())
+                            return@filter false
+
+                        return@filter true
+                    }
                     .sortedBy { it.orderNo ?: it.created.instant.toEpochMilliseconds() }
                     .groupBy { it.parentUid!! }
 
@@ -154,6 +166,7 @@ data class ListState(
         val query = criteria.searchQuery
         val category = criteria.searchCategory
         val status = criteria.filterStatus
+        val hideCompletedTasks = criteria.hideCompletedTasks
 
         return icalEntries.filter { item ->
             // Single pass check for all conditions
@@ -169,8 +182,13 @@ data class ListState(
             if (!matchesCategory) return@filter false
 
             val matchesStatus = status == null || item.status == status
+            if(!matchesStatus)
+                return@filter false
 
-            matchesStatus
+            if(hideCompletedTasks && item.isDone())
+                return@filter false
+
+            return@filter true
         }
     }
 
