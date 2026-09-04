@@ -158,38 +158,10 @@ data class ListState(
                     .groupBy { it.parentUid!! }
 
     private fun getFilteredList(icalEntries: List<IcalEntry>): List<IcalEntry> {
-        val criteria = listFilterCriteria
-
         // Early exit if no filter is active
-        if (!criteria.anyFilterActive()) return icalEntries
+        if (!listFilterCriteria.anyFilterActive()) return icalEntries
 
-        val query = criteria.searchQuery
-        val category = criteria.searchCategory
-        val status = criteria.filterStatus
-        val hideCompletedTasks = criteria.hideCompletedTasks
-
-        return icalEntries.filter { item ->
-            // Single pass check for all conditions
-            val matchesQuery = query.isNullOrBlank() ||
-                    item.summary?.contains(query, ignoreCase = true) == true ||
-                    item.description?.contains(query, ignoreCase = true) == true
-
-            if (!matchesQuery) return@filter false
-
-            val matchesCategory = category.isNullOrBlank() ||
-                    item.categories.any { it.equals(category, ignoreCase = true) }
-
-            if (!matchesCategory) return@filter false
-
-            val matchesStatus = status == null || item.status == status
-            if(!matchesStatus)
-                return@filter false
-
-            if(hideCompletedTasks && item.isDone())
-                return@filter false
-
-            return@filter true
-        }
+        return icalEntries.filter { listFilterCriteria.matches(it) }
     }
 
 

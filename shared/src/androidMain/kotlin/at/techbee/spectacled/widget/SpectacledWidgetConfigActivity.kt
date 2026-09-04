@@ -38,10 +38,15 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.HomeCollection
+import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
+import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelector
+import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.CALENDAR_ID_KEY
 import kotlinx.coroutines.launch
@@ -51,10 +56,12 @@ import org.koin.core.component.inject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.widget_configuration
+import spectacled.shared.generated.resources.widget_filter_criteria
 
 class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
 
     private val calendarRepository: CalendarRepository by inject()
+    private val icalEntryRepository: IcalEntryRepository by inject()
     private val spectacledVariant: SpectacledVariant by inject()
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
@@ -92,25 +99,66 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
                 calendarRepository.getAllPrincipalsFlow().collect { value = it }
             }
 
+            var selectedCalendarId by remember { mutableStateOf(null as Long?) }
+            var listFilterCriteria by remember { mutableStateOf(ListFilterCriteria()) }
+            var settingsLoaded by remember { mutableStateOf(false) }
+
+            // Restore the configuration of an already placed widget as soon as its state arrives.
+            LaunchedEffect(prefs) {
+                val loadedPrefs = prefs ?: return@LaunchedEffect
+                if (settingsLoaded) return@LaunchedEffect
+
+                selectedCalendarId = loadedPrefs[longPreferencesKey(CALENDAR_ID_KEY)]
+                listFilterCriteria = loadedPrefs.getListFilterCriteria()
+                settingsLoaded = true
+            }
+
+            // The categories offered as filter are the ones actually used in the selected calendar.
+            val allCategories by produceState(emptyList<String>(), selectedCalendarId) {
+                val calendarId = selectedCalendarId
+                if (calendarId == null) {
+                    value = emptyList()
+                    return@produceState
+                }
+                icalEntryRepository.getIcalEntriesByCalendarFlow(calendarId).collect { icalEntries ->
+                    value = icalEntries
+                        .flatMap { it.categories }
+                        .filter { it != IcalEntry.PINNED_CATEGORY }
+                        .distinct()
+                        .sorted()
+                }
+            }
+
             WidgetConfigContent(
-                prefs,
-                calendars,
-                homeCollections,
-                principals,
-                spectacledVariant,
+                calendars = calendars,
+                homeCollections = homeCollections,
+                principals = principals,
+                selectedCalendarId = selectedCalendarId,
+                onCalendarIdSelected = { selectedCalendarId = it },
+                listFilterCriteria = listFilterCriteria,
+                onListFilterCriteriaChanged = { listFilterCriteria = it },
+                allCategories = allCategories,
+                calendarComponent = spectacledVariant.mainCalendarComponent,
+                spectacledVariant = spectacledVariant,
                 onConfirm = {
+                    val calendarId = selectedCalendarId ?: return@WidgetConfigContent
                     scope.launch {
-                        onCalendarSelected(it, glanceId)
+                        onConfigConfirmed(calendarId, listFilterCriteria, glanceId)
                     }
                 }
             )
         }
     }
 
-    private suspend fun onCalendarSelected(calendarId: Long, glanceId: GlanceId) {
+    private suspend fun onConfigConfirmed(
+        calendarId: Long,
+        listFilterCriteria: ListFilterCriteria,
+        glanceId: GlanceId
+    ) {
         try {
             updateAppWidgetState(this@SpectacledWidgetConfigActivity, glanceId) { prefs ->
                 prefs[longPreferencesKey(CALENDAR_ID_KEY)] = calendarId
+                prefs.setListFilterCriteria(listFilterCriteria)
             }
             SpectacledWidget().update(this@SpectacledWidgetConfigActivity, glanceId)
         } catch (e: Exception) {
@@ -128,27 +176,18 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WidgetConfigContent(
-    prefs: Preferences?,
     calendars: List<Calendar>,
     homeCollections: List<HomeCollection>,
     principals: List<Principal>,
+    selectedCalendarId: Long?,
+    onCalendarIdSelected: (Long) -> Unit,
+    listFilterCriteria: ListFilterCriteria,
+    onListFilterCriteriaChanged: (ListFilterCriteria) -> Unit,
+    allCategories: List<String>,
+    calendarComponent: CalendarComponent,
     spectacledVariant: SpectacledVariant,
-    onConfirm: (Long) -> Unit
+    onConfirm: () -> Unit
 ) {
-
-
-    var selectedCalendarId by remember {
-        mutableStateOf(null as Long?)
-    }
-
-    LaunchedEffect(prefs, calendars) {
-        if (selectedCalendarId == null) {
-            val savedId = prefs?.get(longPreferencesKey(CALENDAR_ID_KEY))
-            if (savedId != null) {
-                selectedCalendarId = savedId
-            }
-        }
-    }
 
     AppTheme(spectacledVariant = spectacledVariant) {
         Scaffold (
@@ -157,9 +196,7 @@ fun WidgetConfigContent(
                     title = { },
                     actions = {
                         TextButton(
-                            onClick = {
-                                selectedCalendarId?.let { onConfirm(it) }
-                            },
+                            onClick = onConfirm,
                             enabled = selectedCalendarId != null,
                         ) {
                             Text(stringResource(Res.string.done))
@@ -184,15 +221,29 @@ fun WidgetConfigContent(
                     homeCollections = homeCollections,
                     calendars = calendars,
                     selectedCalendarId = selectedCalendarId,
-                    onCalendarIdSelected = { selectedCalendarId = it },
+                    onCalendarIdSelected = onCalendarIdSelected,
                     modifier = Modifier.fillMaxWidth().padding (16.dp)
+                )
+
+                Text(
+                    text = stringResource(Res.string.widget_filter_criteria),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                )
+
+                ListFilterRow(
+                    listFilterCriteria = listFilterCriteria,
+                    allCategories = allCategories,
+                    calendarComponent = calendarComponent,
+                    onListFilterCriteriaChanged = onListFilterCriteriaChanged,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                 )
 
 /*
                 Spacer(modifier = Modifier.weight(1f))
 
                 Button(
-                    onClick = { selectedCalendarId?.let { onConfirm(it) } },
+                    onClick = { onConfirm() },
                     enabled = selectedCalendarId != null,
                     modifier = Modifier.padding(16.dp)
                 ) {
@@ -208,11 +259,34 @@ fun WidgetConfigContent(
 @Composable
 private fun WidgetConfigContent_Preview() {
     WidgetConfigContent(
-        prefs = null,
         calendars = listOf(Calendar.getCalendarForPreview()),
         homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
         principals = listOf(Principal.getPrincipalForPreview()),
+        selectedCalendarId = null,
+        onCalendarIdSelected = { },
+        listFilterCriteria = ListFilterCriteria(),
+        onListFilterCriteriaChanged = { },
+        allCategories = listOf("Category 1", "Category 2"),
+        calendarComponent = CalendarComponent.VJOURNAL,
         spectacledVariant = SpectacledVariant.JOURNALS,
+        onConfirm = {}
+    )
+}
+
+@Preview
+@Composable
+private fun WidgetConfigContent_tasks_filtered_Preview() {
+    WidgetConfigContent(
+        calendars = listOf(Calendar.getCalendarForPreview()),
+        homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+        principals = listOf(Principal.getPrincipalForPreview()),
+        selectedCalendarId = 0L,
+        onCalendarIdSelected = { },
+        listFilterCriteria = ListFilterCriteria(searchCategory = "Category 1", hideCompletedTasks = true),
+        onListFilterCriteriaChanged = { },
+        allCategories = listOf("Category 1", "Category 2"),
+        calendarComponent = CalendarComponent.VTODO,
+        spectacledVariant = SpectacledVariant.TASKS,
         onConfirm = {}
     )
 }
