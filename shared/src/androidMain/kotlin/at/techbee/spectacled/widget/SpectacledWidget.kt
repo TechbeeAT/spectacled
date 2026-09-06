@@ -88,18 +88,19 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
         provideContent {
             val prefs = currentState<Preferences>()
             val calendarId = prefs[longPreferencesKey(CALENDAR_ID_KEY)]
+            val listFilterCriteria = prefs.getListFilterCriteria()
 
 
             val calendar by produceState<Calendar?>(initialValue = null, key1 = calendarId) {
                 value = calendarId?.let { calendarRepository.getCalendarById(it) }
             }
 
-            val entries by remember(calendarId) {
+            val entries by remember(calendarId, listFilterCriteria) {
                 if (calendarId != null) {
                     icalEntryRepository
                         .getIcalEntriesByCalendarFlow(calendarId)
                         .map { list ->
-                            list.filter { !it.syncState.isDeletedState() }
+                            list.filter { !it.syncState.isDeletedState() && it.matchesWidgetFilter(listFilterCriteria) }
                                 .sortedByDescending { it.dtStart?.instant?.toEpochMilliseconds() ?: it.created.instant.toEpochMilliseconds() }
                                 .groupBy { it.parentUid }
                         }

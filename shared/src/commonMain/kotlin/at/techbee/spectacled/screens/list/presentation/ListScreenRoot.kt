@@ -448,7 +448,7 @@ fun ListScreenRoot(
                             listFilterCriteria = state.listFilterCriteria,
                             allCategories = state.icalEntries.flatMap { it.categories }.distinct(),
                             calendarComponent = state.spectacledVariant.mainCalendarComponent,
-                            onAction = { listViewModel.onAction(it) }
+                            onListFilterCriteriaChanged = { listViewModel.onAction(ListAction.OnListFilterCriteriaChanged(it)) }
                         )
                     }
 
