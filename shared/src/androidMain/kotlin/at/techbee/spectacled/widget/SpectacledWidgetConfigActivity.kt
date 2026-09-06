@@ -38,7 +38,6 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.domain.Calendar
-import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
@@ -114,7 +113,7 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
             }
 
             // The categories offered as filter are the ones actually used in the selected calendar.
-            val allCategories by produceState(emptyList<String>(), selectedCalendarId) {
+            val allCategories by produceState(emptyList(), selectedCalendarId) {
                 val calendarId = selectedCalendarId
                 if (calendarId == null) {
                     value = emptyList()
@@ -138,7 +137,6 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
                 listFilterCriteria = listFilterCriteria,
                 onListFilterCriteriaChanged = { listFilterCriteria = it },
                 allCategories = allCategories,
-                calendarComponent = spectacledVariant.mainCalendarComponent,
                 spectacledVariant = spectacledVariant,
                 onConfirm = {
                     val calendarId = selectedCalendarId ?: return@WidgetConfigContent
@@ -184,7 +182,6 @@ fun WidgetConfigContent(
     listFilterCriteria: ListFilterCriteria,
     onListFilterCriteriaChanged: (ListFilterCriteria) -> Unit,
     allCategories: List<String>,
-    calendarComponent: CalendarComponent,
     spectacledVariant: SpectacledVariant,
     onConfirm: () -> Unit
 ) {
@@ -234,7 +231,7 @@ fun WidgetConfigContent(
                 ListFilterRow(
                     listFilterCriteria = listFilterCriteria,
                     allCategories = allCategories,
-                    calendarComponent = calendarComponent,
+                    calendarComponent = spectacledVariant.mainCalendarComponent,
                     onListFilterCriteriaChanged = onListFilterCriteriaChanged,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                 )
@@ -267,7 +264,6 @@ private fun WidgetConfigContent_Preview() {
         listFilterCriteria = ListFilterCriteria(),
         onListFilterCriteriaChanged = { },
         allCategories = listOf("Category 1", "Category 2"),
-        calendarComponent = CalendarComponent.VJOURNAL,
         spectacledVariant = SpectacledVariant.JOURNALS,
         onConfirm = {}
     )
@@ -285,7 +281,6 @@ private fun WidgetConfigContent_tasks_filtered_Preview() {
         listFilterCriteria = ListFilterCriteria(searchCategory = "Category 1", hideCompletedTasks = true),
         onListFilterCriteriaChanged = { },
         allCategories = listOf("Category 1", "Category 2"),
-        calendarComponent = CalendarComponent.VTODO,
         spectacledVariant = SpectacledVariant.TASKS,
         onConfirm = {}
     )
