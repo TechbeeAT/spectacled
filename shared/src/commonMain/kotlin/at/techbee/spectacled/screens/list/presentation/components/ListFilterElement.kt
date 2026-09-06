@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.Status
+import at.techbee.spectacled.screens.core.presentation.horizontalFadingEdges
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -169,9 +170,13 @@ fun ListFilterElement(
                 chips()
             }
         } else {
+            val scrollState = rememberScrollState()
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalFadingEdges(scrollState)
+                    .horizontalScroll(scrollState)
             ) {
                 chips()
             }
