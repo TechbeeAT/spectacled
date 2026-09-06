@@ -44,7 +44,7 @@ import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelector
-import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
+import at.techbee.spectacled.screens.list.presentation.components.ListFilterElement
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.CALENDAR_ID_KEY
@@ -228,12 +228,13 @@ fun WidgetConfigContent(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                 )
 
-                ListFilterRow(
+                ListFilterElement(
                     listFilterCriteria = listFilterCriteria,
                     allCategories = allCategories,
                     calendarComponent = spectacledVariant.mainCalendarComponent,
                     onListFilterCriteriaChanged = onListFilterCriteriaChanged,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                    isVertical = true,
+                    modifier = Modifier.fillMaxWidth().padding(8.dp)
                 )
 
 /*

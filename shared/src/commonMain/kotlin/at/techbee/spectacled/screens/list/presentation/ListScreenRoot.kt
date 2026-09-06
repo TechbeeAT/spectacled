@@ -76,7 +76,7 @@ import at.techbee.spectacled.screens.details.presentation.components.CategorySel
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
-import at.techbee.spectacled.screens.list.presentation.components.ListFilterRow
+import at.techbee.spectacled.screens.list.presentation.components.ListFilterElement
 import at.techbee.spectacled.screens.list.presentation.components.ListSearchBar
 import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
@@ -444,11 +444,12 @@ fun ListScreenRoot(
                     }
 
                     AnimatedVisibility(state.showListFilterRow) {
-                        ListFilterRow(
+                        ListFilterElement(
                             listFilterCriteria = state.listFilterCriteria,
                             allCategories = state.icalEntries.flatMap { it.categories }.distinct(),
                             calendarComponent = state.spectacledVariant.mainCalendarComponent,
-                            onListFilterCriteriaChanged = { listViewModel.onAction(ListAction.OnListFilterCriteriaChanged(it)) }
+                            onListFilterCriteriaChanged = { listViewModel.onAction(ListAction.OnListFilterCriteriaChanged(it)) },
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
 
