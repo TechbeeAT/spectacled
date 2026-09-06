@@ -10,6 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import io.ktor.http.Url
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -221,6 +222,48 @@ data class IcalEntry(
             }
         }
     }
+
+    /**
+     * Whether the entry passes all [listFilterCriteria] criteria. Shared by the list screen and the
+     * widget so both apply the filters in exactly the same way.
+     */
+    fun matches(listFilterCriteria: ListFilterCriteria): Boolean {
+        val filterQuery = listFilterCriteria.searchQuery
+        val filterCategory = listFilterCriteria.searchCategory
+        val filterStatus = listFilterCriteria.filterStatus
+        val hideCompletedTasks = listFilterCriteria.hideCompletedTasks
+
+        val matchesQuery = filterQuery.isNullOrBlank()
+                || summary?.contains(filterQuery, ignoreCase = true) == true
+                || description?.contains(filterQuery, ignoreCase = true) == true
+
+        if (!matchesQuery)
+            return false
+
+        val matchesCategory = filterCategory.isNullOrBlank() || categories.any { it.equals(filterCategory, ignoreCase = true) }
+        if (!matchesCategory)
+            return false
+
+        val matchesStatus = filterStatus == null || status == filterStatus
+        if (!matchesStatus)
+            return false
+
+        if (hideCompletedTasks && isDone())
+            return false
+
+        return true
+    }
+
+    /**
+     * Like the list screen, the full criteria only apply to top level entries: a subtask is shown
+     * with its parent as long as it isn't hidden as completed, even if it carries no category or
+     * status of its own.
+     */
+    fun matchesWidgetFilter(listFilterCriteria: ListFilterCriteria): Boolean =
+        if (parentUid == null)
+            this.matches(listFilterCriteria)
+        else
+            !(listFilterCriteria.hideCompletedTasks && isDone())
 }
 
 

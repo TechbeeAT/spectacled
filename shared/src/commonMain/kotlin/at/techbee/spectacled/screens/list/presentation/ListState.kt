@@ -161,7 +161,7 @@ data class ListState(
         // Early exit if no filter is active
         if (!listFilterCriteria.anyFilterActive()) return icalEntries
 
-        return icalEntries.filter { listFilterCriteria.matches(it) }
+        return icalEntries.filter { it.matches(listFilterCriteria) }
     }
 
 
