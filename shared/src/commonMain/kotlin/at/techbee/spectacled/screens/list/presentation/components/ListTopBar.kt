@@ -321,6 +321,9 @@ fun IcalEntryListTopBar(
                                                 else
                                                     onAction(ListAction.OnSortedByChanged(sortedByOption, sortedByOption.defaultAsc))
                                             },
+                                            leadingIcon = {
+                                                Icon(painterResource(sortedByOption.displayIcon), null)
+                                            },
                                             trailingIcon = {
                                                 if (state.listSortedBy.name == sortedByOption.name && state.listSortedByAscending)
                                                     Icon(
