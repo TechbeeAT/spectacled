@@ -116,7 +116,7 @@ fun ListScreenNotes(
                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                     onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                     onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                    modifier = Modifier.padding(start = 48.dp)
+                    modifier = Modifier.padding(start = 48.dp).then(modifier)
                 )
             }
         }

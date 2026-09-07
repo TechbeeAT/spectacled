@@ -99,7 +99,7 @@ fun ListScreenJournals(
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                 onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
-                modifier = Modifier.padding(start = 64.dp, end = 16.dp)
+                modifier = Modifier.padding(start = 64.dp, end = 16.dp).then(modifier)
             )
         }
     }

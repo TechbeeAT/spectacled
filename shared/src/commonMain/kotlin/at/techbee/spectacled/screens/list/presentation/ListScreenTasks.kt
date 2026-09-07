@@ -88,7 +88,7 @@ fun ListScreenTasks(
             getTaskListItem(
                 icalEntry = subtask,
                 isDragging = isDragging,
-                modifier = Modifier.padding(start = 48.dp)
+                modifier = Modifier.padding(start = 48.dp).then(modifier)
             )
         }
     }
