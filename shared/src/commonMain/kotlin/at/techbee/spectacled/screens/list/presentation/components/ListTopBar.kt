@@ -254,89 +254,88 @@ fun IcalEntryListTopBar(
                         }
                     }
 
-
-                    TextButton(
-                        onClick = { generalMoreDropdownExpanded = !generalMoreDropdownExpanded }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.MoreVert,
-                            contentDescription = stringResource(Res.string.more)
-                        )
-
-                        DropdownMenu(
-                            expanded = generalMoreDropdownExpanded,
-                            onDismissRequest = { generalMoreDropdownExpanded = false }
+                    if (spectacledVariant != SpectacledVariant.JOURNALS) {
+                        TextButton(
+                            onClick = { generalMoreDropdownExpanded = !generalMoreDropdownExpanded }
                         ) {
+                            Icon(
+                                imageVector = Icons.Outlined.MoreVert,
+                                contentDescription = stringResource(Res.string.more)
+                            )
 
-                            // No staggered grid option for Journals and Tasks
-                            if (spectacledVariant == SpectacledVariant.NOTES) {
+                            DropdownMenu(
+                                expanded = generalMoreDropdownExpanded,
+                                onDismissRequest = { generalMoreDropdownExpanded = false }
+                            ) {
 
-                                Text(
-                                    text = stringResource(Res.string.list_layout),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
-                                )
+                                // No staggered grid option for Journals and Tasks
+                                if (spectacledVariant == SpectacledVariant.NOTES) {
 
-                                ListLayout.entries.forEach { listLayout ->
-                                    DropdownMenuItem(
-                                        text = { Text(text = stringResource(listLayout.displayName)) },
-                                        onClick = { onAction(ListAction.OnViewModeChanged(listLayout)) },
-                                        leadingIcon = {
-                                            Icon(imageVector = listLayout.displayIcon, contentDescription = null)
-                                        },
-                                        colors = if (state.listLayout == listLayout)
-                                            MenuDefaults.itemColors(
-                                                textColor = MaterialTheme.colorScheme.primary,
-                                                leadingIconColor = MaterialTheme.colorScheme.primary
-                                            )
-                                        else
-                                            MenuDefaults.itemColors()
+                                    Text(
+                                        text = stringResource(Res.string.list_layout),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
                                     )
-                                }
 
-                                HorizontalDivider()
-                            }
-
-                            // No sorting option for Journals
-                            if (spectacledVariant != SpectacledVariant.JOURNALS) {
-
-                                Text(
-                                    text = stringResource(Res.string.list_sorting),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
-                                )
-
-                                ListSortedBy.entriesFor(spectacledVariant).forEach { sortedByOption ->
-
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(text = stringResource(sortedByOption.displayName))
-                                        },
-                                        onClick = {
-                                            // toggle ascending if the same item is selected again
-                                            if (state.listSortedBy.name == sortedByOption.name && state.listSortedBy != ListSortedBy.DRAGANDDROP)
-                                                onAction(ListAction.OnSortedByChanged(sortedByOption, !state.listSortedByAscending))
+                                    ListLayout.entries.forEach { listLayout ->
+                                        DropdownMenuItem(
+                                            text = { Text(text = stringResource(listLayout.displayName)) },
+                                            onClick = { onAction(ListAction.OnViewModeChanged(listLayout)) },
+                                            leadingIcon = {
+                                                Icon(imageVector = listLayout.displayIcon, contentDescription = null)
+                                            },
+                                            colors = if (state.listLayout == listLayout)
+                                                MenuDefaults.itemColors(
+                                                    textColor = MaterialTheme.colorScheme.primary,
+                                                    leadingIconColor = MaterialTheme.colorScheme.primary
+                                                )
                                             else
-                                                onAction(ListAction.OnSortedByChanged(sortedByOption, sortedByOption.defaultAsc))
-                                        },
-                                        trailingIcon = {
-                                            if (state.listSortedBy.name == sortedByOption.name && state.listSortedByAscending)
-                                                Icon(
-                                                    imageVector = Icons.Default.ArrowCircleDown,
-                                                    contentDescription = stringResource(Res.string.sort_ascending)
-                                                )
-                                            else if (state.listSortedBy.name == sortedByOption.name)
-                                                Icon(
-                                                    imageVector = Icons.Outlined.ArrowCircleUp,
-                                                    contentDescription = stringResource(Res.string.sort_descending)
-                                                )
-                                        }
-                                    )
+                                                MenuDefaults.itemColors()
+                                        )
+                                    }
+
+                                    HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
                                 }
 
-                                //HorizontalDivider()
+                                // No sorting option for Journals
+                                if (spectacledVariant != SpectacledVariant.JOURNALS) {
+
+                                    Text(
+                                        text = stringResource(Res.string.list_sorting),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    )
+
+                                    ListSortedBy.entriesFor(spectacledVariant).forEach { sortedByOption ->
+
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(text = stringResource(sortedByOption.displayName))
+                                            },
+                                            onClick = {
+                                                // toggle ascending if the same item is selected again
+                                                if (state.listSortedBy.name == sortedByOption.name && state.listSortedBy != ListSortedBy.DRAGANDDROP)
+                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, !state.listSortedByAscending))
+                                                else
+                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, sortedByOption.defaultAsc))
+                                            },
+                                            trailingIcon = {
+                                                if (state.listSortedBy.name == sortedByOption.name && state.listSortedByAscending)
+                                                    Icon(
+                                                        imageVector = Icons.Default.ArrowCircleDown,
+                                                        contentDescription = stringResource(Res.string.sort_ascending)
+                                                    )
+                                                else if (state.listSortedBy.name == sortedByOption.name)
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.ArrowCircleUp,
+                                                        contentDescription = stringResource(Res.string.sort_descending)
+                                                    )
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
