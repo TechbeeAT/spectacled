@@ -8,10 +8,12 @@ import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
+import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.PendingRemoteFileDeletion
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
@@ -33,7 +35,8 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class IcalEntryRepositoryImpl(
-    private val databaseDriverFactory: DatabaseDriverFactory
+    private val databaseDriverFactory: DatabaseDriverFactory,
+    private val fileManager: FileManager
 ) : IcalEntryRepository {
 
     private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
@@ -284,6 +287,19 @@ class IcalEntryRepositoryImpl(
         // Re-read fresh so any attachments downloaded just before the move are picked up.
         val entriesToMove = getIcalEntriesWithSubtasks(icalEntryIds)
 
+        // 0. Queue the source-collection blobs for deletion BEFORE re-creating the entries: the
+        //    copy's attachment rows reuse the same UNIQUE uid, so inserting them replaces the
+        //    originals' rows (losing their source remoteUrl). Only enqueue blobs that will actually
+        //    be re-uploaded into the target (attachments with a local copy - matching
+        //    remappedForMove's re-upload branch); a remote-only attachment keeps pointing at its
+        //    source blob after the move, so deleting it would lose the file.
+        entriesToMove.forEach { entry ->
+            val orphanedSourceUrls = entry.attachments
+                .filter { it.localPath != null && !it.remoteUrl.isNullOrBlank() }
+                .map { it.remoteUrl!! }
+            enqueueRemoteFileDeletions(entry.calendarId, orphanedSourceUrls)
+        }
+
         // 1. Re-create each entry in the target calendar. Same uid keeps its identity; clearing
         //    href/etag makes the sync engine PUT it as a new resource into the target collection.
         entriesToMove.forEach { entry ->
@@ -384,9 +400,31 @@ class IcalEntryRepositoryImpl(
         }
     }
 
-    override suspend fun deleteTrashed(cutoffDateTime: IcsDateTime) {    // TODO: Test again!
+    override suspend fun deleteTrashed(cutoffDateTime: IcsDateTime) {
         withContext(ioDispatcher) {
-            getDatabase().icalentry_dtoQueries.deleteTrashed(formatIcsDateTime(cutoffDateTime)?.first)
+            val db = getDatabase()
+            val cutoff = formatIcsDateTime(cutoffDateTime)?.first
+
+            // Before hard-deleting the rows (which cascades attachments away), reclaim their
+            // storage: queue each attachment's server blob for remote deletion and remove its local
+            // file. A moved entry's original has no attachments here - the copy took over its rows
+            // via the shared uid - so there is nothing to free for those.
+            val trashed = db.icalentry_dtoQueries.getTrashedBefore(cutoff).awaitAsList()
+            if (trashed.isNotEmpty()) {
+                val calendarIdByEntryId = trashed.associate { it.id to it.calendarId }
+                val attachments = db.attachment_dtoQueries.getAttachmentsForEntries(trashed.map { it.id }).awaitAsList()
+
+                attachments.forEach { attachment ->
+                    attachment.remoteUrl?.takeIf { it.isNotBlank() }?.let { remoteUrl ->
+                        calendarIdByEntryId[attachment.icalEntryId]?.let { calendarId ->
+                            enqueueRemoteFileDeletions(calendarId, listOf(remoteUrl))
+                        }
+                    }
+                    attachment.localPath?.let { fileManager.deleteAttachment(it) }
+                }
+            }
+
+            db.icalentry_dtoQueries.deleteTrashed(cutoff)
         }
     }
 
@@ -428,5 +466,28 @@ class IcalEntryRepositoryImpl(
 
     override suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment> = withContext(ioDispatcher) {
         getDatabase().attachment_dtoQueries.getAttachmentsForEntry(entryId).awaitAsList().map { it.toDomain() }
+    }
+
+    override suspend fun enqueueRemoteFileDeletions(calendarId: Long, remoteUrls: List<String>) {
+        if (remoteUrls.isEmpty()) return
+        withContext(ioDispatcher) {
+            val db = getDatabase()
+            db.transaction {
+                remoteUrls.filter { it.isNotBlank() }.forEach { remoteUrl ->
+                    db.pending_remote_deletion_dtoQueries.insertPendingRemoteDeletion(calendarId, remoteUrl)
+                }
+            }
+        }
+    }
+
+    override suspend fun getPendingRemoteFileDeletions(calendarId: Long): List<PendingRemoteFileDeletion> = withContext(ioDispatcher) {
+        getDatabase().pending_remote_deletion_dtoQueries.getPendingRemoteDeletionsForCalendar(calendarId).awaitAsList()
+            .map { PendingRemoteFileDeletion(id = it.id, calendarId = it.calendarId, remoteUrl = it.remoteUrl) }
+    }
+
+    override suspend fun deletePendingRemoteFileDeletion(id: Long) {
+        withContext(ioDispatcher) {
+            getDatabase().pending_remote_deletion_dtoQueries.deletePendingRemoteDeletion(id)
+        }
     }
 }

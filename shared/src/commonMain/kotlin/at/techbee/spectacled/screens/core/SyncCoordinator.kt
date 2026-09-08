@@ -28,6 +28,7 @@ import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.ServerResponseException
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.coroutineScope
@@ -202,6 +203,7 @@ class SyncCoordinator(
                         syncCollectionResponse.hrefs.mapNotNull { (url, eTag) -> eTag?.let { url to it } }.toMap()
                     )
                     pushLocalChanges(calendar)
+                    drainPendingRemoteFileDeletions(calendar)
                     calendarRepository.updateCalendarSyncStatus(
                         CalendarSyncStatus(CalendarSyncStatusType.SYNCED).serialize(),
                         syncCollectionResponse.syncToken,
@@ -306,6 +308,7 @@ class SyncCoordinator(
             is MultigetResourceHrefETagResult.Success -> {
                 applyServerchanges(calendar, multigetResourceHrefsMultiplatformResult.hrefs)
                 pushLocalChanges(calendar)
+                drainPendingRemoteFileDeletions(calendar)
                 calendarRepository.updateCalendarSyncStatus(
                     CalendarSyncStatus(CalendarSyncStatusType.SYNCED).serialize(),
                     multigetResourceHrefsMultiplatformResult.syncToken,
@@ -437,6 +440,22 @@ class SyncCoordinator(
     private suspend fun pushLocalChanges(calendar: Calendar) {
         val dirtyIcalEntries = icalEntryRepository.getDirtyIcalEntriesByCalendar(calendar.id)
         dirtyIcalEntries.forEach { pushSingleLocalChange(it, calendar) }
+    }
+
+    // Deletes attachment blobs that were orphaned by a removed attachment, a hard-deleted entry, or a
+    // move (source collection). Best-effort: a 2xx or 404 clears the queue entry, anything else is
+    // left for the next sync to retry.
+    private suspend fun drainPendingRemoteFileDeletions(calendar: Calendar) {
+        icalEntryRepository.getPendingRemoteFileDeletions(calendar.id).forEach { pending ->
+            val status = try {
+                remote.deleteFile(Url(pending.remoteUrl), credentials)
+            } catch (e: Exception) {
+                Napier.d("Remote attachment deletion failed for ${pending.remoteUrl}: ${e.message}")
+                return@forEach   // keep it queued for retry
+            }
+            if (status.isSuccess() || status == HttpStatusCode.NotFound)
+                icalEntryRepository.deletePendingRemoteFileDeletion(pending.id)
+        }
     }
 
     private suspend fun pushSingleLocalChange(dirtyIcalEntry: IcalEntry, calendar: Calendar) {

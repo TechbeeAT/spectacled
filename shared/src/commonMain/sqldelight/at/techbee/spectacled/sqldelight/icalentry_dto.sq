@@ -165,6 +165,9 @@ SET
     url = :url
 WHERE calendarId = :calendarId AND uid = :uid;
 
+getTrashedBefore:
+SELECT id, calendarId FROM IcalEntryDto WHERE lastModified < :cutOffTimestamp AND syncState = 'REMOTE_DELETED_LOCAL_TRASHBIN';
+
 deleteTrashed:
 DELETE FROM IcalEntryDto WHERE lastModified < :cutOffTimestamp AND syncState = 'REMOTE_DELETED_LOCAL_TRASHBIN';
 

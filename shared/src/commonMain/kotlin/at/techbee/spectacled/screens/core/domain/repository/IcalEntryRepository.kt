@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.PendingRemoteFileDeletion
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import io.ktor.http.Url
@@ -56,4 +57,10 @@ interface IcalEntryRepository {
     suspend fun insertOrUpdateAttachment(attachment: Attachment)
     suspend fun deleteAttachment(id: Long)
     suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment>
+
+    // Remote attachment-blob cleanup queue
+    /** Queues attachment blob [remoteUrls] (in [calendarId]'s collection) for later deletion by sync. */
+    suspend fun enqueueRemoteFileDeletions(calendarId: Long, remoteUrls: List<String>)
+    suspend fun getPendingRemoteFileDeletions(calendarId: Long): List<PendingRemoteFileDeletion>
+    suspend fun deletePendingRemoteFileDeletion(id: Long)
 }

@@ -29,6 +29,7 @@ interface WebDavRemoteIcalEntryDataSource {
     suspend fun deleteResource(calendar: Calendar, icalEntry: IcalEntry, credentials: Credentials?): DeleteResourceResult
     suspend fun uploadFile(targetUrl: Url, bytes: ByteArray, mimeType: String?, credentials: Credentials?): HttpStatusCode
     suspend fun downloadFile(sourceUrl: Url, credentials: Credentials?): ByteArray?
+    suspend fun deleteFile(targetUrl: Url, credentials: Credentials?): HttpStatusCode
 }
 
 class DefaultWebDavRemoteIcalEntryDataSource(
@@ -59,4 +60,7 @@ class DefaultWebDavRemoteIcalEntryDataSource(
 
     override suspend fun downloadFile(sourceUrl: Url, credentials: Credentials?) =
         downloadFileMultiplatform(client, sourceUrl, credentials)
+
+    override suspend fun deleteFile(targetUrl: Url, credentials: Credentials?) =
+        deleteFileMultiplatform(client, targetUrl, credentials)
 }
