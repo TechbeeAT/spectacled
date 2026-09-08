@@ -43,6 +43,7 @@ import at.techbee.spectacled.screens.account.presentation.components.AddPrincipa
 import at.techbee.spectacled.screens.account.presentation.components.CalendarSyncInfoDialog
 import at.techbee.spectacled.screens.account.presentation.components.CreateOrUpdateCalendarBottomSheet
 import at.techbee.spectacled.screens.account.presentation.components.DeleteCalendarDialog
+import at.techbee.spectacled.screens.account.presentation.components.DeleteLocalDataDialog
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListTopBar
 import at.techbee.spectacled.screens.account.presentation.components.RemovePrincipalDialog
 import at.techbee.spectacled.screens.account.presentation.components.UpdatePrincipalPasswordBottomSheet
@@ -86,6 +87,13 @@ fun AccountListScreenRoot(
             onConfirm = {
                 viewModel.onAction(AccountListAction.OnRemovePrincipal(principal))
             }
+        )
+    }
+
+    if (state.showDeleteLocalDataDialog) {
+        DeleteLocalDataDialog(
+            onDismiss = { viewModel.onAction(AccountListAction.OnShowDeleteLocalDataDialog(false)) },
+            onConfirm = { viewModel.onAction(AccountListAction.OnDeleteLocalData) }
         )
     }
 
@@ -202,6 +210,7 @@ fun AccountListScreenRoot(
                 isFirstAccount = state.principals.isEmpty(),
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
                 onAction = { viewModel.onAction(it) },
+                onLocalDataPersistenceChanged = { viewModel.onAction(AccountListAction.OnSetLocalDataPersistence(it)) },
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAddPrincipalBottomSheet(false)) }
             )
         }
@@ -238,6 +247,7 @@ fun AccountListScreenRoot(
             SettingsBottomSheet(
                 sheetState = rememberExpandedSheetState(),
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
+                onAction = { action -> viewModel.onAction(action) },
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) }
             )
         }

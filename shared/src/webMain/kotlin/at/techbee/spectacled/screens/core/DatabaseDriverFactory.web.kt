@@ -5,6 +5,8 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.worker.WebWorkerDriver
 import at.techbee.spectacled.db.SpectacledDatabase
+import at.techbee.spectacled.screens.core.data.LocalDataPersistence
+import at.techbee.spectacled.screens.core.data.WebLocalDataPolicy
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -12,7 +14,7 @@ import org.w3c.dom.Worker
 
 
 @OptIn(ExperimentalWasmJsInterop::class)
-fun jsWorker(): Worker =
+fun jsWorker(sessionOnly: Boolean, wipeStoredDatabase: Boolean): Worker =
     // spectacledSqlWorker.js is our own copy of @cashapp/sqldelight-sqljs-worker's
     // sqljs.worker.js with IndexedDB persistence added. It lives in each
     // compose*App's src/webMain/resources (same place as favicon.ico/index.html/
@@ -22,7 +24,16 @@ fun jsWorker(): Worker =
     // app module, not here, even though this factory itself is shared code.
     // Relative (no leading slash) so it resolves against the page's base URL and works whether the
     // app is served at the site root or under a subpath (e.g. /journals/ on GitHub Pages).
-    js("""new Worker("spectacledSqlWorker.js")""")
+    //
+    // What the worker does with its stored snapshot travels in the query string, because it has to
+    // be settled before the worker opens anything - and js(...) only takes a compile-time constant,
+    // hence the four spelled-out URLs instead of one built from the two flags.
+    when {
+        sessionOnly && wipeStoredDatabase -> js("""new Worker("spectacledSqlWorker.js?sessionOnly=1&wipe=1")""")
+        sessionOnly -> js("""new Worker("spectacledSqlWorker.js?sessionOnly=1")""")
+        wipeStoredDatabase -> js("""new Worker("spectacledSqlWorker.js?wipe=1")""")
+        else -> js("""new Worker("spectacledSqlWorker.js")""")
+    }
 
 actual class DatabaseDriverFactory {
 
@@ -37,8 +48,13 @@ actual class DatabaseDriverFactory {
 
         return mutex.withLock {
             database ?: run {
-                Napier.d("Creating WebWorker Driver")
-                val d = WebWorkerDriver(jsWorker())
+                // In a private session the worker keeps the database in memory, so the schema is
+                // created from scratch on every start - readUserVersion below returns 0 and takes
+                // care of that without any special casing here.
+                val sessionOnly = WebLocalDataPolicy.current == LocalDataPersistence.SESSION_ONLY
+
+                Napier.d("Creating WebWorker Driver (sessionOnly=$sessionOnly)")
+                val d = WebWorkerDriver(jsWorker(sessionOnly, WebLocalDataPolicy.consumePendingWipe()))
 
                 // spectacledSqlWorker.js now restores the database from IndexedDB on startup
                 // (see DAT-6), so this can no longer unconditionally call schema.create() -

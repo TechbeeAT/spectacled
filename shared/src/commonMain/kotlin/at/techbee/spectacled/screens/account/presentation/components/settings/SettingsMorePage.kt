@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -14,8 +15,10 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.getLocalDataPolicy
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
@@ -28,6 +31,7 @@ import spectacled.shared.generated.resources.settings_proxy_server
 @Composable
 fun SettingsMorePage(
     userAppPreferencesStore: UserAppPreferencesStore,
+    onAction: (AccountListAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -51,6 +55,17 @@ fun SettingsMorePage(
             )
 
             ProxyServerSetup(userAppPreferencesStore)
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+            // The way back out for anyone who signed in on a machine that is not theirs and only
+            // thought of it afterwards - which is why it lives in the settings rather than only in
+            // the add-account sheet, where the choice is first offered.
+            LocalDataSettings(
+                persistence = getLocalDataPolicy().current,
+                onPersistenceChanged = { onAction(AccountListAction.OnSetLocalDataPersistence(it)) },
+                onDeleteLocalData = { onAction(AccountListAction.OnShowDeleteLocalDataDialog(true)) }
+            )
         }
     }
 }
@@ -63,7 +78,8 @@ private fun SettingsMorePage_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             SettingsMorePage(
-                userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS)
+                userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
+                onAction = {}
             )
         }
     }

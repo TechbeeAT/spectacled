@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.getPlatform
@@ -44,6 +45,7 @@ import spectacled.shared.generated.resources.close
 fun SettingsBottomSheet(
     sheetState: SheetState,
     userAppPreferencesStore: UserAppPreferencesStore,
+    onAction: (AccountListAction) -> Unit,
     onDismiss: () -> Unit,
 ) {
 
@@ -115,7 +117,7 @@ fun SettingsBottomSheet(
                 when (page) {
                     screens.indexOf(SettingsTabDestination.Appearance) -> SettingsAppearancePage(userAppPreferencesStore, defaultPageModifier)
                     screens.indexOf(SettingsTabDestination.AiProvider) -> SettingsAiPage(userAppPreferencesStore, defaultPageModifier)
-                    screens.indexOf(SettingsTabDestination.More) -> SettingsMorePage(userAppPreferencesStore, defaultPageModifier)
+                    screens.indexOf(SettingsTabDestination.More) -> SettingsMorePage(userAppPreferencesStore, onAction, defaultPageModifier)
                 }
             }
         }
@@ -132,6 +134,7 @@ private fun SettingsBottomSheet_Preview() {
             SettingsBottomSheet(
                 sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
+                onAction = {},
                 onDismiss = {}
             )
         }

@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.account.presentation
 
 import at.techbee.spectacled.screens.core.data.Credentials
+import at.techbee.spectacled.screens.core.data.LocalDataPersistence
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
@@ -38,6 +39,11 @@ sealed interface AccountListAction {
     data class OnEditAccountFolders(val principal: Principal?): AccountListAction
 
     data class OnToggleSyncEnabled(val calendarId: Long, val enabled: Boolean): AccountListAction
+
+    /** Web only: restart the app so it either keeps or forgets what it stores in this browser. */
+    data class OnSetLocalDataPersistence(val mode: LocalDataPersistence): AccountListAction
+    data class OnShowDeleteLocalDataDialog(val show: Boolean): AccountListAction
+    object OnDeleteLocalData: AccountListAction
 
     data class OnUpdateSnackbar(val message: String?): AccountListAction
 }

@@ -19,7 +19,8 @@ data class AccountListState(
     var showRemovePrincipalDialog: AccountListAction.OnShowRemovePrincipalDialog? = null,
     var showSyncInfoDialog: AccountListAction.OnShowSyncInfoDialog? = null,
     var showUpdatePrincipalPasswordBottomSheet: AccountListAction.OnShowUpdatePrincipalPasswordBottomSheet? = null,
-    var showSettingsBottomSheet: Boolean = false
+    var showSettingsBottomSheet: Boolean = false,
+    var showDeleteLocalDataDialog: Boolean = false
 )
 
 

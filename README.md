@@ -55,6 +55,7 @@ Spectacled aims to close that gap: a single, standards-based app for journals, n
 - Attachments (inline or linked)
 - Parent/child relationships between entries (`RELATED-TO`)
 - Sync runs in the background and locally caches everything, so the app stays usable offline
+- On the Web, a **private session** that writes nothing to the browser, plus a one-click wipe of everything stored locally — for public or shared computers
 - Light/dark theme, one consistent UI across every platform
 
 ## 📥 Download

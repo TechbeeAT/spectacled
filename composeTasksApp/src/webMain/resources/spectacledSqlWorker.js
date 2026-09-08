@@ -7,6 +7,18 @@
 // snapshot back to IndexedDB (debounced so a burst of writes only triggers
 // one export).
 //
+// Two flags in the worker's own URL decide what it does with that snapshot,
+// see DatabaseDriverFactory.web.kt:
+//   ?sessionOnly=1  private session: never read and never write the snapshot,
+//                   so the database exists only for as long as the page does.
+//   ?wipe=1         delete the stored snapshot before opening anything. The
+//                   deletion happens here, not on the main thread, because
+//                   this worker is the only thing that ever opens that
+//                   database - doing it before the first open is what keeps
+//                   it from racing our own debounced snapshot writes.
+// They are read from the URL rather than sent as a message because they have
+// to be known before the first byte is read or written.
+//
 // The message protocol (exec / begin_transaction / end_transaction /
 // rollback_transaction, id / results / error fields) matches
 // app.cash.sqldelight's WebWorkerDriver exactly, so the Kotlin side needs no
@@ -31,6 +43,10 @@ const STORE_NAME = 'snapshots';
 const SNAPSHOT_KEY = 'database';
 const PERSIST_DEBOUNCE_MS = 300;
 
+const workerParams = new URLSearchParams(self.location.search);
+const SESSION_ONLY = workerParams.get('sessionOnly') === '1';
+const WIPE_STORED_DATABASE = workerParams.get('wipe') === '1';
+
 let db = null;
 let persistTimer = null;
 
@@ -46,8 +62,9 @@ function openMetaDb() {
 }
 
 async function loadSnapshot() {
+  let metaDb = null;
   try {
-    const metaDb = await openMetaDb();
+    metaDb = await openMetaDb();
     return await new Promise((resolve, reject) => {
       const tx = metaDb.transaction(STORE_NAME, 'readonly');
       const req = tx.objectStore(STORE_NAME).get(SNAPSHOT_KEY);
@@ -57,12 +74,17 @@ async function loadSnapshot() {
   } catch (e) {
     console.error('[spectacledSqlWorker] Failed to load snapshot, starting with a fresh database', e);
     return null;
+  } finally {
+    // Closed again right away: an open connection blocks deleteDatabase(), which is how
+    // "delete all data in this browser" gets rid of the snapshot on the next start.
+    if (metaDb) metaDb.close();
   }
 }
 
 async function saveSnapshot(bytes) {
+  let metaDb = null;
   try {
-    const metaDb = await openMetaDb();
+    metaDb = await openMetaDb();
     await new Promise((resolve, reject) => {
       const tx = metaDb.transaction(STORE_NAME, 'readwrite');
       tx.objectStore(STORE_NAME).put(bytes, SNAPSHOT_KEY);
@@ -71,10 +93,33 @@ async function saveSnapshot(bytes) {
     });
   } catch (e) {
     console.error('[spectacledSqlWorker] Failed to persist database snapshot', e);
+  } finally {
+    if (metaDb) metaDb.close();
   }
 }
 
+function deleteStoredDatabase() {
+  return new Promise((resolve) => {
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    // Resolve either way: a deletion that fails or is blocked must not keep the app from
+    // starting, and the alternative - carrying on with the old snapshot - is what the next
+    // start would do anyway.
+    request.onsuccess = () => resolve();
+    request.onerror = () => {
+      console.error('[spectacledSqlWorker] Failed to delete the stored database', request.error);
+      resolve();
+    };
+    request.onblocked = () => {
+      console.warn('[spectacledSqlWorker] Deleting the stored database is blocked by another tab');
+      resolve();
+    };
+  });
+}
+
 function schedulePersist() {
+  if (SESSION_ONLY) {
+    return;
+  }
   if (persistTimer !== null) {
     clearTimeout(persistTimer);
   }
@@ -86,7 +131,10 @@ function schedulePersist() {
 
 async function createDatabase() {
   const SQL = await initSqlJs({ locateFile: () => 'sql-wasm.wasm' });
-  const snapshot = await loadSnapshot();
+  if (WIPE_STORED_DATABASE) {
+    await deleteStoredDatabase();
+  }
+  const snapshot = SESSION_ONLY ? null : await loadSnapshot();
   db = snapshot ? new SQL.Database(snapshot) : new SQL.Database();
 }
 

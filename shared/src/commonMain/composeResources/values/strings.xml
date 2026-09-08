@@ -414,6 +414,20 @@
     <string name="proxy_trust_confirm_button">Use hosted proxy</string>
     <string name="proxy_trust_self_host_button">How to host it myself</string>
 
+    <!-- Web only: how long the browser is allowed to keep the account and the offline copy -->
+    <string name="local_data_title">Data in this browser</string>
+    <string name="local_data_keep_title">Keep me signed in on this computer</string>
+    <string name="local_data_keep_info">The account, its password and an offline copy of your entries stay in this browser until you delete them.</string>
+    <string name="local_data_private_session">Private session</string>
+    <string name="local_data_private_session_info">Nothing is written to this browser. Closing or reloading the tab signs you out and leaves no copy behind - the right choice on a public or shared computer.</string>
+    <string name="local_data_change_reloads">Changing this reloads the app.</string>
+    <string name="local_data_private_session_hint">Starting a private session hides an account this browser has stored - it comes back when you end the session. Use the button below to remove it for good.</string>
+    <string name="local_data_change_failed">This browser does not let the app remember the choice, so the mode could not be changed.</string>
+    <string name="local_data_delete">Delete all data in this browser</string>
+    <string name="local_data_delete_info">Removes the accounts, their passwords, your settings and the offline copy of your entries from this browser. Nothing on your server is touched.</string>
+    <string name="local_data_delete_confirm_title">Delete all data in this browser?</string>
+    <string name="local_data_delete_confirm_text">The accounts, their passwords, your settings and the offline copy of your entries are removed from this browser and the app restarts. Nothing on your server is touched.</string>
+
     <string name="widget_configuration">Widget configuration</string>
     <string name="widget_filter_criteria">Filter criteria</string>
 

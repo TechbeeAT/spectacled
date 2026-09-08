@@ -74,10 +74,13 @@ import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProvider
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProviderCategory
+import at.techbee.spectacled.screens.account.presentation.components.settings.LocalDataPersistenceCard
 import at.techbee.spectacled.screens.account.presentation.components.settings.ProxyServerSetup
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.Credentials
+import at.techbee.spectacled.screens.core.data.LocalDataPersistence
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.getLocalDataPolicy
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
@@ -124,6 +127,7 @@ fun AddPrincipalBottomSheet(
     isFirstAccount: Boolean,
     userAppPreferencesStore: UserAppPreferencesStore,
     onAction: (AccountListAction.OnAddPrincipal) -> Unit,
+    onLocalDataPersistenceChanged: (LocalDataPersistence) -> Unit,
     onDismiss: () -> Unit,
     spectacledVariant: SpectacledVariant = koinInject()
 ) {
@@ -221,6 +225,7 @@ fun AddPrincipalBottomSheet(
                     isFirstAccount = isFirstAccount,
                     userAppPreferencesStore = userAppPreferencesStore,
                     onPageChanged = { selectedPage = it },
+                    onLocalDataPersistenceChanged = onLocalDataPersistenceChanged,
                     spectacledVariant = spectacledVariant,
                     modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
                 )
@@ -249,6 +254,7 @@ fun SelectAccountOptionScreen(
     isFirstAccount: Boolean,
     userAppPreferencesStore: UserAppPreferencesStore,
     onPageChanged: (AddPrincipalBottomSheetPage) -> Unit,
+    onLocalDataPersistenceChanged: (LocalDataPersistence) -> Unit,
     modifier: Modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState()),
     spectacledVariant: SpectacledVariant = koinInject()
 ) {
@@ -259,6 +265,10 @@ fun SelectAccountOptionScreen(
     val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
     val proxyConfigured = !userProxyServer.isNullOrBlank()
     var proxySetupExpanded by rememberSaveable { mutableStateOf(false) }
+
+    val localDataPolicy = getLocalDataPolicy()
+    val localDataPersistenceConfigurable = localDataPolicy.isConfigurable || LocalInspectionMode.current
+    val localDataPersistence = localDataPolicy.current
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
@@ -347,6 +357,17 @@ fun SelectAccountOptionScreen(
                     }
                 }
             }
+        }
+
+        // Offered only while nothing is connected yet, because the mode covers the whole app: a
+        // switch sitting next to an account this browser already stores would promise a privacy it
+        // cannot deliver. This is also the moment it matters - somebody about to type their CalDAV
+        // password into a machine that may not be theirs.
+        if (localDataPersistenceConfigurable && isFirstAccount) {
+            LocalDataPersistenceCard(
+                persistence = localDataPersistence,
+                onPersistenceChanged = onLocalDataPersistenceChanged
+            )
         }
 
         ElevatedCard(
@@ -806,6 +827,7 @@ private fun AddAccountScreen_Preview_Idle() {
                 isFirstAccount = true,
                 userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
                 onAction = {},
+                onLocalDataPersistenceChanged = {},
                 onDismiss = {},
                 spectacledVariant = SpectacledVariant.JOURNALS
             )
@@ -825,6 +847,7 @@ private fun AddAccountScreen_Preview_Processing() {
                 isFirstAccount = false,
                 userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.NOTES),
                 onAction = {},
+                onLocalDataPersistenceChanged = {},
                 onDismiss = {},
                 spectacledVariant = SpectacledVariant.NOTES
             )

@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.Credentials
+import at.techbee.spectacled.screens.core.data.LocalDataPersistence
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.getLocalDataPolicy
 import at.techbee.spectacled.screens.core.data.webdav.DeleteCalendarResult
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverCalendarsResult
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverHomeCollectionsResult
@@ -36,6 +38,7 @@ import spectacled.shared.generated.resources.calendar_successfully_deleted
 import spectacled.shared.generated.resources.calendars_synced
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.credentials_not_found_readd_account
+import spectacled.shared.generated.resources.local_data_change_failed
 import spectacled.shared.generated.resources.login_message_forbidden
 import spectacled.shared.generated.resources.login_message_not_authorized
 import spectacled.shared.generated.resources.server_not_found
@@ -62,6 +65,9 @@ class AccountListViewModel(
 
     private val _state = MutableStateFlow(AccountListState())
     val state = _state.asStateFlow()
+
+    /** Non-trivial only on the web, where the browser may be someone else's computer. */
+    private val localDataPolicy = getLocalDataPolicy()
 
     private var observationJob: Job? = null
 
@@ -151,7 +157,45 @@ class AccountListViewModel(
             AccountListAction.OnDismissUpdatePrincipalPasswordBottomSheet -> { _state.update { it.copy(showUpdatePrincipalPasswordBottomSheet = null) } }
             is AccountListAction.OnShowSettingsBottomSheet -> { _state.update { it.copy(showSettingsBottomSheet = action.show) } }
             is AccountListAction.OnToggleSyncEnabled -> { onToggleSyncEnabled(action.calendarId, action.enabled)}
+            is AccountListAction.OnSetLocalDataPersistence -> { setLocalDataPersistence(action.mode) }
+            is AccountListAction.OnShowDeleteLocalDataDialog -> { _state.update { it.copy(showDeleteLocalDataDialog = action.show) } }
+            AccountListAction.OnDeleteLocalData -> { deleteLocalData() }
         }
+    }
+
+
+    /**
+     * Restarts the app under [mode]. Nothing stored is deleted on the way: entering a private
+     * session hides the account this browser keeps, and ending the session brings it back - use
+     * [deleteLocalData] to actually get rid of it.
+     */
+    private fun setLocalDataPersistence(mode: LocalDataPersistence) {
+        if (mode == localDataPolicy.current) return
+
+        if (!localDataPolicy.restartWith(mode))
+            viewModelScope.launch {
+                _state.update { it.copy(snackbarText = getString(Res.string.local_data_change_failed)) }
+            }
+    }
+
+    /**
+     * Empties everything this browser holds and restarts under the mode currently in use.
+     *
+     * Whether the restart is possible at all is settled before the first deletion, so a browser
+     * that will not have it costs the user nothing.
+     */
+    private fun deleteLocalData() {
+        _state.update { it.copy(showDeleteLocalDataDialog = false) }
+
+        if (!localDataPolicy.canRestart) {
+            viewModelScope.launch {
+                _state.update { it.copy(snackbarText = getString(Res.string.local_data_change_failed)) }
+            }
+            return
+        }
+
+        _state.update { it.copy(processingState = ProcessingState.Processing) }
+        viewModelScope.launch { localDataPolicy.wipeAndRestart(localDataPolicy.current) }
     }
 
 

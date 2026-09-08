@@ -39,6 +39,17 @@ const val OPENAI_BASE_URL = "openai_base_url"
 const val OPENAI_MODEL = "openai_model"
 const val OPENAI_API_KEY = "openai_api_key"
 
+
+/**
+ * The keys that describe this browser or device rather than the person using it. A private session
+ * keeps writing these to the browser's storage while everything else stays in memory.
+ *
+ * It is the proxy that makes this necessary: the web build reaches no CalDAV server at all without
+ * one, so forgetting it would leave whoever set the machine up re-entering it before every private
+ * session - a cost with no privacy gain, since the address of a proxy says nothing about the user.
+ */
+val DEVICE_CONFIGURATION_PREFERENCE_KEYS = setOf(USER_PROXY_SERVER, HOSTED_PROXY_CONSENT_URL)
+
 interface UserAppPreferencesStore {
 
     val variant: SpectacledVariant

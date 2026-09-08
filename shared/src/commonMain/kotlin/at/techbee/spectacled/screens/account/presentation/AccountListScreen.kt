@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.account.presentation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.components.CalendarCard
 import at.techbee.spectacled.screens.account.presentation.components.PrincipalListItem
+import at.techbee.spectacled.screens.account.presentation.components.PrivateSessionBanner
+import at.techbee.spectacled.screens.core.data.LocalDataPersistence
+import at.techbee.spectacled.screens.core.data.getLocalDataPolicy
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
@@ -46,6 +50,10 @@ fun AccountListScreen(
     spectacledVariant: SpectacledVariant = koinInject()
 ) {
 
+    // Shown on this screen in either branch below, so that "where did my account go?" and "will
+    // this computer remember me?" are answered where accounts are managed, not only in the settings.
+    val privateSession = getLocalDataPolicy().current == LocalDataPersistence.SESSION_ONLY
+
     PullToRefreshBox(
         isRefreshing = state.processingState == ProcessingState.Processing,
         onRefresh = { onAction(AccountListAction.OnRerunAccountDiscovery(state.principals))  },
@@ -53,18 +61,30 @@ fun AccountListScreen(
     ) {
 
         if (state.principals.isEmpty()) {
-            SplashScreen(
-                spectacledVariant = spectacledVariant,
-                showProgressIndicator = false,
-                text = stringResource(Res.string.no_account_connected_yet),
-                reducedAlpha = true,
-                modifier = Modifier.fillMaxSize()
-            )
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                if (privateSession)
+                    PrivateSessionBanner(modifier = Modifier.padding(bottom = 8.dp))
+
+                SplashScreen(
+                    spectacledVariant = spectacledVariant,
+                    showProgressIndicator = false,
+                    text = stringResource(Res.string.no_account_connected_yet),
+                    reducedAlpha = true,
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                )
+            }
         } else {
 
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
+
+                if (privateSession) {
+                    item {
+                        PrivateSessionBanner(modifier = Modifier.padding(bottom = 8.dp))
+                    }
+                }
 
                 state.principals.forEachIndexed { indexPrincipal, principal ->
 
