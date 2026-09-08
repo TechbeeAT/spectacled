@@ -61,14 +61,14 @@ jobs:
       fail-fast: false
       matrix:
         # jpackage can only build for the machine it runs on, so every architecture
-        # needs its own runner. `suffix` is appended to the released file name and is
-        # empty for the long-standing x86_64/arm64-mac builds, so existing download
-        # links keep working; only the new Linux arm64 build gets a suffix.
+        # needs its own runner. `suffix` is appended to the released file name; both
+        # .deb builds carry their Debian architecture name, the single-architecture
+        # .msi/.dmg builds keep their plain names.
         include:
           - os: ubuntu-latest
             task: packageDeb
             format: deb
-            suffix: ''
+            suffix: '-amd64'
           - os: ubuntu-24.04-arm    # free hosted arm64 runner (public repositories)
             task: packageDeb
             format: deb
