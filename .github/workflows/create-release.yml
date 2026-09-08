@@ -56,20 +56,31 @@ jobs:
           if-no-files-found: error
 
   build-desktop:
-    name: Build desktop installers (${{ matrix.format }})
+    name: Build desktop installers (${{ matrix.format }}${{ matrix.suffix }})
     strategy:
       fail-fast: false
       matrix:
+        # jpackage can only build for the machine it runs on, so every architecture
+        # needs its own runner. `suffix` is appended to the released file name; both
+        # .deb builds carry their Debian architecture name, the single-architecture
+        # .msi/.dmg builds keep their plain names.
         include:
           - os: ubuntu-latest
             task: packageDeb
             format: deb
+            suffix: '-amd64'
+          - os: ubuntu-24.04-arm    # free hosted arm64 runner (public repositories)
+            task: packageDeb
+            format: deb
+            suffix: '-arm64'
           - os: windows-latest
             task: packageMsi
             format: msi
+            suffix: ''
           - os: macos-latest
             task: packageDmg
             format: dmg
+            suffix: ''
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -128,18 +139,18 @@ jobs:
 
       - name: Collect & rename installers
         # Version-less, stable names so a website can always link to
-        # https://github.com/<owner>/<repo>/releases/latest/download/spectacled-<app>.<format>
+        # https://github.com/<owner>/<repo>/releases/latest/download/spectacled-<app><suffix>.<format>
         # Each compose module writes exactly one installer to its own output dir.
         shell: bash
         run: |
           mkdir -p dist
-          cp composeJournalsApp/build/compose/binaries/main/${{ matrix.format }}/* dist/spectacled-journals.${{ matrix.format }}
-          cp composeNotesApp/build/compose/binaries/main/${{ matrix.format }}/*    dist/spectacled-notes.${{ matrix.format }}
-          cp composeTasksApp/build/compose/binaries/main/${{ matrix.format }}/*     dist/spectacled-tasks.${{ matrix.format }}
+          cp composeJournalsApp/build/compose/binaries/main/${{ matrix.format }}/* dist/spectacled-journals${{ matrix.suffix }}.${{ matrix.format }}
+          cp composeNotesApp/build/compose/binaries/main/${{ matrix.format }}/*    dist/spectacled-notes${{ matrix.suffix }}.${{ matrix.format }}
+          cp composeTasksApp/build/compose/binaries/main/${{ matrix.format }}/*     dist/spectacled-tasks${{ matrix.suffix }}.${{ matrix.format }}
 
       - uses: actions/upload-artifact@v7
         with:
-          name: desktop-${{ matrix.format }}
+          name: desktop-${{ matrix.format }}${{ matrix.suffix }}
           path: dist/*
           if-no-files-found: error
 
