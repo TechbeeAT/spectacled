@@ -144,10 +144,26 @@ compose.desktop {
             //     plain-JSON store.
             modules("java.sql", "jdk.unsupported")
 
-            packageName = "at.techbee.spectacled.notes"
+            // Display name: passed to jpackage as --name, which becomes the "Name=" of the
+            // Linux .desktop entry, the macOS .app bundle name and the Windows install
+            // directory. Deliberately separate from the Debian package name below, which
+            // has to stay a lowercase identifier.
+            packageName = "spectacled Notes"
             packageVersion = libs.versions.appVersionString.get()
+            description = "Keep free-form notes and sync them over CalDAV"
+            vendor = "Techbee e.U."
 
-            linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_png.png")) }
+            linux {
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_png.png"))
+
+                // Debian package identity: a conventional short lowercase name (Debian
+                // Policy 5.6.1), which is also the /opt/<name> installation path. The
+                // reverse-DNS id lives on in bundleID / applicationId, not here.
+                packageName = "spectacled-notes"
+                debMaintainer = "spectacled@techbee.at"   // -> "Techbee e.U. <spectacled@techbee.at>"
+                appCategory = "utils"                     // "Section:" of the deb control file
+                menuGroup = "Office;"                     // "Categories=" of the .desktop entry
+            }
             windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_ico.ico")) }
             macOS {
                 dockName = "spectacled Notes"
