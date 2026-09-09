@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectacled with Baïkal — Spectacled</title>
+    <meta name="description" content="Baïkal works with all three Spectacled apps. One setting to check first: switch WebDAV authentication from Digest to Basic.">
+    <link rel="stylesheet" href="articles.css">
+</head>
+<body>
+<header class="site">
+    <a class="brand" href="../">Spectacled</a>
+    <nav>
+        <a href="./">Articles</a>
+        <a href="https://github.com/TechbeeAT/spectacled">GitHub</a>
+    </nav>
+</header>
+
+<main>
+    <h1>Spectacled with Baïkal</h1>
+    <p class="meta">
+        <span class="tag">Server compatibility</span>
+        <time datetime="2026-09-09">9 September 2026</time>
+    </p>
+
+    <p>
+        <a href="https://sabre.io/baikal/">Baïkal</a> is a small, self-hosted CalDAV and CardDAV
+        server written in PHP and built on the <a href="https://sabre.io/dav/">sabre/dav</a>
+        library. It stores its data in SQLite or MySQL, runs happily on shared hosting, a NAS or a
+        Raspberry Pi, and comes with a minimal web admin for managing users and collections. If you
+        want your own CalDAV server without running a full groupware suite, Baïkal is one of the
+        smallest ways to get there.
+    </p>
+
+    <h2>Compatibility at a glance</h2>
+
+    <table>
+        <thead>
+            <tr><th>App</th><th>Status</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Spectacled Journals</td><td>✅ Works</td><td>No issues found</td></tr>
+            <tr><td>Spectacled Notes</td><td>✅ Works</td><td>No issues found</td></tr>
+            <tr><td>Spectacled Tasks</td><td>✅ Works</td><td>No issues found</td></tr>
+        </tbody>
+    </table>
+
+    <p>
+        We tested all three apps against a Baïkal instance: account setup and discovery, creating
+        and deleting collections, and creating, editing, moving and deleting entries. Everything
+        behaved as expected — no sync errors, no lost data, no server-side quirks to work around.
+    </p>
+
+    <div class="callout">
+        <span class="label">One thing to check first</span>
+        <p>
+            Spectacled authenticates with <strong>HTTP Basic</strong> only. Baïkal can be
+            configured for either Digest or Basic authentication, and if it is set to Digest, the
+            apps cannot log in — you will just get a failed login with correct credentials. Switch
+            your Baïkal instance to Basic before adding the account.
+        </p>
+    </div>
+
+    <h2>Switching Baïkal from Digest to Basic</h2>
+
+    <p>
+        The authentication type is a Baïkal setting, not a per-user one. Open the Baïkal admin web
+        interface, go to <strong>Settings</strong>, and set the WebDAV authentication type to
+        <strong>Basic</strong>. (On older installations the same option lives in Baïkal's
+        configuration file rather than the admin UI.) Existing accounts and passwords keep working;
+        only the way clients prove them changes.
+    </p>
+
+    <div class="callout">
+        <span class="label">Use HTTPS</span>
+        <p>
+            Basic authentication sends your username and password Base64-encoded, which is encoding,
+            not encryption — anyone who can read the traffic can read the credentials. Digest was
+            designed to avoid exactly that on plain HTTP. So if you switch to Basic, serve Baïkal
+            over HTTPS. With TLS in front, Basic is the standard way CalDAV clients authenticate,
+            and it is what most other clients use too.
+        </p>
+    </div>
+
+    <p>
+        If you administer the server yourself, this is a one-minute change. If you are on hosting
+        where you cannot change the setting, Spectacled will not be able to connect for now —
+        Digest support is not implemented in the apps.
+    </p>
+
+    <h2>Connecting an account</h2>
+
+    <p>
+        In the app, add an account and enter your Baïkal CalDAV URL together with your Baïkal
+        username and password. The URL is usually the <code>dav.php</code> endpoint, for example
+        <code>https://dav.example.com/dav.php/</code>; Baïkal shows the exact address for each user
+        in its admin interface. Spectacled also retries via
+        <code>/.well-known/caldav</code>, so the bare host name works as well if your web server has
+        Baïkal's well-known redirect in place.
+    </p>
+
+    <p>
+        After login, Spectacled lists the collections it can actually use. Journals and Notes store
+        their entries as <code>VJOURNAL</code>, Tasks uses <code>VTODO</code>, so a collection only
+        shows up if it supports one of those components — a calendar created for events only will
+        not appear. You can also let Spectacled create a new collection for you during setup, which
+        is the quickest route: it requests the right component set itself.
+    </p>
+
+    <h2>If you use the web app</h2>
+
+    <p>
+        The browser build is a special case, and it is not Baïkal's fault: browsers enforce CORS,
+        and CalDAV servers generally do not send the headers a browser needs for cross-origin
+        WebDAV requests. The web app therefore talks to your server through a small
+        <a href="https://github.com/TechbeeAT/spectacled/tree/main/server">CORS proxy</a>, which you
+        should self-host — it terminates TLS and would otherwise let a third party see your
+        credentials. The Android, iOS and desktop apps contact Baïkal directly and need none of
+        this.
+    </p>
+
+    <h2>Verdict</h2>
+
+    <p>
+        Baïkal is a good match for Spectacled: light to run, standards-compliant, and it worked with
+        all three apps without a single workaround. Set the authentication type to Basic, put it
+        behind HTTPS, and you are done.
+    </p>
+
+    <p>
+        Found something that does not match your experience, or tested Spectacled against another
+        server? Please
+        <a href="https://github.com/TechbeeAT/spectacled/issues">open an issue</a> — server reports
+        are how this section grows.
+    </p>
+</main>
+
+<footer class="site">
+    <a href="./">← All articles</a> ·
+    <a href="https://github.com/TechbeeAT/spectacled">Source on GitHub</a>
+</footer>
+</body>
+</html>

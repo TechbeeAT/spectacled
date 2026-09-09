@@ -1,0 +1,96 @@
+/* Shared styling for the articles section.
+   Deliberately dependency-free and in the same visual language as the landing
+   page: system fonts and the CSS system colors, so light/dark follows the OS. */
+
+:root {
+    color-scheme: light dark;
+    --rule: color-mix(in srgb, CanvasText 20%, transparent);
+    --surface: color-mix(in srgb, CanvasText 4%, Canvas);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+    max-width: 44rem;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 1.05rem;
+    line-height: 1.65;
+    background: Canvas;
+    color: CanvasText;
+}
+
+a { color: LinkText; }
+@media (prefers-color-scheme: dark) { a { color: #8ab4f8; } }
+
+header.site {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.9rem;
+}
+header.site .brand { font-weight: 600; font-size: 1rem; text-decoration: none; color: inherit; }
+header.site nav { margin-left: auto; display: flex; gap: 1rem; }
+
+h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 0.5rem; }
+h2 { font-size: 1.25rem; margin: 2.5rem 0 0.75rem; }
+h3 { font-size: 1.05rem; margin: 1.75rem 0 0.5rem; }
+
+p, ul, ol { margin: 0 0 1rem; }
+ul, ol { padding-left: 1.4rem; }
+li { margin-bottom: 0.35rem; }
+
+.meta { font-size: 0.85rem; opacity: 0.7; margin-bottom: 2rem; }
+.meta .tag {
+    display: inline-block; padding: 0.1rem 0.5rem; margin-right: 0.5rem;
+    border: 1px solid var(--rule); border-radius: 0.5rem;
+}
+
+code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 0.3rem;
+    padding: 0.1rem 0.3rem;
+}
+
+table { border-collapse: collapse; width: 100%; margin: 0 0 1.5rem; font-size: 0.95rem; }
+th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; }
+
+.callout {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid CanvasText;
+    border-radius: 0.5rem;
+    padding: 1rem 1.1rem;
+    margin: 1.5rem 0;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout .label { font-weight: 600; display: block; margin-bottom: 0.25rem; }
+
+/* Article list on the section index */
+.articles { list-style: none; padding: 0; margin: 0; }
+.articles li { margin: 0 0 1rem; }
+.articles a.card {
+    display: block; padding: 1.1rem 1.25rem;
+    border: 1px solid var(--rule); border-radius: 0.75rem;
+    text-decoration: none; color: inherit;
+    transition: transform 0.1s ease, border-color 0.1s ease;
+}
+.articles a.card:hover { transform: translateY(-2px); border-color: CanvasText; }
+.articles .card h2 { margin: 0 0 0.3rem; font-size: 1.1rem; }
+.articles .card p { margin: 0; opacity: 0.75; font-size: 0.95rem; }
+.articles .card .when { display: block; margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.6; }
+
+footer.site {
+    margin-top: 3.5rem; padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.85rem; opacity: 0.7;
+}

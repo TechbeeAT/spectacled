@@ -3,6 +3,7 @@ name: Deploy web apps to GitHub Pages
 # Builds the three Compose/Web apps as static JS bundles and publishes them to
 # GitHub Pages under one origin:
 #   /            landing page
+#   /articles/   articles (server compatibility, guidance)
 #   /journals/   Spectacled Journals
 #   /notes/      Spectacled Notes
 #   /tasks/      Spectacled Tasks
@@ -100,10 +101,12 @@ jobs:
         with:
           path: _site
 
-      - name: Add landing page
+      - name: Add landing page and articles
         run: |
           set -eu
-          cp .github/pages/index.html _site/index.html
+          # Copies the whole static-pages tree (index.html plus articles/), so
+          # adding a page there needs no workflow change.
+          cp -R .github/pages/. _site/
           # Serve the artifact verbatim (no Jekyll processing of files/underscore dirs).
           touch _site/.nojekyll
           echo "Assembled site contents:"; ls -la _site
