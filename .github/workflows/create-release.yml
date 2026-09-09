@@ -148,6 +148,22 @@ jobs:
           cp composeNotesApp/build/compose/binaries/main/${{ matrix.format }}/*    dist/spectacled-notes${{ matrix.suffix }}.${{ matrix.format }}
           cp composeTasksApp/build/compose/binaries/main/${{ matrix.format }}/*     dist/spectacled-tasks${{ matrix.suffix }}.${{ matrix.format }}
 
+      # --- Linux only: GNOME Software / Ubuntu App Center take the license, the
+      #     developer website and the "last updated" date from an AppStream
+      #     metainfo file, which jpackage cannot ship, so it is added to the
+      #     finished packages here (see .github/scripts/deb-add-appstream.sh).
+      - name: Add AppStream metadata to .deb packages
+        if: matrix.format == 'deb'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y appstream
+          for app in journals notes tasks; do
+            metainfo="compose${app^}App/packaging/linux/at.techbee.spectacled.$app.metainfo.xml"
+            appstreamcli validate --no-net "$metainfo"
+            .github/scripts/deb-add-appstream.sh "dist/spectacled-$app${{ matrix.suffix }}.deb" "$metainfo"
+          done
+
       - uses: actions/upload-artifact@v7
         with:
           name: desktop-${{ matrix.format }}${{ matrix.suffix }}

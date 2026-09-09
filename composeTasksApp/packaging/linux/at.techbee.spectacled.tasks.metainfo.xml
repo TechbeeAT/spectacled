@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AppStream metadata — the fields GNOME Software / Ubuntu App Center shows for an
+  installed package: license, developer, website and "last updated". jpackage can
+  only write files below /opt/<package> and has no options for any of this, so
+  .github/scripts/deb-add-appstream.sh installs this file into the finished .deb
+  and fills in the <releases> block from the package version at build time.
+-->
+<component type="desktop-application">
+  <id>at.techbee.spectacled.tasks</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+
+  <name>spectacled Tasks</name>
+  <summary>Track to-dos with due dates and priorities over CalDAV</summary>
+
+  <description>
+    <p>
+      Track to-dos with status, priority and due dates, stored as iCalendar VTODO components and synced over CalDAV to a server you choose — Nextcloud, Radicale or anything else that speaks CalDAV. There is no proprietary backend and no account to create.
+    </p>
+    <p>
+      Entries are categorised, searchable and can be linked to each other. Everything is cached locally, so the app stays usable offline and syncs again as soon as the server is reachable.
+    </p>
+  </description>
+
+  <developer id="at.techbee">
+    <name>Techbee e.U.</name>
+  </developer>
+
+  <!--
+    jpackage names the generated .desktop file
+    <linux package name>-<display name, spaces replaced by underscores>.desktop,
+    so this has to follow the names set in composeTasksApp/build.gradle.kts.
+  -->
+  <launchable type="desktop-id">spectacled-tasks-spectacled_Tasks.desktop</launchable>
+
+  <url type="homepage">https://spectacled.techbee.at</url>
+  <url type="bugtracker">https://github.com/TechbeeAT/spectacled/issues</url>
+  <url type="vcs-browser">https://github.com/TechbeeAT/spectacled</url>
+
+  <categories>
+    <category>Office</category>
+    <category>ProjectManagement</category>
+  </categories>
+
+  <keywords>
+    <keyword>tasks</keyword>
+    <keyword>todo</keyword>
+    <keyword>caldav</keyword>
+    <keyword>icalendar</keyword>
+    <keyword>vtodo</keyword>
+  </keywords>
+
+  <content_rating type="oars-1.1"/>
+</component>

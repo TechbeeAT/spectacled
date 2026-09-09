@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AppStream metadata — the fields GNOME Software / Ubuntu App Center shows for an
+  installed package: license, developer, website and "last updated". jpackage can
+  only write files below /opt/<package> and has no options for any of this, so
+  .github/scripts/deb-add-appstream.sh installs this file into the finished .deb
+  and fills in the <releases> block from the package version at build time.
+-->
+<component type="desktop-application">
+  <id>at.techbee.spectacled.notes</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+
+  <name>spectacled Notes</name>
+  <summary>Keep free-form notes and sync them over CalDAV</summary>
+
+  <description>
+    <p>
+      Keep free-form notes, stored as iCalendar VJOURNAL components and synced over CalDAV to a server you choose — Nextcloud, Radicale or anything else that speaks CalDAV. There is no proprietary backend and no account to create.
+    </p>
+    <p>
+      Entries are categorised, searchable and can be linked to each other. Everything is cached locally, so the app stays usable offline and syncs again as soon as the server is reachable.
+    </p>
+  </description>
+
+  <developer id="at.techbee">
+    <name>Techbee e.U.</name>
+  </developer>
+
+  <!--
+    jpackage names the generated .desktop file
+    <linux package name>-<display name, spaces replaced by underscores>.desktop,
+    so this has to follow the names set in composeNotesApp/build.gradle.kts.
+  -->
+  <launchable type="desktop-id">spectacled-notes-spectacled_Notes.desktop</launchable>
+
+  <url type="homepage">https://spectacled.techbee.at</url>
+  <url type="bugtracker">https://github.com/TechbeeAT/spectacled/issues</url>
+  <url type="vcs-browser">https://github.com/TechbeeAT/spectacled</url>
+
+  <categories>
+    <category>Office</category>
+  </categories>
+
+  <keywords>
+    <keyword>notes</keyword>
+    <keyword>notebook</keyword>
+    <keyword>caldav</keyword>
+    <keyword>icalendar</keyword>
+    <keyword>vjournal</keyword>
+  </keywords>
+
+  <content_rating type="oars-1.1"/>
+</component>
