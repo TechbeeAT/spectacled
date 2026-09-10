@@ -1,3 +1,5 @@
 ﻿<resources>
     <string name="app_name" translatable="false">spectacled Journals</string>
+    <!-- Shown under the launcher icon, where the full name is cut off. -->
+    <string name="launcher_name" translatable="false">Journals</string>
 </resources>
