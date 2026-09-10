@@ -149,14 +149,20 @@ fun ListScreenRoot(
             }
         }
 
+        // Only an actual collapse dismisses the keyboard. This must not fire on first composition:
+        // in the two-pane layout (see SpectacledApp) this screen can enter composition while the
+        // details editor holds the keyboard, and hiding it there closes an editor the user just
+        // tapped, leaving the caret blinking with no keyboard.
+        var searchBarWasShown by remember { mutableStateOf(state.showSearchBar) }
         LaunchedEffect(state.showSearchBar) {
             if (state.showSearchBar) {
                 delay(300.milliseconds)
                 searchBarFocusRequester.requestFocus()
                 keyboardController?.show()
-            } else {
+            } else if (searchBarWasShown) {
                 keyboardController?.hide()
             }
+            searchBarWasShown = state.showSearchBar
         }
 
         if (state.showDeleteSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {

@@ -4,6 +4,7 @@ package at.techbee.spectacled
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -12,8 +13,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -120,7 +125,7 @@ fun SpectacledApp(
                         // BoxWithConstraints observes the window size and will trigger a recomposition
                         // whenever the orientation or size changes.
                         BoxWithConstraints {
-                            val isLandscape = (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
+                            val isLandscape = rememberIsLandscape()
 
                             Row(modifier = Modifier.fillMaxSize()) {
 
@@ -170,7 +175,7 @@ fun SpectacledApp(
                         // BoxWithConstraints observes the window size and will trigger a recomposition
                         // whenever the orientation or size changes.
                         BoxWithConstraints {
-                            val isLandscape = (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
+                            val isLandscape = rememberIsLandscape()
 
                             Row(modifier = Modifier.fillMaxSize()) {
 
@@ -274,6 +279,24 @@ fun SpectacledApp(
     }
 }
 
+
+/**
+ * Whether to use the two-pane (landscape) layout.
+ *
+ * Derived from the tallest height seen at the current width rather than from [maxHeight] directly.
+ * The host view shrinks while the software keyboard is up - SwiftUI keyboard avoidance on iOS (see
+ * imeAwarePadding), `adjustResize` on Android - and measuring against the shrunken height flips a
+ * portrait screen into the landscape layout mid-edit. That remounts the second pane, and a pane
+ * entering composition dismisses the keyboard, so tapping a text field closed the keyboard the
+ * instant it opened. A real rotation changes [maxWidth], which re-latches the height.
+ */
+@Composable
+private fun BoxWithConstraintsScope.rememberIsLandscape(): Boolean {
+    var tallestHeight by remember(maxWidth) { mutableStateOf(maxHeight) }
+    SideEffect { if (maxHeight > tallestHeight) tallestHeight = maxHeight }
+    // large tablets have enough space to always show landscape layout
+    return maxWidth > maxOf(tallestHeight, maxHeight) || maxWidth > 700.dp
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
