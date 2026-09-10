@@ -4,7 +4,10 @@ on:
     tags:
       - 'v*beta*'      # betas  -> pre-release
       - 'v*'           # finals -> release
-      - '!v*alpha*'    # alphas are handled by upload-aab-to-google.yml
+      # internal and alpha builds stay off GitHub: no desktop installers and no
+      # downloadable APKs, so who gets them is decided in Google Play / ASC instead.
+      - '!v*internal*'
+      - '!v*alpha*'
   workflow_dispatch:
 
 concurrency:

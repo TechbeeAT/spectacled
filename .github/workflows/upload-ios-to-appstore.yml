@@ -2,9 +2,9 @@ name: Upload iOS apps to App Store Connect
 on:
   push:
     tags:
-      - 'v*beta*'      # betas  -> TestFlight
-      - 'v*'           # finals -> TestFlight (promote to the App Store from ASC)
-      - '!v*alpha*'
+      # alphas, betas and finals -> TestFlight; decide there who gets which build.
+      - 'v*'
+      - '!v*internal*' # internal builds go to Google Play only
   workflow_dispatch:
 
 # Values read straight from the Xcode configs (iosApp/ios*App/Configuration/Config.xcconfig):

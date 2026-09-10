@@ -1,64 +1,78 @@
 name: Create and upload app bundles to Google Play
+
+# The tag suffix *is* the Google Play track:
+#
+#   v1.0.62-internal  -> internal    (completed)
+#   v1.0.62-alpha     -> alpha       (completed)   closed testing
+#   v1.0.62-beta      -> beta        (completed)   open testing
+#   v1.0.62           -> production  (draft)       published by hand in the Play Console
+#
+# Any other suffix (-rc, -Beta, a typo) fails the job rather than guessing a track.
 on:
   push:
     tags:
-      - 'v*'           # alpha, beta and final releases all upload to Google Play
+      - 'v*'
   workflow_dispatch:
 jobs:
   build:
-    name: Upload app bundles to Google Play
-    permissions:
-      contents: write
+    name: Build app bundles
     runs-on: ubuntu-latest
+    outputs:
+      track: ${{ steps.play.outputs.track }}
+      status: ${{ steps.play.outputs.status }}
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: true
-          fetch-depth: 0   # full history + tags, needed for the What's new notes below
+
+      # Both checks below run before the (slow) Gradle build, so a bad tag or a
+      # forgotten release note costs seconds instead of minutes.
+      - name: Resolve Google Play track
+        id: play
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          case "$TAG" in
+            v*) ;;
+            *) echo "::error::Not a version tag: '$TAG'. Run this on a v* tag." ; exit 1 ;;
+          esac
+          case "$TAG" in
+            *-internal) track=internal;   status=completed ;;
+            *-alpha)    track=alpha;      status=completed ;;
+            *-beta)     track=beta;       status=completed ;;
+            *-*)        echo "::error::Unrecognised suffix in '$TAG'. Use -internal, -alpha, -beta, or no suffix for production." ; exit 1 ;;
+            *)          track=production; status=draft ;;
+          esac
+          echo "track=$track" >> "$GITHUB_OUTPUT"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "$TAG -> track=$track status=$status"
+
+      - name: Check release notes
+        # See distribution/README.md. 500 characters is a hard Google Play limit.
+        run: |
+          failed=0
+          for app in journals notes tasks; do
+            file="distribution/$app/whatsnew/whatsnew-en-US"
+            if [ ! -f "$file" ]; then
+              echo "::error file=$file::Missing release notes for $app."
+              failed=1
+            elif [ ! -s "$file" ]; then
+              echo "::error file=$file::Release notes for $app are empty."
+              failed=1
+            elif [ "$(wc -c < "$file")" -gt 500 ]; then
+              echo "::error file=$file::Release notes for $app are $(wc -c < "$file") characters; Google Play allows 500."
+              failed=1
+            else
+              echo "$app: $(wc -c < "$file") characters"
+            fi
+          done
+          exit "$failed"
+
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6.3.0
-
-      - name: Determine Google Play tracks
-        id: play
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          # Tag suffix -> Play track. Note that Google's "alpha" track is Closed testing
-          # and "beta" is Open testing, which is one step further than our tag names
-          # suggest. Betas go to Internal as well, so internal testers stay on the same
-          # build. When open testing starts, add ",beta" to the line below.
-          case "$TAG" in
-            *alpha*) tracks=internal ;;
-            *beta*)  tracks=internal,alpha ;;
-            *)       tracks=internal ;;   # finals + workflow_dispatch: promote by hand
-          esac
-          echo "tracks=$tracks" >> "$GITHUB_OUTPUT"
-          echo "Uploading $TAG to: $tracks"
-
-      - name: Generate What's new notes
-        # One shared directory for all three apps - they live in the same repository and
-        # therefore share the same commits. Files must be named whatsnew-<BCP 47 locale>.
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          prev="$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)"
-          range="${prev:+$prev..}${TAG}"
-          mkdir -p distribution/whatsnew
-          # Google Play rejects release notes longer than 500 characters, so keep adding
-          # commit subjects only while they still fit.
-          notes=""
-          while IFS= read -r line; do
-            candidate="${notes}${line}"$'\n'
-            if [ "${#candidate}" -gt 500 ]; then break; fi
-            notes="$candidate"
-          done < <(git log --no-merges --pretty='- %s' "$range" 2>/dev/null || true)
-          if [ -z "$notes" ]; then notes="Spectacled ${TAG}"$'\n'; fi
-          printf '%s' "$notes" > distribution/whatsnew/whatsnew-en-US
-          echo "Release notes for $range:"
-          cat distribution/whatsnew/whatsnew-en-US
 
       - name: Prepare keystore
         run: echo "${{ secrets.android_keystore_base64 }}" | base64 -d > "$GITHUB_WORKSPACE/keystore.jks"
@@ -82,48 +96,67 @@ jobs:
           ANDROID_KEY_ALIAS_TASKS: ${{ secrets.android_key_alias_tasks }}
           ANDROID_KEY_PASSWORD_TASKS: ${{ secrets.android_key_password_tasks }}
 
-      - name: Locate ProGuard mapping files
-        # All three apps build with isMinifyEnabled = true, so Play needs the mapping to
-        # de-obfuscate crash reports. Looked up instead of hardcoded so an AGP change to
-        # the output layout degrades to "no mapping uploaded" rather than a failed release.
-        id: mappings
+      - name: Collect bundles & mapping files
+        # Normalized to dist/<app>/, so the upload job below needs no per-app paths.
+        # All three apps build with isMinifyEnabled = true; the mapping is looked up
+        # rather than hardcoded so an AGP change to the output layout degrades to
+        # "no mapping uploaded" instead of failing the release.
         run: |
-          for app in journals notes tasks; do
-            dir="android$(echo "${app:0:1}" | tr '[:lower:]' '[:upper:]')${app:1}App"
-            path="$(find "$dir/build/outputs/mapping" -name mapping.txt -type f 2>/dev/null | head -n 1 || true)"
-            echo "${app}=${path}" >> "$GITHUB_OUTPUT"
-            echo "$dir mapping: ${path:-<none found>}"
+          for pair in "journals:androidJournalsApp" "notes:androidNotesApp" "tasks:androidTasksApp"; do
+            app="${pair%%:*}"
+            module="${pair##*:}"
+            mkdir -p "dist/$app"
+            cp "$module/build/outputs/bundle/release/"*.aab "dist/$app/app.aab"
+            mapping="$(find "$module/build/outputs/mapping" -name mapping.txt -type f 2>/dev/null | head -n 1 || true)"
+            if [ -n "$mapping" ]; then cp "$mapping" "dist/$app/mapping.txt"; fi
+            echo "$app: bundle=ok mapping=${mapping:-<none found>}"
           done
 
-      - name: Upload spectacled Journals to Google Play
-        uses: r0adkll/upload-google-play@v1
+      - uses: actions/upload-artifact@v7
         with:
-          serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
-          packageName: at.techbee.spectacled.journals
-          releaseFiles: ./androidJournalsApp/build/outputs/bundle/release/*.aab
-          mappingFile: ${{ steps.mappings.outputs.journals }}
-          whatsNewDirectory: distribution/whatsnew
-          tracks: ${{ steps.play.outputs.tracks }}
-          status: completed
+          name: play-bundles
+          path: dist/
+          if-no-files-found: error
 
-      - name: Upload spectacled Notes to Google Play
-        uses: r0adkll/upload-google-play@v1
+  upload:
+    name: Upload ${{ matrix.app }} to Google Play (${{ needs.build.outputs.track }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      # One app's rejection must not cancel the other two.
+      fail-fast: false
+      matrix:
+        include:
+          - app: journals
+            packageName: at.techbee.spectacled.journals
+          - app: notes
+            packageName: at.techbee.spectacled.notes
+          - app: tasks
+            packageName: at.techbee.spectacled.tasks
+    steps:
+      - uses: actions/checkout@v7   # for distribution/<app>/whatsnew
+      - uses: actions/download-artifact@v8
         with:
-          serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
-          packageName: at.techbee.spectacled.notes
-          releaseFiles: ./androidNotesApp/build/outputs/bundle/release/*.aab
-          mappingFile: ${{ steps.mappings.outputs.notes }}
-          whatsNewDirectory: distribution/whatsnew
-          tracks: ${{ steps.play.outputs.tracks }}
-          status: completed
+          name: play-bundles
+          path: dist
 
-      - name: Upload spectacled Tasks to Google Play
-        uses: r0adkll/upload-google-play@v1
+      - name: Resolve mapping file
+        id: mapping
+        run: |
+          file="dist/${{ matrix.app }}/mapping.txt"
+          if [ -f "$file" ]; then
+            echo "path=$file" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"   # the action skips an empty mappingFile
+            echo "::warning::No mapping file for ${{ matrix.app }}; crash reports stay obfuscated."
+          fi
+
+      - uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
-          packageName: at.techbee.spectacled.tasks
-          releaseFiles: ./androidTasksApp/build/outputs/bundle/release/*.aab
-          mappingFile: ${{ steps.mappings.outputs.tasks }}
-          whatsNewDirectory: distribution/whatsnew
-          tracks: ${{ steps.play.outputs.tracks }}
-          status: completed
+          packageName: ${{ matrix.packageName }}
+          releaseFiles: dist/${{ matrix.app }}/app.aab
+          mappingFile: ${{ steps.mapping.outputs.path }}
+          whatsNewDirectory: distribution/${{ matrix.app }}/whatsnew
+          track: ${{ needs.build.outputs.track }}
+          status: ${{ needs.build.outputs.status }}
