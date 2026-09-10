@@ -6,7 +6,10 @@ import at.techbee.spectacled.DeepLinkHandler
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.parseArgs
 import at.techbee.spectacled.setupDesktopHandler
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import spectacled.composetasksapp.generated.resources.Res
+import spectacled.composetasksapp.generated.resources.icon_tasks_png
 
 fun main(args: Array<String>) {
     DeepLinkHandler.setupDesktopHandler(SpectacledVariant.TASKS)
@@ -16,6 +19,10 @@ fun main(args: Array<String>) {
         Window(
             onCloseRequest = ::exitApplication,
             title = stringResource(SpectacledVariant.TASKS.appNameStringRes),
+            // Without this the window and taskbar show the default Java icon. The
+            // shared logo is a white silhouette meant for a coloured backdrop, so
+            // this uses the same artwork the installers use as the app icon.
+            icon = painterResource(Res.drawable.icon_tasks_png),
         ) {
             TasksApp()
         }
