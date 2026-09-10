@@ -133,7 +133,10 @@ compose.desktop {
         }
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            // Windows gets both: the .exe is the download for people (Explorer shows
+            // the app icon on it, an .msi always shows the generic Windows Installer
+            // one), the .msi stays for deployment via GPO/Intune.
+            targetFormats(TargetFormat.Dmg, TargetFormat.Exe, TargetFormat.Msi, TargetFormat.Deb)
 
             // jpackage trims the bundled runtime with jlink and can't see reflectively
             // loaded modules, so it drops these and the packaged app crashes at runtime:
