@@ -155,6 +155,26 @@ jobs:
           cp composeNotesApp/build/compose/binaries/main/${{ matrix.format }}/*    dist/spectacled-notes${{ matrix.suffix }}.${{ matrix.format }}
           cp composeTasksApp/build/compose/binaries/main/${{ matrix.format }}/*     dist/spectacled-tasks${{ matrix.suffix }}.${{ matrix.format }}
 
+      # WORKAROUND: GNOME matches a window to its .desktop entry by WM_CLASS, which
+      # Java derives from the main class name, so without this the dock shows a generic
+      # icon and "at-techbee-spectacled-journals-MainKt" instead of the app icon and
+      # name. jpackage has no option for StartupWMClass, and Compose clears the resource
+      # directory that could hold an override, so it is appended to the built packages.
+      # TODO: drop this step once jpackage (or Compose) can set StartupWMClass itself.
+      - name: Add StartupWMClass to .deb packages
+        if: matrix.format == 'deb'
+        shell: bash
+        run: |
+          for deb in dist/*.deb; do
+            work=$(mktemp -d)
+            dpkg-deb --raw-extract "$deb" "$work"
+            main_class=$(sed -n 's/^app\.mainclass=//p' "$work"/opt/*/lib/app/*.cfg)
+            : "${main_class:?no app.mainclass in $deb}"
+            echo "StartupWMClass=${main_class//./-}" >> "$work"/opt/*/lib/*.desktop
+            dpkg-deb --root-owner-group --build "$work" "$deb" >/dev/null
+            rm -rf "$work"
+          done
+
       - uses: actions/upload-artifact@v7
         with:
           name: desktop-${{ matrix.format }}${{ matrix.suffix }}
