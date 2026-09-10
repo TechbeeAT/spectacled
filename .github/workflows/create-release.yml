@@ -148,6 +148,19 @@ jobs:
           cp composeNotesApp/build/compose/binaries/main/${{ matrix.format }}/*    dist/spectacled-notes${{ matrix.suffix }}.${{ matrix.format }}
           cp composeTasksApp/build/compose/binaries/main/${{ matrix.format }}/*     dist/spectacled-tasks${{ matrix.suffix }}.${{ matrix.format }}
 
+      # --- Linux only: WORKAROUND, see .github/scripts/deb-add-startupwmclass.sh.
+      #     GNOME needs a StartupWMClass in the .desktop entry to recognise the
+      #     running window, otherwise the dock shows a generic icon and the Java
+      #     main class name. jpackage cannot write it, so it is added to the
+      #     finished packages here. Drop this step once jpackage supports it.
+      - name: Add StartupWMClass to .deb packages
+        if: matrix.format == 'deb'
+        shell: bash
+        run: |
+          for app in journals notes tasks; do
+            .github/scripts/deb-add-startupwmclass.sh "dist/spectacled-$app${{ matrix.suffix }}.deb"
+          done
+
       - uses: actions/upload-artifact@v7
         with:
           name: desktop-${{ matrix.format }}${{ matrix.suffix }}
