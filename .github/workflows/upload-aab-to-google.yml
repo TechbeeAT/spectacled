@@ -25,8 +25,7 @@ jobs:
         with:
           submodules: true
 
-      # Both checks below run before the (slow) Gradle build, so a bad tag or a
-      # forgotten release note costs seconds instead of minutes.
+      # Runs before the (slow) Gradle build, so a bad tag costs seconds not minutes.
       - name: Resolve Google Play track
         id: play
         env:
@@ -46,27 +45,6 @@ jobs:
           echo "track=$track" >> "$GITHUB_OUTPUT"
           echo "status=$status" >> "$GITHUB_OUTPUT"
           echo "$TAG -> track=$track status=$status"
-
-      - name: Check release notes
-        # See distribution/README.md. 500 characters is a hard Google Play limit.
-        run: |
-          failed=0
-          for app in journals notes tasks; do
-            file="distribution/$app/whatsnew/whatsnew-en-US"
-            if [ ! -f "$file" ]; then
-              echo "::error file=$file::Missing release notes for $app."
-              failed=1
-            elif [ ! -s "$file" ]; then
-              echo "::error file=$file::Release notes for $app are empty."
-              failed=1
-            elif [ "$(wc -c < "$file")" -gt 500 ]; then
-              echo "::error file=$file::Release notes for $app are $(wc -c < "$file") characters; Google Play allows 500."
-              failed=1
-            else
-              echo "$app: $(wc -c < "$file") characters"
-            fi
-          done
-          exit "$failed"
 
       - uses: actions/setup-java@v6
         with:
@@ -134,7 +112,7 @@ jobs:
           - app: tasks
             packageName: at.techbee.spectacled.tasks
     steps:
-      - uses: actions/checkout@v7   # for distribution/<app>/whatsnew
+      # No checkout: everything this job needs travels in the artifact.
       - uses: actions/download-artifact@v8
         with:
           name: play-bundles
@@ -157,6 +135,5 @@ jobs:
           packageName: ${{ matrix.packageName }}
           releaseFiles: dist/${{ matrix.app }}/app.aab
           mappingFile: ${{ steps.mapping.outputs.path }}
-          whatsNewDirectory: distribution/${{ matrix.app }}/whatsnew
           track: ${{ needs.build.outputs.track }}
           status: ${{ needs.build.outputs.status }}
