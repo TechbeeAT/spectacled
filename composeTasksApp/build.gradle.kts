@@ -176,9 +176,12 @@ compose.desktop {
             windows {
                 iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_tasks_ico.ico"))
 
-                // Without this the MSI installs the app with no Start menu entry at all.
+                // Without these the MSI installs the app with no Start menu entry and no
+                // desktop icon at all. jpackage always creates the desktop icon; the DSL
+                // has no equivalent of its --win-shortcut-prompt opt-out checkbox.
                 menu = true
                 menuGroup = "spectacled"
+                shortcut = true
 
                 // Identifies the product across versions. jpackage generates a random one
                 // when it is missing, which makes every new version install alongside the
