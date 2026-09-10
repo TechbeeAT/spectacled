@@ -1,19 +1,51 @@
 name: Create and upload app bundles to Google Play
+
+# The tag suffix *is* the Google Play track:
+#
+#   v1.0.62-internal  -> internal    (completed)
+#   v1.0.62-alpha     -> alpha       (completed)   closed testing
+#   v1.0.62-beta      -> beta        (completed)   open testing
+#   v1.0.62           -> production  (draft)       published by hand in the Play Console
+#
+# Any other suffix (-rc, -Beta, a typo) fails the job rather than guessing a track.
 on:
   push:
     tags:
-      - 'v*'           # alpha, beta and final releases all upload to Google Play
+      - 'v*'
   workflow_dispatch:
 jobs:
   build:
-    name: Upload app bundles to Google Play
-    permissions:
-      contents: write
+    name: Build app bundles
     runs-on: ubuntu-latest
+    outputs:
+      track: ${{ steps.play.outputs.track }}
+      status: ${{ steps.play.outputs.status }}
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: true
+
+      # Runs before the (slow) Gradle build, so a bad tag costs seconds not minutes.
+      - name: Resolve Google Play track
+        id: play
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          case "$TAG" in
+            v*) ;;
+            *) echo "::error::Not a version tag: '$TAG'. Run this on a v* tag." ; exit 1 ;;
+          esac
+          case "$TAG" in
+            *-internal) track=internal;   status=completed ;;
+            *-alpha)    track=alpha;      status=completed ;;
+            *-beta)     track=beta;       status=completed ;;
+            *-*)        echo "::error::Unrecognised suffix in '$TAG'. Use -internal, -alpha, -beta, or no suffix for production." ; exit 1 ;;
+            *)          track=production; status=draft ;;
+          esac
+          echo "track=$track" >> "$GITHUB_OUTPUT"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "$TAG -> track=$track status=$status"
+
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -42,29 +74,66 @@ jobs:
           ANDROID_KEY_ALIAS_TASKS: ${{ secrets.android_key_alias_tasks }}
           ANDROID_KEY_PASSWORD_TASKS: ${{ secrets.android_key_password_tasks }}
 
-      - name: Upload spectacled Journals to Google Play
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
-          packageName: at.techbee.spectacled.journals
-          releaseFiles: ./androidJournalsApp/build/outputs/bundle/release/*.aab
-          tracks: internal
-          status: completed
+      - name: Collect bundles & mapping files
+        # Normalized to dist/<app>/, so the upload job below needs no per-app paths.
+        # All three apps build with isMinifyEnabled = true; the mapping is looked up
+        # rather than hardcoded so an AGP change to the output layout degrades to
+        # "no mapping uploaded" instead of failing the release.
+        run: |
+          for pair in "journals:androidJournalsApp" "notes:androidNotesApp" "tasks:androidTasksApp"; do
+            app="${pair%%:*}"
+            module="${pair##*:}"
+            mkdir -p "dist/$app"
+            cp "$module/build/outputs/bundle/release/"*.aab "dist/$app/app.aab"
+            mapping="$(find "$module/build/outputs/mapping" -name mapping.txt -type f 2>/dev/null | head -n 1 || true)"
+            if [ -n "$mapping" ]; then cp "$mapping" "dist/$app/mapping.txt"; fi
+            echo "$app: bundle=ok mapping=${mapping:-<none found>}"
+          done
 
-      - name: Upload spectacled Notes to Google Play
-        uses: r0adkll/upload-google-play@v1
+      - uses: actions/upload-artifact@v7
         with:
-          serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
-          packageName: at.techbee.spectacled.notes
-          releaseFiles: ./androidNotesApp/build/outputs/bundle/release/*.aab
-          tracks: internal
-          status: completed
+          name: play-bundles
+          path: dist/
+          if-no-files-found: error
 
-      - name: Upload spectacled Tasks to Google Play
-        uses: r0adkll/upload-google-play@v1
+  upload:
+    name: Upload ${{ matrix.app }} to Google Play (${{ needs.build.outputs.track }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      # One app's rejection must not cancel the other two.
+      fail-fast: false
+      matrix:
+        include:
+          - app: journals
+            packageName: at.techbee.spectacled.journals
+          - app: notes
+            packageName: at.techbee.spectacled.notes
+          - app: tasks
+            packageName: at.techbee.spectacled.tasks
+    steps:
+      # No checkout: everything this job needs travels in the artifact.
+      - uses: actions/download-artifact@v8
+        with:
+          name: play-bundles
+          path: dist
+
+      - name: Resolve mapping file
+        id: mapping
+        run: |
+          file="dist/${{ matrix.app }}/mapping.txt"
+          if [ -f "$file" ]; then
+            echo "path=$file" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"   # the action skips an empty mappingFile
+            echo "::warning::No mapping file for ${{ matrix.app }}; crash reports stay obfuscated."
+          fi
+
+      - uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
-          packageName: at.techbee.spectacled.tasks
-          releaseFiles: ./androidTasksApp/build/outputs/bundle/release/*.aab
-          tracks: internal
-          status: completed
+          packageName: ${{ matrix.packageName }}
+          releaseFiles: dist/${{ matrix.app }}/app.aab
+          mappingFile: ${{ steps.mapping.outputs.path }}
+          track: ${{ needs.build.outputs.track }}
+          status: ${{ needs.build.outputs.status }}
