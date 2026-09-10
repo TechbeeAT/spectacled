@@ -152,6 +152,10 @@ compose.desktop {
             packageVersion = libs.versions.appVersionString.get()
             description = "Keep free-form notes and sync them over CalDAV"
             vendor = "Techbee e.U."
+            // Deliberately ASCII: jpackage runs as a separate process and decodes its
+            // arguments with the platform locale, so a "©" turns into mojibake in the
+            // packages whenever the builder's locale is not UTF-8.
+            copyright = "Copyright (c) 2026 Techbee e.U."
 
             linux {
                 iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_png.png"))
@@ -163,12 +167,33 @@ compose.desktop {
                 debMaintainer = "spectacled@techbee.at"   // -> "Techbee e.U. <spectacled@techbee.at>"
                 appCategory = "utils"                     // "Section:" of the deb control file
                 menuGroup = "Office;"                     // "Categories=" of the .desktop entry
+
+                // jpackage writes no .desktop file at all unless this is set, so without
+                // it the package installs without a launcher and the display name and
+                // categories above have nothing to apply to.
+                shortcut = true
             }
-            windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_ico.ico")) }
+            windows {
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_ico.ico"))
+
+                // Without this the MSI installs the app with no Start menu entry at all.
+                menu = true
+                menuGroup = "spectacled"
+
+                // Identifies the product across versions. jpackage generates a random one
+                // when it is missing, which makes every new version install alongside the
+                // old one instead of upgrading it, so this must stay fixed forever.
+                upgradeUuid = "F7155635-D9FE-4A80-996A-C94F44678473"
+            }
             macOS {
                 dockName = "spectacled Notes"
                 iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_icns.icns"))
                 bundleID = "at.techbee.spectacled.notes"
+
+                // LSApplicationCategoryType and LSMinimumSystemVersion of the bundle:
+                // where the app is filed, and which macOS versions refuse to run it.
+                appCategory = "public.app-category.productivity"
+                minimumSystemVersion = "11.0"
 
                 // Sign the .app with the "Developer ID Application" certificate only when a
                 // signing identity is provided (CI release builds on macOS). Local and
