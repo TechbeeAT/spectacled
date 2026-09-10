@@ -63,7 +63,7 @@ jobs:
         # jpackage can only build for the machine it runs on, so every architecture
         # needs its own runner. `suffix` is appended to the released file name; both
         # .deb builds carry their Debian architecture name, the single-architecture
-        # .msi/.dmg builds keep their plain names.
+        # .msi/.exe/.dmg builds keep their plain names.
         include:
           - os: ubuntu-latest
             task: packageDeb
@@ -76,6 +76,10 @@ jobs:
           - os: windows-latest
             task: packageMsi
             format: msi
+            suffix: ''
+          - os: windows-latest      # jpackage wraps an .msi it builds itself, so this
+            task: packageExe        # repeats the Windows build rather than reusing it
+            format: exe
             suffix: ''
           - os: macos-latest
             task: packageDmg
