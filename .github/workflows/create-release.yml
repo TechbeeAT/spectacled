@@ -173,8 +173,8 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          # Betas (and release candidates) are published as pre-releases; final tags as full releases.
-          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          # Only betas and final tags reach this workflow; betas are pre-releases.
+          prerelease: ${{ contains(github.ref_name, '-beta') }}
           files: dist/*
           generate_release_notes: true
           fail_on_unmatched_files: true
