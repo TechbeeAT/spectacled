@@ -14,11 +14,51 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: true
+          fetch-depth: 0   # full history + tags, needed for the What's new notes below
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6.3.0
+
+      - name: Determine Google Play tracks
+        id: play
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          # Tag suffix -> Play track. Note that Google's "alpha" track is Closed testing
+          # and "beta" is Open testing, which is one step further than our tag names
+          # suggest. Betas go to Internal as well, so internal testers stay on the same
+          # build. When open testing starts, add ",beta" to the line below.
+          case "$TAG" in
+            *alpha*) tracks=internal ;;
+            *beta*)  tracks=internal,alpha ;;
+            *)       tracks=internal ;;   # finals + workflow_dispatch: promote by hand
+          esac
+          echo "tracks=$tracks" >> "$GITHUB_OUTPUT"
+          echo "Uploading $TAG to: $tracks"
+
+      - name: Generate What's new notes
+        # One shared directory for all three apps - they live in the same repository and
+        # therefore share the same commits. Files must be named whatsnew-<BCP 47 locale>.
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          prev="$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)"
+          range="${prev:+$prev..}${TAG}"
+          mkdir -p distribution/whatsnew
+          # Google Play rejects release notes longer than 500 characters, so keep adding
+          # commit subjects only while they still fit.
+          notes=""
+          while IFS= read -r line; do
+            candidate="${notes}${line}"$'\n'
+            if [ "${#candidate}" -gt 500 ]; then break; fi
+            notes="$candidate"
+          done < <(git log --no-merges --pretty='- %s' "$range" 2>/dev/null || true)
+          if [ -z "$notes" ]; then notes="Spectacled ${TAG}"$'\n'; fi
+          printf '%s' "$notes" > distribution/whatsnew/whatsnew-en-US
+          echo "Release notes for $range:"
+          cat distribution/whatsnew/whatsnew-en-US
 
       - name: Prepare keystore
         run: echo "${{ secrets.android_keystore_base64 }}" | base64 -d > "$GITHUB_WORKSPACE/keystore.jks"
@@ -42,13 +82,28 @@ jobs:
           ANDROID_KEY_ALIAS_TASKS: ${{ secrets.android_key_alias_tasks }}
           ANDROID_KEY_PASSWORD_TASKS: ${{ secrets.android_key_password_tasks }}
 
+      - name: Locate ProGuard mapping files
+        # All three apps build with isMinifyEnabled = true, so Play needs the mapping to
+        # de-obfuscate crash reports. Looked up instead of hardcoded so an AGP change to
+        # the output layout degrades to "no mapping uploaded" rather than a failed release.
+        id: mappings
+        run: |
+          for app in journals notes tasks; do
+            dir="android$(echo "${app:0:1}" | tr '[:lower:]' '[:upper:]')${app:1}App"
+            path="$(find "$dir/build/outputs/mapping" -name mapping.txt -type f 2>/dev/null | head -n 1 || true)"
+            echo "${app}=${path}" >> "$GITHUB_OUTPUT"
+            echo "$dir mapping: ${path:-<none found>}"
+          done
+
       - name: Upload spectacled Journals to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
           packageName: at.techbee.spectacled.journals
           releaseFiles: ./androidJournalsApp/build/outputs/bundle/release/*.aab
-          tracks: internal
+          mappingFile: ${{ steps.mappings.outputs.journals }}
+          whatsNewDirectory: distribution/whatsnew
+          tracks: ${{ steps.play.outputs.tracks }}
           status: completed
 
       - name: Upload spectacled Notes to Google Play
@@ -57,7 +112,9 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
           packageName: at.techbee.spectacled.notes
           releaseFiles: ./androidNotesApp/build/outputs/bundle/release/*.aab
-          tracks: internal
+          mappingFile: ${{ steps.mappings.outputs.notes }}
+          whatsNewDirectory: distribution/whatsnew
+          tracks: ${{ steps.play.outputs.tracks }}
           status: completed
 
       - name: Upload spectacled Tasks to Google Play
@@ -66,5 +123,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
           packageName: at.techbee.spectacled.tasks
           releaseFiles: ./androidTasksApp/build/outputs/bundle/release/*.aab
-          tracks: internal
+          mappingFile: ${{ steps.mappings.outputs.tasks }}
+          whatsNewDirectory: distribution/whatsnew
+          tracks: ${{ steps.play.outputs.tracks }}
           status: completed
