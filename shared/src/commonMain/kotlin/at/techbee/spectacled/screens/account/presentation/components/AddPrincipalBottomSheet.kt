@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -69,18 +70,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProvider
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProviderCategory
 import at.techbee.spectacled.screens.account.presentation.components.settings.ProxyServerSetup
+import at.techbee.spectacled.screens.core.AppPermission
+import at.techbee.spectacled.screens.core.PermissionStatus
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.isPrivateNetworkHost
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
+import at.techbee.spectacled.screens.core.rememberPermissionRequester
 import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
@@ -96,15 +103,19 @@ import spectacled.shared.generated.resources.add_account_option2_recommendation_
 import spectacled.shared.generated.resources.add_account_option2_recommended_providers
 import spectacled.shared.generated.resources.add_account_option2_text
 import spectacled.shared.generated.resources.add_account_option_x
+import spectacled.shared.generated.resources.add_account_provider_tasks_only_warning
 import spectacled.shared.generated.resources.add_account_proxy_change
 import spectacled.shared.generated.resources.add_account_proxy_ready
 import spectacled.shared.generated.resources.add_account_proxy_required_info
 import spectacled.shared.generated.resources.add_account_proxy_required_title
-import spectacled.shared.generated.resources.add_account_provider_tasks_only_warning
 import spectacled.shared.generated.resources.add_account_spectacled_is_provider_independent
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.insecure_connection_warning
+import spectacled.shared.generated.resources.local_network_permission_granted
+import spectacled.shared.generated.resources.local_network_permission_manage
+import spectacled.shared.generated.resources.local_network_permission_not_granted
+import spectacled.shared.generated.resources.local_network_permission_unknown
 import spectacled.shared.generated.resources.open_in_browser
 import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.server_inferred
@@ -134,6 +145,45 @@ fun AddPrincipalBottomSheet(
     var showInsecureConnectionAlert by rememberSaveable { mutableStateOf(false) }
     var credentials by rememberSaveable { mutableStateOf<Credentials?>(null) }
 
+    // Credentials held back while the OS permission dialog is up, dispatched from the result below.
+    var credentialsAwaitingPermission by remember { mutableStateOf<Credentials?>(null) }
+    var localNetworkStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+
+    val permissionRequester = rememberPermissionRequester { permission, status ->
+        if (permission != AppPermission.LOCAL_NETWORK) return@rememberPermissionRequester
+
+        localNetworkStatus = status
+        // Dispatch either way: a refusal still ends in the timeout, but the indicator now sits
+        // above the button saying why, which is the point of showing it.
+        credentialsAwaitingPermission?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
+        credentialsAwaitingPermission = null
+    }
+
+    // Re-read on resume so returning from the settings page (see onManageLocalNetworkPermission)
+    // shows the new state rather than the one captured when the sheet opened.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        localNetworkStatus = permissionRequester.status(AppPermission.LOCAL_NETWORK)
+    }
+    LaunchedEffect(credentials?.server?.host) {
+        localNetworkStatus = permissionRequester.status(AppPermission.LOCAL_NETWORK)
+    }
+
+    /**
+     * The single way credentials reach the ViewModel, so the permission step cannot be skipped by
+     * whichever of the two routes (direct, or via the insecure-connection dialog) got here.
+     */
+    fun submit(newCredentials: Credentials) {
+        val needsLocalNetwork = isPrivateNetworkHost(newCredentials.server.host) &&
+            localNetworkStatus == PermissionStatus.DENIED
+
+        if (needsLocalNetwork) {
+            credentialsAwaitingPermission = newCredentials
+            permissionRequester.request(AppPermission.LOCAL_NETWORK)
+        } else {
+            onAction(AccountListAction.OnAddPrincipal(newCredentials))
+        }
+    }
+
     LaunchedEffect(selectedPage) {
         if (selectedPage == AddPrincipalBottomSheetPage.SELECTION)
             scope.launch { pagerState.animateScrollToPage(0) }
@@ -146,7 +196,7 @@ fun AddPrincipalBottomSheet(
             server = credentials?.server?.toString()?:"",
             onDismiss = { showInsecureConnectionAlert = false },
             onConfirm = {
-                credentials?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
+                credentials?.let { submit(it) }
                 showInsecureConnectionAlert = false
             }
         )
@@ -202,7 +252,7 @@ fun AddPrincipalBottomSheet(
                         if(credentials?.server?.toString()?.startsWith("http://") == true)
                             showInsecureConnectionAlert = true
                         else
-                            credentials?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
+                            credentials?.let { submit(it) }
                     },
                     enabled = credentials != null && processingState !is ProcessingState.Processing
                 ) {
@@ -230,6 +280,8 @@ fun AddPrincipalBottomSheet(
                         processingState = processingState,
                         //onAction = onAction,
                         onCredentialsUpdated = { credentials = it },
+                        localNetworkStatus = localNetworkStatus,
+                        onManageLocalNetworkPermission = { permissionRequester.openAppSettings() },
                         modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
                     )
                 } else if (selectedPage == AddPrincipalBottomSheetPage.SELECT_FROM_LIST) {    // SELECT FROM LIST
@@ -433,6 +485,8 @@ fun AddAccountScreen(
     processingState: ProcessingState,
     //onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onCredentialsUpdated: (Credentials?) -> Unit,
+    localNetworkStatus: PermissionStatus = PermissionStatus.NOT_APPLICABLE,
+    onManageLocalNetworkPermission: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
 
@@ -470,6 +524,31 @@ fun AddAccountScreen(
 
     LaunchedEffect(credentials) {
         onCredentialsUpdated(credentials)
+    }
+
+    // The host as typed, resolved the same way [credentials] resolves it, so the permission notice
+    // appears while the form is still incomplete rather than only once it validates.
+    val typedHost by remember {
+        derivedStateOf {
+            val trimmedServer = server.trim()
+            val trimmedUsername = username.trim()
+            val effectiveServer = when {
+                trimmedServer.isNotBlank() -> trimmedServer
+                trimmedUsername.contains("@") -> trimmedUsername.substringAfter("@")
+                else -> null
+            }?.takeIf { it.isNotBlank() } ?: return@derivedStateOf null
+
+            val urlString = if (!effectiveServer.startsWith("http://") && !effectiveServer.startsWith("https://"))
+                "https://$effectiveServer"
+            else
+                effectiveServer
+
+            try {
+                Url(urlString).host.takeIf { it.isNotBlank() }
+            } catch (_: Exception) {
+                null
+            }
+        }
     }
 
 
@@ -619,6 +698,13 @@ fun AddAccountScreen(
                 modifier = Modifier.width(400.dp)
             )
 
+            LocalNetworkPermissionNotice(
+                host = typedHost,
+                status = localNetworkStatus,
+                onManage = onManageLocalNetworkPermission,
+                modifier = Modifier.width(400.dp)
+            )
+
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
@@ -729,6 +815,70 @@ fun ChooseProviderScreen(
             }
         }
 
+    }
+}
+
+/**
+ * Says whether the OS lets us reach [host], for the servers where that is in question.
+ *
+ * Shown only for a host on the user's own network: someone adding a hosted provider has no local
+ * network permission to think about, and a "nearby devices" notice there would only confuse. The
+ * manage button is offered in every state it does show, granted included, so the decision stays
+ * reviewable rather than only appearing once something is broken.
+ */
+@Composable
+private fun LocalNetworkPermissionNotice(
+    host: String?,
+    status: PermissionStatus,
+    onManage: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val relevant = host != null &&
+        isPrivateNetworkHost(host) &&
+        status != PermissionStatus.NOT_APPLICABLE
+
+    AnimatedVisibility(relevant, modifier = modifier) {
+        val (icon, tint, message) = when (status) {
+            PermissionStatus.GRANTED -> Triple(
+                Icons.Outlined.Check,
+                MaterialTheme.colorScheme.primary,
+                stringResource(Res.string.local_network_permission_granted)
+            )
+            PermissionStatus.DENIED -> Triple(
+                Icons.Outlined.Warning,
+                MaterialTheme.colorScheme.error,
+                stringResource(Res.string.local_network_permission_not_granted)
+            )
+            // iOS cannot be asked, and raises its own prompt on the first connection.
+            else -> Triple(
+                Icons.Outlined.Info,
+                MaterialTheme.colorScheme.onSurfaceVariant,
+                stringResource(Res.string.local_network_permission_unknown)
+            )
+        }
+
+        Column {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = message,
+                    color = tint,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+
+            TextButton(onClick = onManage) {
+                Text(stringResource(Res.string.local_network_permission_manage))
+            }
+        }
     }
 }
 

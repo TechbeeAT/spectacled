@@ -50,6 +50,10 @@
     <string name="insecure_connection_title">Connect to "%1$s" without encryption?</string>
     <string name="insecure_connection_message">Your password and everything you sync will be sent in plain text - visible to anyone else on this network. Only continue if you trust the network this server is on, for example your home Wi-Fi.</string>
     <string name="insecure_connection_connect_anyway">Connect anyway</string>
+    <string name="local_network_permission_granted">Local network access granted</string>
+    <string name="local_network_permission_not_granted">Local network access not granted - this server is on your own network, so syncing will time out until you allow it.</string>
+    <string name="local_network_permission_unknown">This server is on your own network. Your device may ask for permission the first time it connects.</string>
+    <string name="local_network_permission_manage">Manage permission</string>
     <string name="create_folder">Create folder</string>
     <string name="update_folder">Update folder</string>
     <string name="edit_folders">Edit folders</string>

@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 17 (API 37) gates local network access behind this runtime permission; before
+         that it came for free with INTERNET. Self-hosted CalDAV servers usually live on the
+         user's own network, so without it those connections silently time out. -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
         android:name=".JournalsApplication"
