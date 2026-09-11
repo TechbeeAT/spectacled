@@ -91,8 +91,6 @@ Spectacled is, and will stay, open source. Maintaining it across five platforms 
 - [Liberapay](https://liberapay.com/techbee.at)
 - [PayPal](https://www.paypal.com/ncp/payment/XB7HH4BWXYFKJ)
 
-(See [`.github/FUNDING.yml`](.github/FUNDING.yml) for the current list.)
-
 ---
 
 ## 🛠️ Tech Stack
