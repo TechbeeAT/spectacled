@@ -161,24 +161,6 @@ fun AddPrincipalBottomSheet(
         localNetworkStatus = permissionRequester.status(AppPermission.LOCAL_NETWORK)
     }
 
-    /**
-     * The single way credentials reach the ViewModel, so the permission step cannot be skipped by
-     * whichever of the two routes (direct, or via the insecure-connection dialog) got here.
-     *
-     * Asking for the permission ends the tap: the account is not added behind the prompt, the user
-     * taps again once they have answered it. Resuming the add for them would mean guessing what a
-     * refusal meant, and the indicator above the button already shows where things stand.
-     */
-    fun submit(newCredentials: Credentials) {
-        val needsLocalNetwork = isPrivateNetworkHost(newCredentials.server.host) &&
-            localNetworkStatus == PermissionStatus.DENIED
-
-        if (needsLocalNetwork)
-            permissionRequester.request(AppPermission.LOCAL_NETWORK)
-        else
-            onAction(AccountListAction.OnAddPrincipal(newCredentials))
-    }
-
     LaunchedEffect(selectedPage) {
         if (selectedPage == AddPrincipalBottomSheetPage.SELECTION)
             scope.launch { pagerState.animateScrollToPage(0) }
@@ -191,7 +173,7 @@ fun AddPrincipalBottomSheet(
             server = credentials?.server?.toString()?:"",
             onDismiss = { showInsecureConnectionAlert = false },
             onConfirm = {
-                credentials?.let { submit(it) }
+                credentials?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
                 showInsecureConnectionAlert = false
             }
         )
@@ -247,7 +229,7 @@ fun AddPrincipalBottomSheet(
                         if(credentials?.server?.toString()?.startsWith("http://") == true)
                             showInsecureConnectionAlert = true
                         else
-                            credentials?.let { submit(it) }
+                            credentials?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
                     },
                     enabled = credentials != null && processingState !is ProcessingState.Processing
                 ) {
@@ -276,7 +258,15 @@ fun AddPrincipalBottomSheet(
                         //onAction = onAction,
                         onCredentialsUpdated = { credentials = it },
                         localNetworkStatus = localNetworkStatus,
-                        onManageLocalNetworkPermission = { permissionRequester.openAppSettings() },
+                        onManageLocalNetworkPermission = {
+                            // DENIED is the one state the OS may still be willing to prompt for, so
+                            // ask there and send everyone else to settings: GRANTED can only be
+                            // revoked there, and UNKNOWN is iOS, which has nothing to ask through.
+                            if (localNetworkStatus == PermissionStatus.DENIED)
+                                permissionRequester.request(AppPermission.LOCAL_NETWORK)
+                            else
+                                permissionRequester.openAppSettings()
+                        },
                         modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
                     )
                 } else if (selectedPage == AddPrincipalBottomSheetPage.SELECT_FROM_LIST) {    // SELECT FROM LIST
