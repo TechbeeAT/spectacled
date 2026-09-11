@@ -26,8 +26,8 @@ import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material.icons.outlined.EventRepeat
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.RestoreFromTrash
-import androidx.compose.material.icons.outlined.SwipeDown
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -654,7 +654,7 @@ private fun FormattingBar(
                 onClick = { onReleaseFocus() },
                 modifier = Modifier.focusProperties { canFocus = false }
             ) {
-                Icon(Icons.Outlined.SwipeDown, null)
+                Icon(Icons.Outlined.KeyboardArrowDown, null)
             }
 
         }
