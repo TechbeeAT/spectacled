@@ -145,18 +145,11 @@ fun AddPrincipalBottomSheet(
     var showInsecureConnectionAlert by rememberSaveable { mutableStateOf(false) }
     var credentials by rememberSaveable { mutableStateOf<Credentials?>(null) }
 
-    // Credentials held back while the OS permission dialog is up, dispatched from the result below.
-    var credentialsAwaitingPermission by remember { mutableStateOf<Credentials?>(null) }
     var localNetworkStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
 
     val permissionRequester = rememberPermissionRequester { permission, status ->
-        if (permission != AppPermission.LOCAL_NETWORK) return@rememberPermissionRequester
-
-        localNetworkStatus = status
-        // Dispatch either way: a refusal still ends in the timeout, but the indicator now sits
-        // above the button saying why, which is the point of showing it.
-        credentialsAwaitingPermission?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
-        credentialsAwaitingPermission = null
+        if (permission == AppPermission.LOCAL_NETWORK)
+            localNetworkStatus = status
     }
 
     // Re-read on resume so returning from the settings page (see onManageLocalNetworkPermission)
@@ -171,17 +164,19 @@ fun AddPrincipalBottomSheet(
     /**
      * The single way credentials reach the ViewModel, so the permission step cannot be skipped by
      * whichever of the two routes (direct, or via the insecure-connection dialog) got here.
+     *
+     * Asking for the permission ends the tap: the account is not added behind the prompt, the user
+     * taps again once they have answered it. Resuming the add for them would mean guessing what a
+     * refusal meant, and the indicator above the button already shows where things stand.
      */
     fun submit(newCredentials: Credentials) {
         val needsLocalNetwork = isPrivateNetworkHost(newCredentials.server.host) &&
             localNetworkStatus == PermissionStatus.DENIED
 
-        if (needsLocalNetwork) {
-            credentialsAwaitingPermission = newCredentials
+        if (needsLocalNetwork)
             permissionRequester.request(AppPermission.LOCAL_NETWORK)
-        } else {
+        else
             onAction(AccountListAction.OnAddPrincipal(newCredentials))
-        }
     }
 
     LaunchedEffect(selectedPage) {
