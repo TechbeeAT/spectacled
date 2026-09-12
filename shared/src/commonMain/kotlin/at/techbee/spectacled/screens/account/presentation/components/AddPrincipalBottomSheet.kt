@@ -497,10 +497,7 @@ fun AddAccountScreen(
         if (permission == AppPermission.LOCAL_NETWORK)
             localNetworkPermissionStatus = status
     }
-
-
-
-
+    
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
