@@ -145,22 +145,6 @@ fun AddPrincipalBottomSheet(
     var showInsecureConnectionAlert by rememberSaveable { mutableStateOf(false) }
     var credentials by rememberSaveable { mutableStateOf<Credentials?>(null) }
 
-    var localNetworkStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
-
-    val permissionRequester = rememberPermissionRequester { permission, status ->
-        if (permission == AppPermission.LOCAL_NETWORK)
-            localNetworkStatus = status
-    }
-
-    // Re-read on resume so returning from the settings page (see onManageLocalNetworkPermission)
-    // shows the new state rather than the one captured when the sheet opened.
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        localNetworkStatus = permissionRequester.status(AppPermission.LOCAL_NETWORK)
-    }
-    LaunchedEffect(credentials?.server?.host) {
-        localNetworkStatus = permissionRequester.status(AppPermission.LOCAL_NETWORK)
-    }
-
     LaunchedEffect(selectedPage) {
         if (selectedPage == AddPrincipalBottomSheetPage.SELECTION)
             scope.launch { pagerState.animateScrollToPage(0) }
@@ -257,16 +241,6 @@ fun AddPrincipalBottomSheet(
                         processingState = processingState,
                         //onAction = onAction,
                         onCredentialsUpdated = { credentials = it },
-                        localNetworkStatus = localNetworkStatus,
-                        onManageLocalNetworkPermission = {
-                            // DENIED is the one state the OS may still be willing to prompt for, so
-                            // ask there and send everyone else to settings: GRANTED can only be
-                            // revoked there, and UNKNOWN is iOS, which has nothing to ask through.
-                            if (localNetworkStatus == PermissionStatus.DENIED)
-                                permissionRequester.request(AppPermission.LOCAL_NETWORK)
-                            else
-                                permissionRequester.openAppSettings()
-                        },
                         modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
                     )
                 } else if (selectedPage == AddPrincipalBottomSheetPage.SELECT_FROM_LIST) {    // SELECT FROM LIST
@@ -470,8 +444,6 @@ fun AddAccountScreen(
     processingState: ProcessingState,
     //onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onCredentialsUpdated: (Credentials?) -> Unit,
-    localNetworkStatus: PermissionStatus = PermissionStatus.NOT_APPLICABLE,
-    onManageLocalNetworkPermission: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
 
@@ -534,6 +506,20 @@ fun AddAccountScreen(
                 null
             }
         }
+    }
+
+    var localNetworkStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+
+    val permissionRequester = rememberPermissionRequester { permission, status ->
+        if (permission == AppPermission.LOCAL_NETWORK)
+            localNetworkStatus = status
+    }
+
+    // Covers both reads: the observer is synced up to the current lifecycle state when it is added,
+    // so this fires once on first composition, and again whenever the user comes back from the
+    // settings page having changed the grant there.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        localNetworkStatus = permissionRequester.status(AppPermission.LOCAL_NETWORK)
     }
 
 
@@ -686,7 +672,15 @@ fun AddAccountScreen(
             LocalNetworkPermissionNotice(
                 host = typedHost,
                 status = localNetworkStatus,
-                onManage = onManageLocalNetworkPermission,
+                onManage = {
+                    // DENIED is the one state the OS may still be willing to prompt for, so ask
+                    // there and send everyone else to settings: GRANTED can only be revoked there,
+                    // and UNKNOWN is iOS, which has nothing to ask through.
+                    if (localNetworkStatus == PermissionStatus.DENIED)
+                        permissionRequester.request(AppPermission.LOCAL_NETWORK)
+                    else
+                        permissionRequester.openAppSettings()
+                },
                 modifier = Modifier.width(400.dp)
             )
 
