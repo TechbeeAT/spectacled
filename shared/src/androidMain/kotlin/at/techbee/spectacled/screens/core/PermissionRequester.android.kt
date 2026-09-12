@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -14,7 +15,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import android.content.pm.PackageManager
 
 /**
  * The permission string rather than `Manifest.permission.ACCESS_LOCAL_NETWORK`, so the shared
@@ -22,17 +22,11 @@ import android.content.pm.PackageManager
  */
 private const val ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK"
 
-/**
- * First OS version that enforces the local network permission (Android 17).
- *
- * A literal, not a `Build.VERSION_CODES` constant: Google's own documentation sample names the
- * wrong one here, and a misnamed constant would silently compile into a check that never fires.
- */
+/** First OS version that enforces the local network permission (Android 17). */
 private const val SDK_LOCAL_NETWORK_ENFORCED = 37
 
 private fun AppPermission.manifestPermission(): String? = when (this) {
-    AppPermission.LOCAL_NETWORK ->
-        ACCESS_LOCAL_NETWORK.takeIf { Build.VERSION.SDK_INT >= SDK_LOCAL_NETWORK_ENFORCED }
+    AppPermission.LOCAL_NETWORK -> ACCESS_LOCAL_NETWORK.takeIf { Build.VERSION.SDK_INT >= SDK_LOCAL_NETWORK_ENFORCED }
 }
 
 @Composable
@@ -61,8 +55,7 @@ actual fun rememberPermissionRequester(
         object : PermissionRequester {
 
             override fun status(permission: AppPermission): PermissionStatus {
-                val manifestPermission = permission.manifestPermission()
-                    ?: return PermissionStatus.NOT_APPLICABLE
+                val manifestPermission = permission.manifestPermission() ?: return PermissionStatus.NOT_APPLICABLE
 
                 return if (ContextCompat.checkSelfPermission(context, manifestPermission) == PackageManager.PERMISSION_GRANTED)
                     PermissionStatus.GRANTED

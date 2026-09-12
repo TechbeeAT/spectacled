@@ -12,15 +12,8 @@ actual fun rememberPermissionRequester(
     onResult: (AppPermission, PermissionStatus) -> Unit
 ): PermissionRequester = remember(onResult) {
     object : PermissionRequester {
-
         override fun status(permission: AppPermission): PermissionStatus = PermissionStatus.NOT_APPLICABLE
-
-        override fun request(permission: AppPermission) {
-            onResult(permission, PermissionStatus.NOT_APPLICABLE)
-        }
-
-        override fun openAppSettings() {
-            // No per-app permission page to open.
-        }
+        override fun request(permission: AppPermission) { onResult(permission, PermissionStatus.NOT_APPLICABLE) }
+        override fun openAppSettings() {  /* No per-app permission page to open. */  }
     }
 }

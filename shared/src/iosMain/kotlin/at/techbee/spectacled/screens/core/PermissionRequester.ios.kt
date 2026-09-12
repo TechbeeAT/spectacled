@@ -28,15 +28,13 @@ actual fun rememberPermissionRequester(
         }
 
         override fun request(permission: AppPermission) {
-            // Nothing to ask for - report back so callers keep a single code path.
-            onResult(permission, status(permission))
+            onResult(permission, status(permission)) // Nothing to ask for - report back so callers keep a single code path.
         }
 
         override fun openAppSettings() {
-            val url = NSURL.URLWithString(UIApplicationOpenSettingsURLString) ?: return
-            // openURL:options:completionHandler: rather than the plain openURL:, which has been
-            // deprecated since iOS 10.
-            UIApplication.sharedApplication.openURL(url, options = emptyMap<Any?, Any>(), completionHandler = null)
+            NSURL.URLWithString(UIApplicationOpenSettingsURLString)?.let { url ->
+                UIApplication.sharedApplication.openURL(url, options = emptyMap<Any?, Any>(), completionHandler = null)
+            }
         }
     }
 }

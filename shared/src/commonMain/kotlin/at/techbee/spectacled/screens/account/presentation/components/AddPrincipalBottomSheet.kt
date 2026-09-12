@@ -508,18 +508,18 @@ fun AddAccountScreen(
         }
     }
 
-    var localNetworkStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+    var localNetworkPermissionStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
 
     val permissionRequester = rememberPermissionRequester { permission, status ->
         if (permission == AppPermission.LOCAL_NETWORK)
-            localNetworkStatus = status
+            localNetworkPermissionStatus = status
     }
 
     // Covers both reads: the observer is synced up to the current lifecycle state when it is added,
     // so this fires once on first composition, and again whenever the user comes back from the
     // settings page having changed the grant there.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        localNetworkStatus = permissionRequester.status(AppPermission.LOCAL_NETWORK)
+        localNetworkPermissionStatus = permissionRequester.status(AppPermission.LOCAL_NETWORK)
     }
 
 
@@ -671,12 +671,12 @@ fun AddAccountScreen(
 
             LocalNetworkPermissionNotice(
                 host = typedHost,
-                status = localNetworkStatus,
+                status = localNetworkPermissionStatus,
                 onManage = {
                     // DENIED is the one state the OS may still be willing to prompt for, so ask
                     // there and send everyone else to settings: GRANTED can only be revoked there,
                     // and UNKNOWN is iOS, which has nothing to ask through.
-                    if (localNetworkStatus == PermissionStatus.DENIED)
+                    if (localNetworkPermissionStatus == PermissionStatus.DENIED)
                         permissionRequester.request(AppPermission.LOCAL_NETWORK)
                     else
                         permissionRequester.openAppSettings()
