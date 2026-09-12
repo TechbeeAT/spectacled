@@ -1,13 +1,5 @@
 package at.techbee.spectacled.screens.core
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -17,42 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-
-/**
- * The permission string rather than `Manifest.permission.ACCESS_LOCAL_NETWORK`, so the shared
- * module keeps compiling if the compileSdk is rolled back below 37.
- */
-private const val ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK"
-
-/** First OS version that enforces the local network permission (Android 17). */
-private const val SDK_LOCAL_NETWORK_ENFORCED = 37
-
-private fun AppPermission.manifestPermission(): String? = when (this) {
-    AppPermission.LOCAL_NETWORK -> ACCESS_LOCAL_NETWORK.takeIf { Build.VERSION.SDK_INT >= SDK_LOCAL_NETWORK_ENFORCED }
-}
-
-/** The Activity this Context is hosted by, unwrapping the wrappers Compose may hand over. */
-private fun Context.findActivity(): Activity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is Activity) return context
-        context = context.baseContext
-    }
-    return null
-}
-
-private fun Context.openAppSettings() {
-    val intent = Intent(
-        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-        Uri.fromParts("package", packageName, null)
-    ).apply {
-        // The Context here may be the Activity, but callers can also reach this from a
-        // non-Activity Context, where a new task is required.
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    startActivity(intent)
-}
 
 @Composable
 actual fun rememberPermissionRequester(
@@ -91,16 +47,6 @@ actual fun rememberPermissionRequester(
 
     return remember(context) {
         object : PermissionRequester {
-
-            override fun status(permission: AppPermission): PermissionStatus {
-                val manifestPermission = permission.manifestPermission() ?: return PermissionStatus.NOT_APPLICABLE
-
-                return if (ContextCompat.checkSelfPermission(context, manifestPermission) == PackageManager.PERMISSION_GRANTED)
-                    PermissionStatus.GRANTED
-                else
-                    PermissionStatus.DENIED
-            }
-
             override fun request(permission: AppPermission) {
                 val manifestPermission = permission.manifestPermission()
                 if (manifestPermission == null) {
@@ -110,8 +56,6 @@ actual fun rememberPermissionRequester(
                 requested = permission
                 launcher.launch(manifestPermission)
             }
-
-            override fun openAppSettings() = context.openAppSettings()
         }
     }
 }

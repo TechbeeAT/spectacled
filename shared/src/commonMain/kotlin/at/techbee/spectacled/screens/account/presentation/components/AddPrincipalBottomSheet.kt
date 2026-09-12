@@ -79,6 +79,7 @@ import at.techbee.spectacled.screens.account.presentation.components.datastructu
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProviderCategory
 import at.techbee.spectacled.screens.account.presentation.components.settings.ProxyServerSetup
 import at.techbee.spectacled.screens.core.AppPermission
+import at.techbee.spectacled.screens.core.PermissionChecker
 import at.techbee.spectacled.screens.core.PermissionStatus
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.Credentials
@@ -444,7 +445,8 @@ fun AddAccountScreen(
     processingState: ProcessingState,
     //onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onCredentialsUpdated: (Credentials?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    permissionChecker: PermissionChecker = koinInject()
 ) {
 
     var server by rememberSaveable { mutableStateOf("") }
@@ -495,7 +497,7 @@ fun AddAccountScreen(
     // so this fires once on first composition, and again whenever the user comes back from the
     // settings page having changed the grant there.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        localNetworkPermissionStatus = permissionRequester.status(AppPermission.LOCAL_NETWORK)
+        localNetworkPermissionStatus = permissionChecker.status(AppPermission.LOCAL_NETWORK)
     }
 
 
@@ -605,7 +607,7 @@ fun AddAccountScreen(
                                     if (localNetworkPermissionStatus == PermissionStatus.DENIED)
                                         permissionRequester.request(AppPermission.LOCAL_NETWORK)
                                     else
-                                        permissionRequester.openAppSettings()
+                                        permissionChecker.openAppSettings()
                                 }) {
                                     Text(stringResource(Res.string.local_network_permission_manage))
                                 }
@@ -928,6 +930,11 @@ private fun AddAccountScreen_Preview_Error() {
                 processingState = ProcessingState.Error("This is an error"),
                 onCredentialsUpdated = {},
                 //onAction = {}
+                // Supplied explicitly: a preview has no Koin graph to resolve it from.
+                permissionChecker = object : PermissionChecker {
+                    override fun status(permission: AppPermission) = PermissionStatus.NOT_APPLICABLE
+                    override fun openAppSettings() {}
+                }
             )
         }
 
