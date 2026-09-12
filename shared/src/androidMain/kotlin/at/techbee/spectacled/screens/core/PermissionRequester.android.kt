@@ -1,5 +1,8 @@
 package at.techbee.spectacled.screens.core
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -29,6 +32,28 @@ private fun AppPermission.manifestPermission(): String? = when (this) {
     AppPermission.LOCAL_NETWORK -> ACCESS_LOCAL_NETWORK.takeIf { Build.VERSION.SDK_INT >= SDK_LOCAL_NETWORK_ENFORCED }
 }
 
+/** The Activity this Context is hosted by, unwrapping the wrappers Compose may hand over. */
+private fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
+}
+
+private fun Context.openAppSettings() {
+    val intent = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", packageName, null)
+    ).apply {
+        // The Context here may be the Activity, but callers can also reach this from a
+        // non-Activity Context, where a new task is required.
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    startActivity(intent)
+}
+
 @Composable
 actual fun rememberPermissionRequester(
     onResult: (AppPermission, PermissionStatus) -> Unit
@@ -47,6 +72,19 @@ actual fun rememberPermissionRequester(
     ) { granted ->
         requested?.let { permission ->
             currentOnResult(permission, if (granted) PermissionStatus.GRANTED else PermissionStatus.DENIED)
+
+            // Android stops offering the dialog once the user has refused twice, and from then on
+            // launch() returns denied immediately without showing anything ("No requestable
+            // permission in the request." in logcat), which leaves the button looking dead. A
+            // rationale the system will no longer show is how that state announces itself, so fall
+            // back to the settings page, where the grant can still be changed.
+            val manifestPermission = permission.manifestPermission()
+            val activity = context.findActivity()
+            if (!granted && manifestPermission != null &&
+                activity?.shouldShowRequestPermissionRationale(manifestPermission) == false
+            ) {
+                context.openAppSettings()
+            }
         }
         requested = null
     }
@@ -73,17 +111,7 @@ actual fun rememberPermissionRequester(
                 launcher.launch(manifestPermission)
             }
 
-            override fun openAppSettings() {
-                val intent = Intent(
-                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.fromParts("package", context.packageName, null)
-                ).apply {
-                    // The Context here may be the Activity, but callers can also reach this from a
-                    // non-Activity Context, where a new task is required.
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-            }
+            override fun openAppSettings() = context.openAppSettings()
         }
     }
 }
