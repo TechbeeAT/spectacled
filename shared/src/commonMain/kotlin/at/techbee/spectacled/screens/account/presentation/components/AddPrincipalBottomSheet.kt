@@ -483,31 +483,6 @@ fun AddAccountScreen(
         onCredentialsUpdated(credentials)
     }
 
-    // The host as typed, resolved the same way [credentials] resolves it, so the permission notice
-    // appears while the form is still incomplete rather than only once it validates.
-    val typedHost by remember {
-        derivedStateOf {
-            val trimmedServer = server.trim()
-            val trimmedUsername = username.trim()
-            val effectiveServer = when {
-                trimmedServer.isNotBlank() -> trimmedServer
-                trimmedUsername.contains("@") -> trimmedUsername.substringAfter("@")
-                else -> null
-            }?.takeIf { it.isNotBlank() } ?: return@derivedStateOf null
-
-            val urlString = if (!effectiveServer.startsWith("http://") && !effectiveServer.startsWith("https://"))
-                "https://$effectiveServer"
-            else
-                effectiveServer
-
-            try {
-                Url(urlString).host.takeIf { it.isNotBlank() }
-            } catch (_: Exception) {
-                null
-            }
-        }
-    }
-
     var localNetworkPermissionStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
 
     val permissionRequester = rememberPermissionRequester { permission, status ->
@@ -670,7 +645,7 @@ fun AddAccountScreen(
             )
 
             LocalNetworkPermissionNotice(
-                host = typedHost,
+                host = credentials?.server?.host?.takeIf { it.isNotBlank() },
                 status = localNetworkPermissionStatus,
                 onManage = {
                     // DENIED is the one state the OS may still be willing to prompt for, so ask
