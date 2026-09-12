@@ -82,7 +82,9 @@ suspend fun discoverPrincipalsMultiplatform(
             // We follow these redirects using a GET request to find the effective discovery URL.
             val discoveryUrl = try {
                 val response = client.get(wellKnownUrl) {
-                    if (credentials != null) basicAuth(credentials.username, credentials.password)
+                    if (credentials?.hasUsernameAndPassword() == true) {
+                        basicAuth(credentials.username, credentials.password)
+                    }
                 }
 
                 if (response.status.value in 300..399) {
@@ -133,7 +135,7 @@ private suspend fun discoverPrincipalsInternal(
     val xmlString = calDavXml.encodeToString(propfindRequest)
 
     client.request(location) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         headers.append(HttpHeaders.Depth, "0")
@@ -224,7 +226,7 @@ suspend fun discoverHomeCollectionsMultiplatform(
     val xmlString = calDavXml.encodeToString(propfindRequest)
 
     client.request(principal.principalUrl) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         headers.append(HttpHeaders.Depth, "0")
@@ -317,7 +319,7 @@ suspend fun discoverCalendarsMultiplatform(
     val xmlString = calDavXml.encodeToString(propfindRequest)
 
     client.request(homeCollection.url) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         headers.append(HttpHeaders.Depth, "1")

@@ -60,6 +60,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -69,18 +70,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.account.presentation.ProcessingState
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProvider
 import at.techbee.spectacled.screens.account.presentation.components.datastructures.CalDavProviderCategory
 import at.techbee.spectacled.screens.account.presentation.components.settings.ProxyServerSetup
+import at.techbee.spectacled.screens.core.AppPermission
+import at.techbee.spectacled.screens.core.PermissionChecker
+import at.techbee.spectacled.screens.core.PermissionStatus
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.isPrivateNetworkHost
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
+import at.techbee.spectacled.screens.core.rememberPermissionRequester
 import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
@@ -96,15 +104,19 @@ import spectacled.shared.generated.resources.add_account_option2_recommendation_
 import spectacled.shared.generated.resources.add_account_option2_recommended_providers
 import spectacled.shared.generated.resources.add_account_option2_text
 import spectacled.shared.generated.resources.add_account_option_x
+import spectacled.shared.generated.resources.add_account_provider_tasks_only_warning
 import spectacled.shared.generated.resources.add_account_proxy_change
 import spectacled.shared.generated.resources.add_account_proxy_ready
 import spectacled.shared.generated.resources.add_account_proxy_required_info
 import spectacled.shared.generated.resources.add_account_proxy_required_title
-import spectacled.shared.generated.resources.add_account_provider_tasks_only_warning
 import spectacled.shared.generated.resources.add_account_spectacled_is_provider_independent
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.insecure_connection_warning
+import spectacled.shared.generated.resources.local_network_permission_granted
+import spectacled.shared.generated.resources.local_network_permission_manage
+import spectacled.shared.generated.resources.local_network_permission_not_granted
+import spectacled.shared.generated.resources.local_network_permission_unknown
 import spectacled.shared.generated.resources.open_in_browser
 import spectacled.shared.generated.resources.password
 import spectacled.shared.generated.resources.server_inferred
@@ -433,7 +445,8 @@ fun AddAccountScreen(
     processingState: ProcessingState,
     //onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onCredentialsUpdated: (Credentials?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    permissionChecker: PermissionChecker = koinInject()
 ) {
 
     var server by rememberSaveable { mutableStateOf("") }
@@ -441,6 +454,8 @@ fun AddAccountScreen(
     val passwordState = rememberTextFieldState()
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
     var serverDropdownMenuExpanded by remember { mutableStateOf(false) }
+    var isServerTextFieldFocused by remember { mutableStateOf(false) }
+    var isUsernameTextFieldFocused by remember { mutableStateOf(false) }
 
     val credentials by remember {
         derivedStateOf {
@@ -452,7 +467,7 @@ fun AddAccountScreen(
                 else -> null
             }
 
-            if (!effectiveServer.isNullOrBlank() && trimmedUsername.isNotBlank() && passwordState.text.isNotBlank()) {
+            if (!effectiveServer.isNullOrBlank()) {
                 val urlString = if (!effectiveServer.startsWith("http://") && !effectiveServer.startsWith("https://")) {
                     "https://$effectiveServer"
                 } else {
@@ -472,7 +487,17 @@ fun AddAccountScreen(
         onCredentialsUpdated(credentials)
     }
 
+    var localNetworkPermissionStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+    // This fires once on first composition, and again whenever the user comes back from the settings.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        localNetworkPermissionStatus = permissionChecker.status(AppPermission.LOCAL_NETWORK)
+    }
 
+    val permissionRequester = rememberPermissionRequester { permission, status ->
+        if (permission == AppPermission.LOCAL_NETWORK)
+            localNetworkPermissionStatus = status
+    }
+    
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -529,17 +554,62 @@ fun AddAccountScreen(
                         val domain = username.substringAfter("@").trim()
                         if (domain.isNotEmpty()) "https://$domain" else null
                     } else null
+                    val isPrivateNetwork = credentials?.server?.host?.let { isPrivateNetworkHost(it) } ?: false
 
-                    AnimatedVisibility(inferred?.isNotBlank() == true || isInsecure) {
-                        Column {
-                            if(inferred?.isNotBlank() == true)
-                                Text(stringResource(Res.string.server_inferred, inferred))
+                    Column {
+                        AnimatedVisibility(inferred?.isNotBlank() == true) {
+                            Text(stringResource(Res.string.server_inferred, inferred?:""))
+                        }
 
-                            if(isInsecure)
+                        AnimatedVisibility(isInsecure) {
+                            Text(
+                                text = stringResource(Res.string.insecure_connection_warning),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+
+                        AnimatedVisibility(!isServerTextFieldFocused
+                                && !(isUsernameTextFieldFocused && trimmedServer.isEmpty())  // prevent message while user is typing and server is inferred
+                                && isPrivateNetwork
+                                && localNetworkPermissionStatus != PermissionStatus.NOT_APPLICABLE
+                        ) {
+
+                            Column {
+
+                                val (tint, message) = when (localNetworkPermissionStatus) {
+                                    PermissionStatus.GRANTED -> Pair(
+                                        MaterialTheme.colorScheme.primary,
+                                        stringResource(Res.string.local_network_permission_granted)
+                                    )
+                                    PermissionStatus.DENIED -> Pair(
+                                        MaterialTheme.colorScheme.error,
+                                        stringResource(Res.string.local_network_permission_not_granted)
+                                    )
+                                    // iOS cannot be asked, and raises its own prompt on the first connection.
+                                    else -> Pair(
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                        stringResource(Res.string.local_network_permission_unknown)
+                                    )
+                                }
+
                                 Text(
-                                    text = stringResource(Res.string.insecure_connection_warning),
-                                    color = MaterialTheme.colorScheme.error
+                                    text = message,
+                                    color = tint,
+                                    style = MaterialTheme.typography.labelSmall
                                 )
+
+                                TextButton(onClick = {
+                                    // DENIED is the one state the OS may still be willing to prompt for, so ask
+                                    // there and send everyone else to settings: GRANTED can only be revoked there,
+                                    // and UNKNOWN is iOS, which has nothing to ask through.
+                                    if (localNetworkPermissionStatus == PermissionStatus.DENIED)
+                                        permissionRequester.request(AppPermission.LOCAL_NETWORK)
+                                    else
+                                        permissionChecker.openAppSettings()
+                                }) {
+                                    Text(stringResource(Res.string.local_network_permission_manage))
+                                }
+                            }
                         }
                     }
                 },
@@ -616,7 +686,9 @@ fun AddAccountScreen(
                     autoCorrectEnabled = false
                     //imeAction = ImeAction.Done
                 ),
-                modifier = Modifier.width(400.dp)
+                modifier = Modifier
+                    .width(400.dp)
+                    .onFocusChanged { isServerTextFieldFocused = it.isFocused}
             )
 
             OutlinedTextField(
@@ -631,7 +703,7 @@ fun AddAccountScreen(
                     autoCorrectEnabled = false
                     //imeAction = ImeAction.Done
                 ),
-                modifier = Modifier.width(400.dp)
+                modifier = Modifier.width(400.dp).onFocusChanged { isUsernameTextFieldFocused = it.isFocused}
             )
 
             OutlinedSecureTextField(
@@ -731,6 +803,7 @@ fun ChooseProviderScreen(
 
     }
 }
+
 
 @Composable
 private fun CalDavProviderChip(
@@ -855,6 +928,11 @@ private fun AddAccountScreen_Preview_Error() {
                 processingState = ProcessingState.Error("This is an error"),
                 onCredentialsUpdated = {},
                 //onAction = {}
+                // Supplied explicitly: a preview has no Koin graph to resolve it from.
+                permissionChecker = object : PermissionChecker {
+                    override fun status(permission: AppPermission) = PermissionStatus.NOT_APPLICABLE
+                    override fun openAppSettings() {}
+                }
             )
         }
 

@@ -55,7 +55,7 @@ suspend fun multigetResourceHrefsMultiplatform(
     val xmlString = calDavXml.encodeToString(calendarQuery)
 
     client.request(calendar.url) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         headers.append(HttpHeaders.Depth, "1")
@@ -105,7 +105,7 @@ suspend fun syncCollectionMultiplatform(
     val xmlString = calDavXml.encodeToString(syncCollection)
 
     client.request(calendar.url) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         headers.append(HttpHeaders.Depth, "1")
@@ -165,7 +165,7 @@ suspend fun fetchSingleEntryMultiplatform(
     val xmlBody = calDavXml.encodeToString(calendarMultigetRequest)
 
     client.request(calendar.url) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         method = HttpMethod.parse("REPORT")
@@ -217,7 +217,7 @@ suspend fun putResourceMultiplatform(
     val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
 
     client.put(href) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
@@ -257,7 +257,7 @@ suspend fun deleteResourceMultiplatform(
     val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
 
     client.delete(href) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         contentType(ContentType.parse("text/calendar").withCharset(Charsets.UTF_8))
@@ -285,7 +285,7 @@ suspend fun getResourceMultiplatform(
     val href = Url(calendar.url.toString().trimEnd('/')+"/"+icalEntry.uid+".ics")
 
     client.get(href) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         headers.append(HttpHeaders.IfNoneMatch, icalEntry.etag?:"*")
@@ -317,7 +317,9 @@ suspend fun uploadFileMultiplatform(
     credentials: Credentials?
 ): HttpStatusCode {
     val response = client.put(targetUrl) {
-        credentials?.let { basicAuth(it.username, it.password) }
+        if (credentials?.hasUsernameAndPassword() == true) {
+            basicAuth(credentials.username, credentials.password)
+        }
         contentType(mimeType?.let { ContentType.parse(it) } ?: ContentType.Application.OctetStream)
         setBody(bytes)
     }
@@ -330,7 +332,9 @@ suspend fun downloadFileMultiplatform(
     credentials: Credentials?
 ): ByteArray? {
     val response = client.get(sourceUrl) {
-        credentials?.let { basicAuth(it.username, it.password) }
+        if (credentials?.hasUsernameAndPassword() == true) {
+            basicAuth(credentials.username, credentials.password)
+        }
     }
     return if (response.status.isSuccess()) response.body<ByteArray>() else null    // TODO: respond with an actual HttpStatusCode
 }

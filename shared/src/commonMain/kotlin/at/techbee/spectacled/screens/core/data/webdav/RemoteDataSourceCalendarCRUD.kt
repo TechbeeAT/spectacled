@@ -76,7 +76,7 @@ suspend fun createCalendarMultiplatform(
     val xmlString = calDavXml.encodeToString(mkColRequest)
 
     client.request(newCalendar.url.toString().trimEnd('/')+"/") {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         method = HttpMethod.parse("MKCOL")
@@ -118,7 +118,7 @@ suspend fun createCalendarMultiplatform(
     val xmlString2 = calDavXml.encodeToString(propfindRequest)
 
     client.request(newCalendar.url) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         headers.append(HttpHeaders.Depth, "0")
@@ -203,7 +203,7 @@ suspend fun updateCalDavCalendarMultiplatform(
     val xmlString = calDavXml.encodeToString(propertyupdateRequest)
 
     client.request(calendar.url.toString().trimEnd('/')+"/") {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         method = HttpMethod.parse("PROPPATCH")
@@ -239,7 +239,7 @@ suspend fun updateCalDavCalendarMultiplatform(
     val xmlString2 = calDavXml.encodeToString(propfindRequest)
 
     client.request(calendar.url) {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         headers.append(HttpHeaders.Depth, "0")
@@ -291,7 +291,7 @@ suspend fun deleteCalendarMultiplatform(
 ): DeleteCalendarResult {
 
     client.request(calendar.url.toString().trimEnd('/')+"/") {
-        if (credentials != null) {
+        if (credentials?.hasUsernameAndPassword() == true) {
             basicAuth(credentials.username, credentials.password)
         }
         method = HttpMethod.Delete
