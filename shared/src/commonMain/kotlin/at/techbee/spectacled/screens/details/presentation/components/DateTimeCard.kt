@@ -10,9 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.EditCalendar
-import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MoreTime
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ElevatedCard
@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
@@ -40,13 +41,14 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_date
 import spectacled.shared.generated.resources.add_time
 import spectacled.shared.generated.resources.date
 import spectacled.shared.generated.resources.time
-import spectacled.shared.generated.resources.timezone
+import kotlin.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +66,7 @@ fun DateTimeCard(
 
     var showDatePickerBottomSheet by remember { mutableStateOf(false) }
     var showTimePickerBottomSheet by remember { mutableStateOf(false) }
+    val deviceTimeZone = remember { TimeZone.currentSystemDefault() }
 
     val buttonColors = ButtonDefaults.textButtonColors()
 
@@ -95,9 +98,12 @@ fun DateTimeCard(
         modifier = modifier
     ) {
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
 
-            TextButton(
+            Button(
                 onClick = { showDatePickerBottomSheet = true },
                 enabled = enabled,
                 colors = buttonColors
@@ -143,6 +149,7 @@ fun DateTimeCard(
                     Crossfade(icsDateTime?.isDateOnly == false) { timePresent ->
 
                         if (timePresent) {
+
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -156,10 +163,39 @@ fun DateTimeCard(
                                     AnimatedVisibility(icsDateTime?.timeZone != null) {
                                         Text(
                                             text = icsDateTime?.timeZone?.id ?: "",
-                                            style = MaterialTheme.typography.labelSmall
+                                            style = MaterialTheme.typography.labelSmall,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.StartEllipsis
                                         )
                                     }
-                                    icsDateTime?.let { Text(icsDateTime.formatLocalized(IcsDateTimeFormat.TIME)) }
+                                    icsDateTime?.let {
+                                        Text(icsDateTime.formatLocalized(IcsDateTimeFormat.TIME))
+                                    }
+
+                                    AnimatedVisibility(icsDateTime?.timeZone != null && icsDateTime.timeZone != deviceTimeZone) {
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+
+                                            val localIcsDateTime = icsDateTime?.copy(timeZone = deviceTimeZone) ?: return@AnimatedVisibility
+                                            val dayShift =
+                                                icsDateTime.toLocalDateTime().date.daysUntil(localIcsDateTime.toLocalDateTime().date)
+
+                                            Text(
+                                                text = "Local: " + localIcsDateTime.formatLocalized(IcsDateTimeFormat.TIME),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.secondary
+                                            )
+                                            Text(
+                                                text = when {
+                                                    dayShift > 0 -> " (+$dayShift)"
+                                                    dayShift < 0 -> " ($dayShift)"   // Int already carries the minus sign
+                                                    else -> ""
+                                                },
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
                                 }
                             }
 
@@ -172,62 +208,8 @@ fun DateTimeCard(
                     }
                 }
             }
-
-
-            // show time in local timeZone
-            AnimatedVisibility(icsDateTime?.timeZone != null) {
-                VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 2.dp))
-            }
-
-            AnimatedVisibility(icsDateTime?.timeZone != null && icsDateTime.timeZone != TimeZone.currentSystemDefault()) {
-                TextButton(
-                    onClick = {  },
-                    enabled = false // info only
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Language,
-                            contentDescription = stringResource(Res.string.timezone))
-
-                        Column {
-                            Text(
-                                text = TimeZone.currentSystemDefault().id,
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                            icsDateTime?.let {
-                                Text(
-                                    text = icsDateTime.copy(timeZone = TimeZone.currentSystemDefault()).formatLocalized(IcsDateTimeFormat.DATE_TIME)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
-
-
-    /*
-                AnimatedVisibility(icsDateTime?.isDateOnly == false && icsDateTime.timeZone != null) {
-                    AssistChip(
-                        onClick = { /* disabled, info only */ },
-                        enabled = false,
-                        leadingIcon = {
-                            Icon(Icons.Outlined.Language, null)
-                        },
-                        label = {
-
-                        },
-                        colors = AssistChipDefaults.assistChipColors()
-                            .copy(leadingIconContentColor = iconColor ?: MaterialTheme.colorScheme.primary)
-                    )
-                }
-     */
-
-
 }
 
 
@@ -283,4 +265,19 @@ private fun DateTimeCard_with_timezone_Preview() {
         onIcsDateTimeUpdated = {}
     )
 }
+
+@Preview
+@Composable
+private fun DateTimeCard_with_dayshift_Preview() { // dayshift depends on local timezone, works for Vienna
+    DateTimeCard(
+        icsDateTime = IcsDateTime(Instant.fromEpochMilliseconds(1789174800000), false, TimeZone.of("Pacific/Honolulu")),
+        enabled = true,
+        allowNoDate = true,
+        initializeWithDateOnly = false,
+        suggestedTimezones = emptyList(),
+        onIcsDateTimeUpdated = {}
+    )
+}
+
+
 
