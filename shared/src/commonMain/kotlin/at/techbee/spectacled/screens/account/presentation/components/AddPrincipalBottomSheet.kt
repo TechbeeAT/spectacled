@@ -488,18 +488,17 @@ fun AddAccountScreen(
     }
 
     var localNetworkPermissionStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+    // This fires once on first composition, and again whenever the user comes back from the settings.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        localNetworkPermissionStatus = permissionChecker.status(AppPermission.LOCAL_NETWORK)
+    }
 
     val permissionRequester = rememberPermissionRequester { permission, status ->
         if (permission == AppPermission.LOCAL_NETWORK)
             localNetworkPermissionStatus = status
     }
 
-    // Covers both reads: the observer is synced up to the current lifecycle state when it is added,
-    // so this fires once on first composition, and again whenever the user comes back from the
-    // settings page having changed the grant there.
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        localNetworkPermissionStatus = permissionChecker.status(AppPermission.LOCAL_NETWORK)
-    }
+
 
 
     Column(
