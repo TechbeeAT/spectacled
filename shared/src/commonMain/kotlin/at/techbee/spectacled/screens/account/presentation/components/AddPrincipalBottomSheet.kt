@@ -26,7 +26,6 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -574,9 +573,32 @@ fun AddAccountScreen(
                                 && isPrivateNetwork
                                 && localNetworkPermissionStatus != PermissionStatus.NOT_APPLICABLE
                         ) {
-                            LocalNetworkPermissionNotice(
-                                status = localNetworkPermissionStatus,
-                                onManagePermission = {
+
+                            Column {
+
+                                val (tint, message) = when (localNetworkPermissionStatus) {
+                                    PermissionStatus.GRANTED -> Pair(
+                                        MaterialTheme.colorScheme.primary,
+                                        stringResource(Res.string.local_network_permission_granted)
+                                    )
+                                    PermissionStatus.DENIED -> Pair(
+                                        MaterialTheme.colorScheme.error,
+                                        stringResource(Res.string.local_network_permission_not_granted)
+                                    )
+                                    // iOS cannot be asked, and raises its own prompt on the first connection.
+                                    else -> Pair(
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                        stringResource(Res.string.local_network_permission_unknown)
+                                    )
+                                }
+
+                                Text(
+                                    text = message,
+                                    color = tint,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+
+                                TextButton(onClick = {
                                     // DENIED is the one state the OS may still be willing to prompt for, so ask
                                     // there and send everyone else to settings: GRANTED can only be revoked there,
                                     // and UNKNOWN is iOS, which has nothing to ask through.
@@ -584,8 +606,10 @@ fun AddAccountScreen(
                                         permissionRequester.request(AppPermission.LOCAL_NETWORK)
                                     else
                                         permissionRequester.openAppSettings()
+                                }) {
+                                    Text(stringResource(Res.string.local_network_permission_manage))
                                 }
-                            )
+                            }
                         }
                     }
                 },
@@ -780,56 +804,6 @@ fun ChooseProviderScreen(
     }
 }
 
-/** Note if the local network access is blocked in permissions with a button to open permissions */
-@Composable
-private fun LocalNetworkPermissionNotice(
-    status: PermissionStatus,
-    onManagePermission: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-
-    val (icon, tint, message) = when (status) {
-        PermissionStatus.GRANTED -> Triple(
-            Icons.Outlined.Check,
-            MaterialTheme.colorScheme.primary,
-            stringResource(Res.string.local_network_permission_granted)
-        )
-        PermissionStatus.DENIED -> Triple(
-            Icons.Outlined.Warning,
-            MaterialTheme.colorScheme.error,
-            stringResource(Res.string.local_network_permission_not_granted)
-        )
-        // iOS cannot be asked, and raises its own prompt on the first connection.
-        else -> Triple(
-            Icons.Outlined.Info,
-            MaterialTheme.colorScheme.onSurfaceVariant,
-            stringResource(Res.string.local_network_permission_unknown)
-        )
-    }
-
-    Column(modifier = modifier) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = message,
-                color = tint,
-                style = MaterialTheme.typography.labelSmall
-            )
-        }
-
-        TextButton(onClick = onManagePermission) {
-            Text(stringResource(Res.string.local_network_permission_manage))
-        }
-    }
-}
 
 @Composable
 private fun CalDavProviderChip(
