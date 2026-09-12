@@ -455,6 +455,7 @@ fun AddAccountScreen(
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
     var serverDropdownMenuExpanded by remember { mutableStateOf(false) }
     var isServerTextFieldFocused by remember { mutableStateOf(false) }
+    var isUsernameTextFieldFocused by remember { mutableStateOf(false) }
 
     val credentials by remember {
         derivedStateOf {
@@ -572,6 +573,7 @@ fun AddAccountScreen(
                         }
 
                         AnimatedVisibility(!isServerTextFieldFocused
+                                && !(isUsernameTextFieldFocused && trimmedServer.isEmpty())  // prevent message while user is typing and server is inferred
                                 && isPrivateNetwork
                                 && localNetworkPermissionStatus != PermissionStatus.NOT_APPLICABLE
                         ) {
@@ -705,7 +707,7 @@ fun AddAccountScreen(
                     autoCorrectEnabled = false
                     //imeAction = ImeAction.Done
                 ),
-                modifier = Modifier.width(400.dp)
+                modifier = Modifier.width(400.dp).onFocusChanged { isUsernameTextFieldFocused = it.isFocused}
             )
 
             OutlinedSecureTextField(
