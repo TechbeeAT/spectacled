@@ -61,6 +61,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -452,6 +453,7 @@ fun AddAccountScreen(
     val passwordState = rememberTextFieldState()
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
     var serverDropdownMenuExpanded by remember { mutableStateOf(false) }
+    var isServerTextFieldFocused by remember { mutableStateOf(false) }
 
     val credentials by remember {
         derivedStateOf {
@@ -463,7 +465,7 @@ fun AddAccountScreen(
                 else -> null
             }
 
-            if (!effectiveServer.isNullOrBlank() && trimmedUsername.isNotBlank() && passwordState.text.isNotBlank()) {
+            if (!effectiveServer.isNullOrBlank()) {
                 val urlString = if (!effectiveServer.startsWith("http://") && !effectiveServer.startsWith("https://")) {
                     "https://$effectiveServer"
                 } else {
@@ -554,17 +556,36 @@ fun AddAccountScreen(
                         val domain = username.substringAfter("@").trim()
                         if (domain.isNotEmpty()) "https://$domain" else null
                     } else null
+                    val isPrivateNetwork = credentials?.server?.host?.let { isPrivateNetworkHost(it) } ?: false
 
-                    AnimatedVisibility(inferred?.isNotBlank() == true || isInsecure) {
-                        Column {
-                            if(inferred?.isNotBlank() == true)
-                                Text(stringResource(Res.string.server_inferred, inferred))
+                    Column {
+                        AnimatedVisibility(inferred?.isNotBlank() == true) {
+                            Text(stringResource(Res.string.server_inferred, inferred?:""))
+                        }
 
-                            if(isInsecure)
-                                Text(
-                                    text = stringResource(Res.string.insecure_connection_warning),
-                                    color = MaterialTheme.colorScheme.error
-                                )
+                        AnimatedVisibility(isInsecure) {
+                            Text(
+                                text = stringResource(Res.string.insecure_connection_warning),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+
+                        AnimatedVisibility(!isServerTextFieldFocused
+                                && isPrivateNetwork
+                                && localNetworkPermissionStatus != PermissionStatus.NOT_APPLICABLE
+                        ) {
+                            LocalNetworkPermissionNotice(
+                                status = localNetworkPermissionStatus,
+                                onManagePermission = {
+                                    // DENIED is the one state the OS may still be willing to prompt for, so ask
+                                    // there and send everyone else to settings: GRANTED can only be revoked there,
+                                    // and UNKNOWN is iOS, which has nothing to ask through.
+                                    if (localNetworkPermissionStatus == PermissionStatus.DENIED)
+                                        permissionRequester.request(AppPermission.LOCAL_NETWORK)
+                                    else
+                                        permissionRequester.openAppSettings()
+                                }
+                            )
                         }
                     }
                 },
@@ -641,22 +662,9 @@ fun AddAccountScreen(
                     autoCorrectEnabled = false
                     //imeAction = ImeAction.Done
                 ),
-                modifier = Modifier.width(400.dp)
-            )
-
-            LocalNetworkPermissionNotice(
-                host = credentials?.server?.host?.takeIf { it.isNotBlank() },
-                status = localNetworkPermissionStatus,
-                onManage = {
-                    // DENIED is the one state the OS may still be willing to prompt for, so ask
-                    // there and send everyone else to settings: GRANTED can only be revoked there,
-                    // and UNKNOWN is iOS, which has nothing to ask through.
-                    if (localNetworkPermissionStatus == PermissionStatus.DENIED)
-                        permissionRequester.request(AppPermission.LOCAL_NETWORK)
-                    else
-                        permissionRequester.openAppSettings()
-                },
-                modifier = Modifier.width(400.dp)
+                modifier = Modifier
+                    .width(400.dp)
+                    .onFocusChanged { isServerTextFieldFocused = it.isFocused}
             )
 
             OutlinedTextField(
@@ -772,66 +780,53 @@ fun ChooseProviderScreen(
     }
 }
 
-/**
- * Says whether the OS lets us reach [host], for the servers where that is in question.
- *
- * Shown only for a host on the user's own network: someone adding a hosted provider has no local
- * network permission to think about, and a "nearby devices" notice there would only confuse. The
- * manage button is offered in every state it does show, granted included, so the decision stays
- * reviewable rather than only appearing once something is broken.
- */
+/** Note if the local network access is blocked in permissions with a button to open permissions */
 @Composable
 private fun LocalNetworkPermissionNotice(
-    host: String?,
     status: PermissionStatus,
-    onManage: () -> Unit,
+    onManagePermission: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val relevant = host != null &&
-        isPrivateNetworkHost(host) &&
-        status != PermissionStatus.NOT_APPLICABLE
 
-    AnimatedVisibility(relevant, modifier = modifier) {
-        val (icon, tint, message) = when (status) {
-            PermissionStatus.GRANTED -> Triple(
-                Icons.Outlined.Check,
-                MaterialTheme.colorScheme.primary,
-                stringResource(Res.string.local_network_permission_granted)
+    val (icon, tint, message) = when (status) {
+        PermissionStatus.GRANTED -> Triple(
+            Icons.Outlined.Check,
+            MaterialTheme.colorScheme.primary,
+            stringResource(Res.string.local_network_permission_granted)
+        )
+        PermissionStatus.DENIED -> Triple(
+            Icons.Outlined.Warning,
+            MaterialTheme.colorScheme.error,
+            stringResource(Res.string.local_network_permission_not_granted)
+        )
+        // iOS cannot be asked, and raises its own prompt on the first connection.
+        else -> Triple(
+            Icons.Outlined.Info,
+            MaterialTheme.colorScheme.onSurfaceVariant,
+            stringResource(Res.string.local_network_permission_unknown)
+        )
+    }
+
+    Column(modifier = modifier) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(16.dp)
             )
-            PermissionStatus.DENIED -> Triple(
-                Icons.Outlined.Warning,
-                MaterialTheme.colorScheme.error,
-                stringResource(Res.string.local_network_permission_not_granted)
-            )
-            // iOS cannot be asked, and raises its own prompt on the first connection.
-            else -> Triple(
-                Icons.Outlined.Info,
-                MaterialTheme.colorScheme.onSurfaceVariant,
-                stringResource(Res.string.local_network_permission_unknown)
+            Text(
+                text = message,
+                color = tint,
+                style = MaterialTheme.typography.labelSmall
             )
         }
 
-        Column {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = tint,
-                    modifier = Modifier.size(16.dp)
-                )
-                Text(
-                    text = message,
-                    color = tint,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-
-            TextButton(onClick = onManage) {
-                Text(stringResource(Res.string.local_network_permission_manage))
-            }
+        TextButton(onClick = onManagePermission) {
+            Text(stringResource(Res.string.local_network_permission_manage))
         }
     }
 }
