@@ -56,10 +56,9 @@ class LocalNetworkAddressTest {
     @Test
     fun mdnsAndSingleLabelHostnames() {
         listOf(
-            "raspberrypi.local", "NAS.LOCAL", "nas", "radicale", "server.local.",
+            "localhost", "raspberrypi.local", "NAS.LOCAL", "nas", "radicale", "server.local."
             // Caught by the no-dot rule rather than a case of its own, so pin it: it has to stay
             // in step with 127.0.0.1 and ::1, which are private explicitly.
-            "localhost"
         ).forEach {
             assertTrue(isPrivateNetworkHost(it), "$it should be private")
         }
