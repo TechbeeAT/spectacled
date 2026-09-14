@@ -18,7 +18,6 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
-import at.techbee.spectacled.screens.core.domain.INLINE_ATTACHMENT_WARN_BYTES
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.MAX_INLINE_ATTACHMENT_BYTES
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
@@ -51,7 +50,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.attachment_large_warning
 import spectacled.shared.generated.resources.attachment_too_large
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.credentials_not_found
@@ -807,17 +805,13 @@ class DetailsViewModel(
                 syncState = AttachmentSyncState.LOCAL_MODIFIED
             )
 
-            val largeWarning = if (isInline && bytes.size > INLINE_ATTACHMENT_WARN_BYTES)
-                getString(Res.string.attachment_large_warning) else null
-
             _state.update {
                 it.copy(
                     icalEntry = it.icalEntry.copy(
                         attachments = it.icalEntry.attachments + newAttachment,
                         lastModified = IcsDateTime.now(),
                         syncState = it.icalEntry.syncState.afterLocalEdit()
-                    ),
-                    snackbarText = largeWarning ?: it.snackbarText
+                    )
                 )
             }
         }

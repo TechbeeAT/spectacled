@@ -49,6 +49,7 @@ import androidx.compose.ui.util.fastForEach
 import at.techbee.spectacled.screens.core.FileManager
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
+import at.techbee.spectacled.screens.core.domain.INLINE_ATTACHMENT_WARN_BYTES
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
 import at.techbee.spectacled.screens.core.presentation.components.PathData
 import at.techbee.spectacled.screens.core.presentation.components.PathDataSvgConverter
@@ -61,6 +62,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.attachment
+import spectacled.shared.generated.resources.attachment_large_warning
 import spectacled.shared.generated.resources.attachment_sync_state_pending_download
 import spectacled.shared.generated.resources.attachment_sync_state_pending_upload
 import spectacled.shared.generated.resources.attachment_sync_state_sync_error
@@ -112,7 +114,10 @@ fun AttachmentCard(
 
         Column(modifier = Modifier.fillMaxWidth()) {
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 4.dp)
+            ) {
 
                 IconButton(
                     onClick = {},
@@ -141,6 +146,15 @@ fun AttachmentCard(
                     attachment.syncErrorMessage?.let {
                         Text(
                             text = it,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+
+                    if (attachment.isInline && (attachment.size?:0) > INLINE_ATTACHMENT_WARN_BYTES) {
+                        Text(
+                            text = stringResource(Res.string.attachment_large_warning),
                             style = MaterialTheme.typography.labelSmall,
                             fontStyle = FontStyle.Italic,
                             color = MaterialTheme.colorScheme.error
@@ -401,6 +415,34 @@ private fun AttachmentCard_SyncState_FAILED_Preview() {
             fileName = "my document.pdf",
             mimeType = "application/pdf",
             size = 125000L
+        ),
+        allowEditing = true,
+        onAction = {},
+        fileManager = object: FileManager {
+            override fun getAttachmentsDirectory() = "/"
+            override fun saveAttachment(fileName: String, bytes: ByteArray) = "/test.pdf"
+            override fun readAttachment(path: String) = "".toByteArray()
+            override fun deleteAttachment(path: String) = false
+            override fun exists(path: String) = true
+
+        },
+        modifier = Modifier.padding(8.dp)
+    )
+}
+
+@Preview
+@Composable
+private fun AttachmentCard_Large_Preview() {
+
+
+    AttachmentCard(
+        attachment = Attachment(
+            id = 1L,
+            syncState = AttachmentSyncState.SYNCED,
+            fileName = "my document.pdf",
+            mimeType = "application/pdf",
+            size = 5500000L,
+            isInline = true
         ),
         allowEditing = true,
         onAction = {},
