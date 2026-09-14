@@ -35,6 +35,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryList
 import at.techbee.spectacled.screens.about.presentation.AboutScreen
@@ -70,6 +73,14 @@ fun AccountListScreenRoot(
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val backHandlerState = rememberNavigationEventState(NavigationEventInfo.None)
+    NavigationBackHandler(
+        state = backHandlerState,
+        isBackEnabled = state.editFoldersOfPrincipal != null  // leave edit mode before navigating back
+    ) {
+        viewModel.onAction(AccountListAction.OnEditAccountFolders(null))
+    }
 
 
     LaunchedEffect(state.snackbarText) {
