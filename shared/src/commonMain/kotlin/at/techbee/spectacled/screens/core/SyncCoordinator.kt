@@ -384,7 +384,6 @@ class SyncCoordinator(
                 SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED -> {}  // do nothing, user needs to decide
                 SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED -> {}  // do nothing, user needs to decide
                 SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED -> {}  // do nothing, user needs to decide
-
                 SyncState.LOCAL_NEW -> {}  // unreachable, an untouched new entry is never written to the database
             }
         }
