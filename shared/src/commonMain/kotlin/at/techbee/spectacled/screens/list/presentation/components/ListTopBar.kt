@@ -136,7 +136,7 @@ fun ListTopBar(
                                     contentDescription = stringResource(Res.string.folders)
                                 )
                                 Text(
-                                    text = calendar.displayName ?: calendar.url.toString(),
+                                    text = calendar.displayLabel,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(end = 4.dp)

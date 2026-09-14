@@ -8,9 +8,9 @@ import android.graphics.drawable.Icon
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import at.techbee.spectacled.Shortcuts.observe
 import at.techbee.spectacled.screens.core.data.LAST_USED_CALENDAR_ID
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
-import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.shared.R
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.CALENDAR_ID_KEY
@@ -26,15 +26,9 @@ import org.koin.core.component.inject
 /**
  * The launcher's dynamic shortcuts: one that always adds an entry, and — once there is a last
  * used calendar — one that adds an entry straight into it.
- *
  * The second one depends on state that changes while the app runs (which calendar was opened
  * last, and how that calendar is named), so [observe] keeps collecting instead of taking a
- * snapshot at startup. A one-shot call from `onCreate` would not be enough: MainActivity is
- * `singleTask`, so returning to the app normally goes through `onNewIntent` and the shortcuts
- * would keep showing whatever was current when the process was started.
- *
- * Dependencies come from Koin through [KoinComponent], the same way [at.techbee.spectacled.widget.SpectacledWidget]
- * resolves its own, rather than through a global `KoinPlatform.getKoin()` lookup.
+ * snapshot at startup.
  */
 object Shortcuts : KoinComponent {
 
@@ -45,18 +39,7 @@ object Shortcuts : KoinComponent {
     private val calendarRepository: CalendarRepository by inject()
 
     /**
-     * Publishes the shortcuts and re-publishes them on every change, until the calling scope is
-     * cancelled. Collect it only while the activity is started — `setDynamicShortcuts` is rate
-     * limited for background apps, so an update that arrives (e.g. through a sync) while the app
-     * is not visible can be dropped silently:
-     *
-     * ```
-     * lifecycleScope.launch {
-     *     repeatOnLifecycle(Lifecycle.State.STARTED) {
-     *         Shortcuts.observe(this@MainActivity, SpectacledVariant.JOURNALS)
-     *     }
-     * }
-     * ```
+     * Publishes the shortcuts and re-publishes them on every change, until the calling scope is canceled.
      */
     suspend fun observe(context: Context, spectacledVariant: SpectacledVariant) {
         val appContext = context.applicationContext
@@ -72,7 +55,7 @@ object Shortcuts : KoinComponent {
             // Only these three fields reach the shortcut; mapping to them first keeps every sync
             // from re-publishing over churn on the rest of the Calendar (ctag, syncToken, ...).
             .map { calendar ->
-                calendar?.let { LastUsedCalendar(it.id, it.shortcutLabel(), it.color?.toArgb()) }
+                calendar?.let { LastUsedCalendar(it.id, it.displayLabel, it.color?.toArgb()) }
             }
             .distinctUntilChanged()
             .collect { lastUsedCalendar -> publish(appContext, spectacledVariant, lastUsedCalendar) }
@@ -151,12 +134,4 @@ object Shortcuts : KoinComponent {
     /** What of the last used calendar ends up in its shortcut. [color] is an ARGB int, or null. */
     private data class LastUsedCalendar(val id: Long, val label: String, val color: Int?)
 
-    /**
-     * Guaranteed non-blank: `ShortcutInfo.Builder.setShortLabel` rejects an empty label, and a
-     * calendar that has not been named yet carries `""` (see `Calendar.getNewCalendar`).
-     */
-    private fun Calendar.shortcutLabel(): String =
-        displayName?.takeIf { it.isNotBlank() }
-            ?: url.host.takeIf { it.isNotBlank() }
-            ?: url.toString()
 }

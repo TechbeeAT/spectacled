@@ -29,7 +29,6 @@ enum class SpectacledVariant(
     val appNameStringRes: StringResource,
     val logoDrawableResource: DrawableResource,
     val addNewStringRes: StringResource,
-    /** Like [addNewStringRes], but naming the calendar to add to; takes it as format argument. */
     val addNewInCalendarStringRes: StringResource,
     val addNewDrawableRes: DrawableResource,
     val mainCalendarComponent: CalendarComponent,

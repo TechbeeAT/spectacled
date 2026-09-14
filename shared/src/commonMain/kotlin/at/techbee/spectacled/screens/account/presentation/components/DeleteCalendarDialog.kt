@@ -58,7 +58,7 @@ fun DeleteCalendarDialog(
         },
         icon = { Icon(Icons.Outlined.NoAccounts, null) },
         title = {
-            Text(stringResource(Res.string.delete_folder_x, calendar.displayName ?: calendar.url))
+            Text(stringResource(Res.string.delete_folder_x, calendar.displayLabel))
         },
         text = {
             Column {

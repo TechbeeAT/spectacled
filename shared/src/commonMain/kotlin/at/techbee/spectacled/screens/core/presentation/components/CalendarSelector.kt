@@ -33,7 +33,6 @@ import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.selected_calendar
-import spectacled.shared.generated.resources.unnamed_calendar
 
 @Composable
 fun CalendarSelector(
@@ -105,7 +104,7 @@ fun CalendarSelector(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = calendar.displayName ?: calendar.calendarDescription ?: stringResource(Res.string.unnamed_calendar),
+                                    text = calendar.displayLabel,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )

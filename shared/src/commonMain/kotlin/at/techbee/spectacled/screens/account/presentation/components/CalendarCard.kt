@@ -148,7 +148,7 @@ fun CalendarCard(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = calendar.displayName ?: calendar.url.toString(),
+                            text = calendar.displayLabel,
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -294,7 +294,7 @@ fun CalendarCard(
                                 imageVector = Icons.Outlined.ChevronRight,
                                 contentDescription = stringResource(
                                     Res.string.open_foldername,
-                                    calendar.displayName ?: calendar.url.toString()
+                                    calendar.displayLabel
                                 ),
                                 modifier = Modifier.padding(4.dp)
                             )
