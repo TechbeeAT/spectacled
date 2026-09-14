@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.account.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -82,7 +85,7 @@ fun CalendarCard(
 ) {
 
     val smallIconSize = 20.dp
-
+    val hapticFeedback = LocalHapticFeedback.current
     var dropdownExpanded by remember { mutableStateOf(false) }
 
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(calendar.color)) {
@@ -90,177 +93,196 @@ fun CalendarCard(
         SpecialRoundedCard(
             overrideTopRoundedCornerSize = if (isFirst) 16.dp else 0.dp,
             overrideBottomRoundedCornerSize = if (isLast) 16.dp else 0.dp,
-            onClick = {
-                if (!editEditFoldersModeEnabled)
-                    onAction(AccountListAction.OnCalendarClicked(calendar.id))
-            },
+            onClick = { },
             enabled = calendar.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED,
             modifier = modifier,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth().padding(8.dp).heightIn(min = 48.dp)
+
+            Box(
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = {
+                            if (!editEditFoldersModeEnabled)
+                                onAction(AccountListAction.OnCalendarClicked(calendar.id))
+                        },
+                        onLongClick = {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (editEditFoldersModeEnabled)
+                                onAction(AccountListAction.OnEditAccountFolders(null))
+                            else
+                                onAction(AccountListAction.OnEditAccountFolders(principal))
+                        }
+                    )
+                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
             ) {
 
-                Crossfade(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.IN_PROGRESS) { syncInProgress ->
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(48.dp).padding(8.dp)
-                    ) {
-                        if (syncInProgress)
-                            CircularProgressIndicator(
-                                color = LocalContentColor.current,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        else
-                            Icon(
-                                imageVector = Icons.Outlined.Folder,
-                                contentDescription = stringResource(Res.string.folders),
-                                tint = LocalContentColor.current
-                            )
-                    }
-                }
 
-                Column(
-                    modifier = Modifier.weight(1f)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = calendar.displayName ?: calendar.url.toString(),
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                        //fontWeight = FontWeight.Bold
-                    )
 
-                    if (calendar.calendarDescription?.isNotBlank() == true)
+                    Crossfade(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.IN_PROGRESS) { syncInProgress ->
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(48.dp).padding(8.dp)
+                        ) {
+                            if (syncInProgress)
+                                CircularProgressIndicator(
+                                    color = LocalContentColor.current,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            else
+                                Icon(
+                                    imageVector = Icons.Outlined.Folder,
+                                    contentDescription = stringResource(Res.string.folders),
+                                    tint = LocalContentColor.current
+                                )
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
-                            text = calendar.calendarDescription,
-                            fontStyle = FontStyle.Italic,
-                            style = MaterialTheme.typography.labelSmall,
+                            text = calendar.displayName ?: calendar.url.toString(),
+                            style = MaterialTheme.typography.titleMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
+                            //fontWeight = FontWeight.Bold
                         )
-                }
 
-                if (!calendar.canWriteProperties()) {
-                    TextButton(
-                        onClick = { },
-                        enabled = false
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.EditOff,
-                            contentDescription = stringResource(Res.string.read_only),
-                            modifier = Modifier.size(smallIconSize)
-                        )
+                        if (calendar.calendarDescription?.isNotBlank() == true)
+                            Text(
+                                text = calendar.calendarDescription,
+                                fontStyle = FontStyle.Italic,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                     }
-                }
 
-                AnimatedVisibility(calendar.calendarSyncStatus?.type?.isErrorType() == true) {
-                    IconButton(
-                        onClick = { onAction(AccountListAction.OnShowSyncInfoDialog(principal, calendar)) },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.SyncProblem,
-                            contentDescription = stringResource(Res.string.sync_problem),
-                            modifier = Modifier.size(smallIconSize)
-                        )
-                    }
-                }
-
-                AnimatedVisibility(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED) {
-                    IconButton(
-                        onClick = { },
-                        enabled = false
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.SyncDisabled,
-                            contentDescription = stringResource(Res.string.sync_disabled),
-                            modifier = Modifier.size(smallIconSize)
-                        )
-                    }
-                }
-
-                AnimatedVisibility(editEditFoldersModeEnabled) {
-                    Row {
+                    if (!calendar.canWriteProperties()) {
                         TextButton(
-                            onClick = {
-                                onAction(AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet(principal, homeCollection, calendar))
-                            },
-                            enabled = calendar.canWriteProperties()
+                            onClick = { },
+                            enabled = false
                         ) {
-                            Text(stringResource(Res.string.edit))
+                            Icon(
+                                imageVector = Icons.Outlined.EditOff,
+                                contentDescription = stringResource(Res.string.read_only),
+                                modifier = Modifier.size(smallIconSize)
+                            )
                         }
+                    }
 
-                        TextButton(
-                            onClick = { dropdownExpanded = !dropdownExpanded }
+                    AnimatedVisibility(calendar.calendarSyncStatus?.type?.isErrorType() == true) {
+                        IconButton(
+                            onClick = { onAction(AccountListAction.OnShowSyncInfoDialog(principal, calendar)) },
                         ) {
-                            Icon(Icons.Outlined.MoreVert, stringResource(Res.string.more))
+                            Icon(
+                                imageVector = Icons.Outlined.SyncProblem,
+                                contentDescription = stringResource(Res.string.sync_problem),
+                                modifier = Modifier.size(smallIconSize)
+                            )
+                        }
+                    }
 
-                            DropdownMenu(
-                                expanded = dropdownExpanded,
-                                onDismissRequest = { dropdownExpanded = false }
+                    AnimatedVisibility(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED) {
+                        IconButton(
+                            onClick = { },
+                            enabled = false
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.SyncDisabled,
+                                contentDescription = stringResource(Res.string.sync_disabled),
+                                modifier = Modifier.size(smallIconSize)
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(editEditFoldersModeEnabled) {
+                        Row {
+                            TextButton(
+                                onClick = {
+                                    onAction(AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet(principal, homeCollection, calendar))
+                                },
+                                enabled = calendar.canWriteProperties()
                             ) {
+                                Text(stringResource(Res.string.edit))
+                            }
 
-                                DropdownMenuItem(
-                                    text = {
-                                        Crossfade(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED) { isDisabled ->
-                                            if (isDisabled)
-                                                Text(stringResource(Res.string.sync_disabled))
+                            TextButton(
+                                onClick = { dropdownExpanded = !dropdownExpanded }
+                            ) {
+                                Icon(Icons.Outlined.MoreVert, stringResource(Res.string.more))
+
+                                DropdownMenu(
+                                    expanded = dropdownExpanded,
+                                    onDismissRequest = { dropdownExpanded = false }
+                                ) {
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Crossfade(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED) { isDisabled ->
+                                                if (isDisabled)
+                                                    Text(stringResource(Res.string.sync_disabled))
+                                                else
+                                                    Text(stringResource(Res.string.sync_enabled))
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Crossfade(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED) { isDisabled ->
+                                                if (isDisabled)
+                                                    Icon(Icons.Outlined.SyncDisabled, stringResource(Res.string.sync_disabled))
+                                                else
+                                                    Icon(Icons.Outlined.Sync, stringResource(Res.string.sync_enabled))
+                                            }
+                                        },
+                                        trailingIcon = {
+                                            Switch(
+                                                checked = calendar.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED,
+                                                onCheckedChange = { checkedState ->
+                                                    onAction(AccountListAction.OnToggleSyncEnabled(calendar.id, checkedState))
+                                                },
+                                                modifier = Modifier.padding(horizontal = 8.dp)
+                                            )
+                                        },
+                                        onClick = {
+                                            if (calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
+                                                onAction(AccountListAction.OnToggleSyncEnabled(calendar.id, true))
                                             else
-                                                Text(stringResource(Res.string.sync_enabled))
-                                        }
-                                    },
-                                    leadingIcon = {
-                                        Crossfade(calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED) { isDisabled ->
-                                            if (isDisabled)
-                                                Icon(Icons.Outlined.SyncDisabled, stringResource(Res.string.sync_disabled))
-                                            else
-                                                Icon(Icons.Outlined.Sync, stringResource(Res.string.sync_enabled))
-                                        }
-                                    },
-                                    trailingIcon = {
-                                        Switch(
-                                            checked = calendar.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED,
-                                            onCheckedChange = { checkedState ->
-                                                onAction(AccountListAction.OnToggleSyncEnabled(calendar.id, checkedState))
-                                            },
-                                            modifier = Modifier.padding(horizontal = 8.dp)
-                                        )
-                                    },
-                                    onClick = {
-                                        if (calendar.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED)
-                                            onAction(AccountListAction.OnToggleSyncEnabled(calendar.id, true))
-                                        else
-                                            onAction(AccountListAction.OnToggleSyncEnabled(calendar.id, false))
-                                    },
-                                    enabled = true
-                                )
-
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(Res.string.delete)) },
-                                    leadingIcon = { Icon(Icons.Outlined.DeleteForever, null) },
-                                    onClick = {
-                                        onAction(AccountListAction.OnShowDeleteCalendarDialog(principal, calendar))
-                                    },
-                                    enabled = homeCollection.canUnbind(),
-                                    colors = MenuDefaults.itemColors(
-                                        textColor = MaterialTheme.colorScheme.error,
-                                        leadingIconColor = MaterialTheme.colorScheme.error
+                                                onAction(AccountListAction.OnToggleSyncEnabled(calendar.id, false))
+                                        },
+                                        enabled = true
                                     )
-                                )
+
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.delete)) },
+                                        leadingIcon = { Icon(Icons.Outlined.DeleteForever, null) },
+                                        onClick = {
+                                            onAction(AccountListAction.OnShowDeleteCalendarDialog(principal, calendar))
+                                        },
+                                        enabled = homeCollection.canUnbind(),
+                                        colors = MenuDefaults.itemColors(
+                                            textColor = MaterialTheme.colorScheme.error,
+                                            leadingIconColor = MaterialTheme.colorScheme.error
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                AnimatedVisibility(!editEditFoldersModeEnabled) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        /*
+                    AnimatedVisibility(!editEditFoldersModeEnabled) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            /*
                         Text(
                             text = calendar.notes.size.toString(),
                             //style = MaterialTheme.typography.labelMedium,
@@ -268,14 +290,15 @@ fun CalendarCard(
                         )
                          */
 
-                        Icon(
-                            imageVector = Icons.Outlined.ChevronRight,
-                            contentDescription = stringResource(
-                                Res.string.open_foldername,
-                                calendar.displayName ?: calendar.url.toString()
-                            ),
-                            modifier = Modifier.padding(4.dp)
-                        )
+                            Icon(
+                                imageVector = Icons.Outlined.ChevronRight,
+                                contentDescription = stringResource(
+                                    Res.string.open_foldername,
+                                    calendar.displayName ?: calendar.url.toString()
+                                ),
+                                modifier = Modifier.padding(4.dp)
+                            )
+                        }
                     }
                 }
             }
