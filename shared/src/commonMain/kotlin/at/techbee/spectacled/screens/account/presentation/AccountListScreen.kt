@@ -63,7 +63,8 @@ fun AccountListScreen(
         } else {
 
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(1.dp)
+                verticalArrangement = Arrangement.spacedBy(1.dp),
+                modifier = Modifier.fillMaxSize()
             ) {
 
                 state.principals.forEachIndexed { indexPrincipal, principal ->
