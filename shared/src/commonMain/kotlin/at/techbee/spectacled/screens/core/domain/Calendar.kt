@@ -69,4 +69,13 @@ data class Calendar(
                 || calDavPrivileges.contains(CalDavPrivilege.WRITE)
                 || calDavPrivileges.contains(CalDavPrivilege.WRITE_PROPERTIES)
     }
+
+    /**
+     * Returns a non-nullable string for the calendar which is either
+     * the displayName, the URL host, or the URL itself.
+     */
+    val displayLabel
+        get() = displayName?.takeIf { it.isNotBlank() }
+            ?: url.host.takeIf { it.isNotBlank() }
+            ?: url.toString()
 }

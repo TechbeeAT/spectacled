@@ -9,8 +9,11 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_journal
+import spectacled.shared.generated.resources.add_journal_in_x
 import spectacled.shared.generated.resources.add_note
+import spectacled.shared.generated.resources.add_note_in_x
 import spectacled.shared.generated.resources.add_task
+import spectacled.shared.generated.resources.add_task_in_x
 import spectacled.shared.generated.resources.app_name_spectacled_journals
 import spectacled.shared.generated.resources.app_name_spectacled_notes
 import spectacled.shared.generated.resources.app_name_spectacled_tasks
@@ -26,6 +29,7 @@ enum class SpectacledVariant(
     val appNameStringRes: StringResource,
     val logoDrawableResource: DrawableResource,
     val addNewStringRes: StringResource,
+    val addNewInCalendarStringRes: StringResource,
     val addNewDrawableRes: DrawableResource,
     val mainCalendarComponent: CalendarComponent,
     val themeSeedColor: Color,
@@ -41,6 +45,7 @@ enum class SpectacledVariant(
         Res.string.app_name_spectacled_journals,
         Res.drawable.logo_spectacled_journals,
         Res.string.add_journal,
+        Res.string.add_journal_in_x,
         Res.drawable.ic_add_journal,
         CalendarComponent.VJOURNAL,
         Color(0, 104, 150),
@@ -55,6 +60,7 @@ enum class SpectacledVariant(
         Res.string.app_name_spectacled_notes,
         Res.drawable.logo_spectacled_notes,
         Res.string.add_note,
+        Res.string.add_note_in_x,
         Res.drawable.ic_add_note,
         CalendarComponent.VJOURNAL,
         Color(153, 76, 44),
@@ -70,6 +76,7 @@ enum class SpectacledVariant(
         Res.string.app_name_spectacled_tasks,
         Res.drawable.logo_spectacled_tasks,
         Res.string.add_task,
+        Res.string.add_task_in_x,
         Res.drawable.ic_add_task,
         CalendarComponent.VTODO,
         Color(41, 111, 35),

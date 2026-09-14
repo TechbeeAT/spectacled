@@ -113,6 +113,9 @@
     <string name="add_journal">Add journal</string>
     <string name="add_note">Add note</string>
     <string name="add_task">Add task</string>
+    <string name="add_journal_in_x">Add journal in "%1$s"</string>
+    <string name="add_note_in_x">Add note in "%1$s"</string>
+    <string name="add_task_in_x">Add task in "%1$s"</string>
 
     <string name="sort_ascending">Ascending</string>
     <string name="sort_descending">Descending</string>
