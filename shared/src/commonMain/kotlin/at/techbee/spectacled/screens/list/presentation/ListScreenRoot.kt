@@ -59,6 +59,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
@@ -125,8 +128,18 @@ fun ListScreenRoot(
         }
     }
 
-    MaterialTheme(colorScheme = getColorSchemeForSeedColor(state.calendar.color)) {
+    val backHandlerState = rememberNavigationEventState(NavigationEventInfo.None)
+    NavigationBackHandler(
+        state = backHandlerState,
+        isBackEnabled = state.multiselectItems != null || state.showSearchBar
+    ) {
+        if (state.multiselectItems != null)
+            listViewModel.onAction(ListAction.OnClearMultiselectItems)
+        else
+            listViewModel.onAction(ListAction.OnSearchBarExpanded(false))
+    }
 
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(state.calendar.color)) {
 
         LaunchedEffect(state.snackbarText) {
             state.snackbarText?.let { message ->

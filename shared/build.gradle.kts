@@ -64,6 +64,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.navigationevent.compose)
 
             implementation(libs.material.icons.extended)
             implementation(libs.navigation.compose)

@@ -35,6 +35,7 @@ ksafe = "3.2.0"
 logback = "1.6.3"
 material3 = "1.12.0-alpha03"   # must match composeMultiplatform, see https://github.com/JetBrains/compose-multiplatform/blob/master/CHANGELOG.md
 materialKolor = "5.0.1"
+navigationEvent = "1.1.0"
 workRuntimeKtx = "2.11.2"
 materialIconsExtended = "1.7.3"
 glance = "1.2.0"
@@ -49,6 +50,7 @@ webPackPlugin = "9.1.0"
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }      # Material 3 UI
+navigationevent-compose = { module = "org.jetbrains.androidx.navigationevent:navigationevent-compose", version.ref = "navigationEvent" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilCompose" }
 compose-pipette = { module = "dev.zt64.compose.pipette:compose-pipette", version.ref = "composePipette" }
