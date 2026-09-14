@@ -188,6 +188,7 @@ class AccountListViewModel(
                             calendarRepository.deleteCalendar(calendar.id)
                             _state.update { it.copy(
                                 processingState = ProcessingState.Success(message = getString(Res.string.calendar_successfully_deleted)),
+                                editFoldersOfPrincipal = null,
                                 showDeleteCalendarDialog = null,
                                 snackbarText = getString(Res.string.calendar_successfully_deleted),
                             ) }
@@ -393,6 +394,7 @@ class AccountListViewModel(
                         calendarRepository.upsertCalendar(upsertCalendarResult.calendar, homeCollection.url)
                         Napier.d("Calendar ${calendar.displayName} added")
                         _state.update { it.copy(
+                            editFoldersOfPrincipal = null,
                             snackbarText = getString(Res.string.calendar_successfully_added_updated),
                             showAddOrUpdateCalendarBottomSheet = null,
                             processingState = ProcessingState.Success(getString(Res.string.calendar_successfully_added_updated)),
