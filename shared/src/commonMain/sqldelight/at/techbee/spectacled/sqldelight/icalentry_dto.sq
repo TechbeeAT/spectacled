@@ -39,8 +39,10 @@ CREATE INDEX idx_icalentry_parentUid ON IcalEntryDto(parentUid);
 getIcalEntriesByCalendar:
 SELECT * FROM IcalEntryDto WHERE calendarId = ?;
 
+-- LOCAL_NEW is an untouched new entry that is never written here in the first place, it is
+-- excluded so that such a row could never be pushed to the server if it ever did get written.
 getDirtyIcalEntriesByCalendar:
-SELECT * FROM IcalEntryDto WHERE calendarId = ? AND syncState NOT IN ('SYNCED', 'REMOTE_DELETED_LOCAL_TRASHBIN');
+SELECT * FROM IcalEntryDto WHERE calendarId = ? AND syncState NOT IN ('SYNCED', 'REMOTE_DELETED_LOCAL_TRASHBIN', 'LOCAL_NEW');
 
 getDeletedDeltaHrefs:
 SELECT IcalEntryDto.href FROM IcalEntryDto  WHERE calendarId = ? AND href NOT IN ? AND syncState != 'REMOTE_DELETED_LOCAL_TRASHBIN' AND href NOT NULL;

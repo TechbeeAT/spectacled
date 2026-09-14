@@ -26,6 +26,17 @@ class SyncStateAndStatusTest {
     }
 
     @Test
+    fun afterLocalEdit_exhaustive() {
+        // A local edit makes a synced entry dirty and turns an untouched new entry into a real one,
+        // every other state describes a pending decision that an edit must not overwrite.
+        val expectedToBecomeLocallyModified = setOf(SyncState.SYNCED, SyncState.LOCAL_NEW)
+        SyncState.entries.forEach { state ->
+            val expected = if (state in expectedToBecomeLocallyModified) SyncState.LOCAL_MODIFIED else state
+            assertEquals(expected, state.afterLocalEdit(), "afterLocalEdit() for $state")
+        }
+    }
+
+    @Test
     fun statusEntriesPerComponent() {
         assertEquals(
             listOf(Status.DRAFT, Status.FINAL, Status.CANCELLED),

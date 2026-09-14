@@ -28,6 +28,12 @@ import kotlin.uuid.Uuid
 
 
 enum class SyncState {
+    /**
+     * A newly created entry the user has not touched yet. It is never written to the database and
+     * never pushed to the server: if the user leaves the details screen without editing anything,
+     * the entry is simply dropped. Any edit turns it into [LOCAL_MODIFIED], see [afterLocalEdit].
+     */
+    LOCAL_NEW,
     LOCAL_MODIFIED,
     LOCAL_DELETED,
     CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED,
@@ -37,6 +43,13 @@ enum class SyncState {
     USER_DECIDED_SERVER_WINS,
     SYNCED,
     REMOTE_DELETED_LOCAL_TRASHBIN;
+
+    /**
+     * The state the entry is in after the user edited it locally: an entry that was in sync with
+     * the server - or a brand new one that was never persisted - becomes dirty, every other state
+     * (deleted, conflict, user decision) is kept as it is.
+     */
+    fun afterLocalEdit() = if (this == SYNCED || this == LOCAL_NEW) LOCAL_MODIFIED else this
 
     fun isDeletedState() = this == LOCAL_DELETED || this == REMOTE_DELETED_LOCAL_TRASHBIN
 
@@ -165,7 +178,7 @@ data class IcalEntry(
                 else -> this.status
             },
             lastModified = IcsDateTime.now(),
-            syncState = if (this.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else this.syncState
+            syncState = this.syncState.afterLocalEdit()
         )
     }
 

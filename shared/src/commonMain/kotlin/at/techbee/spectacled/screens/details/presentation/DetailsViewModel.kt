@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
@@ -92,7 +93,10 @@ class DetailsViewModel(
                 .debounce(500L.milliseconds) // Wait for 500ms pause in typing
                 .distinctUntilChanged { old, new -> old.lastModified == new.lastModified } // Only save if last modified changed
                 .collect { entry ->
-                    if(!_state.value.isLoading && entry.calendarId != 0L && entry.syncState != SyncState.SYNCED)
+                    if(!_state.value.isLoading
+                        && entry.calendarId != 0L
+                        && entry.syncState != SyncState.SYNCED
+                        && entry.syncState != SyncState.LOCAL_NEW)   // untouched new entry: don't create a row for it at all
                         saveIcalEntry(entry.syncState)
                 }
         }
@@ -155,7 +159,10 @@ class DetailsViewModel(
                 calendarId = calendar?.id ?: 0L,   // if 0L user is forced to select a calendar
                 description = initialDescription,
                 dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
-                calendarComponent = spectacledVariant.mainCalendarComponent
+                calendarComponent = spectacledVariant.mainCalendarComponent,
+                // An entry that is already pre-filled (shared text, AI derived text) carries content
+                // the user wants to keep, everything else is only saved once the user edits it.
+                syncState = if (initialDescription.isNullOrBlank()) SyncState.LOCAL_NEW else SyncState.LOCAL_MODIFIED
             )
 
             _state.update { it.copy(
@@ -297,7 +304,14 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateUrl -> onUpdateUrl(action.url)
             is DetailsAction.OnUpdateDescription -> onUpdateDescription(action.description)
             is DetailsAction.OnUpdateSummary -> onUpdateSummary(action.summary)
-            DetailsAction.OnDelete -> saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
+            DetailsAction.OnDelete -> {
+                // An untouched new entry was never written, so there is nothing to delete - saving it
+                // as LOCAL_DELETED would only create a row and make sync issue a pointless DELETE.
+                if(_state.value.icalEntry.syncState == SyncState.LOCAL_NEW)
+                    _state.update { it.copy(showSheetOrDialog = null, navigateUp = true) }
+                else
+                    saveIcalEntry(syncState = SyncState.LOCAL_DELETED, navigateUp = true)
+            }
             is DetailsAction.OnMove -> { onMove(action.newCalendarId) }
             is DetailsAction.OnNavigateUp -> onNavigateUp(action.navigateUp)
             is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
@@ -364,7 +378,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     summary = newSummary,
                     lastModified = IcsDateTime.now(),
-                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
         }
@@ -381,7 +395,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     description = newDescription,
                     lastModified = IcsDateTime.now(),
-                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
         }
@@ -415,7 +429,7 @@ class DetailsViewModel(
                             categories
                     },
                     lastModified = IcsDateTime.now(),
-                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
         }
@@ -444,7 +458,7 @@ class DetailsViewModel(
                         }
                     } else 0,
                     lastModified = IcsDateTime.now(),
-                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
         }
@@ -461,7 +475,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     color = newColor,
                     lastModified = IcsDateTime.now(),
-                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
         }
@@ -477,7 +491,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     url = newUrl,
                     lastModified = IcsDateTime.now(),
-                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
         }
@@ -508,7 +522,7 @@ class DetailsViewModel(
                     dtStart = newDtStart,
                     due = newDue,
                     lastModified = IcsDateTime.now(),
-                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
         }
@@ -536,7 +550,7 @@ class DetailsViewModel(
                     dtStart = newDtStart,
                     due = newDue,
                     lastModified = IcsDateTime.now(),
-                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
         }
@@ -547,10 +561,21 @@ class DetailsViewModel(
     }
 
     private fun onDispose() {
+
+        val currentState = _state.value
+
+        if(currentState.icalEntry.syncState == SyncState.LOCAL_NEW) {
+            // Safety net: every editing action bumps lastModified and clears LOCAL_NEW. Should an
+            // action ever bump the one without clearing the other, the edit must not get lost.
+            if(currentState.icalEntry.lastModified != currentState.originalIcalEntry.lastModified)
+                saveIcalEntry(SyncState.LOCAL_MODIFIED)
+            return   // nothing was persisted, so there is nothing to sync either
+        }
+
         if(getPlatform().platform == Platforms.WASM)
             syncAndAwaitResult()
         else
-            platformSyncTrigger.requestImmediate(listOf(_state.value.icalEntry.calendarId))
+            platformSyncTrigger.requestImmediate(listOf(currentState.icalEntry.calendarId))
     }
 
     private fun onRestoreEntry() {
@@ -622,7 +647,8 @@ class DetailsViewModel(
                 )
 
                 when(processedIcalEntry.syncState) {
-                    SyncState.LOCAL_MODIFIED, SyncState.SYNCED -> {
+                    // LOCAL_NEW never reaches the database, so it cannot come back from it either.
+                    SyncState.LOCAL_NEW, SyncState.LOCAL_MODIFIED, SyncState.SYNCED -> {
                         _state.update { it.copy(
                             snackbarText = getString(Res.string.entry_successfully_saved),
                             isLoading = false,
@@ -676,7 +702,15 @@ class DetailsViewModel(
             relType = "PARENT",
             calendarId = _state.value.icalEntry.calendarId)
 
+        // The subtask references its parent by uid, so an untouched new parent has to be persisted
+        // first - adding a subtask is an edit of the parent and clears its LOCAL_NEW state.
+        val parentToSave = if(_state.value.icalEntry.syncState == SyncState.LOCAL_NEW)
+            _state.updateAndGet { it.copy(icalEntry = it.icalEntry.copy(syncState = it.icalEntry.syncState.afterLocalEdit())) }.icalEntry
+        else
+            null
+
         viewModelScope.launch {
+            parentToSave?.let { icalEntryRepository.insertOrUpdateIcalEntry(it) }
             val savedSubtask = icalEntryRepository.insertOrUpdateIcalEntry(subtask)
             if(getPlatform().platform == Platforms.WASM)
                 syncAndAwaitResult(savedSubtask)
@@ -777,7 +811,7 @@ class DetailsViewModel(
                     icalEntry = it.icalEntry.copy(
                         attachments = it.icalEntry.attachments + newAttachment,
                         lastModified = IcsDateTime.now(),
-                        syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                        syncState = it.icalEntry.syncState.afterLocalEdit()
                     ),
                     snackbarText = largeWarning ?: it.snackbarText
                 )
@@ -810,7 +844,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     attachments = it.icalEntry.attachments + newAttachment,
                     lastModified = IcsDateTime.now(),
-                    syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
         }
@@ -890,7 +924,7 @@ class DetailsViewModel(
                         icalEntry = it.icalEntry.copy(
                             attachments = it.icalEntry.attachments.filter { a -> a.uid != attachmentUid },
                             lastModified = IcsDateTime.now(),
-                            syncState = if (it.icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else it.icalEntry.syncState
+                            syncState = it.icalEntry.syncState.afterLocalEdit()
                         )
                     )
                 }
@@ -919,6 +953,13 @@ class DetailsViewModel(
         // Moving deletes the entry from the source collection, so it needs write access there.
         if(state.value.calendar?.canWriteContent() != true)
             return
+
+        // An untouched new entry has no row yet, so there is nothing to move - it is dropped
+        // together with the details screen anyway.
+        if(_state.value.icalEntry.syncState == SyncState.LOCAL_NEW) {
+            _state.update { it.copy(showSheetOrDialog = null, navigateUp = true) }
+            return
+        }
 
         val entryId = _state.value.icalEntry.id
 
