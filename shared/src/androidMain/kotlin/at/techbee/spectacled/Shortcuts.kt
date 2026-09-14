@@ -7,16 +7,24 @@ import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.shared.R
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.CALENDAR_ID_KEY
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.ICAL_ENTRY_ID_KEY
+import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.getString
+import org.koin.mp.KoinPlatform
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_journal
 import spectacled.shared.generated.resources.add_note
 import spectacled.shared.generated.resources.add_task
 
 suspend fun setupShortcuts(context: Context, spectacledVariant: SpectacledVariant) {
+
+    val koin = KoinPlatform.getKoin()
+    val userAppPreferencesStore = koin.get<PlatformUserAppPreferencesStore>()
+    val calendarRepository = koin.get<CalendarRepository>()
 
     val shortcutManager = context.getSystemService(ShortcutManager::class.java)
     val label = getString(when(spectacledVariant) {
@@ -25,12 +33,15 @@ suspend fun setupShortcuts(context: Context, spectacledVariant: SpectacledVarian
         SpectacledVariant.TASKS -> Res.string.add_task
     })
 
+    val shortcuts: MutableList<ShortcutInfo> = mutableListOf()
+
     val iconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_add)
     val icon = iconDrawable?.let {
         Icon.createWithBitmap(it.toBitmap())
     } ?: Icon.createWithResource(context, R.drawable.ic_add)
 
-    val shortcut = ShortcutInfo.Builder(context, "new_entry")
+    // Generic shortcut
+    ShortcutInfo.Builder(context, "new_entry")
         .setShortLabel(label)
         .setIcon(icon)
         .setIntent(
@@ -42,5 +53,29 @@ suspend fun setupShortcuts(context: Context, spectacledVariant: SpectacledVarian
             } ?: Intent()
         )
         .build()
-    shortcutManager.dynamicShortcuts = listOf(shortcut)
+        .also { shortcuts.add(it) }
+
+    Napier.d("Setting up shortcuts, lastUsedCalendarId: ${userAppPreferencesStore.lastUsedCalendarId}")
+
+    // Shortcut with specific calendar
+    userAppPreferencesStore.lastUsedCalendarId?.let { calendarId ->
+
+        val calendar = calendarRepository.getCalendarById(calendarId) ?: return@let
+
+        ShortcutInfo.Builder(context, "new_entry_in_specific_calendar")
+            .setShortLabel(calendar.displayName?:calendar.url.host)
+            .setIcon(icon)
+            .setIntent(
+                context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+                    action = Intent.ACTION_VIEW
+                    putExtra(CALENDAR_ID_KEY, calendarId)
+                    putExtra(ICAL_ENTRY_ID_KEY, 0L)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                } ?: Intent()
+            )
+            .build()
+            .also { shortcuts.add(it) }
+    }
+
+    shortcutManager.dynamicShortcuts = shortcuts
 }
