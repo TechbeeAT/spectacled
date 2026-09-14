@@ -28,12 +28,7 @@ import kotlin.uuid.Uuid
 
 
 enum class SyncState {
-    /**
-     * A newly created entry the user has not touched yet. It is never written to the database and
-     * never pushed to the server: if the user leaves the details screen without editing anything,
-     * the entry is simply dropped. Any edit turns it into [LOCAL_MODIFIED], see [afterLocalEdit].
-     */
-    LOCAL_NEW,
+    LOCAL_NEW,             /** A newly created entry the user has not touched yet. Not written to DB, not pushed to server. */
     LOCAL_MODIFIED,
     LOCAL_DELETED,
     CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED,
