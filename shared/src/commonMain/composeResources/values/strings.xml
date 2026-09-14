@@ -65,7 +65,6 @@
     <string name="update_password">Update password</string>
     <string name="no_entries_found_in_this_folder">No entries found in this folder</string>
     <string name="no_matching_entries_found">No matching entries found</string>
-    <string name="no_summary_description">No summary/description</string>
     <string name="categories">Categories</string>
     <string name="read_only">Read only</string>
     <string name="recurring_entry_read_only_title">Recurring entry</string>

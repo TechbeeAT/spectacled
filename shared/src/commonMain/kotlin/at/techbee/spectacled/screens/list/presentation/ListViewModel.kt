@@ -64,6 +64,7 @@ class ListViewModel(
             errorMessage = null,
             navigateUp = false,
             snackbarText = null,
+            multiselectItems = null,
             listSortedBy = userAppPreferencesStore.listSortedBy,
             listSortedByAscending = userAppPreferencesStore.listSortedByAscending,
             listLayout = userAppPreferencesStore.listLayout,
