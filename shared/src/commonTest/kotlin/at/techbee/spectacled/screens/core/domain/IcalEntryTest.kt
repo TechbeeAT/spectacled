@@ -96,6 +96,12 @@ class IcalEntryTest {
     }
 
     @Test
+    fun withProgressUpdated_marksUntouchedNewEntryAsLocallyModified() {
+        val new = IcalEntry.newTask().copy(syncState = SyncState.LOCAL_NEW)
+        assertEquals(SyncState.LOCAL_MODIFIED, new.withProgressUpdated(50L).syncState)
+    }
+
+    @Test
     fun withProgressUpdated_doesNotOverwriteConflictState() {
         val conflicted = IcalEntry.newTask().copy(syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED)
         assertEquals(SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED, conflicted.withProgressUpdated(50L).syncState)

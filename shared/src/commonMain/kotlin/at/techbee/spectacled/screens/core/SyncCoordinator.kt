@@ -384,6 +384,7 @@ class SyncCoordinator(
                 SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED -> {}  // do nothing, user needs to decide
                 SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED -> {}  // do nothing, user needs to decide
                 SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED -> {}  // do nothing, user needs to decide
+                SyncState.LOCAL_NEW -> {}  // unreachable, an untouched new entry is never written to the database
             }
         }
     }
@@ -430,6 +431,8 @@ class SyncCoordinator(
                             lastModified = IcsDateTime.now()
                         )
                     )  // treat like a new entry
+
+                SyncState.LOCAL_NEW -> {}  // unreachable, an untouched new entry is never written to the database
             }
         }
     }
@@ -443,7 +446,8 @@ class SyncCoordinator(
 
         when (dirtyIcalEntry.syncState) {
             // synchronized entries shouldn't even be returned by the query, do nothing
-            SyncState.SYNCED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN -> Unit // do nothing
+            // the same goes for untouched new entries, which are never written to the database
+            SyncState.SYNCED, SyncState.REMOTE_DELETED_LOCAL_TRASHBIN, SyncState.LOCAL_NEW -> Unit // do nothing
 
             SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED, SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED, SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED -> Unit // do nothing, conflicts need to be resolved by user
 

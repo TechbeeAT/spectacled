@@ -388,7 +388,7 @@ class ListViewModel(
                             id = icalEntry.id,
                             categories = newCategories,
                             lastModified = IcsDateTime.now(),
-                            syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+                            syncState = icalEntry.syncState.afterLocalEdit()
                         )
                     }
                 }
@@ -454,7 +454,7 @@ class ListViewModel(
                         id = icalEntry.id,
                         color = if(color == Color.Unspecified) null else color,
                         lastModified = IcsDateTime.now(),
-                        syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+                        syncState = icalEntry.syncState.afterLocalEdit()
                     )
                 }
             }

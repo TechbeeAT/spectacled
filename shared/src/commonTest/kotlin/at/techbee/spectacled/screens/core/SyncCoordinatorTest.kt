@@ -137,6 +137,19 @@ class SyncCoordinatorTest {
         assertTrue(icalRepo.syncMetadataUpdates.isEmpty())
     }
 
+    @Test
+    fun localNew_isNeverPushed() = runTest {
+        // An untouched new entry is never written to the database, so it should never be returned as
+        // dirty either - but should it ever be, it must not reach the server. FakeRemote's mutating
+        // defaults throw, so any request at all fails this test.
+        val icalRepo = FakeIcalEntryRepository(dirty = listOf(entry(syncState = SyncState.LOCAL_NEW, etag = null, href = null)))
+
+        fakeSyncCoordinator(FakeRemote(), icalRepo).syncCalendarWithSyncLock(calendar())
+
+        assertTrue(icalRepo.upserts.isEmpty())
+        assertTrue(icalRepo.syncMetadataUpdates.isEmpty())
+    }
+
     // --- pushLocalChanges: LOCAL_DELETED ---
 
     @Test
