@@ -184,7 +184,7 @@ fun AttachmentCard(
                 }
 
                 if(allowEditing) {
-                    IconButton(onClick = { onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) }) {
+                    IconButton(onClick = { onAction(DetailsAction.OnShowDeleteAttachmentDialog(attachment.uid)) }) {
                         Icon(
                             imageVector = Icons.Outlined.Delete,
                             contentDescription = stringResource(Res.string.delete),

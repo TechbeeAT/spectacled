@@ -348,7 +348,11 @@ class DetailsViewModel(
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
             is DetailsAction.OnAddUrlAttachment -> { onAddUrlAttachment(action.url) }
             is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentUid) }
-            is DetailsAction.OnDeleteAttachment -> { onDeleteAttachment(action.attachmentUid) }
+            is DetailsAction.OnShowDeleteAttachmentDialog -> { _state.update { it.copy(deleteAttachmentUid = action.attachmentUid) } }
+            is DetailsAction.OnDeleteAttachment -> {
+                _state.update { it.copy(deleteAttachmentUid = null) }
+                onDeleteAttachment(action.attachmentUid)
+            }
             is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
         }
     }

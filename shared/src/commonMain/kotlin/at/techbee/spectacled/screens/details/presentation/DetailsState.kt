@@ -25,6 +25,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
 
     val showSheetOrDialog: DetailsSheetOrDialog? = null,
     val showDrawingCanvasBottomSheet: DetailsAction.OnShowDrawingCanvasBottomSheet = DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
+    val deleteAttachmentUid: String? = null,      // uid of the attachment the delete confirmation dialog asks about
 
     val launchPickerAction: AttachmentPickerAction? = null,      // One-shot signal to the screen to launch a platform picker.
 

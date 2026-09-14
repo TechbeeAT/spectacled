@@ -75,6 +75,7 @@ import at.techbee.spectacled.screens.core.rememberImagePicker
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.AddUrlAttachmentBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.DeleteAttachmentDialog
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DetailsTopBar
@@ -258,6 +259,16 @@ fun DetailsScreenRoot(
                 )
             null -> {}
         }
+
+        detailsState.deleteAttachmentUid
+            ?.let { uid -> detailsState.icalEntry.attachments.find { it.uid == uid } }
+            ?.let { attachment ->
+                DeleteAttachmentDialog(
+                    attachment = attachment,
+                    onConfirm = { detailsViewModel.onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowDeleteAttachmentDialog(null)) }
+                )
+            }
 
         if (detailsState.showDrawingCanvasBottomSheet.show) {
             DrawingCanvasBottomSheet(
