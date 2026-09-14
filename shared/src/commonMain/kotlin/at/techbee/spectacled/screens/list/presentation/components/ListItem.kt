@@ -30,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -46,7 +45,6 @@ import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
-import spectacled.shared.generated.resources.no_summary_description
 import spectacled.shared.generated.resources.sync_conflict_detected
 import spectacled.shared.generated.resources.time
 import kotlin.time.ExperimentalTime
@@ -116,7 +114,7 @@ fun ListItem(
 
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(0.dp)
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
 
                             if (icalEntry.summary?.isBlank() == false)
@@ -137,18 +135,10 @@ fun ListItem(
                                     modifier = Modifier.fillMaxWidth()
                                 )
 
-
-                            if (icalEntry.summary.isNullOrBlank() && icalEntry.description.isNullOrBlank())
-                                Text(
-                                    text = stringResource(Res.string.no_summary_description),
-                                    fontStyle = FontStyle.Italic,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                                 verticalArrangement = Arrangement.spacedBy(3.dp),
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                                modifier = Modifier.fillMaxWidth()//.padding(top = 8.dp)
                             ) {
 
                                 icalEntry.dtStart?.let {

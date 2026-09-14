@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,7 +46,6 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
-import spectacled.shared.generated.resources.no_summary_description
 import spectacled.shared.generated.resources.sync_conflict_detected
 import kotlin.time.ExperimentalTime
 
@@ -85,7 +83,7 @@ fun TaskListItem(
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically),
+                    verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp)
@@ -117,14 +115,6 @@ fun TaskListItem(
                             text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-
-                    if (icalEntry.summary.isNullOrBlank() && icalEntry.description.isNullOrBlank())
-                        Text(
-                            text = stringResource(Res.string.no_summary_description),
-                            fontStyle = FontStyle.Italic,
                             modifier = Modifier.fillMaxWidth()
                         )
 
