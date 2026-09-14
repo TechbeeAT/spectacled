@@ -71,6 +71,7 @@ class ListViewModel(
             listCollapsedGroups = userAppPreferencesStore.listCollapsedGroups,
             spectacledVariant = spectacledVariant
         ).recompute() }
+        refreshDragAndDropList()   // drop whatever the previously opened calendar left behind
 
         userAppPreferencesStore.lastUsedCalendarId = calendarId
 
@@ -159,12 +160,25 @@ class ListViewModel(
                     snackbarText = null
                 ).recompute() }
 
-                dragAndDropList.apply {
-                    clear()
-                    addAll(_state.value.displayedEntries)
-                    sortBy { icalEntry -> icalEntry.orderNo }
-                }
+                refreshDragAndDropList()
             }
+    }
+
+    /**
+     * Re-seeds [dragAndDropList] from the entries the state currently displays.
+     *
+     * The drag-and-drop list is a snapshot list the UI mutates directly while dragging (that is what
+     * keeps the reorder jitter-free), so it is not derived from the state automatically. It therefore
+     * has to be refreshed after *every* [ListState.recompute] - not only when new entries arrive -
+     * otherwise a changed filter or sort order leaves the drag-and-drop list (and with it the Tasks
+     * and Notes list, which renders from it while sorted by [ListSortedBy.DRAGANDDROP]) stale.
+     */
+    private fun refreshDragAndDropList() {
+        dragAndDropList.apply {
+            clear()
+            addAll(_state.value.displayedEntries)
+            sortBy { icalEntry -> icalEntry.orderNo }
+        }
     }
 
     private suspend fun observeColors() {
@@ -212,6 +226,7 @@ class ListViewModel(
                         filterStatus = if(action.isExpanded) it.listFilterCriteria.filterStatus else null,
                     )
                 ).recompute() }
+                refreshDragAndDropList()
             }
             is ListAction.OnNavigateUp -> {
                 if(action.navigateUp)
@@ -405,6 +420,7 @@ class ListViewModel(
             listFilterCriteria = listFilterCriteria,
             isRefreshing = false
         ).recompute() }
+        refreshDragAndDropList()
     }
 
     private fun onDeleteSelectedItems() {
