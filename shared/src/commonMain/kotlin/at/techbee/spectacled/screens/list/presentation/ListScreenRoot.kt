@@ -78,9 +78,9 @@ import at.techbee.spectacled.screens.details.presentation.DetailsInitialAction
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesBottomSheet
-import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterElement
 import at.techbee.spectacled.screens.list.presentation.components.ListSearchBar
+import at.techbee.spectacled.screens.list.presentation.components.ListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import kotlinx.coroutines.delay
@@ -265,7 +265,7 @@ fun ListScreenRoot(
 
         Scaffold(
             topBar = {
-                IcalEntryListTopBar(
+                ListTopBar(
                     state = state,
                     onAction = { action -> listViewModel.onAction(action) },
                     allSelectedPinned = state.multiselectItems?.all { selectedId ->

@@ -97,7 +97,7 @@ import spectacled.shared.generated.resources.x_selected
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IcalEntryListTopBar(
+fun ListTopBar(
     state: ListState,
     onAction: (ListAction) -> Unit,
     allSelectedPinned: Boolean,
@@ -459,7 +459,7 @@ fun IcalEntryListTopBar(
 private fun ListTopBar_Journal_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Journals"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -482,7 +482,7 @@ private fun ListTopBar_Journal_Preview() {
 private fun ListTopBar_Notes_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -504,7 +504,7 @@ private fun ListTopBar_Notes_Preview() {
 private fun ListTopBar_Tasks_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Tasks"),
                 listSortedBy = ListSortedBy.DRAGANDDROP,
@@ -527,7 +527,7 @@ private fun ListTopBar_Tasks_Preview() {
 private fun ListTopBar_blue_Preview() {
     MaterialTheme(colorScheme = dynamicColorScheme(Color.Blue, false)) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview()
                     .copy(displayName = "This is a very long folder name that shouldn't cause troubles"),
@@ -550,7 +550,7 @@ private fun ListTopBar_blue_Preview() {
 private fun ListTopBar_Journals_Multiselect_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -571,7 +571,7 @@ private fun ListTopBar_Journals_Multiselect_Preview() {
 private fun ListTopBar_Notes_Multiselect_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -592,7 +592,7 @@ private fun ListTopBar_Notes_Multiselect_Preview() {
 private fun ListTopBar_Tasks_Multiselect_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -614,7 +614,7 @@ private fun ListTopBar_Tasks_Multiselect_Preview() {
 private fun ListTopBar_sync_in_progress_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(
                     displayName = "This is a very long folder name that shouldn't cause troubles",
