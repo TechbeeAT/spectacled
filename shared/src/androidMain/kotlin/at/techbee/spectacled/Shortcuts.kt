@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import at.techbee.spectacled.screens.core.data.LAST_USED_CALENDAR_ID
@@ -21,10 +22,6 @@ import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.getString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_journal
-import spectacled.shared.generated.resources.add_note
-import spectacled.shared.generated.resources.add_task
 
 /**
  * The launcher's dynamic shortcuts: one that always adds an entry, and — once there is a last
@@ -72,9 +69,11 @@ object Shortcuts : KoinComponent {
             // deleting the calendar updates the shortcut too, not just picking a different one.
             calendars.firstOrNull { it.id == lastUsedCalendarId }
         }
-            // Only the id and the label reach the shortcut; mapping to them first keeps every sync
+            // Only these three fields reach the shortcut; mapping to them first keeps every sync
             // from re-publishing over churn on the rest of the Calendar (ctag, syncToken, ...).
-            .map { calendar -> calendar?.let { it.id to it.shortcutLabel() } }
+            .map { calendar ->
+                calendar?.let { LastUsedCalendar(it.id, it.shortcutLabel(), it.color?.toArgb()) }
+            }
             .distinctUntilChanged()
             .collect { lastUsedCalendar -> publish(appContext, spectacledVariant, lastUsedCalendar) }
     }
@@ -82,50 +81,62 @@ object Shortcuts : KoinComponent {
     private suspend fun publish(
         context: Context,
         spectacledVariant: SpectacledVariant,
-        lastUsedCalendar: Pair<Long, String>?
+        lastUsedCalendar: LastUsedCalendar?
     ) {
         val shortcutManager = context.getSystemService(ShortcutManager::class.java)
-
-        val label = getString(when(spectacledVariant) {
-            SpectacledVariant.JOURNALS -> Res.string.add_journal
-            SpectacledVariant.NOTES -> Res.string.add_note
-            SpectacledVariant.TASKS -> Res.string.add_task
-        })
-
-        val iconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_add)
-        val icon = iconDrawable?.let {
-            Icon.createWithBitmap(it.toBitmap())
-        } ?: Icon.createWithResource(context, R.drawable.ic_add)
+        val label = getString(spectacledVariant.addNewStringRes)
 
         val shortcuts = buildList {
-            add(newEntryShortcut(context, SHORTCUT_ID_NEW_ENTRY, label, icon, calendarId = 0L))
+            add(newEntryShortcut(
+                context = context,
+                id = SHORTCUT_ID_NEW_ENTRY,
+                shortLabel = label,
+                longLabel = label,
+                icon = addIcon(context, tint = null),
+                calendarId = 0L
+            ))
 
-            lastUsedCalendar?.let { (calendarId, calendarLabel) ->
+            lastUsedCalendar?.let { calendar ->
                 // The id carries the calendar id so that a shortcut the user pinned keeps pointing
                 // at the calendar it was pinned for: a pinned shortcut follows its id, so a shared
                 // one would silently retarget as soon as another calendar becomes the last used one.
                 add(newEntryShortcut(
                     context = context,
-                    id = SHORTCUT_ID_NEW_ENTRY_IN_CALENDAR_PREFIX + calendarId,
-                    label = calendarLabel,
-                    icon = icon,
-                    calendarId = calendarId
+                    id = SHORTCUT_ID_NEW_ENTRY_IN_CALENDAR_PREFIX + calendar.id,
+                    shortLabel = calendar.label,
+                    longLabel = getString(spectacledVariant.addNewInCalendarStringRes, calendar.label),
+                    icon = addIcon(context, tint = calendar.color),
+                    calendarId = calendar.id
                 ))
             }
         }
 
-        Napier.d("Publishing ${shortcuts.size} shortcut(s), lastUsedCalendarId: ${lastUsedCalendar?.first}")
+        Napier.d("Publishing ${shortcuts.size} shortcut(s), lastUsedCalendarId: ${lastUsedCalendar?.id}")
         shortcutManager.dynamicShortcuts = shortcuts
+    }
+
+    /**
+     * The plus icon, tinted with the calendar's color where it has one so that the two shortcuts
+     * are told apart by more than their label. The tint is baked into the bitmap instead of left
+     * on the [Icon]: ic_add already carries an `android:tint` of its own, and the launcher loads
+     * the icon in its own process.
+     */
+    private fun addIcon(context: Context, tint: Int?): Icon {
+        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_add)
+            ?: return Icon.createWithResource(context, R.drawable.ic_add)
+        return Icon.createWithBitmap(drawable.mutate().apply { tint?.let { color -> setTint(color) } }.toBitmap())
     }
 
     private fun newEntryShortcut(
         context: Context,
         id: String,
-        label: String,
+        shortLabel: String,
+        longLabel: String,
         icon: Icon,
         calendarId: Long
     ): ShortcutInfo = ShortcutInfo.Builder(context, id)
-        .setShortLabel(label)
+        .setShortLabel(shortLabel)
+        .setLongLabel(longLabel)
         .setIcon(icon)
         .setIntent(
             context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
@@ -136,6 +147,9 @@ object Shortcuts : KoinComponent {
             } ?: Intent()
         )
         .build()
+
+    /** What of the last used calendar ends up in its shortcut. [color] is an ARGB int, or null. */
+    private data class LastUsedCalendar(val id: Long, val label: String, val color: Int?)
 
     /**
      * Guaranteed non-blank: `ShortcutInfo.Builder.setShortLabel` rejects an empty label, and a
