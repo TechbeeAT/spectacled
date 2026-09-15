@@ -75,6 +75,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.Attachment
@@ -127,6 +130,17 @@ fun DetailsScreen(
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Take the first back press ourselves while an editor is focused. Letting the system swallow it
+    // hides the keyboard without clearing focus, which leaves imeAwarePadding reserving space for a
+    // keyboard that is no longer there. Ending the editing session is what the formatting bar's
+    // release button and the pull-down gesture already do.
+    val editorBackState = rememberNavigationEventState(NavigationEventInfo.None)
+    NavigationBackHandler(state = editorBackState, isBackEnabled = isEditorFocused) {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+    }
+
     val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
 
@@ -154,21 +168,13 @@ fun DetailsScreen(
     val descriptionFocusRequester = remember { FocusRequester() }
     var lastFocusedField by remember { mutableStateOf<EditorField?>(null) }
 
-    // Removes the keyboard when the user deliberately pulls down while already at the very top.
+    // removes the keyboard when user scrolls to the top
     val nestedScrollConnection = remember(scrollState, focusManager, keyboardController) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // available.y > 0 means pulling DOWN. Only a real finger drag counts: layout-driven
-                // scrolls arrive as NestedScrollSource.SideEffect, and on iOS the keyboard appearing
-                // makes SwiftUI resize the hosting ComposeView, which re-measures this scroll
-                // container and dispatches exactly such a scroll to bring the just-focused field
-                // back into view. Without the source check that would clear focus and close the
-                // keyboard again the instant it opened. The threshold additionally ignores the few
-                // pixels of finger drift a plain tap produces.
-                if (source == NestedScrollSource.UserInput
-                    && available.y > KEYBOARD_DISMISS_DRAG_THRESHOLD_PX
-                    && scrollState.value == 0
-                ) {
+                // available.y > 0 means pulling DOWN.
+                // If we are at the top (scrollState.value <= 0) and pulling more down
+                if (available.y > 0 && scrollState.value <= 0) {
                     focusManager.clearFocus()
                     keyboardController?.hide()
                 }
@@ -572,12 +578,6 @@ private fun RecurringReadOnlyBanner(modifier: Modifier = Modifier) {
 
 /** The two rich-text editors on the details screen; used to route formatting-bar taps. */
 private enum class EditorField { SUMMARY, DESCRIPTION }
-
-/**
- * How far the user has to pull down in one step, while already at the very top, before the keyboard
- * is dismissed. Large enough to ignore the finger drift of an ordinary tap.
- */
-private const val KEYBOARD_DISMISS_DRAG_THRESHOLD_PX = 16f
 
 /**
  * Opens a [LinkAnnotation.Url] when the user taps directly on it.
