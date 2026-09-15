@@ -165,12 +165,8 @@ class ListViewModel(
 
     /**
      * Re-seeds [dragAndDropList] from the entries the state currently displays.
-     *
      * The drag-and-drop list is a snapshot list the UI mutates directly while dragging (that is what
-     * keeps the reorder jitter-free), so it is not derived from the state automatically. It therefore
-     * has to be refreshed after *every* [ListState.recompute] - not only when new entries arrive -
-     * otherwise a changed filter or sort order leaves the drag-and-drop list (and with it the Tasks
-     * and Notes list, which renders from it while sorted by [ListSortedBy.DRAGANDDROP]) stale.
+     * keeps the reorder jitter-free), so it is not derived from the state automatically.
      */
     private fun refreshDragAndDropList() {
         dragAndDropList.apply {
