@@ -94,6 +94,7 @@ import at.techbee.spectacled.screens.details.presentation.components.UrlCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import io.ktor.http.Url
+import kotlinx.coroutines.delay
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableColumn
@@ -125,7 +126,24 @@ fun DetailsScreen(
 
     // Report whether a text field is being edited so the caller can hide the FAB, which would
     // otherwise sit right above the keyboard and cover the field (SwiftUI resizes the view on iOS).
-    val isEditorFocused = summaryIsFocused || descriptionIsFocused
+    //
+    // Held across the hand-over from one editor to the other: for a frame or two neither field is
+    // focused, and reporting that gap flipped the formatting bar and the FAB out and straight back
+    // in. That put a Scaffold-wide recomposition in the middle of Compose swapping the text input
+    // session between the fields, late enough that the pending hide was no longer folded into the
+    // following show - so the keyboard really did animate away and back, and an interrupted
+    // animation is what leaves the IME inset (and with it imeAwarePadding) stuck at the wrong value.
+    var isEditorFocused by remember { mutableStateOf(false) }
+    LaunchedEffect(summaryIsFocused, descriptionIsFocused) {
+        if (summaryIsFocused || descriptionIsFocused) {
+            isEditorFocused = true
+        } else {
+            // Cancelled and restarted if the other field takes focus meanwhile, so only a real
+            // dismissal gets through.
+            delay(EDITOR_HANDOVER_GRACE_MS)
+            isEditorFocused = false
+        }
+    }
     LaunchedEffect(isEditorFocused) { onEditorFocusChanged(isEditorFocused) }
 
     val focusManager = LocalFocusManager.current
@@ -575,6 +593,13 @@ private fun RecurringReadOnlyBanner(modifier: Modifier = Modifier) {
         }
     }
 }
+
+/**
+ * How long neither editor may hold focus before the editing session counts as over. Long enough to
+ * bridge the hand-over from one field to the other, short enough to be imperceptible on a real
+ * dismissal.
+ */
+private const val EDITOR_HANDOVER_GRACE_MS = 100L
 
 /** The two rich-text editors on the details screen; used to route formatting-bar taps. */
 private enum class EditorField { SUMMARY, DESCRIPTION }
