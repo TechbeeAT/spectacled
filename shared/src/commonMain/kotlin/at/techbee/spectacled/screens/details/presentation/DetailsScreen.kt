@@ -149,6 +149,26 @@ fun DetailsScreen(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    // Built once rather than per recomposition: handing BasicTextField a new visualTransformation or
+    // keyboardOptions instance each time stops it skipping, and re-runs the markdown pass over the
+    // whole text on every frame.
+    val editorContentColor = LocalContentColor.current
+    val editorLinkColor = MaterialTheme.colorScheme.primary
+    val markdownTransformation = remember(editorContentColor, editorLinkColor) {
+        MarkdownVisualTransformation(
+            localContentColor = editorContentColor,
+            linkColor = editorLinkColor
+        )
+    }
+    val editorKeyboardOptions = remember {
+        KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences,
+            autoCorrectEnabled = true,
+            keyboardType = KeyboardType.LongMessage,
+            showKeyboardOnFocus = true
+        )
+    }
+
     // Take the first back press ourselves while an editor is focused. Letting the system swallow it
     // hides the keyboard without clearing focus, which leaves imeAwarePadding reserving space for a
     // keyboard that is no longer there. Ending the editing session is what the formatting bar's
@@ -316,10 +336,7 @@ fun DetailsScreen(
                     textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current),
                     enabled = state.allowEditing(),
                     onTextLayout = { summaryLayoutResult = it },
-                    visualTransformation = MarkdownVisualTransformation(
-                        localContentColor = LocalContentColor.current,
-                        linkColor = MaterialTheme.colorScheme.primary
-                    ),
+                    visualTransformation = markdownTransformation,
                     cursorBrush = SolidColor(LocalContentColor.current),
                     decorationBox = { innerTextField ->
                         Box {
@@ -333,12 +350,7 @@ fun DetailsScreen(
                             innerTextField()
                         }
                     },
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        autoCorrectEnabled = true,
-                        keyboardType = KeyboardType.LongMessage,
-                        showKeyboardOnFocus = true
-                    ),
+                    keyboardOptions = editorKeyboardOptions,
                     modifier = Modifier
                         .focusRequester(summaryFocusRequester)
                         .onFocusChanged {
@@ -368,10 +380,7 @@ fun DetailsScreen(
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current),
                 enabled = state.allowEditing(),
                 onTextLayout = { descriptionLayoutResult = it },
-                visualTransformation = MarkdownVisualTransformation(
-                    localContentColor = LocalContentColor.current,
-                    linkColor = MaterialTheme.colorScheme.primary
-                ),
+                visualTransformation = markdownTransformation,
                 cursorBrush = SolidColor(LocalContentColor.current),
                 decorationBox = { innerTextField ->
                     Box {
@@ -385,12 +394,7 @@ fun DetailsScreen(
                         innerTextField()
                     }
                 },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    autoCorrectEnabled = true,
-                    keyboardType = KeyboardType.LongMessage,
-                    showKeyboardOnFocus = true
-                ),
+                keyboardOptions = editorKeyboardOptions,
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 200.dp)

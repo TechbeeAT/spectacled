@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.presentation
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -12,10 +13,27 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 
+/**
+ * Renders the app's markdown subset for display.
+ *
+ * Deliberately a comparable value: `BasicTextField` compares its `visualTransformation` to decide
+ * whether it can skip recomposition, and two instances built from the same colours have to count as
+ * equal for that to happen. Without this, every recomposition handed the editors a fresh instance
+ * and re-ran [formatAnnotatedString] over the whole text.
+ */
+@Immutable
 class MarkdownVisualTransformation(
     val localContentColor: Color,
     val linkColor: Color = Color(0xFF2196F3)
 ) : VisualTransformation {
+
+    override fun equals(other: Any?): Boolean =
+        this === other ||
+            (other is MarkdownVisualTransformation &&
+                localContentColor == other.localContentColor &&
+                linkColor == other.linkColor)
+
+    override fun hashCode(): Int = 31 * localContentColor.hashCode() + linkColor.hashCode()
 
     val tagAlpha = 0.33f
 
