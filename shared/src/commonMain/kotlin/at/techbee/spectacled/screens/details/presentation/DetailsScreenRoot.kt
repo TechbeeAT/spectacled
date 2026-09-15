@@ -543,7 +543,7 @@ fun DetailsScreenRoot(
 
 @Preview
 @Composable
-private fun ListScreenRoot_Preview() {
+private fun DetailsScreenRoot_Preview() {
     DetailsScreenRoot(
         detailsViewModel = koinViewModel<DetailsViewModel>(),
         onNavigate = {},
