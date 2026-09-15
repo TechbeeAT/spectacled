@@ -38,7 +38,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.formatLocalized
-import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
+import at.techbee.spectacled.screens.core.presentation.rememberMarkdownAnnotatedString
 import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
@@ -102,7 +102,7 @@ fun TaskListItem(
 
                     if (icalEntry.summary?.isBlank() == false)
                         Text(
-                            text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
+                            text = rememberMarkdownAnnotatedString(icalEntry.summary),
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
@@ -112,7 +112,7 @@ fun TaskListItem(
 
                     if (icalEntry.description?.isBlank() == false)
                         Text(
-                            text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
+                            text = rememberMarkdownAnnotatedString(icalEntry.description),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.fillMaxWidth()

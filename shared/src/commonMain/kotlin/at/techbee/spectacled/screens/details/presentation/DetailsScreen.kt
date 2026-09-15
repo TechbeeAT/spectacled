@@ -85,9 +85,9 @@ import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownFormat
-import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.applyMarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
+import at.techbee.spectacled.screens.core.presentation.rememberMarkdownVisualTransformation
 import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.details.presentation.components.UrlCard
@@ -130,6 +130,11 @@ fun DetailsScreen(
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val markdownTransformation = rememberMarkdownVisualTransformation(
+        localContentColor = LocalContentColor.current,
+        linkColor = MaterialTheme.colorScheme.primary
+    )
 
     // Take the first back press ourselves while an editor is focused. Letting the system swallow it
     // hides the keyboard without clearing focus, which leaves imeAwarePadding reserving space for a
@@ -298,10 +303,7 @@ fun DetailsScreen(
                     textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current),
                     enabled = state.allowEditing(),
                     onTextLayout = { summaryLayoutResult = it },
-                    visualTransformation = MarkdownVisualTransformation(
-                        localContentColor = LocalContentColor.current,
-                        linkColor = MaterialTheme.colorScheme.primary
-                    ),
+                    visualTransformation = markdownTransformation,
                     cursorBrush = SolidColor(LocalContentColor.current),
                     decorationBox = { innerTextField ->
                         Box {
@@ -350,10 +352,7 @@ fun DetailsScreen(
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current),
                 enabled = state.allowEditing(),
                 onTextLayout = { descriptionLayoutResult = it },
-                visualTransformation = MarkdownVisualTransformation(
-                    localContentColor = LocalContentColor.current,
-                    linkColor = MaterialTheme.colorScheme.primary
-                ),
+                visualTransformation = markdownTransformation,
                 cursorBrush = SolidColor(LocalContentColor.current),
                 decorationBox = { innerTextField ->
                     Box {
