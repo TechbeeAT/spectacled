@@ -39,8 +39,8 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.formatLocalized
-import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
+import at.techbee.spectacled.screens.core.presentation.rememberMarkdownAnnotatedString
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -119,7 +119,7 @@ fun ListItem(
 
                             if (icalEntry.summary?.isBlank() == false)
                                 Text(
-                                    text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
+                                    text = rememberMarkdownAnnotatedString(icalEntry.summary),
                                     style = MaterialTheme.typography.titleMedium,
                                     maxLines = 3,
                                     overflow = TextOverflow.Ellipsis,
@@ -129,7 +129,7 @@ fun ListItem(
 
                             if (icalEntry.description?.isBlank() == false)
                                 Text(
-                                    text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
+                                    text = rememberMarkdownAnnotatedString(icalEntry.description),
                                     maxLines = 5,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.fillMaxWidth()

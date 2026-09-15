@@ -1,5 +1,9 @@
 package at.techbee.spectacled.screens.core.presentation
 
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -12,10 +16,35 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 
+/**
+ * Renders the app's markdown subset for display.
+ *
+ * Deliberately a comparable value. `BasicTextField` compares its `visualTransformation` to decide
+ * whether it can skip recomposition, so two instances built from the same colours have to count as
+ * equal for that to happen; without it the editors were handed a fresh instance on every
+ * recomposition and could never skip.
+ *
+ * Prefer [rememberMarkdownVisualTransformation] and [rememberMarkdownAnnotatedString] over calling
+ * the constructor from a composable: [formatAnnotatedString] walks the whole string, so building it
+ * inline re-runs the markdown pass on every recomposition - once per visible row in a list.
+ */
+@Immutable
 class MarkdownVisualTransformation(
     val localContentColor: Color,
-    val linkColor: Color = Color(0xFF2196F3)
+    val linkColor: Color = DefaultLinkColor
 ) : VisualTransformation {
+
+    companion object {
+        val DefaultLinkColor = Color(0xFF2196F3)
+    }
+
+    override fun equals(other: Any?): Boolean =
+        this === other ||
+            (other is MarkdownVisualTransformation &&
+                localContentColor == other.localContentColor &&
+                linkColor == other.linkColor)
+
+    override fun hashCode(): Int = 31 * localContentColor.hashCode() + linkColor.hashCode()
 
     val tagAlpha = 0.33f
 
@@ -107,5 +136,28 @@ class MarkdownVisualTransformation(
         }
 
         return finalBuilder.toAnnotatedString()
+    }
+}
+
+/** Remembers a [MarkdownVisualTransformation] for the given colours. */
+@Composable
+fun rememberMarkdownVisualTransformation(
+    localContentColor: Color = LocalContentColor.current,
+    linkColor: Color = MarkdownVisualTransformation.DefaultLinkColor
+): MarkdownVisualTransformation = remember(localContentColor, linkColor) {
+    MarkdownVisualTransformation(localContentColor = localContentColor, linkColor = linkColor)
+}
+
+/** Remembers [text] rendered through [MarkdownVisualTransformation]. */
+@Composable
+fun rememberMarkdownAnnotatedString(
+    text: String?,
+    localContentColor: Color = LocalContentColor.current,
+    linkColor: Color = MarkdownVisualTransformation.DefaultLinkColor
+): AnnotatedString {
+    val transformation = rememberMarkdownVisualTransformation(localContentColor, linkColor)
+    // Targets the AnnotatedString overload explicitly; this is what the String? one does anyway.
+    return remember(transformation, text) {
+        transformation.formatAnnotatedString(AnnotatedString(text ?: ""))
     }
 }
