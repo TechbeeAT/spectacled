@@ -102,4 +102,18 @@ class ListStateSectionsTest {
         ).recompute()
         assertEquals(listOf(openTask.uid), filteredByCategory.displayedEntries.map { it.uid })
     }
+
+    @Test
+    fun entriesWithoutOrderNoSortLastUnderDragAndDrop() {
+        val unordered = IcalEntry.newTask().copy(summary = "never dragged", orderNo = null)
+        val ordered = IcalEntry.newTask().copy(summary = "dragged", orderNo = 1L)
+
+        val state = ListState(
+            icalEntries = listOf(unordered, ordered),
+            spectacledVariant = SpectacledVariant.TASKS,
+            listSortedBy = ListSortedBy.DRAGANDDROP
+        ).recompute()
+
+        assertEquals(listOf(ordered.uid, unordered.uid), state.displayedEntries.map { it.uid })
+    }
 }

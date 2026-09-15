@@ -172,7 +172,7 @@ class ListViewModel(
         dragAndDropList.apply {
             clear()
             addAll(_state.value.displayedEntries)
-            sortBy { icalEntry -> icalEntry.orderNo }
+            sortBy { icalEntry -> icalEntry.orderNo ?: Long.MAX_VALUE }
         }
     }
 
