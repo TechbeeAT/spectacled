@@ -4,6 +4,7 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import kotlin.test.Test
@@ -66,5 +67,39 @@ class ListStateSectionsTest {
         assertTrue(grouped.isNotEmpty())
         assertTrue(grouped.none { section -> section.entries.any { it.uid == taskNoDue.uid } })
         assertTrue(grouped.any { section -> section.entries.any { it.uid == taskWithDue.uid } })
+    }
+
+    /** Sorted by drag-and-drop, the entries the list renders are the filtered ones: this is the feed the
+     *  view model copies into its drag-and-drop list, so a filter that didn't reach here couldn't reach
+     *  the Tasks/Notes list either. */
+    @Test
+    fun displayedEntriesRespectFiltersWhenSortedByDragAndDrop() {
+        val openTask = IcalEntry.newTask().copy(summary = "open", categories = listOf("work"))
+        val doneTask = IcalEntry.newTask().copy(summary = "done", percentComplete = 100L)
+        val otherCategoryTask = IcalEntry.newTask().copy(summary = "other", categories = listOf("home"))
+
+        val state = ListState(
+            icalEntries = listOf(openTask, doneTask, otherCategoryTask),
+            spectacledVariant = SpectacledVariant.TASKS,
+            listSortedBy = ListSortedBy.DRAGANDDROP
+        )
+
+        assertEquals(
+            setOf(openTask.uid, doneTask.uid, otherCategoryTask.uid),
+            state.recompute().displayedEntries.map { it.uid }.toSet()
+        )
+
+        val hidingCompleted = state.copy(
+            listFilterCriteria = ListFilterCriteria(hideCompletedTasks = true)
+        ).recompute()
+        assertEquals(
+            setOf(openTask.uid, otherCategoryTask.uid),
+            hidingCompleted.displayedEntries.map { it.uid }.toSet()
+        )
+
+        val filteredByCategory = state.copy(
+            listFilterCriteria = ListFilterCriteria(searchCategory = "work")
+        ).recompute()
+        assertEquals(listOf(openTask.uid), filteredByCategory.displayedEntries.map { it.uid })
     }
 }
