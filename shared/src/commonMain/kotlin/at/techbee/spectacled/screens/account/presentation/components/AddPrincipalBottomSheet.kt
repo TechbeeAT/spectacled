@@ -64,6 +64,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -240,6 +241,12 @@ fun AddPrincipalBottomSheet(
                 if (selectedPage == AddPrincipalBottomSheetPage.USE_EXISTING) {
                     AddAccountScreen(
                         processingState = processingState,
+                        onKeyboardDone = {
+                            if(credentials?.server?.toString()?.startsWith("http://") == true)
+                                showInsecureConnectionAlert = true
+                            else
+                                credentials?.let { onAction(AccountListAction.OnAddPrincipal(it)) }
+                        },
                         //onAction = onAction,
                         onCredentialsUpdated = { credentials = it },
                         modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState())
@@ -445,6 +452,7 @@ fun AddAccountScreen(
     processingState: ProcessingState,
     //onAction: (AccountListAction.OnAddPrincipal) -> Unit,
     onCredentialsUpdated: (Credentials?) -> Unit,
+    onKeyboardDone: () -> Unit,
     modifier: Modifier = Modifier,
     permissionChecker: PermissionChecker = koinInject()
 ) {
@@ -683,8 +691,8 @@ fun AddAccountScreen(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     keyboardType = KeyboardType.Uri,
-                    autoCorrectEnabled = false
-                    //imeAction = ImeAction.Done
+                    autoCorrectEnabled = false,
+                    imeAction = ImeAction.Next
                 ),
                 modifier = Modifier
                     .width(400.dp)
@@ -700,8 +708,8 @@ fun AddAccountScreen(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     keyboardType = KeyboardType.Email,
-                    autoCorrectEnabled = false
-                    //imeAction = ImeAction.Done
+                    autoCorrectEnabled = false,
+                    imeAction = ImeAction.Next
                 ),
                 modifier = Modifier.width(400.dp).onFocusChanged { isUsernameTextFieldFocused = it.isFocused}
             )
@@ -726,9 +734,10 @@ fun AddAccountScreen(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     keyboardType = KeyboardType.Password,
-                    autoCorrectEnabled = false
-                    //imeAction = ImeAction.Done
+                    autoCorrectEnabled = false,
+                    imeAction = ImeAction.Done
                 ),
+                onKeyboardAction = { onKeyboardDone() },
                 modifier = Modifier.width(400.dp)
             )
         }
@@ -928,7 +937,7 @@ private fun AddAccountScreen_Preview_Error() {
                 processingState = ProcessingState.Error("This is an error"),
                 onCredentialsUpdated = {},
                 //onAction = {}
-                // Supplied explicitly: a preview has no Koin graph to resolve it from.
+                onKeyboardDone = {},
                 permissionChecker = object : PermissionChecker {
                     override fun status(permission: AppPermission) = PermissionStatus.NOT_APPLICABLE
                     override fun openAppSettings() {}

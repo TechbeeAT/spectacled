@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.data.ai.AI_BATCH_CATEGORY_PREFIX
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
 import kotlinx.coroutines.delay
@@ -91,6 +92,7 @@ fun CategorySelectionBottomSheet(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 allCategories
+                    .filter { !it.startsWith(AI_BATCH_CATEGORY_PREFIX) }
                     .sortedBy { it.uppercase() }
                     .forEach { category ->
                         FilterChip(
@@ -153,7 +155,7 @@ private fun CategorySelectionBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             CategorySelectionBottomSheet(
-                allCategories = listOf("Category 5", "Category 1", "Category 2", "Category 3", "Category 4"),
+                allCategories = listOf(AI_BATCH_CATEGORY_PREFIX + "test", "Category 5", "Category 1", "Category 2", "Category 3", "Category 4"),
                 selectedCategories = listOf("Category 2"),
                 onCategoryAdded = { },
                 onCategoryRemoved = { },
