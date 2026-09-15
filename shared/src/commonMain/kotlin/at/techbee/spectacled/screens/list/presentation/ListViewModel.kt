@@ -19,7 +19,6 @@ import at.techbee.spectacled.screens.core.data.ai.toIcalEntries
 import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.ioDispatcher
@@ -458,6 +457,7 @@ class ListViewModel(
                     )
                 }
             }
+            syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
         }
     }
 
@@ -485,6 +485,7 @@ class ListViewModel(
                 lastModified = updatedEntry.lastModified,
                 syncState = updatedEntry.syncState
             )
+            syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
         }
     }
