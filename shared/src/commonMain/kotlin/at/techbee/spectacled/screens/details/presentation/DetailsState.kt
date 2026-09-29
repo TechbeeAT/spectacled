@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.details.presentation
 
 import androidx.compose.ui.graphics.Color
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.HomeCollection
@@ -16,6 +17,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val subtasks: List<IcalEntry> = emptyList(),
 
     val changeBackstack: List<IcalEntry> = emptyList(),
+    val undoRestoreMarker: IcsDateTime? = null,   // lastModified stamp of an in-flight undo-restore save, so saveIcalEntry() can recognize and skip it
 
     val allColors: List<Color> = emptyList(),
     val allCategories: List<String> = emptyList(),
