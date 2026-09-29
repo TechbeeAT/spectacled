@@ -133,6 +133,7 @@ class DetailsViewModel(
             _state.update { it.copy(
                 icalEntry = icalEntry,
                 originalIcalEntry = icalEntry,
+                changeBackstack = listOf(icalEntry),
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
@@ -166,6 +167,7 @@ class DetailsViewModel(
             _state.update { it.copy(
                 icalEntry = newIcalEntry,
                 originalIcalEntry = newIcalEntry,
+                changeBackstack = listOf(newIcalEntry),
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
@@ -215,6 +217,7 @@ class DetailsViewModel(
             _state.update { it.copy(
                 icalEntry = copiedIcalEntry,
                 originalIcalEntry = copiedIcalEntry,
+                changeBackstack = listOf(copiedIcalEntry),
                 isLoading = false,
                 isInitialized = true,
                 navigateUp = false
@@ -352,6 +355,7 @@ class DetailsViewModel(
                 onDeleteAttachment(action.attachmentUid)
             }
             is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
+            is DetailsAction.OnUndo -> { onUndo() }
         }
     }
 
@@ -605,6 +609,7 @@ class DetailsViewModel(
         _state.update {
             it.copy(
                 icalEntry = entryToSave,
+                changeBackstack = it.changeBackstack.plus(entryToSave),
                 showSheetOrDialog = if(navigateUp) null else _state.value.showSheetOrDialog,
                 navigateUp = navigateUp
             )
@@ -969,6 +974,22 @@ class DetailsViewModel(
         viewModelScope.launch(ioDispatcher) {
             moveIcalEntriesUseCase.move(listOf(entryId), newCalendarId)
             _state.update { it.copy(showSheetOrDialog = null, isLoading = false, navigateUp = true) }
+        }
+    }
+
+    private fun onUndo() {
+
+        if(!state.value.allowEditing())
+            return
+
+        _state.update {
+            it.copy(
+                icalEntry = (it.changeBackstack.lastOrNull() ?: it.originalIcalEntry).copy(
+                    lastModified = IcsDateTime.now(),
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
+                ),
+                changeBackstack = if(it.changeBackstack.size <= 1) it.changeBackstack else it.changeBackstack.dropLast(1)
+            )
         }
     }
 }

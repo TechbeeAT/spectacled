@@ -22,12 +22,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
-import androidx.compose.material.icons.filled.FormatBold
-import androidx.compose.material.icons.filled.FormatItalic
-import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material.icons.outlined.EventRepeat
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.RestoreFromTrash
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.Icon
@@ -48,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
@@ -84,12 +79,12 @@ import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
-import at.techbee.spectacled.screens.core.presentation.MarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.applyMarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
 import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
+import at.techbee.spectacled.screens.details.presentation.components.FormattingBar
 import at.techbee.spectacled.screens.details.presentation.components.UrlCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
@@ -103,9 +98,6 @@ import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.drag_handle
-import spectacled.shared.generated.resources.format_bold
-import spectacled.shared.generated.resources.format_italic
-import spectacled.shared.generated.resources.format_underline
 import spectacled.shared.generated.resources.recurring_entry_read_only_message
 import spectacled.shared.generated.resources.recurring_entry_read_only_title
 import spectacled.shared.generated.resources.summary
@@ -533,7 +525,8 @@ fun DetailsScreen(
                 onReleaseFocus = {
                     focusManager.clearFocus()
                     keyboardController?.hide()
-                }
+                },
+                onUndo = { onAction(DetailsAction.OnUndo) }
             )
         }
     }
@@ -618,60 +611,6 @@ private fun Modifier.openLinkOnTap(
             } catch (_: Throwable) {
                 // ignore
             }
-        }
-    }
-}
-
-/**
- * Slim formatting bar (bold / italic / underline) meant to sit just above the software keyboard.
- * The buttons are made non-focusable so tapping them does not steal focus from the editor and hide
- * the keyboard.
- */
-@Composable
-private fun FormattingBar(
-    onFormat: (MarkdownFormat) -> Unit,
-    onReleaseFocus: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        tonalElevation = 3.dp,
-        shadowElevation = 6.dp,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(horizontal = 4.dp).fillMaxWidth()
-        ) {
-            IconButton(
-                onClick = { onFormat(MarkdownFormat.BOLD) },
-                modifier = Modifier.focusProperties { canFocus = false }
-            ) {
-                Icon(Icons.Default.FormatBold, contentDescription = stringResource(Res.string.format_bold))
-            }
-            IconButton(
-                onClick = { onFormat(MarkdownFormat.ITALIC) },
-                modifier = Modifier.focusProperties { canFocus = false }
-            ) {
-                Icon(Icons.Default.FormatItalic, contentDescription = stringResource(Res.string.format_italic))
-            }
-            IconButton(
-                onClick = { onFormat(MarkdownFormat.UNDERLINE) },
-                modifier = Modifier.focusProperties { canFocus = false }
-            ) {
-                Icon(Icons.Default.FormatUnderlined, contentDescription = stringResource(Res.string.format_underline))
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(
-                onClick = { onReleaseFocus() },
-                modifier = Modifier.focusProperties { canFocus = false }
-            ) {
-                Icon(Icons.Outlined.KeyboardArrowDown, null)
-            }
-
         }
     }
 }

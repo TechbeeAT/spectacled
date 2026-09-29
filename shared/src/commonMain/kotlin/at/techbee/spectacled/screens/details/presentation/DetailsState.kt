@@ -15,6 +15,8 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val calendar: Calendar? = null,
     val subtasks: List<IcalEntry> = emptyList(),
 
+    val changeBackstack: List<IcalEntry> = emptyList(),
+
     val allColors: List<Color> = emptyList(),
     val allCategories: List<String> = emptyList(),
     val latestUsedTimezones: List<TimeZone> = emptyList(),
