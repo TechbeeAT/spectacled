@@ -133,6 +133,8 @@ class DetailsViewModel(
             _state.update { it.copy(
                 icalEntry = icalEntry,
                 originalIcalEntry = icalEntry,
+                changeBackstack = listOf(icalEntry),
+                undoRestoreMarker = null,
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
@@ -166,6 +168,8 @@ class DetailsViewModel(
             _state.update { it.copy(
                 icalEntry = newIcalEntry,
                 originalIcalEntry = newIcalEntry,
+                changeBackstack = listOf(newIcalEntry),
+                undoRestoreMarker = null,
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
@@ -215,6 +219,8 @@ class DetailsViewModel(
             _state.update { it.copy(
                 icalEntry = copiedIcalEntry,
                 originalIcalEntry = copiedIcalEntry,
+                changeBackstack = listOf(copiedIcalEntry),
+                undoRestoreMarker = null,
                 isLoading = false,
                 isInitialized = true,
                 navigateUp = false
@@ -352,6 +358,7 @@ class DetailsViewModel(
                 onDeleteAttachment(action.attachmentUid)
             }
             is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
+            is DetailsAction.OnUndo -> { onUndo() }
         }
     }
 
@@ -603,8 +610,13 @@ class DetailsViewModel(
         val entryToSave = _state.value.icalEntry.copy(syncState = syncState)
 
         _state.update {
+            // A save caused by onUndo() restoring a prior checkpoint must not be recorded as a
+            // new one - it would silently reinflate the very stack onUndo() just popped.
+            val isUndoRestoreSave = it.undoRestoreMarker != null && it.undoRestoreMarker == entryToSave.lastModified
             it.copy(
                 icalEntry = entryToSave,
+                changeBackstack = if(isUndoRestoreSave) it.changeBackstack else it.changeBackstack.plus(entryToSave),
+                undoRestoreMarker = if(isUndoRestoreSave) null else it.undoRestoreMarker,
                 showSheetOrDialog = if(navigateUp) null else _state.value.showSheetOrDialog,
                 navigateUp = navigateUp
             )
@@ -969,6 +981,30 @@ class DetailsViewModel(
         viewModelScope.launch(ioDispatcher) {
             moveIcalEntriesUseCase.move(listOf(entryId), newCalendarId)
             _state.update { it.copy(showSheetOrDialog = null, isLoading = false, navigateUp = true) }
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    private fun onUndo() {
+
+        if(!state.value.allowEditing())
+            return
+        if(state.value.changeBackstack.size <= 1)   // already at the oldest tracked checkpoint
+            return
+
+        val restoreTimestamp = IcsDateTime.now()
+
+        _state.update {
+            val newBackstack = it.changeBackstack.dropLast(1)   // drop the entry duplicating current state
+            val target = newBackstack.last()                    // the real previous checkpoint
+            it.copy(
+                icalEntry = target.copy(
+                    lastModified = restoreTimestamp,
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
+                ),
+                changeBackstack = newBackstack,
+                undoRestoreMarker = restoreTimestamp
+            )
         }
     }
 }
