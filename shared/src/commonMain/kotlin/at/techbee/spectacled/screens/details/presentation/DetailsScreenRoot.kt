@@ -61,7 +61,6 @@ import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
@@ -236,9 +235,11 @@ fun DetailsScreenRoot(
                 TaskStatusProgressPickerBottomSheet(
                     status = detailsState.icalEntry.status,
                     percentComplete = detailsState.icalEntry.percentComplete,
+                    priority = detailsState.icalEntry.priority,
                     sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                     onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
                     onProgressUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateProgress(it)) },
+                    onPriorityUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdatePriority(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
             DetailsSheetOrDialog.ADD_SUBTASKS ->
@@ -386,8 +387,7 @@ fun DetailsScreenRoot(
                                     enabled = detailsState.allowEditing() && !detailsState.isLoading
                                 ) {
                                     StatusWithProgressIcon(
-                                        status = detailsState.icalEntry.status
-                                            ?: if(detailsState.icalEntry.isTask()) Status.NEEDS_ACTION else Status.FINAL,
+                                        status = detailsState.icalEntry.status,
                                         percent = detailsState.icalEntry.percentComplete
                                     )
                                 }

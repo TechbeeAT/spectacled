@@ -353,6 +353,7 @@ class DetailsViewModel(
             is DetailsAction.OnPin -> { onPinIcalEntry(action.pin) }
             is DetailsAction.OnUpdateStatus -> { onUpdateStatus(action.status) }
             is DetailsAction.OnUpdateProgress -> { onUpdateTaskProgress(action.percent) }
+            is DetailsAction.OnUpdatePriority -> { onUpdatePriority(action.priority) }
             is DetailsAction.OnUpdateSubtaskProgress -> { onUpdateSubtaskProgress(action.percent, action.subtaskIcalEntryId) }
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
             is DetailsAction.OnNavigateToIcalEntryId -> { _state.update { it.copy(navigateToIcalEntryId = action.id) } }
@@ -475,6 +476,22 @@ class DetailsViewModel(
                             else -> it.icalEntry.percentComplete
                         }
                     } else 0,
+                    lastModified = IcsDateTime.now(),
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
+                )
+            )
+        }
+    }
+
+    private fun onUpdatePriority(newPriority: Long?) {
+
+        if(!state.value.allowEditing())
+            return
+
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    priority = newPriority,
                     lastModified = IcsDateTime.now(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
