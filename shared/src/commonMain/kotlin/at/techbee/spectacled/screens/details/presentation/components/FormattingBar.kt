@@ -29,6 +29,7 @@ import at.techbee.spectacled.screens.core.presentation.MarkdownFormat
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.close
 import spectacled.shared.generated.resources.format_bold
 import spectacled.shared.generated.resources.format_italic
 import spectacled.shared.generated.resources.format_underline
@@ -44,6 +45,7 @@ fun FormattingBar(
     onFormat: (MarkdownFormat) -> Unit,
     onReleaseFocus: () -> Unit,
     onUndo: () -> Unit,
+    allowUndo: Boolean,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -80,6 +82,7 @@ fun FormattingBar(
 
             IconButton(
                 onClick = { onUndo() },
+                enabled = allowUndo,
                 modifier = Modifier.focusProperties { canFocus = false }
             ) {
                 Icon(Icons.AutoMirrored.Outlined.Undo, contentDescription = stringResource(Res.string.undo))
@@ -91,7 +94,7 @@ fun FormattingBar(
                 onClick = { onReleaseFocus() },
                 modifier = Modifier.focusProperties { canFocus = false }
             ) {
-                Icon(Icons.Outlined.KeyboardArrowDown, null)
+                Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = stringResource(Res.string.close))
             }
         }
     }
@@ -106,8 +109,26 @@ private fun FormattingBar_Preview() {
             FormattingBar(
                 onFormat = {},
                 onReleaseFocus = {},
-                onUndo = {}
+                onUndo = {},
+                allowUndo = true,
             )
         }
     }
 }
+
+@Preview
+@Composable
+private fun FormattingBar_BlockUndo_Preview() {
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            FormattingBar(
+                onFormat = {},
+                onReleaseFocus = {},
+                onUndo = {},
+                allowUndo = false,
+            )
+        }
+    }
+}
+

@@ -526,7 +526,8 @@ fun DetailsScreen(
                     focusManager.clearFocus()
                     keyboardController?.hide()
                 },
-                onUndo = { onAction(DetailsAction.OnUndo) }
+                onUndo = { onAction(DetailsAction.OnUndo) },
+                allowUndo = state.changeBackstack.size > 1
             )
         }
     }
