@@ -463,7 +463,7 @@ class DetailsViewModel(
                                 100L -> 99L
                                 else -> it.icalEntry.percentComplete
                             }
-                            Status.NO_STATUS, Status.NEEDS_ACTION -> 0L
+                            Status.NEEDS_ACTION -> 0L
                             else -> it.icalEntry.percentComplete
                         }
                     } else 0,

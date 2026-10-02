@@ -21,7 +21,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -36,16 +35,18 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.percent_complete
 import spectacled.shared.generated.resources.priority
-import spectacled.shared.generated.resources.priority_Medium
 import spectacled.shared.generated.resources.priority_high
 import spectacled.shared.generated.resources.priority_low
+import spectacled.shared.generated.resources.priority_medium
 import spectacled.shared.generated.resources.priority_not_specified
+import spectacled.shared.generated.resources.status_no_status
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,10 +109,10 @@ fun TaskStatusProgressPickerBottomSheet(
             ) {
 
                 FilterChip(
-                    leadingIcon = { Status.NO_STATUS.StatusIcon(null) },
+                    leadingIcon = { StatusWithProgressIcon(null, null) },
                     selected = status == null,
                     onClick = { onStatusUpdated(null) },
-                    label = { Text(stringResource(Status.NO_STATUS.stringRes)) }
+                    label = { Text(stringResource(Res.string.status_no_status)) }
                 )
 
                 val statusSet = setOf(Status.NEEDS_ACTION, Status.IN_PROCESS, Status.COMPLETED, Status.CANCELLED)
@@ -147,26 +148,24 @@ fun TaskStatusProgressPickerBottomSheet(
                 // Local continuous value for smooth dragging
                 var sliderValue by remember(priority) { mutableFloatStateOf(currentPriorityStep) }
 
-                LaunchedEffect(priority) {
-                    sliderValue = currentPriorityStep
-                }
-
                 Slider(
                     value = sliderValue,
                     valueRange = 0f..3f,
                     steps = 2,
                     onValueChange = { sliderValue = it },
                     onValueChangeFinished = {
-                        onPriorityUpdated(
-                            when (sliderValue.roundToInt()) {
-                                0 -> null
-                                1 -> 9L
-                                2 -> 5L
-                                3 -> 1L
-                                else -> null
-                            }
-                        )
 
+                        val newStep = sliderValue.roundToInt()
+
+                        if (newStep != currentPriorityStep.roundToInt())
+                            onPriorityUpdated(
+                                when (newStep) {
+                                    1 -> 9L
+                                    2 -> 5L
+                                    3 -> 1L
+                                    else -> null
+                                }
+                            )
                     },
                     thumb = {
                         AssistChip(
@@ -176,7 +175,7 @@ fun TaskStatusProgressPickerBottomSheet(
                                         text = stringResource(when (sliderValue.roundToInt()) {
                                             0 -> Res.string.priority_not_specified
                                             1 -> Res.string.priority_low
-                                            2 -> Res.string.priority_Medium
+                                            2 -> Res.string.priority_medium
                                             3 -> Res.string.priority_high
                                             else -> Res.string.priority_not_specified
                                         }),

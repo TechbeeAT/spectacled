@@ -5,10 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.QuestionMark
-import androidx.compose.material.icons.outlined.Reviews
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material.icons.outlined.RemoveCircle
+import androidx.compose.material.icons.outlined.Unpublished
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,12 +27,11 @@ import at.techbee.spectacled.theme.AppTheme
 
 @Composable
 fun StatusWithProgressIcon(
-    status: Status,
+    status: Status?,
     percent: Long? = null,
 ) {
 
     val text = when(status) {
-        Status.NO_STATUS -> "?"
         Status.NEEDS_ACTION -> "0"
         Status.IN_PROCESS -> (percent?:1L).toString()
         Status.COMPLETED -> "100"
@@ -40,18 +39,17 @@ fun StatusWithProgressIcon(
     }
 
     val icon = when(status) {
-        Status.NO_STATUS -> Icons.Outlined.QuestionMark
-        Status.FINAL -> Icons.Outlined.Check
-        Status.DRAFT -> Icons.Outlined.Reviews
-        Status.CANCELLED -> Icons.Outlined.Close
-        else -> null
+        Status.FINAL -> Icons.Outlined.CheckCircle
+        Status.DRAFT -> Icons.Outlined.Unpublished
+        Status.CANCELLED -> Icons.Outlined.RemoveCircle
+        else -> Icons.Outlined.Circle
     }
 
     val progress = when(status) {
         Status.FINAL, Status.COMPLETED -> 1f
         Status.DRAFT -> 0.33f
         Status.IN_PROCESS  -> (percent?:1L)/100f
-        Status.NO_STATUS, Status.NEEDS_ACTION, Status.CANCELLED -> 0f
+        null, Status.NEEDS_ACTION, Status.CANCELLED -> 0f
     }
 
     Box(contentAlignment = Alignment.Center) {
@@ -64,17 +62,12 @@ fun StatusWithProgressIcon(
                 fontWeight = FontWeight.Bold,
                 fontSize = 9.sp
             )
-        }
-
-        icon?.let {
-            Icon(
-                imageVector = it,
-                contentDescription = null,
-                tint = ProgressIndicatorDefaults.circularColor,
-                modifier = Modifier.size(14.dp)
-            )
-        }
-
+        } ?: Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if(status == Status.CANCELLED) MaterialTheme.colorScheme.error else ProgressIndicatorDefaults.circularColor,
+            modifier = Modifier.size(14.dp)
+        )
 
         CircularProgressIndicator(
             progress = { progress },
@@ -89,7 +82,7 @@ private fun StatusWithProgress_Icon_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
-            StatusWithProgressIcon(status = Status.NO_STATUS)
+            StatusWithProgressIcon(status = null)
 
             StatusWithProgressIcon(status = Status.FINAL)
             StatusWithProgressIcon(status = Status.DRAFT)

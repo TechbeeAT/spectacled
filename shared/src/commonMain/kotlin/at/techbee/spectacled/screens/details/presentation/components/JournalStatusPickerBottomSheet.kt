@@ -20,10 +20,12 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.done
+import spectacled.shared.generated.resources.status_no_status
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,10 +57,10 @@ fun JournalStatusPickerBottomSheet(
             ) {
 
                 FilterChip(
-                    leadingIcon = { Status.NO_STATUS.StatusIcon(null) },
+                    leadingIcon = { StatusWithProgressIcon(null, null) },
                     selected = status == null,
                     onClick = { onStatusUpdated(null) },
-                    label = { Text(stringResource(Status.NO_STATUS.stringRes)) }
+                    label = { Text(stringResource(Res.string.status_no_status)) }
                 )
 
                 val statusSet = setOf(Status.DRAFT, Status.FINAL, Status.CANCELLED)

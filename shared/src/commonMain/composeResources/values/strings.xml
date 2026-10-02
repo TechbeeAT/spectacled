@@ -253,7 +253,7 @@
     <string name="priority">Priority</string>
     <string name="priority_not_specified">Not specified</string>
     <string name="priority_low">Low</string>
-    <string name="priority_Medium">Medium</string>
+    <string name="priority_medium">Medium</string>
     <string name="priority_high">High</string>
 
     <string name="login_message_forbidden">Not authorized. Please check your server, username and password.</string>
