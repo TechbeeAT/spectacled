@@ -42,7 +42,7 @@ glance = "1.2.0"
 napier = "2.7.1"
 navigationCompose = "2.9.2"
 reorderable = "3.1.0"
-sqldelight = "2.3.2"
+sqldelight = "2.4.0"
 sqlJs = "1.13.0"
 webPackPlugin = "9.1.0"
 
