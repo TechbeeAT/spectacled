@@ -24,7 +24,6 @@ import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.done
-import spectacled.shared.generated.resources.status_no_status
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,10 +44,6 @@ fun JournalStatusPickerBottomSheet(
                 Text(stringResource(Res.string.done))
             }
         },
-        menuActionLeft = { TextButton(onClick = {
-            onStatusUpdated(null)
-            onDismiss()
-        }) { Text(stringResource(Res.string.status_no_status)) } }
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -58,6 +53,14 @@ fun JournalStatusPickerBottomSheet(
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
+
+                FilterChip(
+                    leadingIcon = { Status.NO_STATUS.StatusIcon(null) },
+                    selected = status == null,
+                    onClick = { onStatusUpdated(null) },
+                    label = { Text(stringResource(Status.NO_STATUS.stringRes)) }
+                )
+
                 val statusSet = setOf(Status.DRAFT, Status.FINAL, Status.CANCELLED)
 
                 statusSet.forEach { selectableStatus ->
@@ -82,6 +85,22 @@ private fun JournalStatusPickerBottomSheet_Preview() {
         Scaffold {
             JournalStatusPickerBottomSheet(
                 status = Status.FINAL,
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
+                onStatusUpdated = {},
+                onDismiss = {}
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+private fun JournalStatusPickerBottomSheet_NO_STATUS_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            JournalStatusPickerBottomSheet(
+                status = null,
                 sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 onStatusUpdated = {},
                 onDismiss = {}

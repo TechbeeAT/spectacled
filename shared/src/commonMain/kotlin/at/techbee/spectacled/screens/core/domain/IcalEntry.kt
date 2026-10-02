@@ -22,6 +22,7 @@ import spectacled.shared.generated.resources.status_draft
 import spectacled.shared.generated.resources.status_final
 import spectacled.shared.generated.resources.status_in_process
 import spectacled.shared.generated.resources.status_needs_action
+import spectacled.shared.generated.resources.status_no_status
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -277,9 +278,11 @@ data class IcalEntry(
 
 
 enum class Status(
-    val rfcName: String,
+    val rfcName: String?,
     val stringRes: StringResource
 ) {
+    NO_STATUS(null, Res.string.status_no_status),
+
     FINAL("FINAL", Res.string.status_final),
     DRAFT("DRAFT", Res.string.status_draft),
 

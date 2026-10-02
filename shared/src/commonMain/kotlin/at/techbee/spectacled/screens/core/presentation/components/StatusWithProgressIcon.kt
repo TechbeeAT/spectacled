@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.QuestionMark
+import androidx.compose.material.icons.outlined.Reviews
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +32,7 @@ fun StatusWithProgressIcon(
 ) {
 
     val text = when(status) {
+        Status.NO_STATUS -> "?"
         Status.NEEDS_ACTION -> "0"
         Status.IN_PROCESS -> (percent?:1L).toString()
         Status.COMPLETED -> "100"
@@ -38,8 +40,9 @@ fun StatusWithProgressIcon(
     }
 
     val icon = when(status) {
+        Status.NO_STATUS -> Icons.Outlined.QuestionMark
         Status.FINAL -> Icons.Outlined.Check
-        Status.DRAFT -> Icons.Outlined.QuestionMark
+        Status.DRAFT -> Icons.Outlined.Reviews
         Status.CANCELLED -> Icons.Outlined.Close
         else -> null
     }
@@ -48,7 +51,7 @@ fun StatusWithProgressIcon(
         Status.FINAL, Status.COMPLETED -> 1f
         Status.DRAFT -> 0.33f
         Status.IN_PROCESS  -> (percent?:1L)/100f
-        Status.NEEDS_ACTION, Status.CANCELLED -> 0f
+        Status.NO_STATUS, Status.NEEDS_ACTION, Status.CANCELLED -> 0f
     }
 
     Box(contentAlignment = Alignment.Center) {
@@ -85,6 +88,9 @@ fun StatusWithProgressIcon(
 private fun StatusWithProgress_Icon_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            StatusWithProgressIcon(status = Status.NO_STATUS)
+
             StatusWithProgressIcon(status = Status.FINAL)
             StatusWithProgressIcon(status = Status.DRAFT)
             StatusWithProgressIcon(status = Status.CANCELLED)

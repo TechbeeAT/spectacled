@@ -236,9 +236,11 @@ fun DetailsScreenRoot(
                 TaskStatusProgressPickerBottomSheet(
                     status = detailsState.icalEntry.status,
                     percentComplete = detailsState.icalEntry.percentComplete,
+                    priority = detailsState.icalEntry.priority,
                     sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                     onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
                     onProgressUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateProgress(it)) },
+                    onPriorityUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdatePriority(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
             DetailsSheetOrDialog.ADD_SUBTASKS ->
