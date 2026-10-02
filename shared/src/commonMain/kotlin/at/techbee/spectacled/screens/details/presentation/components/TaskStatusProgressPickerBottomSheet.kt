@@ -1,16 +1,20 @@
 package at.techbee.spectacled.screens.details.presentation.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
@@ -33,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.domain.Priority
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
@@ -42,10 +47,6 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.percent_complete
 import spectacled.shared.generated.resources.priority
-import spectacled.shared.generated.resources.priority_high
-import spectacled.shared.generated.resources.priority_low
-import spectacled.shared.generated.resources.priority_medium
-import spectacled.shared.generated.resources.priority_not_specified
 import spectacled.shared.generated.resources.status_no_status
 import kotlin.math.roundToInt
 
@@ -137,55 +138,41 @@ fun TaskStatusProgressPickerBottomSheet(
 
                 Text(stringResource(Res.string.priority))
 
-                val currentPriorityStep = when (priority) {
-                    null, 0L -> 0f
-                    in 6L..9L -> 1f
-                    5L -> 2f
-                    in 1L..4L -> 3f
-                    else -> 0f
-                }
+                val currentPriority = Priority.fromIcsValue(priority)
 
                 // Local continuous value for smooth dragging
-                var sliderValue by remember(priority) { mutableFloatStateOf(currentPriorityStep) }
+                var sliderValue by remember(priority) { mutableFloatStateOf(currentPriority.ordinal.toFloat()) }
 
                 Slider(
                     value = sliderValue,
-                    valueRange = 0f..3f,
-                    steps = 2,
+                    valueRange = 0f..(Priority.entries.size - 1).toFloat(),
+                    steps = Priority.entries.size - 2,
                     onValueChange = { sliderValue = it },
                     onValueChangeFinished = {
-
-                        val newStep = sliderValue.roundToInt()
-
-                        if (newStep != currentPriorityStep.roundToInt())
-                            onPriorityUpdated(
-                                when (newStep) {
-                                    1 -> 9L
-                                    2 -> 5L
-                                    3 -> 1L
-                                    else -> null
-                                }
-                            )
+                        val newPriority = Priority.fromSliderStep(sliderValue.roundToInt())
+                        if (newPriority != currentPriority)
+                            onPriorityUpdated(newPriority.icsValue)
                     },
                     thumb = {
-                        AssistChip(
-                            onClick = {},
-                            label = {
-                                    Text(
-                                        text = stringResource(when (sliderValue.roundToInt()) {
-                                            0 -> Res.string.priority_not_specified
-                                            1 -> Res.string.priority_low
-                                            2 -> Res.string.priority_medium
-                                            3 -> Res.string.priority_high
-                                            else -> Res.string.priority_not_specified
-                                        }),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.width(72.dp)
-                                    )
-                            }
-                        )
+                        // Plain Box rather than a chip/Surface so the thumb stays non-interactive and
+                        // every press reaches the Slider's own drag handling.
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow, AssistChipDefaults.shape)
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, AssistChipDefaults.shape)
+                        ) {
+                            Text(
+                                text = stringResource(Priority.fromSliderStep(sliderValue.roundToInt()).stringRes),
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                                    .width(72.dp)
+                            )
+                        }
                     },
                     modifier = Modifier.weight(1f)
                 )

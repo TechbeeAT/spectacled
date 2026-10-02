@@ -277,10 +277,9 @@ data class IcalEntry(
 
 
 enum class Status(
-    val rfcName: String?,
+    val rfcName: String,
     val stringRes: StringResource
 ) {
-
     FINAL("FINAL", Res.string.status_final),
     DRAFT("DRAFT", Res.string.status_draft),
 
