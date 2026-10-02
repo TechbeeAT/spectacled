@@ -61,7 +61,6 @@ import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
@@ -388,8 +387,7 @@ fun DetailsScreenRoot(
                                     enabled = detailsState.allowEditing() && !detailsState.isLoading
                                 ) {
                                     StatusWithProgressIcon(
-                                        status = detailsState.icalEntry.status
-                                            ?: if(detailsState.icalEntry.isTask()) Status.NEEDS_ACTION else Status.FINAL,
+                                        status = detailsState.icalEntry.status,
                                         percent = detailsState.icalEntry.percentComplete
                                     )
                                 }
