@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +65,16 @@ fun TimePickerBottomSheet(
     )
     var showTimezoneDropdown by mutableStateOf(false)
 
+    // rememberTimePickerState() seeds hour/minute from the entry's current time, and
+    // LaunchedEffect runs immediately on first composition - without this guard, just opening
+    // the sheet (without touching the picker) would fire onTimeUpdated with that seeded value.
+    var hasHandledInitialTime by remember { mutableStateOf(false) }
+
     LaunchedEffect(timePickerState.minute, timePickerState.hour) {
+        if (!hasHandledInitialTime) {
+            hasHandledInitialTime = true
+            return@LaunchedEffect
+        }
         val newLocalDateTime = LocalDateTime(
             year = localDateTime.year,
             month = localDateTime.month,

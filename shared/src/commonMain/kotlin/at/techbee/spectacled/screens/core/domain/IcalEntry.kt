@@ -177,6 +177,11 @@ data class IcalEntry(
         )
     }
 
+    // Ignores bookkeeping the app/sync layer maintains on its own (row id, sync state, CalDAV
+    // etag/href, last-modified stamp) - true if nothing a user could see or edit differs.
+    fun hasSameContentAs(other: IcalEntry): Boolean =
+        this.copy(id = other.id, lastModified = other.lastModified, syncState = other.syncState, etag = other.etag, href = other.href) == other
+
     fun getProgressTriState() = when {
         status == Status.IN_PROCESS -> ToggleableState.Indeterminate
         status == Status.COMPLETED -> ToggleableState.On
