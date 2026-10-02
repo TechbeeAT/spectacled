@@ -92,6 +92,7 @@ class IcalEntryRoundTripTest {
             status = Status.IN_PROCESS,
             percentComplete = 50L,
             priority = 1L,
+            location = "Stadtpark, Bench 3; near the pond",
             dtstamp = utcDateTime,
             created = utcDateTime,
             lastModified = utcDateTime,
@@ -106,6 +107,30 @@ class IcalEntryRoundTripTest {
         assertEquals(Status.IN_PROCESS, parsed.status)
         assertEquals(50L, parsed.percentComplete)
         assertEquals(1L, parsed.priority)
+        assertEquals(original.location, parsed.location)
+        assertTrue(parsed.extraProperties.none { it.name == "LOCATION" })
+    }
+
+    @Test
+    fun thunderbirdTaskLocationIsParsed() {
+        val ics = """
+            BEGIN:VCALENDAR
+            PRODID:-//Mozilla.org/NONSGML Mozilla Calendar V1.1//EN
+            VERSION:2.0
+            BEGIN:VTODO
+            UID:tb-task-1
+            DTSTAMP:20260711T101530Z
+            SUMMARY:Buy groceries
+            LOCATION:Main Street 12\, Vienna
+            END:VTODO
+            END:VCALENDAR
+        """.trimIndent().replace("\n", "\r\n")
+
+        val parsed = parseIcalEntries(ics).single()
+
+        assertEquals("Main Street 12, Vienna", parsed.location)
+        assertTrue(parsed.extraProperties.none { it.name == "LOCATION" })
+        assertTrue(serializeVCalendar(parsed).contains("LOCATION:Main Street 12\\, Vienna"))
     }
 
     @Test
