@@ -91,11 +91,20 @@ class DetailsViewModel(
                 .debounce(500L.milliseconds) // Wait for 500ms pause in typing
                 .distinctUntilChanged { old, new -> old.lastModified == new.lastModified } // Only save if last modified changed
                 .collect { entry ->
-                    if(!_state.value.isLoading
+                    val current = _state.value
+                    if(!current.isLoading
                         && entry.calendarId != 0L
                         && entry.syncState != SyncState.SYNCED
-                        && entry.syncState != SyncState.LOCAL_NEW)   // untouched new entry: don't create a row for it at all
-                        saveIcalEntry(entry.syncState)
+                        && entry.syncState != SyncState.LOCAL_NEW) {   // untouched new entry: don't create a row for it at all
+                        // onUndo() bumps lastModified to restore a prior checkpoint even though its
+                        // content already matches that checkpoint - that save must still go through
+                        // so the restore is actually persisted (saveIcalEntry() itself already skips
+                        // re-recording it on the backstack, via undoRestoreMarker).
+                        val isUndoRestore = current.undoRestoreMarker != null && current.undoRestoreMarker == entry.lastModified
+                        val lastCheckpoint = current.changeBackstack.lastOrNull() ?: current.originalIcalEntry
+                        if(isUndoRestore || !entry.hasSameContentAs(lastCheckpoint))
+                            saveIcalEntry(entry.syncState)
+                    }
                 }
         }
 
