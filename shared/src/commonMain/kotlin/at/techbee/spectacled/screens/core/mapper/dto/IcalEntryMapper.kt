@@ -3,7 +3,6 @@ package at.techbee.spectacled.screens.core.mapper.dto
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
-import at.techbee.spectacled.screens.core.data.ics.KnownIcsPropertyName
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
@@ -14,7 +13,6 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.mapper.ics.escapeIcsValue
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.screens.core.mapper.ics.parseIcsDateTime
-import at.techbee.spectacled.screens.core.mapper.ics.parseProperty
 import at.techbee.spectacled.screens.core.mapper.ics.splitIcsList
 import at.techbee.spectacled.sqldelight.IcalEntryDto
 import io.ktor.http.Url
@@ -36,14 +34,6 @@ fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList()): IcalEntr
         emptyList() // Fallback if data is corrupted
     }
 
-    // Rows stored before LOCATION became a known property kept it as a raw extra property.
-    // Lift it into the dedicated field so it isn't serialized twice once the location is edited.
-    val legacyLocationProp = if (this.location == null)
-        extraProps.firstOrNull { it.name == KnownIcsPropertyName.LOCATION.propertyName }
-    else null
-    val location = this.location
-        ?: legacyLocationProp?.let { parseProperty(it.unfoldedLine).value.ifEmpty { null } }
-
     return IcalEntry(
         id = this.id,
         calendarId = this.calendarId,
@@ -63,7 +53,7 @@ fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList()): IcalEntr
         categories = this.categories?.let { splitIcsList(it) } ?: emptyList(),
         created = parseIcsDateTime(this.created) ?: IcsDateTime.now(),
         lastModified = parseIcsDateTime(this.lastModified) ?: IcsDateTime.now(),
-        extraProperties = if (legacyLocationProp != null) extraProps - legacyLocationProp else extraProps,
+        extraProperties = extraProps,
         attachments = attachments,
         orderNo = this.orderNo,
         syncState = this.syncState?.let { SyncState.entries.find { it.name == this.syncState } } ?: SyncState.LOCAL_MODIFIED,
@@ -73,7 +63,7 @@ fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList()): IcalEntr
         parentUid = this.parentUid,
         relType = this.relType,
         url = this.url?.let { Url(it) },
-        location = location
+        location = this.location
     )
 }
 
