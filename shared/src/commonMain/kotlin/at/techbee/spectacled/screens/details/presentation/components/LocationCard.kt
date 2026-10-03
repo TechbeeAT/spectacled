@@ -15,12 +15,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.Platforms
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import at.techbee.spectacled.screens.details.presentation.DetailsSheetOrDialog
 import at.techbee.spectacled.theme.AppTheme
+import io.github.aakira.napier.Napier
+import io.ktor.http.encodeURLParameter
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.edit
@@ -34,9 +39,15 @@ fun LocationCard(
     modifier: Modifier = Modifier
 ) {
 
+    val uriHandler = LocalUriHandler.current
+
     Card(
         onClick = {
-            TODO()
+            try {
+                uriHandler.openUri(mapsUriFor(location))
+            } catch (e: Exception) {
+                Napier.w(e.stackTraceToString())
+            }
         },
         elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent),
@@ -67,6 +78,15 @@ fun LocationCard(
                 }
             }
         }
+    }
+}
+
+fun mapsUriFor(location: String, platform: Platforms = getPlatform().platform): String {
+    val query = location.encodeURLParameter()
+    return when (platform) {
+        Platforms.ANDROID -> "geo:0,0?q=$query"
+        Platforms.IOS -> "https://maps.apple.com/?q=$query"
+        Platforms.DESKTOP, Platforms.WASM -> "https://www.openstreetmap.org/search?query=$query"
     }
 }
 
