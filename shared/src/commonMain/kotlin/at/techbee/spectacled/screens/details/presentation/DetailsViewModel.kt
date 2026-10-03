@@ -315,6 +315,7 @@ class DetailsViewModel(
             is DetailsAction.OnUpdateCategories -> onUpdateCategories(action.addCategory, action.removeCategory)
             is DetailsAction.OnUpdateColor -> onUpdateColor(action.color)
             is DetailsAction.OnUpdateUrl -> onUpdateUrl(action.url)
+            is DetailsAction.OnUpdateLocation -> onUpdateLocation(action.location)
             is DetailsAction.OnUpdateDescription -> onUpdateDescription(action.description)
             is DetailsAction.OnUpdateSummary -> onUpdateSummary(action.summary)
             DetailsAction.OnDelete -> {
@@ -525,6 +526,22 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     url = newUrl,
+                    lastModified = IcsDateTime.now(),
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
+                )
+            )
+        }
+    }
+
+    private fun onUpdateLocation(newLocation: String?) {
+
+        if(!state.value.allowEditing())
+            return
+
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    location = newLocation,
                     lastModified = IcsDateTime.now(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )

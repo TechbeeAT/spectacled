@@ -21,6 +21,7 @@ sealed interface DetailsAction {
     data class OnUpdateSubtaskProgress(val percent: Long, val subtaskIcalEntryId: Long): DetailsAction
     data class OnAddSubtask(val summary: String): DetailsAction
     data class OnUpdateUrl(val url: Url?): DetailsAction
+    data class OnUpdateLocation(val location: String?): DetailsAction
     data class OnAddAttachment(val fileName: String, val bytes: ByteArray, val mimeType: String?): DetailsAction
     data class OnAddUrlAttachment(val url: Url): DetailsAction
     data class OnOpenAttachment(val attachmentUid: String): DetailsAction
