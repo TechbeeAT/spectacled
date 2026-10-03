@@ -62,7 +62,8 @@ fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList()): IcalEntr
         calendarComponent = CalendarComponent.entries.find { it.name == this.calendarComponent } ?: CalendarComponent.VJOURNAL,
         parentUid = this.parentUid,
         relType = this.relType,
-        url = this.url?.let { Url(it) }
+        url = this.url?.let { Url(it) },
+        location = this.location
     )
 }
 
@@ -105,6 +106,7 @@ fun IcalEntry.toDto(): IcalEntryDto {
         calendarComponent = this.calendarComponent.name,
         parentUid = this.parentUid,
         relType = this.relType,
-        url = this.url?.toString()
+        url = this.url?.toString(),
+        location = this.location?.ifEmpty { null }
     )
 }
