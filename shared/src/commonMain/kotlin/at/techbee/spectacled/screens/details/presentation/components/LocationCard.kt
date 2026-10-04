@@ -3,7 +3,7 @@ package at.techbee.spectacled.screens.details.presentation.components
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.PinDrop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,7 +28,7 @@ import io.github.aakira.napier.Napier
 import io.ktor.http.encodeURLParameter
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.edit
+import spectacled.shared.generated.resources.open_in_browser
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,11 +43,8 @@ fun LocationCard(
 
     Card(
         onClick = {
-            try {
-                uriHandler.openUri(mapsUriFor(location))
-            } catch (e: Exception) {
-                Napier.w(e.stackTraceToString())
-            }
+            if(allowEditing)
+                onClick(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.EDIT_LOCATION))
         },
         elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent),
@@ -68,14 +65,16 @@ fun LocationCard(
                 modifier = Modifier.weight(1f)
             )
 
-            if(allowEditing) {
-                IconButton(
-                    onClick = {
-                        onClick(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.EDIT_LOCATION))
+            IconButton(
+                onClick = {
+                    try {
+                        uriHandler.openUri(mapsUriFor(location))
+                    } catch (e: Exception) {
+                        Napier.w(e.stackTraceToString())
                     }
-                ) {
-                    Icon(Icons.Outlined.Edit, stringResource(Res.string.edit))
                 }
+            ) {
+                Icon(Icons.AutoMirrored.Outlined.OpenInNew, stringResource(Res.string.open_in_browser))
             }
         }
     }
