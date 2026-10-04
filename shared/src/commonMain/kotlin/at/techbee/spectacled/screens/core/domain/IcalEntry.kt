@@ -83,7 +83,8 @@ data class IcalEntry(
     val calendarComponent: CalendarComponent,
     val parentUid: String? = null,
     val relType: String? = null,
-    val url: Url? = null
+    val url: Url? = null,
+    val location: String? = null
     ) {
 
     companion object {

@@ -358,7 +358,8 @@ fun parseIcalEntryBlock(
         calendarComponent = calendarComponent,
         parentUid = parentUid,
         relType = relType,
-        url = url
+        url = url,
+        location = knownProps[KnownIcsPropertyName.LOCATION.propertyName]?.firstOrNull()?.value?.ifEmpty { null }
     )
 }
 

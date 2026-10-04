@@ -29,6 +29,7 @@ CREATE TABLE IcalEntryDto (
     parentUid TEXT,
     relType TEXT,
     url TEXT,
+    location TEXT,
     UNIQUE(calendarId, uid)
 );
 
@@ -100,7 +101,8 @@ INSERT OR IGNORE INTO IcalEntryDto (
     calendarComponent,
     parentUid,
     relType,
-    url
+    url,
+    location
 )
 VALUES (
     :calendarId,
@@ -130,7 +132,8 @@ VALUES (
     :calendarComponent,
     :parentUid,
     :relType,
-    :url
+    :url,
+    :location
 );
 
 updateIcalEntry:
@@ -164,7 +167,8 @@ SET
     calendarComponent = :calendarComponent,
     parentUid = :parentUid,
     relType = :relType,
-    url = :url
+    url = :url,
+    location = :location
 WHERE calendarId = :calendarId AND uid = :uid;
 
 deleteTrashed:
