@@ -55,7 +55,7 @@ per-variant entry (`ListScreenJournals/Notes/Tasks.kt`).
 - **Repositories:** interface in `core/domain/repository/`, implementation in
   `core/data/repository/`.
 - **Database:** SQLDelight (`shared/src/commonMain/sqldelight/…`). Schema changes need a
-  new numbered migration (`13.sqm` next) alongside the `.sq` edit — never edit an
+  new numbered migration (`14.sqm` next) alongside the `.sq` edit — never edit an
   existing `.sqm`.
 - **Strings:** source strings only in
   `shared/src/commonMain/composeResources/values/strings.xml`. Never hand-edit

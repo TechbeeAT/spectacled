@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.AddLink
+import androidx.compose.material.icons.outlined.AddLocation
 import androidx.compose.material.icons.outlined.AddTask
 import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.DatasetLinked
@@ -79,6 +80,7 @@ import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalE
 import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DetailsTopBar
 import at.techbee.spectacled.screens.details.presentation.components.DrawingCanvasBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.EditLocationBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.EditUrlBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.MoveIcalEntryDialog
@@ -91,6 +93,7 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add_attachment
 import spectacled.shared.generated.resources.add_drawing
 import spectacled.shared.generated.resources.add_from_gallery
+import spectacled.shared.generated.resources.add_location
 import spectacled.shared.generated.resources.add_photo
 import spectacled.shared.generated.resources.add_subtask
 import spectacled.shared.generated.resources.add_url
@@ -251,6 +254,12 @@ fun DetailsScreenRoot(
                 EditUrlBottomSheet(
                     initialUrl = detailsState.icalEntry.url,
                     onUrlEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateUrl(it)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            DetailsSheetOrDialog.EDIT_LOCATION ->
+                EditLocationBottomSheet(
+                    initialLocation = detailsState.icalEntry.location,
+                    onLocationEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateLocation(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
             DetailsSheetOrDialog.ADD_ATTACHMENT_URL ->
@@ -463,6 +472,18 @@ fun DetailsScreenRoot(
                                             addMoreExpanded = false
                                         },
                                     )
+
+                                    if(detailsState.icalEntry.isTask()) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.add_location)) },
+                                            leadingIcon = { Icon(Icons.Outlined.AddLocation, stringResource(Res.string.add_location)) },
+                                            enabled = detailsState.icalEntry.location == null,
+                                            onClick = {
+                                                detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.EDIT_LOCATION))
+                                                addMoreExpanded = false
+                                            },
+                                        )
+                                    }
 
                                     DropdownMenuItem(
                                         text = {

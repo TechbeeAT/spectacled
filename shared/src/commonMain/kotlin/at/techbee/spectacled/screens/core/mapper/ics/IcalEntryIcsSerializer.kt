@@ -163,6 +163,7 @@ fun serializeVJournal(icalEntry: IcalEntry, fileManager: FileManager? = null): S
     }
     icalEntry.summary?.let { lines += "${KnownIcsPropertyName.SUMMARY.propertyName}:${escapeIcsValue(it)}" }
     icalEntry.description?.let { lines += "${KnownIcsPropertyName.DESCRIPTION.propertyName}:${escapeIcsValue(it)}" }
+    icalEntry.location?.let { lines += "${KnownIcsPropertyName.LOCATION.propertyName}:${escapeIcsValue(it)}" }
     icalEntry.color?.let { lines += "${KnownIcsPropertyName.COLOR.propertyName}:${it.toArgb()}" }
     icalEntry.status?.let { lines += "${KnownIcsPropertyName.STATUS.propertyName}:${it.rfcName}" }
     icalEntry.classification?.let { lines += "${KnownIcsPropertyName.CLASSIFICATION.propertyName}:${it.name}" }

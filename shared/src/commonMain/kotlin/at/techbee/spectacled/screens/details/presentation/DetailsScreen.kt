@@ -85,6 +85,7 @@ import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontal
 import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.details.presentation.components.FormattingBar
+import at.techbee.spectacled.screens.details.presentation.components.LocationCard
 import at.techbee.spectacled.screens.details.presentation.components.UrlCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
@@ -381,6 +382,18 @@ fun DetailsScreen(
 
                     UrlCard(
                         url = state.icalEntry.url ?: Url(""),
+                        allowEditing = state.allowEditing(),
+                        onClick = onAction,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
+
+            AnimatedVisibility(state.icalEntry.location != null) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+
+                    LocationCard(
+                        location = state.icalEntry.location?:"",
                         allowEditing = state.allowEditing(),
                         onClick = onAction,
                         modifier = Modifier.padding(vertical = 8.dp)
