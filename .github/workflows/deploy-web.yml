@@ -59,7 +59,7 @@ jobs:
           cache: gradle
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v6.3.0
+        uses: gradle/actions/wrapper-validation@v6.4.0
 
       - name: Build ${{ matrix.app }} (JS)
         # -Xmx6g: the production Kotlin/JS compile OOMs at the repo default 3 GB.
