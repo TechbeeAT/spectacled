@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.details.presentation.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -22,6 +23,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +45,7 @@ import at.techbee.spectacled.theme.AppTheme
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.categories_show_all
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.create_category
 import spectacled.shared.generated.resources.done
@@ -62,6 +65,17 @@ fun CategorySelectionBottomSheet(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
+    var showAllCategories by remember { mutableStateOf(false) }
+    val initialMaxCategories = 5
+
+    val categoriesToShow by derivedStateOf {
+        allCategories
+            .filter { !it.startsWith(AI_BATCH_CATEGORY_PREFIX) }
+            .filter { searchQuery.isBlank() || it.contains(searchQuery, true) }
+            .sortedBy { it.uppercase() }
+            .sortedBy { !selectedCategories.contains(it) }
+    }
+
 
     LaunchedEffect(Unit) {
         delay(300.milliseconds)
@@ -84,17 +98,17 @@ fun CategorySelectionBottomSheet(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
         ) {
 
-
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().animateContentSize()
             ) {
-                allCategories
-                    .filter { !it.startsWith(AI_BATCH_CATEGORY_PREFIX) }
-                    .sortedBy { it.uppercase() }
-                    .forEach { category ->
+                categoriesToShow.forEachIndexed { index, category ->
+
+                        if(!showAllCategories && index > initialMaxCategories-1)
+                            return@forEachIndexed
+
                         FilterChip(
                             selected = selectedCategories.contains(category),
                             onClick = {
@@ -106,6 +120,13 @@ fun CategorySelectionBottomSheet(
                             label = { Text(category) },
                             leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category)) }
                         )
+                    }
+
+                if(!showAllCategories && categoriesToShow.size >= initialMaxCategories)
+                    TextButton(
+                        onClick = { showAllCategories = true }
+                    ) {
+                        Text(stringResource(Res.string.categories_show_all, categoriesToShow.size))
                     }
             }
 
@@ -119,6 +140,7 @@ fun CategorySelectionBottomSheet(
                             if (searchQuery.isNotBlank()) {
                                 onCategoryAdded(searchQuery)
                                 searchQuery = ""
+                                showAllCategories = false
                             }
                             keyboardController?.hide()
                         },
@@ -137,6 +159,7 @@ fun CategorySelectionBottomSheet(
                         if (searchQuery.isNotBlank()) {
                             onCategoryAdded(searchQuery)
                             searchQuery = ""
+                            showAllCategories = false
                         }
                     }
                 ),
@@ -163,5 +186,21 @@ private fun CategorySelectionBottomSheet_Preview() {
             )
         }
     }
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+private fun CategorySelectionBottomSheet_3Categories_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CategorySelectionBottomSheet(
+                allCategories = listOf(AI_BATCH_CATEGORY_PREFIX + "test", "Category 5", "Category 1"),
+                selectedCategories = listOf("Category 2"),
+                onCategoryAdded = { },
+                onCategoryRemoved = { },
+                onDismiss = { }
+            )
+        }
+    }
 }

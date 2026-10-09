@@ -133,6 +133,7 @@
     <string name="update_category">Update category</string>
     <string name="create_category">Create "%1$s"</string>
     <string name="search_add_category">Search/add category</string>
+    <string name="categories_show_all">Show all (%1$d)</string>
     <string name="delete">Delete</string>
     <string name="move">Move</string>
     <string name="remove">Remove</string>
