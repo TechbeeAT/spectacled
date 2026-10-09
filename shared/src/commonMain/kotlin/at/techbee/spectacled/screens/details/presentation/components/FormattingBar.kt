@@ -59,6 +59,17 @@ fun FormattingBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.padding(horizontal = 4.dp).fillMaxWidth()
         ) {
+
+            IconButton(
+                onClick = { onUndo() },
+                enabled = allowUndo,
+                modifier = Modifier.focusProperties { canFocus = false }
+            ) {
+                Icon(Icons.AutoMirrored.Outlined.Undo, contentDescription = stringResource(Res.string.undo))
+            }
+
+            VerticalDivider(modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp).height(24.dp))
+
             IconButton(
                 onClick = { onFormat(MarkdownFormat.BOLD) },
                 modifier = Modifier.focusProperties { canFocus = false }
@@ -76,16 +87,6 @@ fun FormattingBar(
                 modifier = Modifier.focusProperties { canFocus = false }
             ) {
                 Icon(Icons.Default.FormatUnderlined, contentDescription = stringResource(Res.string.format_underline))
-            }
-
-            VerticalDivider(modifier = Modifier.padding(vertical = 4.dp).height(24.dp))
-
-            IconButton(
-                onClick = { onUndo() },
-                enabled = allowUndo,
-                modifier = Modifier.focusProperties { canFocus = false }
-            ) {
-                Icon(Icons.AutoMirrored.Outlined.Undo, contentDescription = stringResource(Res.string.undo))
             }
 
             Spacer(modifier = Modifier.weight(1f))
