@@ -111,7 +111,8 @@ fun ListFilterElement(
                             trailingIcon = {
                                 if (listFilterCriteria.isCategorySelected(category))
                                     Icon(Icons.Outlined.Check, null)
-                            }
+                            },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, null) }
                         )
                     }
                 }
