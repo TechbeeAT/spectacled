@@ -4,15 +4,14 @@ import at.techbee.spectacled.screens.core.domain.Status
 
 data class ListFilterCriteria(
     val searchQuery: String? = null,
-    val searchCategory: String? = null,
-    val filterStatus: Status? = null,
-
+    val searchCategories: List<String> = emptyList(),
+    val filterStatus: List<Status?> = emptyList(),
     val hideCompletedTasks: Boolean = false
 ) {
 
     fun anyFilterActive() =
         searchQuery != null
-                || searchCategory != null
-                || filterStatus != null
+                || searchCategories.isNotEmpty()
+                || filterStatus.isNotEmpty()
                 || hideCompletedTasks
 }

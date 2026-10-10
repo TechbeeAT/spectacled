@@ -98,7 +98,7 @@ class ListStateSectionsTest {
         )
 
         val filteredByCategory = state.copy(
-            listFilterCriteria = ListFilterCriteria(searchCategory = "work")
+            listFilterCriteria = ListFilterCriteria(searchCategories = listOf("work"))
         ).recompute()
         assertEquals(listOf(openTask.uid), filteredByCategory.displayedEntries.map { it.uid })
     }

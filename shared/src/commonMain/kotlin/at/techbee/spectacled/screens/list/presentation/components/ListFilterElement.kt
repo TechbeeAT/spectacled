@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.list.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -19,6 +21,7 @@ import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.Status
+import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import at.techbee.spectacled.screens.core.presentation.horizontalFadingEdges
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import org.jetbrains.compose.resources.painterResource
@@ -41,6 +45,7 @@ import spectacled.shared.generated.resources.hide_completed_tasks
 import spectacled.shared.generated.resources.ic_completed_hidden
 import spectacled.shared.generated.resources.ic_completed_visible
 import spectacled.shared.generated.resources.status
+import spectacled.shared.generated.resources.status_no_status
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +64,152 @@ fun ListFilterElement(
     val chipModifier = if(isVertical) Modifier.fillMaxWidth().heightIn(min = 48.dp) else Modifier
 
     val chips = @Composable {
+
+        //Category
+        ElevatedFilterChip(
+            selected = listFilterCriteria.searchCategories.isNotEmpty(),
+            enabled = allCategories.isNotEmpty(),
+            onClick = {
+                categoryDropdownExpanded = !categoryDropdownExpanded
+            },
+            leadingIcon = {
+                Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category))
+            },
+            trailingIcon = {
+                if (listFilterCriteria.searchCategories.isNotEmpty())
+                    IconButton(
+                        onClick = {
+                            onListFilterCriteriaChanged(listFilterCriteria.copy(searchCategories = emptyList()))
+                        },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(Icons.Outlined.Close, stringResource(Res.string.clear_selection))
+                    }
+            },
+            label = {
+                Column {
+                    Text(stringResource(Res.string.category))
+
+                    AnimatedVisibility(listFilterCriteria.searchCategories.isNotEmpty()) {
+                        Text(
+                            listFilterCriteria.searchCategories.joinToString(separator = ", "),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = categoryDropdownExpanded,
+                    onDismissRequest = { categoryDropdownExpanded = false }
+                ) {
+
+                    allCategories.forEach { category ->
+                        DropdownMenuItem(
+                            text = { Text(category) },
+                            onClick = {
+                                onListFilterCriteriaChanged(listFilterCriteria.copy(
+                                    searchCategories =
+                                        if(listFilterCriteria.searchCategories.contains(category))
+                                            listFilterCriteria.searchCategories.minus(category)
+                                        else
+                                            listFilterCriteria.searchCategories.plus(category)
+                                ))
+                            },
+                            trailingIcon = {
+                                if(listFilterCriteria.searchCategories.contains(category))
+                                    Icon(Icons.Outlined.Check, null)
+                            }
+                        )
+                    }
+                }
+            },
+            modifier = chipModifier
+        )
+
+        //Status
+        ElevatedFilterChip(
+            selected = listFilterCriteria.filterStatus.isNotEmpty(),
+            onClick = {
+                statusDropdownExpanded = !statusDropdownExpanded
+            },
+            leadingIcon = { StatusWithProgressIcon(null, null) },
+            trailingIcon = {
+                if (listFilterCriteria.filterStatus.isNotEmpty())
+                    IconButton(
+                        onClick = {
+                            onListFilterCriteriaChanged(listFilterCriteria.copy(filterStatus = emptyList()))
+                        },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(Icons.Outlined.Close, stringResource(Res.string.clear_selection))
+                    }
+            },
+            label = {
+
+                Column {
+                    Text(stringResource(Res.string.status))
+
+                    AnimatedVisibility(listFilterCriteria.filterStatus.isNotEmpty()) {
+                        Text(
+                            listFilterCriteria.filterStatus.map {
+                                if (it == null) stringResource(Res.string.status_no_status) else stringResource(it.stringRes)
+                            }.joinToString(separator = ", "),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = statusDropdownExpanded,
+                    onDismissRequest = { statusDropdownExpanded = false }
+                ) {
+
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.status_no_status)) },
+                        onClick = {
+                            onListFilterCriteriaChanged(listFilterCriteria.copy(
+                                filterStatus =
+                                    if(listFilterCriteria.filterStatus.contains(null))
+                                        listFilterCriteria.filterStatus.minus(null)
+                                    else
+                                        listFilterCriteria.filterStatus.plus(null)
+                            ))
+                        },
+                        trailingIcon = {
+                            if(listFilterCriteria.filterStatus.contains(null))
+                                Icon(Icons.Outlined.Check, null)
+                        },
+                        leadingIcon = {
+                            StatusWithProgressIcon(null, null)
+                        }
+                    )
+
+                    Status.entriesForComponent(calendarComponent).forEach { status ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(status.stringRes)) },
+                            onClick = {
+                                onListFilterCriteriaChanged(listFilterCriteria.copy(
+                                    filterStatus =
+                                        if(listFilterCriteria.filterStatus.contains(status))
+                                            listFilterCriteria.filterStatus.minus(status)
+                                        else
+                                            listFilterCriteria.filterStatus.plus(status)
+                                ))
+                            },
+                            trailingIcon = {
+                                if(listFilterCriteria.filterStatus.contains(status))
+                                    Icon(Icons.Outlined.Check, null)
+                            },
+                            leadingIcon = {
+                                status.StatusIcon(null)
+                            }
+                        )
+                    }
+                }
+            },
+            modifier = chipModifier
+        )
+
         //Hide completed
         ElevatedFilterChip(
             selected = listFilterCriteria.hideCompletedTasks,
@@ -72,89 +223,6 @@ fun ListFilterElement(
                 }
             },
             label = { Text(stringResource(Res.string.hide_completed_tasks)) },
-            modifier = chipModifier
-        )
-
-        //Category
-        ElevatedFilterChip(
-            selected = !listFilterCriteria.searchCategory.isNullOrBlank(),
-            enabled = allCategories.isNotEmpty(),
-            onClick = {
-                categoryDropdownExpanded = !categoryDropdownExpanded
-            },
-            leadingIcon = {
-                Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category))
-            },
-            trailingIcon = {
-                if (!listFilterCriteria.searchCategory.isNullOrBlank())
-                    IconButton(
-                        onClick = {
-                            onListFilterCriteriaChanged(listFilterCriteria.copy(searchCategory = null))
-                        },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(Icons.Outlined.Close, stringResource(Res.string.clear_selection))
-                    }
-            },
-            label = {
-                Text(listFilterCriteria.searchCategory ?: stringResource(Res.string.category))
-
-                DropdownMenu(
-                    expanded = categoryDropdownExpanded,
-                    onDismissRequest = { categoryDropdownExpanded = false }
-                ) {
-
-                    allCategories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category) },
-                            onClick = {
-                                onListFilterCriteriaChanged(listFilterCriteria.copy(searchCategory = category))
-                                categoryDropdownExpanded = false
-                            }
-                        )
-                    }
-                }
-            },
-            modifier = chipModifier
-        )
-
-        //Status
-        ElevatedFilterChip(
-            selected = listFilterCriteria.filterStatus != null,
-            onClick = {
-                statusDropdownExpanded = !statusDropdownExpanded
-            },
-            leadingIcon = { listFilterCriteria.filterStatus?.StatusIcon(0) ?: Status.DRAFT.StatusIcon(0) },
-            trailingIcon = {
-                if (listFilterCriteria.filterStatus != null)
-                    IconButton(
-                        onClick = {
-                            onListFilterCriteriaChanged(listFilterCriteria.copy(filterStatus = null))
-                        },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(Icons.Outlined.Close, stringResource(Res.string.clear_selection))
-                    }
-            },
-            label = {
-                Text(listFilterCriteria.filterStatus?.stringRes?.let { stringResource(it) } ?: stringResource(Res.string.status))
-
-                DropdownMenu(
-                    expanded = statusDropdownExpanded,
-                    onDismissRequest = { statusDropdownExpanded = false }
-                ) {
-
-                    Status.entriesForComponent(calendarComponent).forEach { status ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(status.stringRes)) },
-                            onClick = {
-                                onListFilterCriteriaChanged(listFilterCriteria.copy(filterStatus = status))
-                                statusDropdownExpanded = false
-                            }
-                        )
-                    }
-                }
-            },
             modifier = chipModifier
         )
     }
@@ -201,7 +269,7 @@ fun ListFilter_Element_Preview() {
 fun ListFilter_Element_search_and_category_Preview() {
 
     ListFilterElement(
-        listFilterCriteria = ListFilterCriteria(searchQuery = "preview", searchCategory = "my category", filterStatus = Status.FINAL),
+        listFilterCriteria = ListFilterCriteria(searchQuery = "preview", searchCategories = listOf("my category"), filterStatus = listOf(Status.FINAL)),
         allCategories = emptyList(),
         calendarComponent = CalendarComponent.VJOURNAL,
         onListFilterCriteriaChanged = { }

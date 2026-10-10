@@ -57,7 +57,7 @@ fun TaskListItem(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleProgress: () -> Unit,
-    onFilterCategory: (category: String) -> Unit,
+    onFilterCategory: (categories: List<String>) -> Unit,
     dragHandle: @Composable (() -> Unit) = { },
     modifier: Modifier = Modifier
 ) {
@@ -153,7 +153,7 @@ fun TaskListItem(
                                 icon = Icons.AutoMirrored.Outlined.Label,
                                 iconContentDescription = stringResource(Res.string.category),
                                 text = category,
-                                onClick = { onFilterCategory(category) }
+                                onClick = { onFilterCategory(listOf(category)) }
                             )
                         }
 

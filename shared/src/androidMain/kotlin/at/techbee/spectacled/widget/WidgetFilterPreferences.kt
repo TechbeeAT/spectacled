@@ -16,28 +16,36 @@ import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilter
 
 private val CATEGORY_KEY = stringPreferencesKey("filter_category")
 private val STATUS_KEY = stringPreferencesKey("filter_status")
+private const val STATUS_NO_STATUS = "NO_STATUS"
 private val HIDE_COMPLETED_TASKS_KEY = booleanPreferencesKey("filter_hide_completed_tasks")
 
 /** The filter criteria stored for a widget, all defaults for a widget configured before filtering existed. */
 fun Preferences.getListFilterCriteria() = ListFilterCriteria(
-    searchCategory = this[CATEGORY_KEY],
+    searchCategories = this[CATEGORY_KEY]?.split(",") ?: emptyList(),
     // An unknown name means the enum changed since the widget was configured: treat it as no filter.
-    filterStatus = this[STATUS_KEY]?.let { stored -> Status.entries.firstOrNull { it.name == stored } },
+    filterStatus = this[STATUS_KEY]?.let { storedList ->
+        storedList.split(",").map { storedStatus ->
+            if(storedStatus == STATUS_NO_STATUS)
+                null
+            else
+                Status.entries.firstOrNull { it.name == storedStatus }
+        }
+    } ?: emptyList(),
     hideCompletedTasks = this[HIDE_COMPLETED_TASKS_KEY] == true
 )
 
 fun MutablePreferences.setListFilterCriteria(listFilterCriteria: ListFilterCriteria) {
-    val category = listFilterCriteria.searchCategory
-    if (category.isNullOrBlank())
+    val categories = listFilterCriteria.searchCategories
+    if (categories.isEmpty())
         remove(CATEGORY_KEY)
     else
-        this[CATEGORY_KEY] = category
+        this[CATEGORY_KEY] = categories.joinToString(separator = ",")
 
     val status = listFilterCriteria.filterStatus
-    if (status == null)
+    if (status.isEmpty())
         remove(STATUS_KEY)
     else
-        this[STATUS_KEY] = status.name
+        this[STATUS_KEY] = status.joinToString(separator = ",") { it?.name?:STATUS_NO_STATUS }
 
     this[HIDE_COMPLETED_TASKS_KEY] = listFilterCriteria.hideCompletedTasks
 }

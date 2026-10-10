@@ -56,7 +56,7 @@ fun ListItem(
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onFilterCategory: (category: String) -> Unit,
+    onFilterCategory: (categories: List<String>) -> Unit,
     isFirst: Boolean = true,
     isLast: Boolean = true,
     overrideTopRoundedCornerSize: Dp? = null,
@@ -165,7 +165,7 @@ fun ListItem(
                                         icon = Icons.AutoMirrored.Outlined.Label,
                                         iconContentDescription = stringResource(Res.string.category),
                                         text = category,
-                                        onClick = { onFilterCategory(category) }
+                                        onClick = { onFilterCategory(listOf(category)) }
                                     )
                                 }
 
