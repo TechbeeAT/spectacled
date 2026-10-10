@@ -243,7 +243,7 @@ data class IcalEntry(
      */
     fun matches(listFilterCriteria: ListFilterCriteria): Boolean {
         val filterQuery = listFilterCriteria.searchQuery
-        val filterCategory = listFilterCriteria.searchCategories
+        val filterCategories = listFilterCriteria.searchCategories
         val filterStatus = listFilterCriteria.filterStatus
         val hideCompletedTasks = listFilterCriteria.hideCompletedTasks
 
@@ -254,11 +254,11 @@ data class IcalEntry(
         if (!matchesQuery)
             return false
 
-        val matchesCategory = filterCategory.isEmpty() || categories.any { filterCategory.contains(it) }
+        val matchesCategory = filterCategories.isEmpty() || categories.any { listFilterCriteria.isCategorySelected(it) }
         if (!matchesCategory)
             return false
 
-        val matchesStatus = filterStatus.isEmpty() || filterStatus.any { status == it }
+        val matchesStatus = filterStatus.isEmpty() || status in filterStatus
         if (!matchesStatus)
             return false
 

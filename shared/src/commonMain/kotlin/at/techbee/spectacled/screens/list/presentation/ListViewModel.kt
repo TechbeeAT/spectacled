@@ -217,8 +217,6 @@ class ListViewModel(
                 _state.update { it.copy(
                     listFilterCriteria = it.listFilterCriteria.copy(
                         searchQuery = if(action.isExpanded) "" else null,
-                        searchCategories = if(action.isExpanded) it.listFilterCriteria.searchCategories else emptyList(),
-                        filterStatus = if(action.isExpanded) it.listFilterCriteria.filterStatus else emptyList(),
                     )
                 ).recompute() }
                 refreshDragAndDropList()

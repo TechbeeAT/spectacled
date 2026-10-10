@@ -64,7 +64,6 @@ fun ListFilterElement(
     val chipModifier = if(isVertical) Modifier.fillMaxWidth().heightIn(min = 48.dp) else Modifier
 
     val chips = @Composable {
-
         //Category
         ElevatedFilterChip(
             selected = listFilterCriteria.searchCategories.isNotEmpty(),
@@ -107,16 +106,10 @@ fun ListFilterElement(
                         DropdownMenuItem(
                             text = { Text(category) },
                             onClick = {
-                                onListFilterCriteriaChanged(listFilterCriteria.copy(
-                                    searchCategories =
-                                        if(listFilterCriteria.searchCategories.contains(category))
-                                            listFilterCriteria.searchCategories.minus(category)
-                                        else
-                                            listFilterCriteria.searchCategories.plus(category)
-                                ))
+                                onListFilterCriteriaChanged(listFilterCriteria.toggleCategory(category))
                             },
                             trailingIcon = {
-                                if(listFilterCriteria.searchCategories.contains(category))
+                                if (listFilterCriteria.isCategorySelected(category))
                                     Icon(Icons.Outlined.Check, null)
                             }
                         )
@@ -145,7 +138,6 @@ fun ListFilterElement(
                     }
             },
             label = {
-
                 Column {
                     Text(stringResource(Res.string.status))
 
@@ -163,20 +155,13 @@ fun ListFilterElement(
                     expanded = statusDropdownExpanded,
                     onDismissRequest = { statusDropdownExpanded = false }
                 ) {
-
                     DropdownMenuItem(
                         text = { Text(stringResource(Res.string.status_no_status)) },
                         onClick = {
-                            onListFilterCriteriaChanged(listFilterCriteria.copy(
-                                filterStatus =
-                                    if(listFilterCriteria.filterStatus.contains(null))
-                                        listFilterCriteria.filterStatus.minus(null)
-                                    else
-                                        listFilterCriteria.filterStatus.plus(null)
-                            ))
+                            onListFilterCriteriaChanged(listFilterCriteria.toggleStatus(null))
                         },
                         trailingIcon = {
-                            if(listFilterCriteria.filterStatus.contains(null))
+                            if (null in listFilterCriteria.filterStatus)
                                 Icon(Icons.Outlined.Check, null)
                         },
                         leadingIcon = {
@@ -188,16 +173,10 @@ fun ListFilterElement(
                         DropdownMenuItem(
                             text = { Text(stringResource(status.stringRes)) },
                             onClick = {
-                                onListFilterCriteriaChanged(listFilterCriteria.copy(
-                                    filterStatus =
-                                        if(listFilterCriteria.filterStatus.contains(status))
-                                            listFilterCriteria.filterStatus.minus(status)
-                                        else
-                                            listFilterCriteria.filterStatus.plus(status)
-                                ))
+                                onListFilterCriteriaChanged(listFilterCriteria.toggleStatus(status))
                             },
                             trailingIcon = {
-                                if(listFilterCriteria.filterStatus.contains(status))
+                                if (status in listFilterCriteria.filterStatus)
                                     Icon(Icons.Outlined.Check, null)
                             },
                             leadingIcon = {
