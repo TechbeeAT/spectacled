@@ -50,22 +50,20 @@ data class ListFilterCriteria(
             }
 
         /** Reverse of [joinEscaped]. A string without escapes or separators yields a single value. */
-        fun splitEscaped(joined: String): List<String> {
-            val values = mutableListOf<String>()
+        fun splitEscaped(joined: String): List<String> = buildList {
             val current = StringBuilder()
             var escaped = false
-            joined.forEach { char ->
+            for (char in joined) {
                 when {
                     escaped -> { current.append(char); escaped = false }
                     char == ESCAPE -> escaped = true
-                    char == SEPARATOR -> { values += current.toString(); current.clear() }
+                    char == SEPARATOR -> { add(current.toString()); current.clear() }
                     else -> current.append(char)
                 }
             }
             if (escaped)
                 current.append(ESCAPE)   // a dangling escape is kept literally
-            values += current.toString()
-            return values
+            add(current.toString())
         }
     }
 }
