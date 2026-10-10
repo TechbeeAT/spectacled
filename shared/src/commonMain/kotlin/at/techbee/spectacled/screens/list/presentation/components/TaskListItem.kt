@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -104,6 +105,7 @@ fun TaskListItem(
                         Text(
                             text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
                             style = MaterialTheme.typography.titleMedium,
+                            textDecoration = if(icalEntry.status == Status.CANCELLED) TextDecoration.LineThrough else null,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.fillMaxWidth()
@@ -113,6 +115,7 @@ fun TaskListItem(
                     if (icalEntry.description?.isBlank() == false)
                         Text(
                             text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
+                            textDecoration = if(icalEntry.status == Status.CANCELLED) TextDecoration.LineThrough else null,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.fillMaxWidth()
@@ -249,7 +252,7 @@ private fun TaskListItem_drag_Preview() {
 private fun TaskListItem_drag_short_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         TaskListItem(
-            icalEntry = IcalEntry(calendarComponent = CalendarComponent.VTODO, summary = "short summary", syncState = SyncState.LOCAL_DELETED),
+            icalEntry = IcalEntry(calendarComponent = CalendarComponent.VTODO, summary = "short summary", status = Status.CANCELLED, syncState = SyncState.LOCAL_DELETED),
             isSelected = false,
             allowEditing = false,
             onClick = {},

@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -121,6 +122,7 @@ fun ListItem(
                                 Text(
                                     text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
                                     style = MaterialTheme.typography.titleMedium,
+                                    textDecoration = if(icalEntry.status == Status.CANCELLED) TextDecoration.LineThrough else null,
                                     maxLines = 3,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.fillMaxWidth()
@@ -130,6 +132,7 @@ fun ListItem(
                             if (icalEntry.description?.isBlank() == false)
                                 Text(
                                     text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
+                                    textDecoration = if(icalEntry.status == Status.CANCELLED) TextDecoration.LineThrough else null,
                                     maxLines = 5,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.fillMaxWidth()
@@ -296,7 +299,7 @@ private fun ListItem_withTime_Preview() {
 @Composable
 private fun ListItem_Task_with_dtstart_Preview() {
     ListItem(
-        icalEntry = IcalEntry.getSampleTask(),
+        icalEntry = IcalEntry.getSampleTask().copy(status = Status.CANCELLED),
         isFirst = true,
         isLast = false,
         isSelected = false,
