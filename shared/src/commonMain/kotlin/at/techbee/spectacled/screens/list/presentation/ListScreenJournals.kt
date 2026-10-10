@@ -74,7 +74,7 @@ fun ListScreenJournals(
                     onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
             },
             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategories = it))) },
             showDayBlock = showDayBlock,
             modifier = Modifier
                 .widthIn(max = 700.dp)
@@ -98,7 +98,7 @@ fun ListScreenJournals(
                 },
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
-                onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+                onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategories = it))) },
                 modifier = Modifier.padding(start = 64.dp, end = 16.dp).then(modifier)
             )
         }
