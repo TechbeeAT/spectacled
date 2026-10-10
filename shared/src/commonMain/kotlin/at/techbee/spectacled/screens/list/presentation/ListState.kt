@@ -149,7 +149,7 @@ data class ListState(
                         if(it.syncState.isDeletedState() || it.parentUid == null)
                             return@filter false
 
-                        if(listFilterCriteria.hideCompletedTasks && it.isDone())
+                        if(listFilterCriteria.hideCompletedTasks && it.isDoneOrCancelled())
                             return@filter false
 
                         return@filter true

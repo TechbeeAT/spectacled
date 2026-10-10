@@ -158,7 +158,7 @@ data class IcalEntry(
 
     fun isPinned() = categories.any { category -> category == PINNED_CATEGORY}
 
-    fun isDone() = isTask() && (percentComplete == 100L || status == Status.COMPLETED)
+    fun isDoneOrCancelled() = isTask() && (percentComplete == 100L || status == Status.COMPLETED || status == Status.CANCELLED)
 
     val categoriesWithoutPinned: List<String>
         get() = categories.filterNot { it == PINNED_CATEGORY }
@@ -262,7 +262,7 @@ data class IcalEntry(
         if (!matchesStatus)
             return false
 
-        if (hideCompletedTasks && isDone())
+        if (hideCompletedTasks && isDoneOrCancelled())
             return false
 
         return true
@@ -277,7 +277,7 @@ data class IcalEntry(
         if (parentUid == null)
             this.matches(listFilterCriteria)
         else
-            !(listFilterCriteria.hideCompletedTasks && isDone())
+            !(listFilterCriteria.hideCompletedTasks && isDoneOrCancelled())
 }
 
 
