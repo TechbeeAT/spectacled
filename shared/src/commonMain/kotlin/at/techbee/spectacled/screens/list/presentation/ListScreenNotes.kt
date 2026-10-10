@@ -93,7 +93,6 @@ fun ListScreenNotes(
                 },
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
                 dragHandle = dragHandle,
-                onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategories = it))) },
                 modifier = Modifier
                     .widthIn(max = 700.dp)
                     .heightIn(min = 50.dp)
@@ -115,7 +114,6 @@ fun ListScreenNotes(
                     },
                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                     onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
-                    onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategories = it))) },
                     modifier = Modifier.padding(start = 48.dp).then(modifier)
                 )
             }

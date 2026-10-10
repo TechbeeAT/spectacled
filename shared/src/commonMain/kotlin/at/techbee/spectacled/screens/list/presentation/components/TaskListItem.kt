@@ -59,7 +59,6 @@ fun TaskListItem(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleProgress: () -> Unit,
-    onFilterCategory: (categories: List<String>) -> Unit,
     dragHandle: @Composable (() -> Unit) = { },
     modifier: Modifier = Modifier
 ) {
@@ -196,7 +195,6 @@ private fun TaskListItem_first_Preview() {
             allowEditing = true,
             onClick = {},
             onLongClick = {},
-            onFilterCategory = {},
             onToggleProgress = {}
         )
     }
@@ -216,7 +214,6 @@ private fun TaskListItem_colored_Preview() {
                 allowEditing = true,
                 onClick = {},
                 onLongClick = {},
-                onFilterCategory = {},
                 onToggleProgress = {}
             )
         }
@@ -235,7 +232,6 @@ private fun TaskListItem_drag_Preview() {
             allowEditing = true,
             onClick = {},
             onLongClick = {},
-            onFilterCategory = {},
             dragHandle = {
                 IconButton(
                     onClick = {}
@@ -259,7 +255,6 @@ private fun TaskListItem_drag_short_Preview() {
             allowEditing = false,
             onClick = {},
             onLongClick = {},
-            onFilterCategory = {},
             dragHandle = {
                 IconButton(
                     onClick = {}

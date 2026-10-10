@@ -58,7 +58,6 @@ fun ListItem(
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onFilterCategory: (categories: List<String>) -> Unit,
     isFirst: Boolean = true,
     isLast: Boolean = true,
     overrideTopRoundedCornerSize: Dp? = null,
@@ -207,8 +206,7 @@ private fun ListItem_first_Preview() {
         isLast = false,
         isSelected = false,
         onClick = {},
-        onLongClick = {},
-        onFilterCategory = {}
+        onLongClick = {}
     )
 }
 
@@ -222,8 +220,7 @@ private fun ListItem_last_Preview_with_color() {
         isLast = true,
         isSelected = true,
         onClick = {},
-        onLongClick = {},
-        onFilterCategory = {}
+        onLongClick = {}
     )
 }
 
@@ -238,8 +235,7 @@ private fun ListItem_first_and_last_Preview_with_color() {
         isLast = true,
         isSelected = false,
         onClick = {},
-        onLongClick = {},
-        onFilterCategory = {}
+        onLongClick = {}
     )
 }
 
@@ -253,8 +249,7 @@ private fun ListItem_middle_Preview_with_color() {
         isLast = false,
         isSelected = false,
         onClick = {},
-        onLongClick = {},
-        onFilterCategory = {}
+        onLongClick = {}
     )
 }
 
@@ -275,8 +270,7 @@ private fun ListItem_middle_Preview_no_summary_and_description() {
             ) {
                 Icon(Icons.Outlined.DragIndicator, null)
             }
-        },
-        onFilterCategory = {}
+        }
     )
 }
 
@@ -291,7 +285,6 @@ private fun ListItem_withTime_Preview() {
         isSelected = false,
         onClick = {},
         onLongClick = {},
-        onFilterCategory = {},
         showDayBlock = true
     )
 }
@@ -307,7 +300,6 @@ private fun ListItem_Task_with_dtstart_Preview() {
         isSelected = false,
         onClick = {},
         onLongClick = {},
-        onFilterCategory = {},
         showDayBlock = false
     )
 }

@@ -457,7 +457,6 @@ fun DetailsScreen(
                                     )
                                 )
                             },
-                            onFilterCategory = {},
                             dragHandle = {
                                 if(state.allowEditing()) {
                                     IconButton(
@@ -491,7 +490,6 @@ fun DetailsScreen(
                         onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(deletedSubtask.id)) },
                         onLongClick = {},
                         onToggleProgress = {},
-                        onFilterCategory = {},
                         dragHandle = {
                             IconButton(
                                 onClick = {},

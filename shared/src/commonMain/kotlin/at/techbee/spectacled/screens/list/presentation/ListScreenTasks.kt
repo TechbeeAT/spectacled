@@ -76,7 +76,6 @@ fun ListScreenTasks(
             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
             onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
             dragHandle = dragHandle,
-            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategories = it))) },
             modifier = Modifier
                 .widthIn(max = 700.dp)
                 .heightIn(min = 50.dp)
