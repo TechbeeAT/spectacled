@@ -152,8 +152,7 @@ fun TaskListItem(
                             MetaInfoCard(
                                 icon = Icons.AutoMirrored.Outlined.Label,
                                 iconContentDescription = stringResource(Res.string.category),
-                                text = category,
-                                onClick = { onFilterCategory(listOf(category)) }
+                                text = category
                             )
                         }
 
