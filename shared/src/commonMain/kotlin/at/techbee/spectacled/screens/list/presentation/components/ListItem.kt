@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.DragIndicator
@@ -167,7 +168,8 @@ fun ListItem(
                                     MetaInfoCard(
                                         icon = Icons.AutoMirrored.Outlined.Label,
                                         iconContentDescription = stringResource(Res.string.category),
-                                        text = category
+                                        text = category,
+                                        modifier = Modifier.widthIn(max = 72.dp)
                                     )
                                 }
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.CalendarToday
@@ -155,7 +156,8 @@ fun TaskListItem(
                             MetaInfoCard(
                                 icon = Icons.AutoMirrored.Outlined.Label,
                                 iconContentDescription = stringResource(Res.string.category),
-                                text = category
+                                text = category,
+                                modifier = Modifier.widthIn(max = 72.dp)
                             )
                         }
 
