@@ -167,9 +167,14 @@
     <string name="attachment">Attachment</string>
     <string name="attachment_too_large">Attachment is too large to sync (max %1$d MB) and was not added.</string>
     <string name="attachment_large_warning">Large attachment - it's embedded in the entry and re-uploaded on every edit, which some servers may reject.</string>
-    <string name="add_photo">Add photo</string>
-    <string name="add_from_gallery">Add from gallery</string>
-    <string name="add_drawing">Add drawing</string>
+    <string name="file_attachment">File attachment</string>
+    <string name="image_attachment">Image attachment</string>
+    <string name="other_attachment">Other</string>
+    <string name="attachment_photo">Photo</string>
+    <string name="attachment_from_gallery">From gallery</string>
+    <string name="attachment_file">File</string>
+    <string name="attachment_by_url">By URL</string>
+
     <string name="drawing">Drawing</string>
     <string name="pen">Pen</string>
     <string name="marker">Marker</string>
@@ -215,8 +220,9 @@
     <string name="share">Share</string>
     <string name="send_as_email">Send as E-Mail</string>
 
-    <string name="create_copy">Create a copy</string>
-    <string name="copy_to_clipboard">Copy to clipboard</string>
+    <string name="sharing">Sharing</string>
+    <string name="copy">Copy</string>
+    <string name="clipboard">Clipboard</string>
 
     <string name="drag_and_drop">Drag &amp; drop</string>
     <string name="date_selector">Date selector</string>
@@ -356,6 +362,7 @@
     <string name="ai_create_entries">Create with AI</string>
     <string name="ai_paste_text_placeholder">Paste text to create entries…</string>
     <string name="ai_create_subtasks">Create subtasks</string>
+    <string name="ai_assisted">AI assisted</string>
     <string name="create">Create</string>
 
     <string name="account_added_updated">Account added/updated</string>

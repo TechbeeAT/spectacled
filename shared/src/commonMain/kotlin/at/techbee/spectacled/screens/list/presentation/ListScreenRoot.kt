@@ -16,17 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Attachment
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.DatasetLinked
 import androidx.compose.material.icons.outlined.EditOff
-import androidx.compose.material.icons.outlined.Gesture
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -57,7 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -65,17 +56,15 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
-import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
-import at.techbee.spectacled.screens.details.presentation.DetailsInitialAction
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
+import at.techbee.spectacled.screens.list.presentation.components.AddMoreDropdownMenuList
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesBottomSheet
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterElement
@@ -88,14 +77,7 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_attachment
-import spectacled.shared.generated.resources.add_drawing
-import spectacled.shared.generated.resources.add_from_gallery
-import spectacled.shared.generated.resources.add_photo
-import spectacled.shared.generated.resources.ai_create_entries
-import spectacled.shared.generated.resources.ai_provider_not_configured
 import spectacled.shared.generated.resources.done
-import spectacled.shared.generated.resources.link_file_by_url
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.read_only
 import kotlin.time.Duration.Companion.milliseconds
@@ -332,81 +314,14 @@ fun ListScreenRoot(
                                         contentDescription = stringResource(Res.string.more)
                                     )
 
-                                    DropdownMenu(
-                                        expanded = fabMoreExpanded,
-                                        onDismissRequest = { fabMoreExpanded = false }
-                                    ) {
-
-                                        // AI "create entries from text" - only when an Anthropic key is set and the
-                                        // collection is writable.
-                                        DropdownMenuItem(
-                                            text = {
-                                                Column {
-                                                    Text(stringResource(Res.string.ai_create_entries))
-                                                    if (!state.isAiProviderConfigured)
-                                                        Text(
-                                                            text = stringResource(Res.string.ai_provider_not_configured),
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontStyle = FontStyle.Italic
-                                                        )
-                                                }
-                                            },
-                                            leadingIcon = { Icon(Icons.Outlined.AutoAwesome, stringResource(Res.string.ai_create_entries)) },
-                                            enabled = state.isAiProviderConfigured,
-                                            onClick = {
-                                                listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(true))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_attachment)) },
-                                            leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
-                                            onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_ATTACHMENT.name))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.link_file_by_url)) },
-                                            leadingIcon = { Icon(Icons.Outlined.DatasetLinked, stringResource(Res.string.link_file_by_url)) },
-                                            onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_ATTACHMENT_URL.name))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-
-                                        if (getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID)) {
-                                            DropdownMenuItem(
-                                                text = { Text(stringResource(Res.string.add_photo)) },
-                                                leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
-                                                onClick = {
-                                                    onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_PHOTO.name))
-                                                    fabMoreExpanded = false
-                                                },
-                                            )
-                                        }
-
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_from_gallery)) },
-                                            leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
-                                            onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_FROM_GALLERY.name))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-
-
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_drawing)) },
-                                            leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
-                                            onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_DRAWING.name))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-                                    }
+                                    AddMoreDropdownMenuList(
+                                        addMoreExpanded = fabMoreExpanded,
+                                        calendarId = state.calendar.id,
+                                        isAiProviderConfigured = state.isAiProviderConfigured,
+                                        onDismiss = { fabMoreExpanded = false },
+                                        onNavigate = onNavigate,
+                                        onAction = { listViewModel.onAction(it) }
+                                    )
                                 }
                             }
                         }
