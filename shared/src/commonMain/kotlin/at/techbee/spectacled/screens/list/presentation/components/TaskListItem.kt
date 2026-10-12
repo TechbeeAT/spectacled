@@ -89,7 +89,7 @@ fun TaskListItem(
             backgroundContent = {
                 // Background color or icon revealed during the swipe
                 Box(
-                    modifier = Modifier
+                    modifier = modifier
                         .fillMaxSize()
                         .background(
                             color = MaterialTheme.colorScheme.errorContainer,

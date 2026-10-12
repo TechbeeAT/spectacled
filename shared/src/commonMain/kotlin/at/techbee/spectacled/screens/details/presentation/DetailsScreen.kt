@@ -491,7 +491,7 @@ fun DetailsScreen(
                     Text(stringResource(Res.string.show_deleted_subtasks))
                 }
             }
-            
+
             AnimatedVisibility(showDeletedSubtasks && deletedSubtasks.isNotEmpty()) {
                 Column(
                     verticalArrangement = Arrangement.Center,
