@@ -357,6 +357,8 @@ class DetailsViewModel(
             is DetailsAction.OnUpdatePriority -> { onUpdatePriority(action.priority) }
             is DetailsAction.OnUpdateSubtaskProgress -> { onUpdateSubtaskProgress(action.percent, action.subtaskIcalEntryId) }
             is DetailsAction.OnAddSubtask -> { insertSubtask(action.summary) }
+            is DetailsAction.OnShowDeleteSubtaskDialog -> { _state.update { it.copy(deleteSubtaskId = action.subtaskIcalEntryId) } }
+            is DetailsAction.OnDeleteSubtask -> { deleteSubtask(action.subtaskIcalEntryId) }
             is DetailsAction.OnNavigateToIcalEntryId -> { _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is DetailsAction.OnPersistOrderNo -> { onPersistOrderNo(action.list)}
             is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
@@ -774,6 +776,17 @@ class DetailsViewModel(
             platformSyncTrigger.triggerWidgetUpdate()
         }
         Napier.d("Entry saved")
+    }
+
+    private fun deleteSubtask(subtaskIcalEntryId: Long) {
+
+        if(!state.value.allowEditing())
+            return
+
+        viewModelScope.launch {
+            icalEntryRepository.markAsDeleted(listOf(subtaskIcalEntryId))
+        }
+        _state.update { it.copy(deleteSubtaskId = null) }
     }
 
     private fun onUpdateTaskProgress(percent: Long) {

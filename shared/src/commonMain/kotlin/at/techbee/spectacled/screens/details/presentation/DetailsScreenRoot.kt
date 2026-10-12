@@ -252,6 +252,16 @@ fun DetailsScreenRoot(
                 )
             }
 
+        detailsState.deleteSubtaskId
+            ?.let { id -> detailsState.subtasks.find { it.id == id } }
+            ?.let { subtask ->
+                DeleteIcalEntryDialog(
+                    icalEntry = subtask,
+                    onConfirm = { detailsViewModel.onAction(DetailsAction.OnDeleteSubtask(subtask.id)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowDeleteSubtaskDialog(null)) }
+                )
+            }
+
         if (detailsState.showDrawingCanvasBottomSheet.show) {
             DrawingCanvasBottomSheet(
                 replaceAttachmentUid = detailsState.showDrawingCanvasBottomSheet.replaceAttachmentUid,

@@ -74,6 +74,10 @@ fun ListScreenJournals(
                     onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
             },
             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
+            onSwipeToDelete = {
+                onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
+                onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
+            },
             showDayBlock = showDayBlock,
             modifier = Modifier
                 .widthIn(max = 700.dp)
@@ -97,6 +101,10 @@ fun ListScreenJournals(
                 },
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
+                onSwipeToDelete = {
+                    onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
+                    onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
+                },
                 modifier = Modifier.padding(start = 64.dp, end = 16.dp).then(modifier)
             )
         }
