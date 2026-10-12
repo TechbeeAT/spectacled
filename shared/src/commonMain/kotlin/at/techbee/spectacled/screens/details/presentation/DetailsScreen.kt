@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -101,6 +102,7 @@ import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.drag_handle
 import spectacled.shared.generated.resources.recurring_entry_read_only_message
 import spectacled.shared.generated.resources.recurring_entry_read_only_title
+import spectacled.shared.generated.resources.show_deleted_subtasks
 import spectacled.shared.generated.resources.summary
 
 
@@ -115,6 +117,9 @@ fun DetailsScreen(
     // saved `true` would show the formatting bar and hide the FAB with no keyboard up.
     var summaryIsFocused by remember { mutableStateOf(false) }
     var descriptionIsFocused by remember { mutableStateOf(false) }
+
+    // hide deleted subtasks by default
+    var showDeletedSubtasks by remember { mutableStateOf(false) }
 
     // Report whether a text field is being edited so the caller can hide the FAB, which would
     // otherwise sit right above the keyboard and cover the field (SwiftUI resizes the view on iOS).
@@ -481,32 +486,40 @@ fun DetailsScreen(
                 }
             }
 
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-            ) {
-                deletedSubtasks.forEach { deletedSubtask ->
-                    TaskListItem(
-                        icalEntry = deletedSubtask,
-                        isSelected = false,
-                        allowEditing = false,
-                        onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(deletedSubtask.id)) },
-                        onLongClick = {},
-                        onToggleProgress = {},
-                        onSwipeToDelete = {},
-                        dragHandle = {
-                            IconButton(
-                                onClick = {},
-                                enabled = false
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.RestoreFromTrash,
-                                    contentDescription = null
-                                )
+            AnimatedVisibility(!showDeletedSubtasks && deletedSubtasks.isNotEmpty()) {
+                TextButton(onClick = { showDeletedSubtasks = true }) {
+                    Text(stringResource(Res.string.show_deleted_subtasks))
+                }
+            }
+            
+            AnimatedVisibility(showDeletedSubtasks && deletedSubtasks.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                ) {
+                    deletedSubtasks.forEach { deletedSubtask ->
+                        TaskListItem(
+                            icalEntry = deletedSubtask,
+                            isSelected = false,
+                            allowEditing = false,
+                            onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(deletedSubtask.id)) },
+                            onLongClick = {},
+                            onToggleProgress = {},
+                            onSwipeToDelete = {},
+                            dragHandle = {
+                                IconButton(
+                                    onClick = {},
+                                    enabled = false
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.RestoreFromTrash,
+                                        contentDescription = null
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
 
