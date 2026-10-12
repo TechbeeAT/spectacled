@@ -20,6 +20,8 @@ sealed interface DetailsAction {
     data class OnUpdatePriority(val priority: Long?): DetailsAction
     data class OnUpdateSubtaskProgress(val percent: Long, val subtaskIcalEntryId: Long): DetailsAction
     data class OnAddSubtask(val summary: String): DetailsAction
+    data class OnShowDeleteSubtaskDialog(val subtaskIcalEntryId: Long?): DetailsAction
+    data class OnDeleteSubtask(val subtaskIcalEntryId: Long): DetailsAction
     data class OnUpdateUrl(val url: Url?): DetailsAction
     data class OnUpdateLocation(val location: String?): DetailsAction
     data class OnAddAttachment(val fileName: String, val bytes: ByteArray, val mimeType: String?): DetailsAction

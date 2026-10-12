@@ -64,6 +64,7 @@ import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSn
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
 import at.techbee.spectacled.screens.list.presentation.components.AddMoreDropdownMenuList
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesBottomSheet
@@ -161,11 +162,18 @@ fun ListScreenRoot(
         }
 
         if (state.showDeleteSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
-            DeleteSelectedItemsDialog(
-                multiselectItems = state.multiselectItems?: emptyList(),
-                onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
-                onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
-            )
+            if(state.multiselectItems?.size == 1)
+                DeleteIcalEntryDialog(
+                    icalEntry = state.multiselectItems?.first().let { id -> state.icalEntries.find { it.id == id } }!!,
+                    onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
+                    onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
+                )
+            else
+                DeleteSelectedItemsDialog(
+                    multiselectItems = state.multiselectItems?: emptyList(),
+                    onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
+                    onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
+                )
         }
 
         if (state.showMoveSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {

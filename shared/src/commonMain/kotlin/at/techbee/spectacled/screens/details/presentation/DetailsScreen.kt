@@ -457,6 +457,10 @@ fun DetailsScreen(
                                     )
                                 )
                             },
+                            onSwipeToDelete = {
+                                if(state.allowEditing())
+                                    onAction(DetailsAction.OnShowDeleteSubtaskDialog(subtask.id))
+                            },
                             dragHandle = {
                                 if(state.allowEditing()) {
                                     IconButton(
@@ -490,6 +494,7 @@ fun DetailsScreen(
                         onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(deletedSubtask.id)) },
                         onLongClick = {},
                         onToggleProgress = {},
+                        onSwipeToDelete = {},
                         dragHandle = {
                             IconButton(
                                 onClick = {},

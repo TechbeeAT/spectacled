@@ -92,6 +92,10 @@ fun ListScreenNotes(
                         onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                 },
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
+                onSwipeToDelete = {
+                    onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
+                    onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
+                },
                 dragHandle = dragHandle,
                 modifier = Modifier
                     .widthIn(max = 700.dp)
@@ -114,6 +118,10 @@ fun ListScreenNotes(
                     },
                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                     onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
+                    onSwipeToDelete = {
+                        onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
+                        onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
+                    },
                     modifier = Modifier.padding(start = 48.dp).then(modifier)
                 )
             }
