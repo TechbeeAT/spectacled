@@ -74,6 +74,7 @@ fun ListItem(
     overrideTopRoundedCornerSize: Dp? = null,
     overrideBottomRoundedCornerSize: Dp? = null,
     showDayBlock: Boolean = false,
+    deletePending: Boolean,
     dragHandle: @Composable (() -> Unit) = { },
     modifier: Modifier = Modifier
 ) {
@@ -257,7 +258,8 @@ private fun ListItem_first_Preview() {
         isSelected = false,
         onClick = {},
         onLongClick = {},
-        onSwipeToDelete = {}
+        onSwipeToDelete = {},
+        deletePending = false
     )
 }
 
@@ -272,7 +274,8 @@ private fun ListItem_last_Preview_with_color() {
         isSelected = true,
         onClick = {},
         onLongClick = {},
-        onSwipeToDelete = {}
+        onSwipeToDelete = {},
+        deletePending = false
     )
 }
 
@@ -288,7 +291,8 @@ private fun ListItem_first_and_last_Preview_with_color() {
         isSelected = false,
         onClick = {},
         onLongClick = {},
-        onSwipeToDelete = {}
+        onSwipeToDelete = {},
+        deletePending = false
     )
 }
 
@@ -303,7 +307,8 @@ private fun ListItem_middle_Preview_with_color() {
         isSelected = false,
         onClick = {},
         onLongClick = {},
-        onSwipeToDelete = {}
+        onSwipeToDelete = {},
+        deletePending = false
     )
 }
 
@@ -325,7 +330,8 @@ private fun ListItem_middle_Preview_no_summary_and_description() {
             ) {
                 Icon(Icons.Outlined.DragIndicator, null)
             }
-        }
+        },
+        deletePending = false
     )
 }
 
@@ -341,7 +347,8 @@ private fun ListItem_withTime_Preview() {
         onClick = {},
         onLongClick = {},
         onSwipeToDelete = {},
-        showDayBlock = true
+        showDayBlock = true,
+        deletePending = false
     )
 }
 
@@ -357,7 +364,8 @@ private fun ListItem_Task_with_dtstart_Preview() {
         onClick = {},
         onLongClick = {},
         onSwipeToDelete = {},
-        showDayBlock = false
+        showDayBlock = false,
+        deletePending = false
     )
 }
 

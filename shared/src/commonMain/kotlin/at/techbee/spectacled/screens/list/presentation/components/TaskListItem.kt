@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -67,6 +68,7 @@ fun TaskListItem(
     icalEntry: IcalEntry,
     isSelected: Boolean,
     allowEditing: Boolean,
+    deletePending: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleProgress: () -> Unit,
@@ -78,11 +80,16 @@ fun TaskListItem(
     val hapticFeedback = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
 
+    val dismissState = rememberSwipeToDismissBoxState()
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(deletePending) {
+        if(!deletePending) {
+            scope.launch { dismissState.reset() }
+        }
+    }
+
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
-
-
-        val dismissState = rememberSwipeToDismissBoxState()
-        val scope = rememberCoroutineScope()
 
         SwipeToDismissBox(
             state = dismissState,
@@ -220,18 +227,14 @@ fun TaskListItem(
                 )
             },
             onDismiss = { direction ->
+
                 when (direction) {
-                    SwipeToDismissBoxValue.EndToStart -> {
-                        scope.launch { dismissState.reset() }
+                    SwipeToDismissBoxValue.EndToStart, SwipeToDismissBoxValue.StartToEnd -> {
+                        //scope.launch { dismissState.reset() }
                         onSwipeToDelete()
                     }
 
-                    SwipeToDismissBoxValue.StartToEnd -> {
-                        scope.launch { dismissState.reset() }
-                        onSwipeToDelete()
-                    }
-
-                    SwipeToDismissBoxValue.Settled -> {}
+                    SwipeToDismissBoxValue.Settled -> { }
                 }
             }
         )
@@ -248,6 +251,7 @@ private fun TaskListItem_first_Preview() {
             icalEntry = IcalEntry.getSampleIcalEntry(),
             isSelected = false,
             allowEditing = true,
+            deletePending = false,
             onClick = {},
             onLongClick = {},
             onToggleProgress = {},
@@ -268,6 +272,7 @@ private fun TaskListItem_colored_Preview() {
                 icalEntry = IcalEntry.getSampleIcalEntry(),
                 isSelected = false,
                 allowEditing = true,
+                deletePending = false,
                 onClick = {},
                 onLongClick = {},
                 onToggleProgress = {},
@@ -287,6 +292,7 @@ private fun TaskListItem_drag_Preview() {
             icalEntry = IcalEntry.getSampleIcalEntry(),
             isSelected = false,
             allowEditing = true,
+            deletePending = false,
             onClick = {},
             onLongClick = {},
             dragHandle = {
@@ -316,6 +322,7 @@ private fun TaskListItem_drag_short_Preview() {
             ),
             isSelected = false,
             allowEditing = false,
+            deletePending = false,
             onClick = {},
             onLongClick = {},
             dragHandle = {

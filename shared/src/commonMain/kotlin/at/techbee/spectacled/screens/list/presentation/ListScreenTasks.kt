@@ -67,6 +67,7 @@ fun ListScreenTasks(
             icalEntry = icalEntry,
             isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
             allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState() && !icalEntry.isRecurring(),
+            deletePending = state.showDeleteSelectedItemsDialog && state.multiselectItems?.contains(icalEntry.id) == true,
             onClick = {
                 if (state.multiselectItems == null)
                     onAction(ListAction.OnIcalEntryClicked(icalEntry.id))

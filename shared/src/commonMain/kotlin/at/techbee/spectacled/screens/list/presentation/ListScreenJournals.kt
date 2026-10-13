@@ -79,6 +79,7 @@ fun ListScreenJournals(
                 onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
             },
             showDayBlock = showDayBlock,
+            deletePending = state.showDeleteSelectedItemsDialog && state.multiselectItems?.contains(icalEntry.id) == true,
             modifier = Modifier
                 .widthIn(max = 700.dp)
                 .heightIn(min = 50.dp)
@@ -93,6 +94,7 @@ fun ListScreenJournals(
                 icalEntry = subtask,
                 isSelected = state.multiselectItems?.contains(subtask.id) == true,
                 allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState() && !subtask.isRecurring(),
+                deletePending = state.showDeleteSelectedItemsDialog && state.multiselectItems?.contains(subtask.id) == true,
                 onClick = {
                     if (state.multiselectItems == null)
                         onAction(ListAction.OnIcalEntryClicked(subtask.id))
@@ -102,7 +104,7 @@ fun ListScreenJournals(
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
                 onSwipeToDelete = {
-                    onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
+                    onAction(ListAction.OnToggleMultiselectItem(subtask.id))
                     onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
                 },
                 modifier = Modifier.padding(start = 64.dp, end = 16.dp).then(modifier)

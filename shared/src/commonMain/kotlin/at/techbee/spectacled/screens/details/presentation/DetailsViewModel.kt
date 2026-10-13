@@ -786,6 +786,7 @@ class DetailsViewModel(
         viewModelScope.launch {
             icalEntryRepository.markAsDeleted(listOf(subtaskIcalEntryId))
         }
+
         _state.update { it.copy(deleteSubtaskId = null) }
     }
 
