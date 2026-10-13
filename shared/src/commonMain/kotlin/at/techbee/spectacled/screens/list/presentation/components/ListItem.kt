@@ -33,7 +33,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,7 +52,6 @@ import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -75,11 +74,18 @@ fun ListItem(
     overrideBottomRoundedCornerSize: Dp? = null,
     showDayBlock: Boolean = false,
     deletePending: Boolean,
+    allowEditing: Boolean,
     dragHandle: @Composable (() -> Unit) = { },
     modifier: Modifier = Modifier
 ) {
 
     val hapticFeedback = LocalHapticFeedback.current
+    val dismissState = rememberSwipeToDismissBoxState()
+
+    LaunchedEffect(deletePending) {
+        if(!deletePending)
+            dismissState.reset()
+    }
 
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
 
@@ -94,11 +100,9 @@ fun ListItem(
                     Spacer(modifier = Modifier.padding(8.dp).width(28.dp))
             }
 
-            val dismissState = rememberSwipeToDismissBoxState()
-            val scope = rememberCoroutineScope()
-
             SwipeToDismissBox(
                 state = dismissState,
+                gesturesEnabled = allowEditing,
                 backgroundContent = {
                     // Background color or icon revealed during the swipe
                     Box(
@@ -229,16 +233,14 @@ fun ListItem(
                     }
                 },
                 onDismiss = { direction ->
+
                     when (direction) {
-                        SwipeToDismissBoxValue.EndToStart -> {
-                            scope.launch { dismissState.reset() }
+                        SwipeToDismissBoxValue.EndToStart, SwipeToDismissBoxValue.StartToEnd -> {
+                            //scope.launch { dismissState.reset() }
                             onSwipeToDelete()
                         }
-                        SwipeToDismissBoxValue.StartToEnd -> {
-                            scope.launch { dismissState.reset() }
-                            onSwipeToDelete()
-                        }
-                        SwipeToDismissBoxValue.Settled -> {}
+
+                        SwipeToDismissBoxValue.Settled -> { }
                     }
                 }
             )
@@ -259,7 +261,8 @@ private fun ListItem_first_Preview() {
         onClick = {},
         onLongClick = {},
         onSwipeToDelete = {},
-        deletePending = false
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -275,7 +278,8 @@ private fun ListItem_last_Preview_with_color() {
         onClick = {},
         onLongClick = {},
         onSwipeToDelete = {},
-        deletePending = false
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -292,7 +296,8 @@ private fun ListItem_first_and_last_Preview_with_color() {
         onClick = {},
         onLongClick = {},
         onSwipeToDelete = {},
-        deletePending = false
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -308,7 +313,8 @@ private fun ListItem_middle_Preview_with_color() {
         onClick = {},
         onLongClick = {},
         onSwipeToDelete = {},
-        deletePending = false
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -331,7 +337,8 @@ private fun ListItem_middle_Preview_no_summary_and_description() {
                 Icon(Icons.Outlined.DragIndicator, null)
             }
         },
-        deletePending = false
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -348,7 +355,8 @@ private fun ListItem_withTime_Preview() {
         onLongClick = {},
         onSwipeToDelete = {},
         showDayBlock = true,
-        deletePending = false
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -365,7 +373,8 @@ private fun ListItem_Task_with_dtstart_Preview() {
         onLongClick = {},
         onSwipeToDelete = {},
         showDayBlock = false,
-        deletePending = false
+        deletePending = false,
+        allowEditing = true
     )
 }
 

@@ -80,6 +80,7 @@ fun ListScreenJournals(
             },
             showDayBlock = showDayBlock,
             deletePending = state.showDeleteSelectedItemsDialog && state.multiselectItems?.contains(icalEntry.id) == true,
+            allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState() && !icalEntry.isRecurring(),
             modifier = Modifier
                 .widthIn(max = 700.dp)
                 .heightIn(min = 50.dp)

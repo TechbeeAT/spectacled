@@ -431,7 +431,7 @@ fun DetailsScreen(
             )
 
             val (deletedSubtasks, activeSortedSubtasks) = sortedSubtasks.partition { it.syncState.isDeletedState() }
-
+            val allowEditing = state.allowEditing()  // keep as a val outside the onSwipeToDelete lambda to avoid recomposition issue and triggereing the lambda twice
 
             ReorderableColumn(
                 list = activeSortedSubtasks,
@@ -451,7 +451,7 @@ fun DetailsScreen(
                         TaskListItem(
                             icalEntry = subtask,
                             isSelected = isDragging,
-                            allowEditing = state.allowEditing() && !subtask.isRecurring(),
+                            allowEditing = allowEditing && !subtask.isRecurring(),
                             deletePending = state.deleteSubtaskId == subtask.id,
                             onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                             onLongClick = {},
@@ -464,11 +464,11 @@ fun DetailsScreen(
                                 )
                             },
                             onSwipeToDelete = {
-                                if(state.allowEditing())
+                                if(allowEditing)
                                     onAction(DetailsAction.OnShowDeleteSubtaskDialog(subtask.id))
                             },
                             dragHandle = {
-                                if(state.allowEditing()) {
+                                if(allowEditing) {
                                     IconButton(
                                         onClick = {},
                                         modifier = with(this) {

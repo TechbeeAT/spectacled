@@ -33,7 +33,6 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,7 +52,6 @@ import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -81,18 +79,17 @@ fun TaskListItem(
     val interactionSource = remember { MutableInteractionSource() }
 
     val dismissState = rememberSwipeToDismissBoxState()
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(deletePending) {
-        if(!deletePending) {
-            scope.launch { dismissState.reset() }
-        }
+        if(!deletePending)
+            dismissState.reset()
     }
 
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
 
         SwipeToDismissBox(
             state = dismissState,
+            gesturesEnabled = allowEditing,
             backgroundContent = {
                 // Background color or icon revealed during the swipe
                 Box(
