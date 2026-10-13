@@ -32,6 +32,8 @@ import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,6 +85,13 @@ fun TaskListItem(
     LaunchedEffect(deletePending) {
         if(!deletePending)
             dismissState.reset()
+    }
+
+    // SwipeToDismissBox re-runs onDismiss whenever the lambda instance changes while the box is still
+    // dismissed. Keep the instance stable so a recomposition of the caller can't re-trigger the delete.
+    val currentOnSwipeToDelete by rememberUpdatedState(onSwipeToDelete)
+    val onDismiss: (SwipeToDismissBoxValue) -> Unit = remember {
+        { direction: SwipeToDismissBoxValue -> if (direction != SwipeToDismissBoxValue.Settled) currentOnSwipeToDelete() }
     }
 
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
@@ -223,17 +232,7 @@ fun TaskListItem(
                     onClick = { /* Handled by internal Column */ }
                 )
             },
-            onDismiss = { direction ->
-
-                when (direction) {
-                    SwipeToDismissBoxValue.EndToStart, SwipeToDismissBoxValue.StartToEnd -> {
-                        //scope.launch { dismissState.reset() }
-                        onSwipeToDelete()
-                    }
-
-                    SwipeToDismissBoxValue.Settled -> { }
-                }
-            }
+            onDismiss = onDismiss
         )
     }
 }

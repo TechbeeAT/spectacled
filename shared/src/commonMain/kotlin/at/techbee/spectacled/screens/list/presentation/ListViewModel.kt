@@ -231,6 +231,13 @@ class ListViewModel(
             is ListAction.OnToggleMultiselectItem -> toggleMultiselectItem(action.icalEntryId)
             ListAction.OnClearMultiselectItems -> { _state.update { it.copy(multiselectItems = null) } }
             is ListAction.OnShowDeleteSelectedItemsDialog -> { _state.update { it.copy(showDeleteSelectedItemsDialog = action.showDialog) }}
+            is ListAction.OnSwipeToDelete -> {
+                // Select (never toggle) the swiped entry so it is part of the dialog and the swiped box resets on dismiss
+                _state.update { it.copy(
+                    multiselectItems = (it.multiselectItems ?: emptyList()).let { items -> if(action.icalEntryId in items) items else items + action.icalEntryId },
+                    showDeleteSelectedItemsDialog = true
+                ) }
+            }
             ListAction.OnDeleteSelectedItems -> onDeleteSelectedItems()
             is ListAction.OnShowMoveSelectedItemsDialog -> { _state.update { it.copy(showMoveSelectedItemsDialog = action.showDialog) }}
             is ListAction.OnMoveSelectedItems -> onMoveSelectedItems(action.targetCalendarId)

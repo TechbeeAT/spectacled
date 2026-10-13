@@ -76,10 +76,7 @@ fun ListScreenTasks(
             },
             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
             onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
-            onSwipeToDelete = {
-                onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-                onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
-            },
+            onSwipeToDelete = { onAction(ListAction.OnSwipeToDelete(icalEntry.id)) },
             dragHandle = dragHandle,
             modifier = Modifier
                 .widthIn(max = 700.dp)

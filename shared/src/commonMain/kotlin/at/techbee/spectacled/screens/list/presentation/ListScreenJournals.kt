@@ -74,10 +74,7 @@ fun ListScreenJournals(
                     onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
             },
             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-            onSwipeToDelete = {
-                onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-                onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
-            },
+            onSwipeToDelete = { onAction(ListAction.OnSwipeToDelete(icalEntry.id)) },
             showDayBlock = showDayBlock,
             deletePending = state.showDeleteSelectedItemsDialog && state.multiselectItems?.contains(icalEntry.id) == true,
             allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState() && !icalEntry.isRecurring(),
@@ -104,10 +101,7 @@ fun ListScreenJournals(
                 },
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
-                onSwipeToDelete = {
-                    onAction(ListAction.OnToggleMultiselectItem(subtask.id))
-                    onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
-                },
+                onSwipeToDelete = { onAction(ListAction.OnSwipeToDelete(subtask.id)) },
                 modifier = Modifier.padding(start = 64.dp, end = 16.dp).then(modifier)
             )
         }
