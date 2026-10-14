@@ -18,9 +18,7 @@ import spectacled.shared.generated.resources.provider_hetzner_description
 import spectacled.shared.generated.resources.provider_infomaniak_description
 import spectacled.shared.generated.resources.provider_murena_description
 import spectacled.shared.generated.resources.provider_nextcloud_description
-import spectacled.shared.generated.resources.provider_posteo_description
 import spectacled.shared.generated.resources.provider_radicale_description
-import spectacled.shared.generated.resources.provider_tag_anonymous_payments
 import spectacled.shared.generated.resources.provider_tag_free_plan
 import spectacled.shared.generated.resources.provider_tag_free_trial
 import spectacled.shared.generated.resources.provider_tag_gdpr
@@ -273,6 +271,7 @@ enum class CalDavProvider(
 
  */
 
+    /* Posteo allows the creation of new calendars only on the web interface which never adds VTODO or VJOURNAL support
     POSTEO(
         "Posteo",
         Res.string.provider_posteo_description,
@@ -286,6 +285,7 @@ enum class CalDavProvider(
         listOf(CalendarComponent.VTODO),
         CalDavProviderCategory.EMAIL
     )
+     */
     ;
 
     val hasTodo = supportedCalendarComponents.contains(CalendarComponent.VTODO)
