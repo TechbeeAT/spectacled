@@ -220,7 +220,7 @@ enum class CalDavProvider(
     INFOMANIAK(
         "Infomaniak",
         Res.string.provider_infomaniak_description,
-        "https://www.infomaniak.com",
+        "https://www.infomaniak.com/goto/en/home?utm_term=643c252cecbd9",
         listOf(
             Res.string.provider_flag_switzerland,
             Res.string.provider_tag_privacy,
