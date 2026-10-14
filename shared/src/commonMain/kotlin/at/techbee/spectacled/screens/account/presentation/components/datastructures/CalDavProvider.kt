@@ -147,7 +147,8 @@ enum class CalDavProvider(
             CalendarComponent.VTODO,
             CalendarComponent.VJOURNAL
         ),
-        CalDavProviderCategory.NEXTCLOUD
+        CalDavProviderCategory.NEXTCLOUD,
+        calDavUrl = "https://cloud.disroot.org/remote.php/dav"
     ),
 
     NEXTCLOUD(
