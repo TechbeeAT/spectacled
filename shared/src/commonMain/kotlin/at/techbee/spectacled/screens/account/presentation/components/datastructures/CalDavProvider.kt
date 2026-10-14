@@ -97,23 +97,6 @@ enum class CalDavProvider(
     ),
      */
 
-    HETZNER(
-        "Hetzner Storage Share",
-        Res.string.provider_hetzner_description,
-        "https://www.hetzner.com/storage/storage-share/",
-        listOf(
-            Res.string.provider_flag_germany,
-            Res.string.provider_tag_nextcloud,
-            Res.string.provider_tag_gdpr,
-            Res.string.provider_tag_power_users
-        ),
-        listOf(
-            CalendarComponent.VTODO,
-            CalendarComponent.VJOURNAL
-        ),
-        CalDavProviderCategory.NEXTCLOUD
-    ),
-
     WOELKLI(
         "woelkli",
         Res.string.provider_woelkli_description,
@@ -149,6 +132,24 @@ enum class CalDavProvider(
         ),
         CalDavProviderCategory.NEXTCLOUD,
         calDavUrl = "https://cloud.disroot.org/remote.php/dav"
+    ),
+
+
+    HETZNER(
+        "Hetzner Storage Share",
+        Res.string.provider_hetzner_description,
+        "https://www.hetzner.com/storage/storage-share/",
+        listOf(
+            Res.string.provider_flag_germany,
+            Res.string.provider_tag_nextcloud,
+            Res.string.provider_tag_gdpr,
+            Res.string.provider_tag_power_users
+        ),
+        listOf(
+            CalendarComponent.VTODO,
+            CalendarComponent.VJOURNAL
+        ),
+        CalDavProviderCategory.NEXTCLOUD
     ),
 
     NEXTCLOUD(
