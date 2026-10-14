@@ -10,14 +10,12 @@ import spectacled.shared.generated.resources.provider_category_self_hosted
 import spectacled.shared.generated.resources.provider_disroot_description
 import spectacled.shared.generated.resources.provider_fastmail_description
 import spectacled.shared.generated.resources.provider_flag_australia
-import spectacled.shared.generated.resources.provider_flag_belgium
 import spectacled.shared.generated.resources.provider_flag_france
 import spectacled.shared.generated.resources.provider_flag_germany
 import spectacled.shared.generated.resources.provider_flag_netherlands
 import spectacled.shared.generated.resources.provider_flag_switzerland
 import spectacled.shared.generated.resources.provider_hetzner_description
 import spectacled.shared.generated.resources.provider_infomaniak_description
-import spectacled.shared.generated.resources.provider_mailfence_description
 import spectacled.shared.generated.resources.provider_murena_description
 import spectacled.shared.generated.resources.provider_nextcloud_description
 import spectacled.shared.generated.resources.provider_posteo_description
@@ -231,6 +229,7 @@ enum class CalDavProvider(
         calDavUrl = "https://sync.infomaniak.com"
     ),
 
+    /* mailfence only allows creation of calendars in their web interface which would never support VTODO or VJOURNAL
     MAILFENCE(
         "Mailfence",
         Res.string.provider_mailfence_description,
@@ -244,6 +243,8 @@ enum class CalDavProvider(
         CalDavProviderCategory.EMAIL,
         calDavUrl = "https://mailfence.com"
     ),
+
+     */
 /*
     RUNBOX(
         "Runbox",
