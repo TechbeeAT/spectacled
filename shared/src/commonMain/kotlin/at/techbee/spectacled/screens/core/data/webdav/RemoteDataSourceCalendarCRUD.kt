@@ -68,8 +68,9 @@ suspend fun createCalendarMultiplatform(
                     components = newCalendar.supportedComponents
                         .map { CalendarComp(name = it.name) }
                         .ifEmpty { listOf(CalendarComp(CalendarComponent.VJOURNAL.name), CalendarComp(CalendarComponent.VTODO.name)) }
-                ),
-                currentUserPrincipal = CurrentUserPrincipal()
+                )
+                // Only settable properties may go here: RFC 5689 requires the whole MKCOL to fail
+                // if any property is rejected, e.g. a protected one like current-user-principal.
             )
         )
     )
@@ -87,15 +88,18 @@ suspend fun createCalendarMultiplatform(
 
 
         if(!response.status.isSuccess()) {
+            // The body (an mkcol-response) names the precondition or property the server rejected
+            val details = "${response.status.description} ${response.status.value}\n${response.bodyAsText()}".trim()
+            Napier.w("MKCOL failed: $details")
             return when (response.status) {
-                HttpStatusCode.Forbidden ->    // Missing bind privilege on calendar-home-set
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_privileges), "${response.status.description} ${response.status.value}")
+                HttpStatusCode.Forbidden ->    // Missing bind privilege on calendar-home-set, or a rejected property
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_privileges), details)
                 HttpStatusCode.Conflict ->
-                    UpsertCalendarResult.Failed(response.status,getString(Res.string.calendar_create_failed_conflict), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status,getString(Res.string.calendar_create_failed_conflict), details)
                 HttpStatusCode.MethodNotAllowed ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_unsupported), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_unsupported), details)
                 else ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed), details)
             }
         }
     }
