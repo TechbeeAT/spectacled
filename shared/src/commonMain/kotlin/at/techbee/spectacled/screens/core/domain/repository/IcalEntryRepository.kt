@@ -6,8 +6,10 @@ import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.domain.UpcomingAlarm
 import io.ktor.http.Url
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Instant
 
 interface IcalEntryRepository {
 
@@ -56,4 +58,17 @@ interface IcalEntryRepository {
     suspend fun insertOrUpdateAttachment(attachment: Attachment)
     suspend fun deleteAttachment(id: Long)
     suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment>
+
+    // Alarms - stored and synced as part of the entry (IcalEntry.alarms), these only cover the
+    // local notification state.
+
+    /**
+     * Alarms that are due to be notified in [from] until [until] (exclusive), earliest first and
+     * at most [limit]. Skips alarms already notified, actions that don't notify (EMAIL, ...), and
+     * entries that are deleted, done, cancelled or recurring.
+     */
+    suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm>
+
+    /** Records that a notification was shown for the stored alarm [alarmId]. Local only, never synced. */
+    suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant)
 }

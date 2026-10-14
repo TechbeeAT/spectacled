@@ -248,7 +248,11 @@ fun parseIcalEntryBlock(
     val knownProps = mutableMapOf<String, MutableList<IcsProperty>>()
     val extraProps = mutableListOf<RawIcsProperty>()
 
-    lines.forEach { line ->
+    // Nested components (VALARM, ...) must not be read as properties of the entry itself.
+    val componentLines = splitNestedComponents(lines)
+    val alarms = componentLines.alarmBlocks.map { parseAlarm(it) }
+
+    componentLines.ownLines.forEach { line ->
         val name = line.substringBefore(':')
             .substringBefore(';')
 
@@ -261,6 +265,14 @@ fun parseIcalEntryBlock(
                 unfoldedLine = line
             )
         }
+    }
+    // Other nested components are kept verbatim; they go last since RFC 5545 puts all of a
+    // component's properties before its subcomponents.
+    componentLines.otherNestedLines.forEach { line ->
+        extraProps += RawIcsProperty(
+            name = line.substringBefore(':').substringBefore(';'),
+            unfoldedLine = line
+        )
     }
 
     val uid = knownProps[KnownIcsPropertyName.UID.propertyName]?.firstOrNull()?.value ?: return null
@@ -354,6 +366,7 @@ fun parseIcalEntryBlock(
         lastModified = lastModified,
         extraProperties = extraProps,
         attachments = attachments,
+        alarms = alarms,
         syncState = SyncState.SYNCED,
         calendarComponent = calendarComponent,
         parentUid = parentUid,

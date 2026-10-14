@@ -1,0 +1,59 @@
+-- One row per VALARM of an entry. icsBlock (the serialized VALARM, unfolded lines joined by '\n')
+-- is the source of truth and is parsed back into the domain Alarm, so alarms we can't edit
+-- round-trip unchanged. The other columns are derived from it or local-only:
+--  - action / triggerAt: for querying upcoming alarms without parsing every block. triggerAt
+--    (epoch millis) is computed from the entry's DTSTART/DUE when the entry is saved; NULL if
+--    the alarm can't fire.
+--  - lastNotifiedAt (epoch millis): when this device last showed a notification for it. Never synced.
+CREATE TABLE AlarmDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    icalEntryId INTEGER NOT NULL REFERENCES IcalEntryDto(id) ON DELETE CASCADE,
+    uid TEXT,
+    action TEXT,
+    icsBlock TEXT NOT NULL,
+    triggerAt INTEGER,
+    lastNotifiedAt INTEGER
+);
+
+CREATE INDEX idx_alarm_icalEntryId ON AlarmDto(icalEntryId);
+CREATE INDEX idx_alarm_triggerAt ON AlarmDto(triggerAt);
+
+getAlarmsForEntry:
+SELECT * FROM AlarmDto WHERE icalEntryId = ? ORDER BY id;
+
+getAlarmsForEntries:
+SELECT * FROM AlarmDto WHERE icalEntryId IN ? ORDER BY id;
+
+-- Alarms that should be shown as a notification between fromMillis (incl.) and untilMillis (excl.), earliest first. Entries that
+-- are deleted, completed or cancelled are skipped here; whatever needs the domain model (e.g.
+-- recurring entries) is filtered by the caller.
+getUpcomingAlarms:
+SELECT * FROM AlarmDto
+WHERE triggerAt >= :fromMillis
+  AND triggerAt < :untilMillis
+  AND lastNotifiedAt IS NULL
+  AND action IN ('DISPLAY', 'AUDIO')
+  AND icalEntryId IN (
+      SELECT id FROM IcalEntryDto
+      WHERE COALESCE(syncState, '') NOT IN ('LOCAL_DELETED', 'REMOTE_DELETED_LOCAL_TRASHBIN', 'CONFLICT_LOCAL_DELETED_SERVER_MODIFIED')
+        AND COALESCE(status, '') NOT IN ('COMPLETED', 'CANCELLED')
+        AND COALESCE(percentComplete, 0) < 100
+  )
+ORDER BY triggerAt
+LIMIT :maxCount;
+
+insertAlarm:
+INSERT INTO AlarmDto (
+    icalEntryId,
+    uid,
+    action,
+    icsBlock,
+    triggerAt,
+    lastNotifiedAt
+) VALUES (?, ?, ?, ?, ?, ?);
+
+deleteAlarmsForEntry:
+DELETE FROM AlarmDto WHERE icalEntryId = ?;
+
+updateLastNotifiedAt:
+UPDATE AlarmDto SET lastNotifiedAt = :lastNotifiedAt WHERE id = :id;
