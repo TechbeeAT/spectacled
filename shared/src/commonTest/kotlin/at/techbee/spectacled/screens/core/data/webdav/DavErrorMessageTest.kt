@@ -34,7 +34,7 @@ class DavErrorMessageTest {
 
     @Test
     fun withDavErrorMessage_appendsServerMessage() {
-        assertEquals("Creating collection failed\nThe VJOURNAL properties is not supported", "Creating collection failed".withDavErrorMessage(sabreError))
-        assertEquals("Creating collection failed", "Creating collection failed".withDavErrorMessage("Internal Server Error"))
+        assertEquals("Creating collection failed\nThe VJOURNAL properties is not supported", "Creating collection failed".appendDavErrorMessage(sabreError))
+        assertEquals("Creating collection failed", "Creating collection failed".appendDavErrorMessage("Internal Server Error"))
     }
 }

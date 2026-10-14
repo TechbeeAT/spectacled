@@ -16,5 +16,5 @@ fun extractDavErrorMessage(body: String?): String? =
         ?.takeIf { it.isNotEmpty() }
 
 /** Appends the message the server returned (if any) to a user-facing error message. */
-fun String.withDavErrorMessage(body: String?): String =
+fun String.appendDavErrorMessage(body: String?): String =
     extractDavErrorMessage(body)?.let { "$this\n$it" } ?: this
