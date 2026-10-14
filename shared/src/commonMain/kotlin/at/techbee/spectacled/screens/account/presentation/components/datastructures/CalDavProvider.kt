@@ -227,7 +227,8 @@ enum class CalDavProvider(
             Res.string.provider_tag_gdpr
         ),
         listOf(CalendarComponent.VTODO),
-        CalDavProviderCategory.EMAIL
+        CalDavProviderCategory.EMAIL,
+        calDavUrl = "https://sync.infomaniak.com"
     ),
 
     MAILFENCE(
