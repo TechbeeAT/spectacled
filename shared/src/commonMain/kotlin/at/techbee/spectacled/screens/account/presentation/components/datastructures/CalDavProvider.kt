@@ -74,7 +74,7 @@ enum class CalDavProvider(
         ),
         listOf(CalendarComponent.VTODO, CalendarComponent.VJOURNAL),
         CalDavProviderCategory.EMAIL,
-        calDavUrl = " https://caldav.fastmail.com/"
+        calDavUrl = "https://caldav.fastmail.com/"
     ),
 
     /*
