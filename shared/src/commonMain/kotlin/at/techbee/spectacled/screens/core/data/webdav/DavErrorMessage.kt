@@ -1,9 +1,7 @@
 package at.techbee.spectacled.screens.core.data.webdav
 
-private val davErrorMessageRegex = Regex(
-    "<(?:[\\w.-]+:)?message(?:\\s[^>]*)?>(.*?)</(?:[\\w.-]+:)?message>",
-    RegexOption.DOT_MATCHES_ALL
-)
+// [\s\S] instead of "." + DOT_MATCHES_ALL, which is not available on all multiplatform targets (e.g. JS)
+private val davErrorMessageRegex = Regex("<(?:[\\w.-]+:)?message(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[\\w.-]+:)?message>")
 
 /**
  * Extracts the human-readable message from a DAV error body, e.g. SabreDAV's (Nextcloud, Infomaniak, …)
