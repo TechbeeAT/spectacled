@@ -37,8 +37,8 @@ import spectacled.shared.generated.resources.provider_woelkli_description
 
 enum class CalDavProviderCategory(val headline: StringResource) {
     NEXTCLOUD(Res.string.provider_category_nextcloud),
-    SELF_HOSTED(Res.string.provider_category_self_hosted),
-    EMAIL(Res.string.provider_category_email)
+    EMAIL(Res.string.provider_category_email),
+    SELF_HOSTED(Res.string.provider_category_self_hosted)
 }
 
 enum class CalDavProvider(
