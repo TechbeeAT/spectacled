@@ -11,7 +11,6 @@ import spectacled.shared.generated.resources.provider_disroot_description
 import spectacled.shared.generated.resources.provider_fastmail_description
 import spectacled.shared.generated.resources.provider_flag_australia
 import spectacled.shared.generated.resources.provider_flag_belgium
-import spectacled.shared.generated.resources.provider_flag_european_union
 import spectacled.shared.generated.resources.provider_flag_france
 import spectacled.shared.generated.resources.provider_flag_germany
 import spectacled.shared.generated.resources.provider_flag_netherlands
@@ -23,7 +22,6 @@ import spectacled.shared.generated.resources.provider_murena_description
 import spectacled.shared.generated.resources.provider_nextcloud_description
 import spectacled.shared.generated.resources.provider_posteo_description
 import spectacled.shared.generated.resources.provider_radicale_description
-import spectacled.shared.generated.resources.provider_tabdigital_description
 import spectacled.shared.generated.resources.provider_tag_anonymous_payments
 import spectacled.shared.generated.resources.provider_tag_free_plan
 import spectacled.shared.generated.resources.provider_tag_free_trial
@@ -83,6 +81,7 @@ enum class CalDavProvider(
         calDavUrl = " https://caldav.fastmail.com/"
     ),
 
+    /*
     TABDIGITAL(
         "Tab.Digital",
         Res.string.provider_tabdigital_description,
@@ -100,6 +99,7 @@ enum class CalDavProvider(
         ),
         CalDavProviderCategory.NEXTCLOUD
     ),
+     */
 
     HETZNER(
         "Hetzner Storage Share",
