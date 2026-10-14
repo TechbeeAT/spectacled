@@ -780,13 +780,15 @@ class DetailsViewModel(
 
     private fun deleteSubtask(subtaskIcalEntryId: Long) {
 
+        // always close the dialog, otherwise it (and the swiped subtask) would stay open forever
+        _state.update { it.copy(deleteSubtaskId = null) }
+
         if(!state.value.allowEditing())
             return
 
         viewModelScope.launch {
             icalEntryRepository.markAsDeleted(listOf(subtaskIcalEntryId))
         }
-        _state.update { it.copy(deleteSubtaskId = null) }
     }
 
     private fun onUpdateTaskProgress(percent: Long) {

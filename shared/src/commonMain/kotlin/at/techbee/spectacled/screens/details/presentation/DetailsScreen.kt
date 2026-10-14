@@ -432,7 +432,6 @@ fun DetailsScreen(
 
             val (deletedSubtasks, activeSortedSubtasks) = sortedSubtasks.partition { it.syncState.isDeletedState() }
 
-
             ReorderableColumn(
                 list = activeSortedSubtasks,
                 onSettle = { fromIndex, toIndex ->
@@ -452,6 +451,7 @@ fun DetailsScreen(
                             icalEntry = subtask,
                             isSelected = isDragging,
                             allowEditing = state.allowEditing() && !subtask.isRecurring(),
+                            deletePending = state.deleteSubtaskId == subtask.id,
                             onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                             onLongClick = {},
                             onToggleProgress = {
@@ -503,6 +503,7 @@ fun DetailsScreen(
                             icalEntry = deletedSubtask,
                             isSelected = false,
                             allowEditing = false,
+                            deletePending = false,
                             onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(deletedSubtask.id)) },
                             onLongClick = {},
                             onToggleProgress = {},

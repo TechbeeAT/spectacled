@@ -33,7 +33,10 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,7 +55,6 @@ import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -74,11 +76,26 @@ fun ListItem(
     overrideTopRoundedCornerSize: Dp? = null,
     overrideBottomRoundedCornerSize: Dp? = null,
     showDayBlock: Boolean = false,
+    deletePending: Boolean,
+    allowEditing: Boolean,
     dragHandle: @Composable (() -> Unit) = { },
     modifier: Modifier = Modifier
 ) {
 
     val hapticFeedback = LocalHapticFeedback.current
+    val dismissState = rememberSwipeToDismissBoxState()
+
+    LaunchedEffect(deletePending) {
+        if(!deletePending)
+            dismissState.reset()
+    }
+
+    // SwipeToDismissBox re-runs onDismiss whenever the lambda instance changes while the box is still
+    // dismissed. Keep the instance stable so a recomposition of the caller can't re-trigger the delete.
+    val currentOnSwipeToDelete by rememberUpdatedState(onSwipeToDelete)
+    val onDismiss: (SwipeToDismissBoxValue) -> Unit = remember {
+        { direction: SwipeToDismissBoxValue -> if (direction != SwipeToDismissBoxValue.Settled) currentOnSwipeToDelete() }
+    }
 
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(icalEntry.color)) {
 
@@ -93,11 +110,9 @@ fun ListItem(
                     Spacer(modifier = Modifier.padding(8.dp).width(28.dp))
             }
 
-            val dismissState = rememberSwipeToDismissBoxState()
-            val scope = rememberCoroutineScope()
-
             SwipeToDismissBox(
                 state = dismissState,
+                gesturesEnabled = allowEditing,
                 backgroundContent = {
                     // Background color or icon revealed during the swipe
                     Box(
@@ -227,19 +242,7 @@ fun ListItem(
                         }
                     }
                 },
-                onDismiss = { direction ->
-                    when (direction) {
-                        SwipeToDismissBoxValue.EndToStart -> {
-                            scope.launch { dismissState.reset() }
-                            onSwipeToDelete()
-                        }
-                        SwipeToDismissBoxValue.StartToEnd -> {
-                            scope.launch { dismissState.reset() }
-                            onSwipeToDelete()
-                        }
-                        SwipeToDismissBoxValue.Settled -> {}
-                    }
-                }
+                onDismiss = onDismiss
             )
         }
     }
@@ -257,7 +260,9 @@ private fun ListItem_first_Preview() {
         isSelected = false,
         onClick = {},
         onLongClick = {},
-        onSwipeToDelete = {}
+        onSwipeToDelete = {},
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -272,7 +277,9 @@ private fun ListItem_last_Preview_with_color() {
         isSelected = true,
         onClick = {},
         onLongClick = {},
-        onSwipeToDelete = {}
+        onSwipeToDelete = {},
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -288,7 +295,9 @@ private fun ListItem_first_and_last_Preview_with_color() {
         isSelected = false,
         onClick = {},
         onLongClick = {},
-        onSwipeToDelete = {}
+        onSwipeToDelete = {},
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -303,7 +312,9 @@ private fun ListItem_middle_Preview_with_color() {
         isSelected = false,
         onClick = {},
         onLongClick = {},
-        onSwipeToDelete = {}
+        onSwipeToDelete = {},
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -325,7 +336,9 @@ private fun ListItem_middle_Preview_no_summary_and_description() {
             ) {
                 Icon(Icons.Outlined.DragIndicator, null)
             }
-        }
+        },
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -341,7 +354,9 @@ private fun ListItem_withTime_Preview() {
         onClick = {},
         onLongClick = {},
         onSwipeToDelete = {},
-        showDayBlock = true
+        showDayBlock = true,
+        deletePending = false,
+        allowEditing = true
     )
 }
 
@@ -357,7 +372,9 @@ private fun ListItem_Task_with_dtstart_Preview() {
         onClick = {},
         onLongClick = {},
         onSwipeToDelete = {},
-        showDayBlock = false
+        showDayBlock = false,
+        deletePending = false,
+        allowEditing = true
     )
 }
 

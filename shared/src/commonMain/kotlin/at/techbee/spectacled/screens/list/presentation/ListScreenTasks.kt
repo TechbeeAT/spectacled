@@ -67,6 +67,7 @@ fun ListScreenTasks(
             icalEntry = icalEntry,
             isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
             allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState() && !icalEntry.isRecurring(),
+            deletePending = state.showDeleteSelectedItemsDialog && state.multiselectItems?.contains(icalEntry.id) == true,
             onClick = {
                 if (state.multiselectItems == null)
                     onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
@@ -75,10 +76,7 @@ fun ListScreenTasks(
             },
             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
             onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
-            onSwipeToDelete = {
-                onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
-                onAction(ListAction.OnShowDeleteSelectedItemsDialog(true))
-            },
+            onSwipeToDelete = { onAction(ListAction.OnSwipeToDelete(icalEntry.id)) },
             dragHandle = dragHandle,
             modifier = Modifier
                 .widthIn(max = 700.dp)
