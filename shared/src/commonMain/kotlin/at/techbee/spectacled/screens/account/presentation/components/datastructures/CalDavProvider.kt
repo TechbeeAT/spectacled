@@ -69,6 +69,20 @@ enum class CalDavProvider(
         "https://murena.io/remote.php/dav"
     ),
 
+    FASTMAIL(
+        "Fastmail",
+        Res.string.provider_fastmail_description,
+        "https://www.fastmail.com",
+        listOf(
+            Res.string.provider_flag_australia,
+            Res.string.provider_tag_power_users,
+            Res.string.provider_tag_free_trial
+        ),
+        listOf(CalendarComponent.VTODO, CalendarComponent.VJOURNAL),
+        CalDavProviderCategory.EMAIL,
+        calDavUrl = " https://caldav.fastmail.com/"
+    ),
+
     TABDIGITAL(
         "Tab.Digital",
         Res.string.provider_tabdigital_description,
@@ -202,19 +216,6 @@ enum class CalDavProvider(
     ),
 
  */
-
-    FASTMAIL(
-        "Fastmail",
-        Res.string.provider_fastmail_description,
-        "https://www.fastmail.com",
-        listOf(
-            Res.string.provider_flag_australia,
-            Res.string.provider_tag_power_users,
-            Res.string.provider_tag_free_trial
-        ),
-        listOf(CalendarComponent.VTODO),
-        CalDavProviderCategory.EMAIL
-    ),
 
     INFOMANIAK(
         "Infomaniak",
