@@ -21,6 +21,7 @@ import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.ioDispatcher
 import io.github.aakira.napier.Napier
+import io.ktor.http.Url
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -261,21 +262,31 @@ class AccountListViewModel(
                         return@launch
                     }
                     is DiscoverPrincipalsResult.Success -> {
+                        if(discoverPrincipalsResult.principals.isEmpty()) {
+                            _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.server_not_found), detail = "No principal found")) }
+                            return@launch
+                        }
                         discoverPrincipalsResult.principals.forEach { principal ->
                             //principals are upserted with the discovery of homesets to avoid double db operations
                             credentialStore.save(Credentials(principal.principalUrl, credentials.username, credentials.password))
-                            Napier.d("Principal added")
+                            Napier.d("Credentials saved for principal ${principal.principalUrl}")
                         }
                     }
                 }
 
                 // STEP 2: discover home collections and update principal
-                val discoveredHomeCollections = mutableListOf<HomeCollection>()
-                val discoveredCalendars = mutableListOf<Calendar>()
+                // Any failure below is remembered, so that the final success state doesn't overwrite the error
+                // and calendars of a principal that couldn't be fully discovered are not removed locally.
+                val failedPrincipalUrls = mutableSetOf<Url>()
+                val calendarsToSync = mutableListOf<Calendar>()
                 discoverPrincipalsResult.principals.forEach { principal ->
+
+                    val discoveredHomeCollections = mutableListOf<HomeCollection>()
+                    val discoveredCalendars = mutableListOf<Calendar>()
 
                     when(val discoverHomeCollectionsResult = webDavCalendarDataSource.discoverHomeCollections(principal, credentials)) {
                         is DiscoverHomeCollectionsResult.Failed -> {
+                            failedPrincipalUrls.add(principal.principalUrl)
                             _state.update { it.copy(
                                 processingState = ProcessingState.Error(
                                     message = discoverHomeCollectionsResult.message,
@@ -284,10 +295,15 @@ class AccountListViewModel(
                             ) }
                         }
                         DiscoverHomeCollectionsResult.NotAuthorized -> {
+                            failedPrincipalUrls.add(principal.principalUrl)
                             _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.login_message_not_authorized))) }
                         }
                         DiscoverHomeCollectionsResult.NotFound -> {
-                            _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.server_not_found))) }
+                            failedPrincipalUrls.add(principal.principalUrl)
+                            _state.update { it.copy(processingState = ProcessingState.Error(
+                                message = getString(Res.string.server_not_found),
+                                detail = "Principal not found: ${principal.principalUrl}"
+                            )) }
                         }
                         is DiscoverHomeCollectionsResult.Success -> {
                             principal.displayName = discoverHomeCollectionsResult.principalDisplayName
@@ -305,6 +321,7 @@ class AccountListViewModel(
                             credentials = credentials
                         )) {
                             is DiscoverCalendarsResult.Failed -> {
+                                failedPrincipalUrls.add(principal.principalUrl)
                                 _state.update { it.copy(
                                     processingState = ProcessingState.Error(
                                         message = discoverCalendarsResult.message,
@@ -313,9 +330,11 @@ class AccountListViewModel(
                                 ) }
                             }
                             DiscoverCalendarsResult.NotAuthorized -> {
+                                failedPrincipalUrls.add(principal.principalUrl)
                                 _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.login_message_not_authorized))) }
                             }
                             DiscoverCalendarsResult.NotFound -> {
+                                failedPrincipalUrls.add(principal.principalUrl)
                                 _state.update { it.copy(processingState = ProcessingState.Error(message = getString(Res.string.server_not_found))) }
                             }
                             is DiscoverCalendarsResult.Success -> {
@@ -342,24 +361,36 @@ class AccountListViewModel(
                             }
                         }
                     }
-                }
 
+                    // reload calendars from DB, remove calendars that haven't been returned
+                    // (only if the discovery was complete, otherwise we would remove calendars that just weren't fetched)
+                    if(principal.principalUrl in failedPrincipalUrls)
+                        return@forEach
 
-
-                //reload calendars from DB, remove calendars that haven't been returned
-                // theoretically there should be only one principal. but just in case...
-                discoverPrincipalsResult.principals.forEach { principal ->
                     val localCalendars = calendarRepository.getCalendarsForPrincipalUrl(principal.principalUrl.toString())
                     val removedCalendars = localCalendars.filter { localCalendar -> discoveredCalendars.none { calendar -> calendar.url == localCalendar.url}  }
                     removedCalendars.forEach { calendarRepository.deleteCalendar(it.id) }
                     // Todo: inform user that calendar was removed!
 
+                    calendarsToSync.addAll(localCalendars)
+                }
+
+                // Only report success (and close the bottom sheet) if every principal was discovered completely,
+                // otherwise keep the error state set above so the user can see what went wrong.
+                if(failedPrincipalUrls.isEmpty()) {
                     _state.update { it.copy(
                         showAddPrincipalBottomSheet = false,
                         processingState = ProcessingState.Success(getString(Res.string.account_added_updated)),
                         snackbarText = getString(Res.string.account_added_updated)
                     ) }
-                    onSyncCalendars(localCalendars)
+                    onSyncCalendars(calendarsToSync)
+                } else {
+                    // still sync what could be discovered, but don't let the sync result overwrite the error state
+                    calendarsToSync
+                        .filter { it.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED }
+                        .map { it.id }
+                        .takeIf { it.isNotEmpty() }
+                        ?.let { platformSyncTrigger.requestImmediate(it) }
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(
