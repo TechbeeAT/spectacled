@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.core.data
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.ai.AiProvider
 import at.techbee.spectacled.screens.core.data.ai.ClaudeModel
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.ThemeFont
@@ -22,6 +23,7 @@ const val LIST_COLLAPSED_GROUPS = "list_collapsed_groups"
 const val LIST_COLLAPSED_GROUP_TRASHBIN = "list_collapsed_group_trashbin"
 const val LIST_COLLAPSED_GROUP_PINNED = "list_collapsed_group_pinned"
 const val LIST_COLLAPSED_GROUP_NO_CRITERIA = "list_collapsed_group_no_criteria"
+const val LIST_FILTER_CRITERIA = "list_filter_criteria"
 
 const val THEME_OPTION = "theme_option"
 const val THEME_DYNAMIC_COLORS_ENABLED = "theme_dynamic_colors_enabled"
@@ -75,6 +77,22 @@ interface UserAppPreferencesStore {
         get() = this.load(LIST_COLLAPSED_GROUPS)
             ?.split("|")?.toSet() ?: setOf(LIST_COLLAPSED_GROUP_NO_CRITERIA, LIST_COLLAPSED_GROUP_TRASHBIN)
         set(value) = this.save(LIST_COLLAPSED_GROUPS, value.joinToString("|"))
+
+    var listFilterCriteria: Map<Long, ListFilterCriteria>?
+        get() = this.load(LIST_FILTER_CRITERIA)?.let { json ->
+            runCatching {
+                ListFilterCriteria.mapperJson.decodeFromString<Map<Long, ListFilterCriteria>>(json)
+            }.getOrNull()
+        } ?: emptyMap()
+        set(value) {
+            if (value.isNullOrEmpty())
+                this.remove(LIST_FILTER_CRITERIA)
+            else
+                this.save(
+                    LIST_FILTER_CRITERIA,
+                    ListFilterCriteria.mapperJson.encodeToString(value)
+                )
+        }
 
 
     /* SETTINGS */

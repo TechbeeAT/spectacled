@@ -68,6 +68,7 @@ class ListViewModel(
             listSortedByAscending = userAppPreferencesStore.listSortedByAscending,
             listLayout = userAppPreferencesStore.listLayout,
             listCollapsedGroups = userAppPreferencesStore.listCollapsedGroups,
+            listFilterCriteria = userAppPreferencesStore.listFilterCriteria?.get(calendarId)?: ListFilterCriteria(),
             spectacledVariant = spectacledVariant
         ).recompute() }
         refreshDragAndDropList()   // drop whatever the previously opened calendar left behind
@@ -200,6 +201,7 @@ class ListViewModel(
         when(action) {
             is ListAction.OnListFilterCriteriaChanged -> {
                 updateList(_state.value.listSortedBy, _state.value.listSortedByAscending, action.listFilterCriteria)
+                userAppPreferencesStore.listFilterCriteria = userAppPreferencesStore.listFilterCriteria?.plus(mapOf(state.value.calendar.id to action.listFilterCriteria))
             }
             is ListAction.OnToggleFilterBar -> { _state.update { it.copy(showListFilterRow = !_state.value.showListFilterRow) } }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))

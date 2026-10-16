@@ -1,7 +1,12 @@
 package at.techbee.spectacled.screens.list.presentation.datastructures
 
 import at.techbee.spectacled.screens.core.domain.Status
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria.Companion.joinEscaped
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria.Companion.splitEscaped
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
+@Serializable
 data class ListFilterCriteria(
     val searchQuery: String? = null,
     val searchCategories: List<String> = emptyList(),
@@ -39,6 +44,11 @@ data class ListFilterCriteria(
     companion object {
         private const val SEPARATOR = ','
         private const val ESCAPE = '\\'
+
+        val mapperJson = Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
         /**
          * Joins [values] into one string separated by commas, escaping commas and backslashes inside
