@@ -57,11 +57,9 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.SyncTrigger
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.domain.Status
-import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.getAndroidLogoResId
@@ -340,35 +338,29 @@ class ToggleTaskAction : ActionCallback, KoinComponent {
         parameters: ActionParameters
     ) {
         val icalEntryRepository: IcalEntryRepository by inject()
+        val syncTrigger: SyncTrigger by inject()
 
         val entryId = parameters[EntryIdKey] ?: return
         val isChecked = parameters[IsCheckedKey] ?: return
 
-        // Recurring entries are read-only (this app has no recurrence support), so ignore the
-        // toggle even if a stale widget still shows an enabled checkbox for one.
-        if (icalEntryRepository.getIcalEntryById(entryId)?.isRecurring() == true)
+        val icalEntry = icalEntryRepository.getIcalEntryById(entryId) ?: return
+        // Deleted and recurring entries are read-only (this app has no recurrence support), so
+        // ignore the toggle even if a stale widget still shows an enabled checkbox for one.
+        if (icalEntry.syncState.isDeletedState() || icalEntry.isRecurring())
             return
 
-        val newPercent = if (isChecked) 100L else 0L
-        val newStatus = if (isChecked) Status.COMPLETED else Status.NEEDS_ACTION
+        // Same update as toggling the checkbox in the list, so e.g. a conflict state is kept
+        // instead of being overwritten with LOCAL_MODIFIED.
+        val updatedEntry = icalEntry.withProgressUpdated(if (isChecked) 100L else 0L)
 
         icalEntryRepository.updateProgress(
-            id = entryId,
-            percentComplete = newPercent,
-            status = newStatus,
-            lastModified = IcsDateTime.now(),
-            syncState = SyncState.LOCAL_MODIFIED
+            id = updatedEntry.id,
+            percentComplete = updatedEntry.percentComplete,
+            status = updatedEntry.status,
+            lastModified = updatedEntry.lastModified,
+            syncState = updatedEntry.syncState
         )
-
-        // Force a UI update by changing a preference.
-        // This ensures Glance recognizes a state change.
-        /*
-        updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
-            prefs.toMutablePreferences().apply {
-                this[longPreferencesKey("last_widget_update")] = System.currentTimeMillis()
-            }
-        }
-         */
+        syncTrigger.requestImmediate(listOf(updatedEntry.calendarId))
 
         SpectacledWidget().update(context, glanceId)
     }
