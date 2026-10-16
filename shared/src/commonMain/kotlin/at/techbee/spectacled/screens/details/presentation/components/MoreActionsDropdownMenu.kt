@@ -108,6 +108,7 @@ fun MoreActionsDropdownMenu(
                     onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.DELETE))
                     onDismiss()
                 },
+                highlightContainerColors = true,
                 enabled = canWriteContent
             )
 

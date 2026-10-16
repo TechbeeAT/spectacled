@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Attachment
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +31,7 @@ fun SquareDropdownMenuItem(
     text: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
+    highlightContainerColors: Boolean = false,
     modifier: Modifier = Modifier.size(88.dp)
 ) {
     ElevatedAssistChip(
@@ -38,7 +41,10 @@ fun SquareDropdownMenuItem(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(icon, null)
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null
+                )
                 Text(
                     text = text,
                     textAlign = TextAlign.Center,
@@ -49,6 +55,10 @@ fun SquareDropdownMenuItem(
             }
         },
         enabled = enabled,
+        colors = if(highlightContainerColors)
+            AssistChipDefaults.elevatedAssistChipColors(containerColor = MaterialTheme.colorScheme.errorContainer, labelColor = MaterialTheme.colorScheme.onErrorContainer)
+        else
+            AssistChipDefaults.elevatedAssistChipColors(),
         modifier = modifier
     )
 }
