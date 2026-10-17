@@ -22,8 +22,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.ioDispatcher
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,11 +63,7 @@ class ListViewModel(
             navigateUp = false,
             snackbarText = null,
             multiselectItems = null,
-            listSortedBy = userAppPreferencesStore.listSortedBy,
-            listSortedByAscending = userAppPreferencesStore.listSortedByAscending,
-            listLayout = userAppPreferencesStore.listLayout,
-            listCollapsedGroups = userAppPreferencesStore.listCollapsedGroups,
-            listFilterCriteria = userAppPreferencesStore.listFilterCriteria?.get(calendarId)?: ListFilterCriteria(),
+            listConfiguration = userAppPreferencesStore.listFilterCriteria?.get(calendarId)?: ListConfiguration(),
             spectacledVariant = spectacledVariant
         ).recompute() }
         refreshDragAndDropList()   // drop whatever the previously opened calendar left behind
@@ -199,30 +194,21 @@ class ListViewModel(
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     fun onAction(action: ListAction) {
         when(action) {
-            is ListAction.OnListFilterCriteriaChanged -> {
-                updateList(_state.value.listSortedBy, _state.value.listSortedByAscending, action.listFilterCriteria)
-                userAppPreferencesStore.listFilterCriteria = userAppPreferencesStore.listFilterCriteria?.plus(mapOf(state.value.calendar.id to action.listFilterCriteria))
+            is ListAction.OnListConfigurationChanged -> {
+                updateList(action.listConfiguration)
+            }
+            is ListAction.OnSortedByChanged -> {
+                updateList(_state.value.listConfiguration.copy(listSortedBy = action.listSortedBy, listSortedByAscending = action.listSortedByAscending))
+            }
+            is ListAction.OnViewModeChanged -> {
+                updateList(_state.value.listConfiguration.copy(listLayout = action.listLayout))
+            }
+            is ListAction.OnSearchBarExpanded -> {
+                updateList(_state.value.listConfiguration.copy(searchQuery = if(action.isExpanded) "" else null))
             }
             is ListAction.OnToggleFilterBar -> { _state.update { it.copy(showListFilterRow = !_state.value.showListFilterRow) } }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             is ListAction.OnIcalEntryClicked -> {  _state.update { it.copy(navigateToIcalEntryId = action.id) } }
-            is ListAction.OnSortedByChanged -> {
-                updateList(action.listSortedBy, action.listSortedByAscending, _state.value.listFilterCriteria)
-                userAppPreferencesStore.listSortedBy = action.listSortedBy
-                userAppPreferencesStore.listSortedByAscending = action.listSortedByAscending
-            }
-            is ListAction.OnViewModeChanged -> {
-                _state.update { it.copy(listLayout = action.listLayout) }
-                userAppPreferencesStore.listLayout = action.listLayout
-            }
-            is ListAction.OnSearchBarExpanded -> {
-                _state.update { it.copy(
-                    listFilterCriteria = it.listFilterCriteria.copy(
-                        searchQuery = if(action.isExpanded) "" else null,
-                    )
-                ).recompute() }
-                refreshDragAndDropList()
-            }
             is ListAction.OnNavigateUp -> {
                 if(action.navigateUp)
                     userAppPreferencesStore.lastUsedCalendarId = null // reset lastUsedCalendarId
@@ -245,7 +231,14 @@ class ListViewModel(
             is ListAction.OnMoveSelectedItems -> onMoveSelectedItems(action.targetCalendarId)
             is ListAction.OnUpdateOrderNo -> onUpdateOrderNo(action.fromIndex, action.toIndex)
             ListAction.OnPersistOrderNo -> onPersistOrderNo()
-            is ListAction.OnToggleListGroupExpanded -> onToggleListGroupExpanded(action.listGroup)
+            is ListAction.OnToggleListGroupExpanded -> {
+                updateList(_state.value.listConfiguration.copy(
+                    listCollapsedGroups = if(_state.value.listConfiguration.listCollapsedGroups.contains(action.listGroup))
+                        _state.value.listConfiguration.listCollapsedGroups.minus(action.listGroup)
+                    else
+                        _state.value.listConfiguration.listCollapsedGroups.plus(action.listGroup)
+                ))
+            }
             is ListAction.OnShowUpdateColorOfSelectedBottomSheet -> {
                 _state.update {
                     if(action.show)
@@ -414,15 +407,14 @@ class ListViewModel(
     }
 
 
-    private fun updateList(listSortedBy: ListSortedBy, listSortedByAscending: Boolean, listFilterCriteria: ListFilterCriteria) {
+    private fun updateList(listConfiguration: ListConfiguration) {
 
         _state.update { it.copy(
-            listSortedBy = listSortedBy,
-            listSortedByAscending = listSortedByAscending,
-            listFilterCriteria = listFilterCriteria,
+            listConfiguration = listConfiguration,
             isRefreshing = false
         ).recompute() }
         refreshDragAndDropList()
+        userAppPreferencesStore.listFilterCriteria = userAppPreferencesStore.listFilterCriteria?.plus(mapOf(state.value.calendar.id to listConfiguration))
     }
 
     private fun onDeleteSelectedItems() {
@@ -569,18 +561,6 @@ class ListViewModel(
         viewModelScope.launch {
             icalEntryRepository.updateOrderNo(dragAndDropList.map { it.id })
         }
-    }
-
-    private fun onToggleListGroupExpanded(listGroup: String) {
-        _state.update {
-            it.copy(
-                listCollapsedGroups = if(it.listCollapsedGroups.contains(listGroup))
-                    it.listCollapsedGroups.minus(listGroup)
-                else
-                    it.listCollapsedGroups.plus(listGroup)
-            )
-        }
-        userAppPreferencesStore.listCollapsedGroups = _state.value.listCollapsedGroups
     }
 
     private fun onGoToDate(selectedDate: IcsDateTime?) {

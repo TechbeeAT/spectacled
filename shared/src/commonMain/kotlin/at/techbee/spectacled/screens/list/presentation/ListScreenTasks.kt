@@ -103,7 +103,7 @@ fun ListScreenTasks(
 
         // using mutableStateList instead of grouped list for drag and drop
         // this allows us to directly manipulate the list and avoid jitter
-        if(state.listSortedBy == ListSortedBy.DRAGANDDROP && !state.showSearchBar) {
+        if(state.listConfiguration.listSortedBy == ListSortedBy.DRAGANDDROP && !state.showSearchBar) {
             items (dragAndDropList, key = { note -> note.uid }) { icalEntry ->
 
                 ReorderableItem(
@@ -129,7 +129,7 @@ fun ListScreenTasks(
                             subtasks = state.subtasks[icalEntry.uid] ?: emptyList(),
                             isDragging = isDragging,
                             dragHandle = {
-                                if (state.listSortedBy == ListSortedBy.DRAGANDDROP)
+                                if (state.listConfiguration.listSortedBy == ListSortedBy.DRAGANDDROP)
                                     ListDragHandle(listScope)
                             }
                         )
@@ -139,7 +139,7 @@ fun ListScreenTasks(
         } else {
             listSections(
                 sections = state.sections.filter { it.kind != ListSection.Kind.TRASHBIN },
-                collapsedGroups = state.listCollapsedGroups,
+                collapsedGroups = state.listConfiguration.listCollapsedGroups,
                 onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
             ) { icalEntry, section, _ ->
                 getTaskListItem(
@@ -153,7 +153,7 @@ fun ListScreenTasks(
         // TRASHBIN (shown below both the drag-and-drop and the grouped body)
         listSections(
             sections = state.sections.filter { it.kind == ListSection.Kind.TRASHBIN },
-            collapsedGroups = state.listCollapsedGroups,
+            collapsedGroups = state.listConfiguration.listCollapsedGroups,
             onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
         ) { icalEntry, section, _ ->
             getTaskListItem(

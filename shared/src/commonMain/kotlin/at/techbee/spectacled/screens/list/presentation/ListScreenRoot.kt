@@ -379,7 +379,7 @@ fun ListScreenRoot(
 
                     AnimatedVisibility(state.showSearchBar) {
                         ListSearchBar(
-                            listFilterCriteria = state.listFilterCriteria,
+                            listConfiguration = state.listConfiguration,
                             onAction = { listViewModel.onAction(it) },
                             searchBarFocusRequester = searchBarFocusRequester
                         )
@@ -387,10 +387,10 @@ fun ListScreenRoot(
 
                     AnimatedVisibility(state.showListFilterRow) {
                         ListFilterElement(
-                            listFilterCriteria = state.listFilterCriteria,
+                            listConfiguration = state.listConfiguration,
                             allCategories = state.icalEntries.flatMap { it.categories }.distinct(),
                             calendarComponent = state.spectacledVariant.mainCalendarComponent,
-                            onListFilterCriteriaChanged = { listViewModel.onAction(ListAction.OnListFilterCriteriaChanged(it)) },
+                            onListFilterCriteriaChanged = { listViewModel.onAction(ListAction.OnListConfigurationChanged(it)) },
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }

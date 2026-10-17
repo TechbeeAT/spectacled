@@ -35,7 +35,7 @@ import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import at.techbee.spectacled.screens.core.presentation.horizontalFadingEdges
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -50,10 +50,10 @@ import spectacled.shared.generated.resources.status_no_status
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListFilterElement(
-    listFilterCriteria: ListFilterCriteria,
+    listConfiguration: ListConfiguration,
     allCategories: List<String>,
     calendarComponent: CalendarComponent,
-    onListFilterCriteriaChanged: (ListFilterCriteria) -> Unit,
+    onListFilterCriteriaChanged: (ListConfiguration) -> Unit,
     isVertical: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -66,7 +66,7 @@ fun ListFilterElement(
     val chips = @Composable {
         //Category
         ElevatedFilterChip(
-            selected = listFilterCriteria.searchCategories.isNotEmpty(),
+            selected = listConfiguration.searchCategories.isNotEmpty(),
             enabled = allCategories.isNotEmpty(),
             onClick = {
                 categoryDropdownExpanded = !categoryDropdownExpanded
@@ -75,10 +75,10 @@ fun ListFilterElement(
                 Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category))
             },
             trailingIcon = {
-                if (listFilterCriteria.searchCategories.isNotEmpty())
+                if (listConfiguration.searchCategories.isNotEmpty())
                     IconButton(
                         onClick = {
-                            onListFilterCriteriaChanged(listFilterCriteria.copy(searchCategories = emptyList()))
+                            onListFilterCriteriaChanged(listConfiguration.copy(searchCategories = emptyList()))
                         },
                         modifier = Modifier.size(28.dp)
                     ) {
@@ -89,9 +89,9 @@ fun ListFilterElement(
                 Column {
                     Text(stringResource(Res.string.category))
 
-                    AnimatedVisibility(listFilterCriteria.searchCategories.isNotEmpty()) {
+                    AnimatedVisibility(listConfiguration.searchCategories.isNotEmpty()) {
                         Text(
-                            listFilterCriteria.searchCategories.joinToString(separator = ", "),
+                            listConfiguration.searchCategories.joinToString(separator = ", "),
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
@@ -106,10 +106,10 @@ fun ListFilterElement(
                         DropdownMenuItem(
                             text = { Text(category) },
                             onClick = {
-                                onListFilterCriteriaChanged(listFilterCriteria.toggleCategory(category))
+                                onListFilterCriteriaChanged(listConfiguration.toggleCategory(category))
                             },
                             trailingIcon = {
-                                if (listFilterCriteria.isCategorySelected(category))
+                                if (listConfiguration.isCategorySelected(category))
                                     Icon(Icons.Outlined.Check, null)
                             },
                             leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, null) }
@@ -122,16 +122,16 @@ fun ListFilterElement(
 
         //Status
         ElevatedFilterChip(
-            selected = listFilterCriteria.filterStatus.isNotEmpty(),
+            selected = listConfiguration.filterStatus.isNotEmpty(),
             onClick = {
                 statusDropdownExpanded = !statusDropdownExpanded
             },
             leadingIcon = { StatusWithProgressIcon(null, null) },
             trailingIcon = {
-                if (listFilterCriteria.filterStatus.isNotEmpty())
+                if (listConfiguration.filterStatus.isNotEmpty())
                     IconButton(
                         onClick = {
-                            onListFilterCriteriaChanged(listFilterCriteria.copy(filterStatus = emptyList()))
+                            onListFilterCriteriaChanged(listConfiguration.copy(filterStatus = emptyList()))
                         },
                         modifier = Modifier.size(28.dp)
                     ) {
@@ -142,9 +142,9 @@ fun ListFilterElement(
                 Column {
                     Text(stringResource(Res.string.status))
 
-                    AnimatedVisibility(listFilterCriteria.filterStatus.isNotEmpty()) {
+                    AnimatedVisibility(listConfiguration.filterStatus.isNotEmpty()) {
                         Text(
-                            listFilterCriteria.filterStatus.map {
+                            listConfiguration.filterStatus.map {
                                 if (it == null) stringResource(Res.string.status_no_status) else stringResource(it.stringRes)
                             }.joinToString(separator = ", "),
                             style = MaterialTheme.typography.labelSmall
@@ -159,10 +159,10 @@ fun ListFilterElement(
                     DropdownMenuItem(
                         text = { Text(stringResource(Res.string.status_no_status)) },
                         onClick = {
-                            onListFilterCriteriaChanged(listFilterCriteria.toggleStatus(null))
+                            onListFilterCriteriaChanged(listConfiguration.toggleStatus(null))
                         },
                         trailingIcon = {
-                            if (null in listFilterCriteria.filterStatus)
+                            if (null in listConfiguration.filterStatus)
                                 Icon(Icons.Outlined.Check, null)
                         },
                         leadingIcon = {
@@ -174,10 +174,10 @@ fun ListFilterElement(
                         DropdownMenuItem(
                             text = { Text(stringResource(status.stringRes)) },
                             onClick = {
-                                onListFilterCriteriaChanged(listFilterCriteria.toggleStatus(status))
+                                onListFilterCriteriaChanged(listConfiguration.toggleStatus(status))
                             },
                             trailingIcon = {
-                                if (status in listFilterCriteria.filterStatus)
+                                if (status in listConfiguration.filterStatus)
                                     Icon(Icons.Outlined.Check, null)
                             },
                             leadingIcon = {
@@ -192,10 +192,10 @@ fun ListFilterElement(
 
         //Hide completed
         ElevatedFilterChip(
-            selected = listFilterCriteria.hideCompletedTasks,
-            onClick = { onListFilterCriteriaChanged(listFilterCriteria.copy(hideCompletedTasks = !listFilterCriteria.hideCompletedTasks)) },
+            selected = listConfiguration.hideCompletedTasks,
+            onClick = { onListFilterCriteriaChanged(listConfiguration.copy(hideCompletedTasks = !listConfiguration.hideCompletedTasks)) },
             leadingIcon = {
-                Crossfade(listFilterCriteria.hideCompletedTasks) { hidden ->
+                Crossfade(listConfiguration.hideCompletedTasks) { hidden ->
                     if (hidden)
                         Icon(painterResource(Res.drawable.ic_completed_hidden), null)
                     else
@@ -237,7 +237,7 @@ fun ListFilterElement(
 fun ListFilter_Element_Preview() {
 
     ListFilterElement(
-        listFilterCriteria = ListFilterCriteria(),
+        listConfiguration = ListConfiguration(),
         allCategories = emptyList(),
         calendarComponent = CalendarComponent.VJOURNAL,
         onListFilterCriteriaChanged = { }
@@ -249,7 +249,7 @@ fun ListFilter_Element_Preview() {
 fun ListFilter_Element_search_and_category_Preview() {
 
     ListFilterElement(
-        listFilterCriteria = ListFilterCriteria(searchQuery = "preview", searchCategories = listOf("my category"), filterStatus = listOf(Status.FINAL)),
+        listConfiguration = ListConfiguration(searchQuery = "preview", searchCategories = listOf("my category"), filterStatus = listOf(Status.FINAL)),
         allCategories = emptyList(),
         calendarComponent = CalendarComponent.VJOURNAL,
         onListFilterCriteriaChanged = { }
@@ -261,7 +261,7 @@ fun ListFilter_Element_search_and_category_Preview() {
 fun ListFilter_Column_Preview() {
 
     ListFilterElement(
-        listFilterCriteria = ListFilterCriteria(),
+        listConfiguration = ListConfiguration(),
         allCategories = emptyList(),
         calendarComponent = CalendarComponent.VJOURNAL,
         onListFilterCriteriaChanged = { },

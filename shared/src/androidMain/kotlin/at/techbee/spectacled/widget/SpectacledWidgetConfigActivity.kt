@@ -45,7 +45,7 @@ import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelector
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterElement
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
 import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.widget.SpectacledWidget.Companion.CALENDAR_ID_KEY
 import kotlinx.coroutines.launch
@@ -99,7 +99,7 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
             }
 
             var selectedCalendarId by remember { mutableStateOf(null as Long?) }
-            var listFilterCriteria by remember { mutableStateOf(ListFilterCriteria()) }
+            var listConfiguration by remember { mutableStateOf(ListConfiguration()) }
             var settingsLoaded by remember { mutableStateOf(false) }
 
             // Restore the configuration of an already placed widget as soon as its state arrives.
@@ -108,7 +108,7 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
                 if (settingsLoaded) return@LaunchedEffect
 
                 selectedCalendarId = loadedPrefs[longPreferencesKey(CALENDAR_ID_KEY)]
-                listFilterCriteria = loadedPrefs.getListFilterCriteria()
+                listConfiguration = loadedPrefs.getListFilterCriteria()
                 settingsLoaded = true
             }
 
@@ -134,14 +134,14 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
                 principals = principals,
                 selectedCalendarId = selectedCalendarId,
                 onCalendarIdSelected = { selectedCalendarId = it },
-                listFilterCriteria = listFilterCriteria,
-                onListFilterCriteriaChanged = { listFilterCriteria = it },
+                listConfiguration = listConfiguration,
+                onListFilterCriteriaChanged = { listConfiguration = it },
                 allCategories = allCategories,
                 spectacledVariant = spectacledVariant,
                 onConfirm = {
                     val calendarId = selectedCalendarId ?: return@WidgetConfigContent
                     scope.launch {
-                        onConfigConfirmed(calendarId, listFilterCriteria, glanceId)
+                        onConfigConfirmed(calendarId, listConfiguration, glanceId)
                     }
                 }
             )
@@ -150,13 +150,13 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
 
     private suspend fun onConfigConfirmed(
         calendarId: Long,
-        listFilterCriteria: ListFilterCriteria,
+        listConfiguration: ListConfiguration,
         glanceId: GlanceId
     ) {
         try {
             updateAppWidgetState(this@SpectacledWidgetConfigActivity, glanceId) { prefs ->
                 prefs[longPreferencesKey(CALENDAR_ID_KEY)] = calendarId
-                prefs.setListFilterCriteria(listFilterCriteria)
+                prefs.setListFilterCriteria(listConfiguration)
             }
             SpectacledWidget().update(this@SpectacledWidgetConfigActivity, glanceId)
         } catch (e: Exception) {
@@ -179,8 +179,8 @@ fun WidgetConfigContent(
     principals: List<Principal>,
     selectedCalendarId: Long?,
     onCalendarIdSelected: (Long) -> Unit,
-    listFilterCriteria: ListFilterCriteria,
-    onListFilterCriteriaChanged: (ListFilterCriteria) -> Unit,
+    listConfiguration: ListConfiguration,
+    onListFilterCriteriaChanged: (ListConfiguration) -> Unit,
     allCategories: List<String>,
     spectacledVariant: SpectacledVariant,
     onConfirm: () -> Unit
@@ -229,7 +229,7 @@ fun WidgetConfigContent(
                 )
 
                 ListFilterElement(
-                    listFilterCriteria = listFilterCriteria,
+                    listConfiguration = listConfiguration,
                     allCategories = allCategories,
                     calendarComponent = spectacledVariant.mainCalendarComponent,
                     onListFilterCriteriaChanged = onListFilterCriteriaChanged,
@@ -262,7 +262,7 @@ private fun WidgetConfigContent_Preview() {
         principals = listOf(Principal.getPrincipalForPreview()),
         selectedCalendarId = null,
         onCalendarIdSelected = { },
-        listFilterCriteria = ListFilterCriteria(),
+        listConfiguration = ListConfiguration(),
         onListFilterCriteriaChanged = { },
         allCategories = listOf("Category 1", "Category 2"),
         spectacledVariant = SpectacledVariant.JOURNALS,
@@ -279,7 +279,7 @@ private fun WidgetConfigContent_tasks_filtered_Preview() {
         principals = listOf(Principal.getPrincipalForPreview()),
         selectedCalendarId = 0L,
         onCalendarIdSelected = { },
-        listFilterCriteria = ListFilterCriteria(searchCategories = listOf("Category 1"), hideCompletedTasks = true),
+        listConfiguration = ListConfiguration(searchCategories = listOf("Category 1"), hideCompletedTasks = true),
         onListFilterCriteriaChanged = { },
         allCategories = listOf("Category 1", "Category 2"),
         spectacledVariant = SpectacledVariant.TASKS,

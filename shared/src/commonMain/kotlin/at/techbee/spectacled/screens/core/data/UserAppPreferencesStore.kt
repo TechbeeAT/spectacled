@@ -3,9 +3,7 @@ package at.techbee.spectacled.screens.core.data
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.ai.AiProvider
 import at.techbee.spectacled.screens.core.data.ai.ClaudeModel
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
 import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
@@ -61,27 +59,18 @@ interface UserAppPreferencesStore {
             else this.save(LAST_USED_CALENDAR_ID, value.toString())
         }
 
-    var listSortedBy: ListSortedBy
-        get() = this.load(LIST_SORTED_BY)?.let { savedSortedBy -> ListSortedBy.entries.find { savedSortedBy == it.name } } ?: variant.defaultListSortedBy
-        set(value) { this.save(LIST_SORTED_BY, value.name) }
-
-    var listSortedByAscending: Boolean
-        get() = this.load(LIST_SORTED_BY_ASCENDING)?.toBooleanStrictOrNull() ?: false
-        set(value) = this.save(LIST_SORTED_BY_ASCENDING, if(value) "true" else "false")
-
-    var listLayout: ListLayout
-        get() = this.load(LIST_LAYOUT)?.let { savedLayout -> ListLayout.entries.find { savedLayout == it.name } } ?: variant.defaultListLayout
-        set(value) { this.save(LIST_LAYOUT, value.name) }
-
+    /*
     var listCollapsedGroups: Set<String>
         get() = this.load(LIST_COLLAPSED_GROUPS)
             ?.split("|")?.toSet() ?: setOf(LIST_COLLAPSED_GROUP_NO_CRITERIA, LIST_COLLAPSED_GROUP_TRASHBIN)
         set(value) = this.save(LIST_COLLAPSED_GROUPS, value.joinToString("|"))
 
-    var listFilterCriteria: Map<Long, ListFilterCriteria>?
+     */
+
+    var listFilterCriteria: Map<Long, ListConfiguration>?
         get() = this.load(LIST_FILTER_CRITERIA)?.let { json ->
             runCatching {
-                ListFilterCriteria.mapperJson.decodeFromString<Map<Long, ListFilterCriteria>>(json)
+                ListConfiguration.mapperJson.decodeFromString<Map<Long, ListConfiguration>>(json)
             }.getOrNull()
         } ?: emptyMap()
         set(value) {
@@ -90,7 +79,7 @@ interface UserAppPreferencesStore {
             else
                 this.save(
                     LIST_FILTER_CRITERIA,
-                    ListFilterCriteria.mapperJson.encodeToString(value)
+                    ListConfiguration.mapperJson.encodeToString(value)
                 )
         }
 

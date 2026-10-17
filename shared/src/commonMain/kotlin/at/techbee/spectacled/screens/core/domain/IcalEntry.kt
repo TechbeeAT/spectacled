@@ -10,7 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
 import io.ktor.http.Url
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.StringResource
@@ -239,14 +239,14 @@ data class IcalEntry(
     }
 
     /**
-     * Whether the entry passes all [listFilterCriteria] criteria. Shared by the list screen and the
+     * Whether the entry passes all [listConfiguration] criteria. Shared by the list screen and the
      * widget so both apply the filters in exactly the same way.
      */
-    fun matches(listFilterCriteria: ListFilterCriteria): Boolean {
-        val filterQuery = listFilterCriteria.searchQuery
-        val filterCategories = listFilterCriteria.searchCategories
-        val filterStatus = listFilterCriteria.filterStatus
-        val hideCompletedTasks = listFilterCriteria.hideCompletedTasks
+    fun matches(listConfiguration: ListConfiguration): Boolean {
+        val filterQuery = listConfiguration.searchQuery
+        val filterCategories = listConfiguration.searchCategories
+        val filterStatus = listConfiguration.filterStatus
+        val hideCompletedTasks = listConfiguration.hideCompletedTasks
 
         val matchesQuery = filterQuery.isNullOrBlank()
                 || summary?.contains(filterQuery, ignoreCase = true) == true
@@ -255,7 +255,7 @@ data class IcalEntry(
         if (!matchesQuery)
             return false
 
-        val matchesCategory = filterCategories.isEmpty() || categories.any { listFilterCriteria.isCategorySelected(it) }
+        val matchesCategory = filterCategories.isEmpty() || categories.any { listConfiguration.isCategorySelected(it) }
         if (!matchesCategory)
             return false
 
@@ -274,11 +274,11 @@ data class IcalEntry(
      * with its parent as long as it isn't hidden as completed, even if it carries no category or
      * status of its own.
      */
-    fun matchesWidgetFilter(listFilterCriteria: ListFilterCriteria): Boolean =
+    fun matchesWidgetFilter(listConfiguration: ListConfiguration): Boolean =
         if (parentUid == null)
-            this.matches(listFilterCriteria)
+            this.matches(listConfiguration)
         else
-            !(listFilterCriteria.hideCompletedTasks && isDoneOrCancelled())
+            !(listConfiguration.hideCompletedTasks && isDoneOrCancelled())
 }
 
 
