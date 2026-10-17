@@ -9,19 +9,23 @@ import app.cash.sqldelight.coroutines.asFlow
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.domain.Alarm
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.domain.UpcomingAlarm
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.mapper.dto.CATEGORY_SPLIT_DELIMITER
 import at.techbee.spectacled.screens.core.mapper.dto.toDomain
 import at.techbee.spectacled.screens.core.mapper.dto.toDto
+import at.techbee.spectacled.screens.core.mapper.dto.toIcsBlock
 import at.techbee.spectacled.screens.core.mapper.ics.escapeIcsValue
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import at.techbee.spectacled.screens.core.mapper.ics.splitIcsList
+import at.techbee.spectacled.sqldelight.IcalEntryDto
 import io.ktor.http.Url
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +34,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class IcalEntryRepositoryImpl(
@@ -47,10 +52,7 @@ class IcalEntryRepositoryImpl(
             db.icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).asFlow()
                 .map { query ->
                     val icalEntryDtos = query.awaitAsList()
-                    val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
-                    icalEntryDtos.map { icalEntryDto ->
-                        icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList())
-                    }
+                    loadIcalEntries(icalEntryDtos)
                 }
         }.flowOn(ioDispatcher)
     }
@@ -60,8 +62,7 @@ class IcalEntryRepositoryImpl(
             db.icalentry_dtoQueries.getIcalEntryByUid(calendarId, uid).asFlow()
                 .map { query ->
                     val dto = query.awaitAsOneOrNull() ?: return@map null
-                    val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
-                    dto.toDomain(attachments)
+                    db.loadIcalEntry(dto)
                 }
         }.flowOn(ioDispatcher)
     }
@@ -69,22 +70,19 @@ class IcalEntryRepositoryImpl(
     override suspend fun getIcalEntryById(id: Long): IcalEntry? = withContext(ioDispatcher) {
             val db = getDatabase()
             val dto = db.icalentry_dtoQueries.getIcalEntryById(id).awaitAsOneOrNull() ?: return@withContext null
-            val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
-            dto.toDomain(attachments)
+            db.loadIcalEntry(dto)
     }
 
     override suspend fun getIcalEntryByUid(calendarId: Long, uid: String): IcalEntry? = withContext(ioDispatcher) {
         val db = getDatabase()
         val dto = db.icalentry_dtoQueries.getIcalEntryByUid(calendarId, uid).awaitAsOneOrNull() ?: return@withContext null
-        val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
-        dto.toDomain(attachments)
+        db.loadIcalEntry(dto)
     }
 
     override suspend fun getIcalEntryByHref(href: Url): IcalEntry? = withContext(ioDispatcher) {
         val db = getDatabase()
         val dto = db.icalentry_dtoQueries.getIcalEntryByHref(href.toString()).awaitAsOneOrNull() ?: return@withContext null
-        val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
-        dto.toDomain(attachments)
+        db.loadIcalEntry(dto)
     }
 
     private suspend fun attachmentsGroupedByEntryId(entryIds: List<Long>): Map<Long, List<Attachment>> {
@@ -97,24 +95,47 @@ class IcalEntryRepositoryImpl(
             .groupBy { it.icalEntryId }
     }
 
+    private suspend fun alarmsGroupedByEntryId(entryIds: List<Long>): Map<Long, List<Alarm>> {
+        if (entryIds.isEmpty()) return emptyMap()
+
+        val db = getDatabase()
+        return entryIds.chunked(500)   // chunk to make sure SQL limits for IN (...) aren't reached.
+            .flatMap { chunk -> db.alarm_dtoQueries.getAlarmsForEntries(chunk).awaitAsList() }
+            .groupBy(keySelector = { it.icalEntryId }, valueTransform = { it.toDomain() })
+    }
+
+    /** Maps a single row to the domain model, with its attachments and alarms. */
+    private suspend fun SpectacledDatabase.loadIcalEntry(dto: IcalEntryDto): IcalEntry {
+        val attachments = attachment_dtoQueries.getAttachmentsForEntry(dto.id).awaitAsList().map { it.toDomain() }
+        val alarms = alarm_dtoQueries.getAlarmsForEntry(dto.id).awaitAsList().map { it.toDomain() }
+        return dto.toDomain(attachments, alarms)
+    }
+
+    /** Maps rows to the domain model, loading attachments and alarms in bulk. */
+    private suspend fun loadIcalEntries(dtos: List<IcalEntryDto>): List<IcalEntry> {
+        val entryIds = dtos.map { it.id }
+        val attachmentsByEntryId = attachmentsGroupedByEntryId(entryIds)
+        val alarmsByEntryId = alarmsGroupedByEntryId(entryIds)
+        return dtos.map { dto ->
+            dto.toDomain(attachmentsByEntryId[dto.id] ?: emptyList(), alarmsByEntryId[dto.id] ?: emptyList())
+        }
+    }
+
     override suspend fun getDirtyIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = withContext(ioDispatcher) {
         val db = getDatabase()
         val icalEntryDtos = db.icalentry_dtoQueries.getDirtyIcalEntriesByCalendar(calendarId).awaitAsList()
-        val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
-        icalEntryDtos.map { icalEntryDto -> icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList()) }
+        loadIcalEntries(icalEntryDtos)
     }
 
     override suspend fun getIcalEntriesByHrefs(hrefs: List<Url>): List<IcalEntry> = withContext(ioDispatcher) {
         val db = getDatabase()
         val icalEntryDtos = db.icalentry_dtoQueries.getIcalEntriesByHrefs(hrefs.map { it.toString() }).awaitAsList()
-        val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
-        icalEntryDtos.map { icalEntryDto -> icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList()) }
+        loadIcalEntries(icalEntryDtos)
     }
 
     override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = withContext(ioDispatcher) {
         val icalEntryDtos = getDatabase().icalentry_dtoQueries.getIcalEntriesByCalendar(calendarId).awaitAsList()
-        val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
-        icalEntryDtos.map { it.toDomain(attachmentsByEntryId[it.id] ?: emptyList()) }
+        loadIcalEntries(icalEntryDtos)
     }
 
     override suspend fun getDeletedDeltaHrefs(
@@ -159,10 +180,7 @@ class IcalEntryRepositoryImpl(
             db.icalentry_dtoQueries.getSubtasksByParentUid(calendarId, parentUid).asFlow()
                 .map { query ->
                     val icalEntryDtos = query.awaitAsList()
-                    val attachmentsByEntryId = attachmentsGroupedByEntryId(icalEntryDtos.map { it.id })
-                    icalEntryDtos.map { icalEntryDto ->
-                        icalEntryDto.toDomain(attachmentsByEntryId[icalEntryDto.id] ?: emptyList())
-                    }
+                    loadIcalEntries(icalEntryDtos)
                 }
         }.flowOn(ioDispatcher)
     }
@@ -271,8 +289,69 @@ class IcalEntryRepositoryImpl(
                 )
             }
         }
-        
+
+        saveAlarms(db, icalEntry.copy(id = entryId))
+
         getIcalEntryByUid(icalEntry.calendarId, icalEntry.uid)!!
+    }
+
+    /**
+     * Replaces the stored alarms of [icalEntry] and (re)computes their trigger time from its
+     * current DTSTART/DUE. Alarms have no stable row identity (a UID is optional), so the rows are
+     * rewritten on every save. The local-only lastNotifiedAt is carried over to the alarm it
+     * belongs to (same UID, or the same block if it has none) - but only while its trigger time is
+     * unchanged, so an alarm moved to a new time notifies again.
+     */
+    private suspend fun saveAlarms(db: SpectacledDatabase, icalEntry: IcalEntry) {
+        val existingAlarms = db.alarm_dtoQueries.getAlarmsForEntry(icalEntry.id).awaitAsList()
+
+        db.transaction {
+            db.alarm_dtoQueries.deleteAlarmsForEntry(icalEntry.id)
+
+            icalEntry.alarms.forEach { alarm ->
+                val triggerAt = alarm.triggerTime(icalEntry)
+                val icsBlock = alarm.toIcsBlock()
+                val previous = existingAlarms.firstOrNull { existing ->
+                    if (alarm.uid != null) existing.uid == alarm.uid else existing.icsBlock == icsBlock
+                }
+                val lastNotifiedAt = previous
+                    ?.takeIf { it.triggerAt == triggerAt?.toEpochMilliseconds() }
+                    ?.lastNotifiedAt
+
+                val alarmDto = alarm.toDto(icalEntry.id, triggerAt, lastNotifiedAt)
+                db.alarm_dtoQueries.insertAlarm(
+                    icalEntryId = alarmDto.icalEntryId,
+                    uid = alarmDto.uid,
+                    action = alarmDto.action,
+                    icsBlock = alarmDto.icsBlock,
+                    triggerAt = alarmDto.triggerAt,
+                    lastNotifiedAt = alarmDto.lastNotifiedAt
+                )
+            }
+        }
+    }
+
+    override suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm> = withContext(ioDispatcher) {
+        val db = getDatabase()
+        db.alarm_dtoQueries.getUpcomingAlarms(from.toEpochMilliseconds(), until.toEpochMilliseconds(), limit)
+            .awaitAsList()
+            .mapNotNull { alarmDto ->
+                // Recurring entries are read-only in this app, their alarms are only preserved.
+                val entry = db.icalentry_dtoQueries.getIcalEntryById(alarmDto.icalEntryId).awaitAsOneOrNull()?.toDomain()
+                if (entry == null || entry.isRecurring()) return@mapNotNull null
+                UpcomingAlarm(
+                    alarmId = alarmDto.id,
+                    icalEntryId = alarmDto.icalEntryId,
+                    alarm = alarmDto.toDomain(),
+                    triggerAt = Instant.fromEpochMilliseconds(alarmDto.triggerAt ?: return@mapNotNull null)
+                )
+            }
+    }
+
+    override suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant) {
+        withContext(ioDispatcher) {
+            getDatabase().alarm_dtoQueries.updateLastNotifiedAt(lastNotifiedAt = notifiedAt.toEpochMilliseconds(), id = alarmId)
+        }
     }
 
     override suspend fun markAsDeleted(ids: List<Long>) {
@@ -325,8 +404,7 @@ class IcalEntryRepositoryImpl(
 
         val db = getDatabase()
         db.icalentry_dtoQueries.getSubtasksByParentUid(entry.calendarId, entry.uid).awaitAsList().forEach { childDto ->
-            val attachments = db.attachment_dtoQueries.getAttachmentsForEntry(childDto.id).awaitAsList().map { it.toDomain() }
-            collectWithSubtasks(childDto.toDomain(attachments), acc)
+            collectWithSubtasks(db.loadIcalEntry(childDto), acc)
         }
     }
 
