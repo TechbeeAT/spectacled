@@ -12,7 +12,6 @@ import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import io.ktor.http.Url
-import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -282,7 +281,6 @@ data class IcalEntry(
 }
 
 
-@Serializable
 enum class Status(
     val rfcName: String,
     val stringRes: StringResource
