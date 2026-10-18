@@ -48,6 +48,7 @@ data class ListFilterCriteria(
         val mapperJson = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
+            coerceInputValues = true
         }
 
         /**
