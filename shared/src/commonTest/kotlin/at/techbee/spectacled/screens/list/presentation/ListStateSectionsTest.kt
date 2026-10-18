@@ -4,7 +4,7 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import kotlin.test.Test
@@ -57,7 +57,7 @@ class ListStateSectionsTest {
         val state = ListState(
             icalEntries = listOf(taskWithDue, taskNoDue),
             spectacledVariant = SpectacledVariant.TASKS,
-            listConfiguration = ListConfiguration(listSortedBy = ListSortedBy.DUE)
+            listSortedBy = ListSortedBy.DUE
         ).recompute()
 
         val noCriteria = state.sections.first { it.kind == ListSection.Kind.NO_CRITERIA }
@@ -81,7 +81,7 @@ class ListStateSectionsTest {
         val state = ListState(
             icalEntries = listOf(openTask, doneTask, otherCategoryTask),
             spectacledVariant = SpectacledVariant.TASKS,
-            listConfiguration = ListConfiguration(listSortedBy = ListSortedBy.DRAGANDDROP)
+            listSortedBy = ListSortedBy.DRAGANDDROP
         )
 
         assertEquals(
@@ -90,7 +90,7 @@ class ListStateSectionsTest {
         )
 
         val hidingCompleted = state.copy(
-            listConfiguration = ListConfiguration(hideCompletedTasks = true)
+            listFilterCriteria = ListFilterCriteria(hideCompletedTasks = true)
         ).recompute()
         assertEquals(
             setOf(openTask.uid, otherCategoryTask.uid),
@@ -98,7 +98,7 @@ class ListStateSectionsTest {
         )
 
         val filteredByCategory = state.copy(
-            listConfiguration = ListConfiguration(searchCategories = listOf("work"))
+            listFilterCriteria = ListFilterCriteria(searchCategories = listOf("work"))
         ).recompute()
         assertEquals(listOf(openTask.uid), filteredByCategory.displayedEntries.map { it.uid })
     }
@@ -111,7 +111,7 @@ class ListStateSectionsTest {
         val state = ListState(
             icalEntries = listOf(unordered, ordered),
             spectacledVariant = SpectacledVariant.TASKS,
-            listConfiguration = ListConfiguration(listSortedBy = ListSortedBy.DRAGANDDROP)
+            listSortedBy = ListSortedBy.DRAGANDDROP
         ).recompute()
 
         assertEquals(listOf(ordered.uid, unordered.uid), state.displayedEntries.map { it.uid })

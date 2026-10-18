@@ -61,7 +61,7 @@ import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.list.presentation.ListAction
 import at.techbee.spectacled.screens.list.presentation.ListState
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import at.techbee.spectacled.theme.AppTheme
@@ -195,9 +195,9 @@ fun ListTopBar(
                     TextButton(
                         onClick = {
                             if (state.showSearchBar) {
-                                onAction(ListAction.OnListConfigurationChanged(state.listConfiguration.copy(searchQuery = null)))
+                                onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchQuery = null)))
                             } else {
-                                onAction(ListAction.OnListConfigurationChanged(state.listConfiguration.copy(searchQuery = "")))
+                                onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchQuery = "")))
                             }
                         },
                         //elevation = if (state.showSearchBar) ButtonDefaults.buttonElevation(defaultElevation = 1.dp) else null,
@@ -285,7 +285,7 @@ fun ListTopBar(
                                             leadingIcon = {
                                                 Icon(imageVector = listLayout.displayIcon, contentDescription = null)
                                             },
-                                            colors = if (state.listConfiguration.listLayout == listLayout)
+                                            colors = if (state.listLayout == listLayout)
                                                 MenuDefaults.itemColors(
                                                     textColor = MaterialTheme.colorScheme.primary,
                                                     leadingIconColor = MaterialTheme.colorScheme.primary
@@ -316,8 +316,8 @@ fun ListTopBar(
                                             },
                                             onClick = {
                                                 // toggle ascending if the same item is selected again
-                                                if (state.listConfiguration.listSortedBy.name == sortedByOption.name && state.listConfiguration.listSortedBy != ListSortedBy.DRAGANDDROP)
-                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, !state.listConfiguration.listSortedByAscending))
+                                                if (state.listSortedBy.name == sortedByOption.name && state.listSortedBy != ListSortedBy.DRAGANDDROP)
+                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, !state.listSortedByAscending))
                                                 else
                                                     onAction(ListAction.OnSortedByChanged(sortedByOption, sortedByOption.defaultAsc))
                                             },
@@ -325,12 +325,12 @@ fun ListTopBar(
                                                 Icon(painterResource(sortedByOption.displayIcon), null)
                                             },
                                             trailingIcon = {
-                                                if (state.listConfiguration.listSortedBy.name == sortedByOption.name && state.listConfiguration.listSortedByAscending)
+                                                if (state.listSortedBy.name == sortedByOption.name && state.listSortedByAscending)
                                                     Icon(
                                                         imageVector = Icons.Default.ArrowCircleDown,
                                                         contentDescription = stringResource(Res.string.sort_ascending)
                                                     )
-                                                else if (state.listConfiguration.listSortedBy.name == sortedByOption.name)
+                                                else if (state.listSortedBy.name == sortedByOption.name)
                                                     Icon(
                                                         imageVector = Icons.Outlined.ArrowCircleUp,
                                                         contentDescription = stringResource(Res.string.sort_descending)
@@ -462,13 +462,11 @@ private fun ListTopBar_Journal_Preview() {
         ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Journals"),
-                listConfiguration = ListConfiguration(
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.LIST,
-                    hideCompletedTasks = true
-                ),
-                multiselectItems = null
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
+                multiselectItems = null,
+                listFilterCriteria = ListFilterCriteria(hideCompletedTasks = true)
             ),
             onAction = {},
             spectacledVariant = SpectacledVariant.JOURNALS,
@@ -487,12 +485,11 @@ private fun ListTopBar_Notes_Preview() {
         ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.STAGGERED_GRID,
                 multiselectItems = null,
-                listConfiguration = ListConfiguration(
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.STAGGERED_GRID
-                )
+                listFilterCriteria = ListFilterCriteria()
             ),
             onAction = {},
             spectacledVariant = SpectacledVariant.NOTES,
@@ -510,12 +507,11 @@ private fun ListTopBar_Tasks_Preview() {
         ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Tasks"),
+                listSortedBy = ListSortedBy.DRAGANDDROP,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
                 multiselectItems = null,
-                listConfiguration = ListConfiguration(
-                    listSortedBy = ListSortedBy.DRAGANDDROP,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.LIST
-                )
+                listFilterCriteria = ListFilterCriteria()
             ),
             onAction = {},
             spectacledVariant = SpectacledVariant.TASKS,
@@ -535,13 +531,11 @@ private fun ListTopBar_blue_Preview() {
             state = ListState(
                 calendar = Calendar.getCalendarForPreview()
                     .copy(displayName = "This is a very long folder name that shouldn't cause troubles"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.STAGGERED_GRID,
                 multiselectItems = null,
-                listConfiguration = ListConfiguration(
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.STAGGERED_GRID,
-                    searchQuery = ""
-                )
+                listFilterCriteria = ListFilterCriteria(searchQuery = "")
             ),
             onAction = {},
             spectacledVariant = SpectacledVariant.NOTES,
@@ -559,12 +553,11 @@ private fun ListTopBar_Journals_Multiselect_Preview() {
         ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
                 multiselectItems = listOf(1, 2, 3),
-                listConfiguration = ListConfiguration(
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.LIST
-                )
+                listFilterCriteria = ListFilterCriteria()
             ),
             onAction = {},
             spectacledVariant = SpectacledVariant.JOURNALS,
@@ -581,12 +574,11 @@ private fun ListTopBar_Notes_Multiselect_Preview() {
         ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
                 multiselectItems = listOf(1, 2, 3),
-                listConfiguration = ListConfiguration(
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.LIST
-                )
+                listFilterCriteria = ListFilterCriteria()
             ),
             onAction = {},
             spectacledVariant = SpectacledVariant.NOTES,
@@ -603,12 +595,11 @@ private fun ListTopBar_Tasks_Multiselect_Preview() {
         ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.LIST,
                 multiselectItems = listOf(1, 2, 3),
-                listConfiguration = ListConfiguration(
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.LIST
-                )
+                listFilterCriteria = ListFilterCriteria()
             ),
             onAction = {},
             spectacledVariant = SpectacledVariant.TASKS,
@@ -629,12 +620,11 @@ private fun ListTopBar_sync_in_progress_Preview() {
                     displayName = "This is a very long folder name that shouldn't cause troubles",
                     calendarSyncStatus = CalendarSyncStatus(CalendarSyncStatusType.IN_PROGRESS)
                 ),
+                listSortedBy = ListSortedBy.CREATED,
+                listSortedByAscending = true,
+                listLayout = ListLayout.STAGGERED_GRID,
                 multiselectItems = null,
-                listConfiguration = ListConfiguration(
-                    listSortedBy = ListSortedBy.CREATED,
-                    listSortedByAscending = true,
-                    listLayout = ListLayout.STAGGERED_GRID
-                )
+                listFilterCriteria = ListFilterCriteria()
             ),
             onAction = {},
             spectacledVariant = SpectacledVariant.TASKS,

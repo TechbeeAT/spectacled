@@ -20,7 +20,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.list.presentation.ListAction
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.search
@@ -28,7 +28,7 @@ import spectacled.shared.generated.resources.search
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListSearchBar(
-    listConfiguration: ListConfiguration,
+    listFilterCriteria: ListFilterCriteria,
     onAction: (ListAction) -> Unit,
     modifier: Modifier = Modifier,
     searchBarFocusRequester: FocusRequester = remember { FocusRequester() }
@@ -40,8 +40,8 @@ fun ListSearchBar(
 
         TextField(
             placeholder = { Text(stringResource(Res.string.search)) },
-            value = listConfiguration.searchQuery ?: "",
-            onValueChange = { onAction(ListAction.OnListConfigurationChanged(listConfiguration.copy(searchQuery = it))) },
+            value = listFilterCriteria.searchQuery ?: "",
+            onValueChange = { onAction(ListAction.OnListFilterCriteriaChanged(listFilterCriteria.copy(searchQuery = it))) },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
                 keyboardType = KeyboardType.Filter,
@@ -63,7 +63,7 @@ fun ListSearchBar(
 fun ListSearchBar_Preview() {
 
     ListSearchBar(
-        listConfiguration = ListConfiguration(),
+        listFilterCriteria = ListFilterCriteria(),
         onAction = { }
     )
 }

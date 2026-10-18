@@ -73,8 +73,8 @@ fun ListScreenNotes(
         modifier: Modifier = Modifier
     ) {
 
-        val isFirst = state.draggingIcalEntryId != null || (state.listConfiguration.listLayout == ListLayout.LIST && index == 0) || state.listConfiguration.listLayout == ListLayout.STAGGERED_GRID
-        val isLast = subtasks.isEmpty() || state.draggingIcalEntryId != null || (state.listConfiguration.listLayout == ListLayout.LIST && index == lastIndex) || state.listConfiguration.listLayout == ListLayout.STAGGERED_GRID
+        val isFirst = state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID
+        val isLast = subtasks.isEmpty() || state.draggingIcalEntryId != null || (state.listLayout == ListLayout.LIST && index == lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID
 
 
         Column {
@@ -130,7 +130,7 @@ fun ListScreenNotes(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalItemSpacing = 2.dp,
         state = lazyStaggeredGridState,
-        columns = when (state.listConfiguration.listLayout) {
+        columns = when (state.listLayout) {
             ListLayout.LIST -> StaggeredGridCells.Fixed(1)
             ListLayout.STAGGERED_GRID -> StaggeredGridCells.Adaptive(150.dp)
         },
@@ -139,7 +139,7 @@ fun ListScreenNotes(
 
         // using mutableStateList instead of grouped list for drag and drop
         // this allows us to directly manipulate the list and avoid jitter
-        if(state.listConfiguration.listSortedBy == ListSortedBy.DRAGANDDROP && !state.showSearchBar) {
+        if(state.listSortedBy == ListSortedBy.DRAGANDDROP && !state.showSearchBar) {
             itemsIndexed(dragAndDropList, key = { _, note -> note.uid }) { index, icalEntry ->
 
                 ReorderableItem(
@@ -165,7 +165,7 @@ fun ListScreenNotes(
                         isDragging = isDragging,
                         interactionSource = remember { MutableInteractionSource() },
                         dragHandle = {
-                            if (state.listConfiguration.listSortedBy == ListSortedBy.DRAGANDDROP)
+                            if (state.listSortedBy == ListSortedBy.DRAGANDDROP)
                                 ListDragHandle(this)
                         }
                     )
@@ -174,7 +174,7 @@ fun ListScreenNotes(
         } else {
             listSections(
                 sections = state.sections.filter { it.kind != ListSection.Kind.TRASHBIN },
-                collapsedGroups = state.listConfiguration.listCollapsedGroups,
+                collapsedGroups = state.listCollapsedGroups,
                 onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
             ) { icalEntry, section, index ->
                 getNoteListItem(
@@ -190,7 +190,7 @@ fun ListScreenNotes(
         // TRASHBIN (shown below both the drag-and-drop and the grouped body)
         listSections(
             sections = state.sections.filter { it.kind == ListSection.Kind.TRASHBIN },
-            collapsedGroups = state.listConfiguration.listCollapsedGroups,
+            collapsedGroups = state.listCollapsedGroups,
             onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
         ) { icalEntry, section, index ->
             getNoteListItem(

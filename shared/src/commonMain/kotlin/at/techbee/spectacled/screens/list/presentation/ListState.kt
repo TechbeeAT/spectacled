@@ -15,8 +15,9 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.formatLocalized
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSectionHeader
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
@@ -64,7 +65,10 @@ data class ListState(
     val allHomeCollections: List<HomeCollection> = emptyList(),
     val allCalendars: List<Calendar> = emptyList(),
 
-    val listConfiguration: ListConfiguration = ListConfiguration(),
+    val listFilterCriteria: ListFilterCriteria = ListFilterCriteria(),
+    val listSortedBy: ListSortedBy = ListSortedBy.CREATED,
+    val listSortedByAscending: Boolean = true,
+    val listLayout: ListLayout = ListLayout.STAGGERED_GRID,
 
     val snackbarText: String? = null,
     val showDeletedItems: Boolean = false,
@@ -88,6 +92,7 @@ data class ListState(
     val draggingIcalEntryId: Long? = null,
     val scrollToDate: IcsDateTime? = null,
 
+    val listCollapsedGroups: Set<String> = emptySet(),
     val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES,  // must be overwritten immediately on load
 
     // Single ordered structure every list screen renders from:
@@ -97,7 +102,7 @@ data class ListState(
 ) {
 
     val showSearchBar: Boolean
-        get() = listConfiguration.searchQuery != null
+        get() = listFilterCriteria.searchQuery != null
 
     val showMultiselectBar: Boolean
         get() = multiselectItems != null
@@ -144,7 +149,7 @@ data class ListState(
                         if(it.syncState.isDeletedState() || it.parentUid == null)
                             return@filter false
 
-                        if(listConfiguration.hideCompletedTasks && it.isDoneOrCancelled())
+                        if(listFilterCriteria.hideCompletedTasks && it.isDoneOrCancelled())
                             return@filter false
 
                         return@filter true
@@ -154,15 +159,15 @@ data class ListState(
 
     private fun getFilteredList(icalEntries: List<IcalEntry>): List<IcalEntry> {
         // Early exit if no filter is active
-        if (!listConfiguration.anyFilterActive()) return icalEntries
+        if (!listFilterCriteria.anyFilterActive()) return icalEntries
 
-        return icalEntries.filter { it.matches(listConfiguration) }
+        return icalEntries.filter { it.matches(listFilterCriteria) }
     }
 
 
     private fun getSortedList(icalEntries: List<IcalEntry>): List<IcalEntry> {
-        val ascending = listConfiguration.listSortedByAscending
-        return when (listConfiguration.listSortedBy) {
+        val ascending = listSortedByAscending
+        return when (listSortedBy) {
             ListSortedBy.CREATED -> {
                 if (ascending) icalEntries.sortedBy { it.created.instant }
                 else icalEntries.sortedByDescending { it.created.instant }
@@ -243,7 +248,7 @@ data class ListState(
         if (spectacledVariant == SpectacledVariant.JOURNALS)
             return monthSections(entries)
 
-        return when (listConfiguration.listSortedBy) {
+        return when (listSortedBy) {
             ListSortedBy.CREATED -> datetimeBucketSections(entries, ListGrouping.createdGroups) { it.created }
             ListSortedBy.LAST_MODIFIED -> datetimeBucketSections(entries, ListGrouping.lastModifiedGroups) { it.lastModified ?: it.created }
             ListSortedBy.START -> datetimeBucketSections(entries, ListGrouping.startGroups) { it.dtStart }
@@ -309,7 +314,7 @@ data class ListState(
     private fun IcalEntry.isNoCriteria(): Boolean {
         if (isWrongTypeForVariant()) return true
         if (spectacledVariant == SpectacledVariant.JOURNALS) return false  // undated already caught above
-        return when (listConfiguration.listSortedBy) {
+        return when (listSortedBy) {
             ListSortedBy.CREATED -> ListGrouping.getGrouping(ListGrouping.createdGroups, created) == null
             ListSortedBy.LAST_MODIFIED -> ListGrouping.getGrouping(ListGrouping.lastModifiedGroups, lastModified ?: created) == null
             ListSortedBy.START -> ListGrouping.getGrouping(ListGrouping.startGroups, dtStart) == null

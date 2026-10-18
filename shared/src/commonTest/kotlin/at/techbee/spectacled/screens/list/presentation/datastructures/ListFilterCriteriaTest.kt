@@ -6,11 +6,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class ListConfigurationTest {
+class ListFilterCriteriaTest {
 
     @Test
     fun toggleCategoryAddsAndRemovesIgnoringCase() {
-        val selected = ListConfiguration().toggleCategory("Work")
+        val selected = ListFilterCriteria().toggleCategory("Work")
         assertEquals(listOf("Work"), selected.searchCategories)
         assertTrue(selected.isCategorySelected("work"))
 
@@ -19,7 +19,7 @@ class ListConfigurationTest {
 
     @Test
     fun toggleStatusAddsAndRemovesIncludingNoStatus() {
-        val selected = ListConfiguration().toggleStatus(Status.DRAFT).toggleStatus(null)
+        val selected = ListFilterCriteria().toggleStatus(Status.DRAFT).toggleStatus(null)
         assertEquals(listOf(Status.DRAFT, null), selected.filterStatus)
         assertEquals(listOf<Status?>(Status.DRAFT), selected.toggleStatus(null).filterStatus)
         assertEquals(listOf(null), selected.toggleStatus(Status.DRAFT).filterStatus)
@@ -27,30 +27,30 @@ class ListConfigurationTest {
 
     @Test
     fun anyFilterActiveForMultiselectLists() {
-        assertFalse(ListConfiguration().anyFilterActive())
-        assertTrue(ListConfiguration(searchCategories = listOf("a")).anyFilterActive())
-        assertTrue(ListConfiguration(filterStatus = listOf(null)).anyFilterActive())
+        assertFalse(ListFilterCriteria().anyFilterActive())
+        assertTrue(ListFilterCriteria(searchCategories = listOf("a")).anyFilterActive())
+        assertTrue(ListFilterCriteria(filterStatus = listOf(null)).anyFilterActive())
     }
 
     @Test
     fun escapedJoinRoundTrips() {
         val values = listOf("plain", "with,comma", "back\\slash", "trailing\\", ",", "", "a\\,b")
-        assertEquals(values, ListConfiguration.splitEscaped(ListConfiguration.joinEscaped(values)))
+        assertEquals(values, ListFilterCriteria.splitEscaped(ListFilterCriteria.joinEscaped(values)))
     }
 
     @Test
     fun escapedJoinEscapesSeparatorAndEscape() {
-        assertEquals("a\\,b,c\\\\d", ListConfiguration.joinEscaped(listOf("a,b", "c\\d")))
+        assertEquals("a\\,b,c\\\\d", ListFilterCriteria.joinEscaped(listOf("a,b", "c\\d")))
     }
 
     @Test
     fun splitOfLegacySingleValueIsUnchanged() {
-        assertEquals(listOf("Category 1"), ListConfiguration.splitEscaped("Category 1"))
-        assertEquals(listOf("IN_PROCESS"), ListConfiguration.splitEscaped("IN_PROCESS"))
+        assertEquals(listOf("Category 1"), ListFilterCriteria.splitEscaped("Category 1"))
+        assertEquals(listOf("IN_PROCESS"), ListFilterCriteria.splitEscaped("IN_PROCESS"))
     }
 
     @Test
     fun splitKeepsDanglingEscape() {
-        assertEquals(listOf("abc\\"), ListConfiguration.splitEscaped("abc\\"))
+        assertEquals(listOf("abc\\"), ListFilterCriteria.splitEscaped("abc\\"))
     }
 }

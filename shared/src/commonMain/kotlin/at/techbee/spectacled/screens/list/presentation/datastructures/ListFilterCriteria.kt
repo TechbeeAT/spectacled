@@ -1,24 +1,18 @@
 package at.techbee.spectacled.screens.list.presentation.datastructures
 
 import at.techbee.spectacled.screens.core.domain.Status
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration.Companion.joinEscaped
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration.Companion.splitEscaped
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria.Companion.joinEscaped
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria.Companion.splitEscaped
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 @Serializable
-data class ListConfiguration(
+data class ListFilterCriteria(
     val searchQuery: String? = null,
     val searchCategories: List<String> = emptyList(),
     /** A `null` element stands for entries without a status. */
     val filterStatus: List<Status?> = emptyList(),
-    val hideCompletedTasks: Boolean = false,
-
-    val listSortedBy: ListSortedBy = ListSortedBy.CREATED,
-    val listSortedByAscending: Boolean = true,
-    val listLayout: ListLayout = ListLayout.STAGGERED_GRID,
-
-    val listCollapsedGroups: Set<String> = emptySet()
+    val hideCompletedTasks: Boolean = false
 ) {
 
     fun anyFilterActive() =

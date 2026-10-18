@@ -27,7 +27,7 @@ import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
 import at.techbee.spectacled.screens.list.presentation.components.ListItem
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
 import at.techbee.spectacled.screens.list.presentation.components.listSections
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
 import kotlinx.coroutines.launch
@@ -56,8 +56,8 @@ fun ListScreenJournals(
         showDayBlock: Boolean = false,
         overrideTopRoundedCornerSize: Dp? = null,
         overrideBottomRoundedCornerSize: Dp? = null,
-        isFirst: Boolean = (state.listConfiguration.listLayout == ListLayout.LIST && index == 0) || state.listConfiguration.listLayout == ListLayout.STAGGERED_GRID,
-        isLast: Boolean = (state.listConfiguration.listLayout == ListLayout.LIST && index == lastIndex) || state.listConfiguration.listLayout == ListLayout.STAGGERED_GRID,
+        isFirst: Boolean = (state.listLayout == ListLayout.LIST && index == 0) || state.listLayout == ListLayout.STAGGERED_GRID,
+        isLast: Boolean = (state.listLayout == ListLayout.LIST && index == lastIndex) || state.listLayout == ListLayout.STAGGERED_GRID,
         modifier: Modifier = Modifier
     ) {
         ListItem(
@@ -118,7 +118,7 @@ fun ListScreenJournals(
             for (section in state.sections) {
                 if (section.entries.isEmpty()) continue
                 if (section.header != null) flatIndex += 1
-                val collapsed = section.header != null && section.key in state.listConfiguration.listCollapsedGroups
+                val collapsed = section.header != null && section.key in state.listCollapsedGroups
                 if (collapsed) continue
 
                 if (section.kind == ListSection.Kind.GROUPED) {
@@ -151,7 +151,7 @@ fun ListScreenJournals(
 
         listSections(
             sections = state.sections,
-            collapsedGroups = state.listConfiguration.listCollapsedGroups,
+            collapsedGroups = state.listCollapsedGroups,
             onToggleGroup = { onAction(ListAction.OnToggleListGroupExpanded(it)) }
         ) { icalEntry, section, index ->
 
@@ -213,7 +213,7 @@ private fun ListScreenJournals_Preview() {
     var state = ListState()
     state = state.copy(
         spectacledVariant = SpectacledVariant.JOURNALS,
-        listConfiguration = ListConfiguration(listLayout = ListLayout.LIST),
+        listLayout = ListLayout.LIST,
         icalEntries = listOf(IcalEntry.getSampleJournal(), IcalEntry.getSampleJournal())
     )
 
@@ -229,7 +229,7 @@ private fun ListScreenJournals_Search_Preview() {
 
     var state = ListState()
     state = state.copy(
-        listConfiguration = ListConfiguration(searchQuery = "Lorem"),
+        listFilterCriteria = ListFilterCriteria(searchQuery = "Lorem"),
         icalEntries = listOf(IcalEntry.getSampleIcalEntry(), IcalEntry.getSampleIcalEntry())
     )
 

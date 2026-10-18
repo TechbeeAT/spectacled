@@ -1,6 +1,6 @@
 package at.techbee.spectacled.screens.core.domain
 
-import at.techbee.spectacled.screens.list.presentation.datastructures.ListConfiguration
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -13,14 +13,14 @@ class IcalEntryMatchesTest {
 
     @Test
     fun emptyCriteriaMatchEverything() {
-        val criteria = ListConfiguration()
+        val criteria = ListFilterCriteria()
         assertTrue(work.matches(criteria))
         assertTrue(uncategorized.matches(criteria))
     }
 
     @Test
     fun anySelectedCategoryMatches() {
-        val criteria = ListConfiguration(searchCategories = listOf("Work", "garden"))
+        val criteria = ListFilterCriteria(searchCategories = listOf("Work", "garden"))
         assertTrue(work.matches(criteria))
         assertTrue(home.matches(criteria))
         assertFalse(uncategorized.matches(criteria))
@@ -28,14 +28,14 @@ class IcalEntryMatchesTest {
 
     @Test
     fun categoryMatchIgnoresCase() {
-        assertTrue(work.matches(ListConfiguration(searchCategories = listOf("work"))))
-        assertTrue(home.matches(ListConfiguration(searchCategories = listOf("HOME"))))
-        assertFalse(work.matches(ListConfiguration(searchCategories = listOf("home"))))
+        assertTrue(work.matches(ListFilterCriteria(searchCategories = listOf("work"))))
+        assertTrue(home.matches(ListFilterCriteria(searchCategories = listOf("HOME"))))
+        assertFalse(work.matches(ListFilterCriteria(searchCategories = listOf("home"))))
     }
 
     @Test
     fun anySelectedStatusMatches() {
-        val criteria = ListConfiguration(filterStatus = listOf(Status.IN_PROCESS, Status.CANCELLED))
+        val criteria = ListFilterCriteria(filterStatus = listOf(Status.IN_PROCESS, Status.CANCELLED))
         assertTrue(IcalEntry.newTask().copy(status = Status.IN_PROCESS).matches(criteria))
         assertTrue(IcalEntry.newTask().copy(status = Status.CANCELLED).matches(criteria))
         assertFalse(IcalEntry.newTask().copy(status = Status.NEEDS_ACTION).matches(criteria))
@@ -44,11 +44,11 @@ class IcalEntryMatchesTest {
 
     @Test
     fun nullStatusSelectsEntriesWithoutStatus() {
-        val noStatusOnly = ListConfiguration(filterStatus = listOf(null))
+        val noStatusOnly = ListFilterCriteria(filterStatus = listOf(null))
         assertTrue(IcalEntry.newJournal().matches(noStatusOnly))
         assertFalse(IcalEntry.newJournal().copy(status = Status.FINAL).matches(noStatusOnly))
 
-        val noStatusOrDraft = ListConfiguration(filterStatus = listOf(null, Status.DRAFT))
+        val noStatusOrDraft = ListFilterCriteria(filterStatus = listOf(null, Status.DRAFT))
         assertTrue(IcalEntry.newJournal().matches(noStatusOrDraft))
         assertTrue(IcalEntry.newJournal().copy(status = Status.DRAFT).matches(noStatusOrDraft))
         assertFalse(IcalEntry.newJournal().copy(status = Status.FINAL).matches(noStatusOrDraft))
@@ -56,7 +56,7 @@ class IcalEntryMatchesTest {
 
     @Test
     fun categoryAndStatusMustBothMatch() {
-        val criteria = ListConfiguration(searchCategories = listOf("work"), filterStatus = listOf(Status.IN_PROCESS))
+        val criteria = ListFilterCriteria(searchCategories = listOf("work"), filterStatus = listOf(Status.IN_PROCESS))
         assertTrue(work.copy(status = Status.IN_PROCESS).matches(criteria))
         assertFalse(work.copy(status = Status.NEEDS_ACTION).matches(criteria))
         assertFalse(home.copy(status = Status.IN_PROCESS).matches(criteria))
