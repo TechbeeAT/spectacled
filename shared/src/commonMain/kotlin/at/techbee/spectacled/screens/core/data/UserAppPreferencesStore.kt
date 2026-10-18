@@ -78,21 +78,13 @@ interface UserAppPreferencesStore {
             ?.split("|")?.toSet() ?: setOf(LIST_COLLAPSED_GROUP_NO_CRITERIA, LIST_COLLAPSED_GROUP_TRASHBIN)
         set(value) = this.save(LIST_COLLAPSED_GROUPS, value.joinToString("|"))
 
-    var listFilterCriteria: Map<Long, ListFilterCriteria>?
+    var listFilterCriteria: Map<Long, ListFilterCriteria>
         get() = this.load(LIST_FILTER_CRITERIA)?.let { json ->
             runCatching {
                 ListFilterCriteria.mapperJson.decodeFromString<Map<Long, ListFilterCriteria>>(json)
             }.getOrNull()
         } ?: emptyMap()
-        set(value) {
-            if (value.isNullOrEmpty())
-                this.remove(LIST_FILTER_CRITERIA)
-            else
-                this.save(
-                    LIST_FILTER_CRITERIA,
-                    ListFilterCriteria.mapperJson.encodeToString(value)
-                )
-        }
+        set(value) = this.save(LIST_FILTER_CRITERIA, ListFilterCriteria.mapperJson.encodeToString(value))
 
 
     /* SETTINGS */
