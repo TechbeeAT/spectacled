@@ -205,7 +205,10 @@ class ListViewModel(
         when(action) {
             is ListAction.OnListFilterCriteriaChanged -> {
                 updateList(_state.value.listSortedBy, _state.value.listSortedByAscending, action.listFilterCriteria)
-                userAppPreferencesStore.listFilterCriteria += (loadedCalendarId!! to action.listFilterCriteria)
+                loadedCalendarId?.let {
+                    userAppPreferencesStore.listFilterCriteria += (it to action.listFilterCriteria)
+                }
+
             }
             is ListAction.OnToggleFilterBar -> { _state.update { it.copy(showListFilterRow = !_state.value.showListFilterRow) } }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
