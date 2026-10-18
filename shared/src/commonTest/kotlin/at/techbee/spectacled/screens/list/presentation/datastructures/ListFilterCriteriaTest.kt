@@ -33,24 +33,29 @@ class ListFilterCriteriaTest {
     }
 
     @Test
-    fun escapedJoinRoundTrips() {
-        val values = listOf("plain", "with,comma", "back\\slash", "trailing\\", ",", "", "a\\,b")
-        assertEquals(values, ListFilterCriteria.splitEscaped(ListFilterCriteria.joinEscaped(values)))
+    fun perCalendarMapRoundTripsWithoutSearchQuery() {
+        val stored = mapOf(
+            1L to ListFilterCriteria(
+                searchQuery = "not stored",
+                searchCategories = listOf("with,comma", "back\\slash"),
+                filterStatus = listOf(Status.IN_PROCESS, null),
+                hideCompletedTasks = true
+            ),
+            42L to ListFilterCriteria()
+        )
+
+        val json = ListFilterCriteria.mapperJson.encodeToString(stored)
+        val restored = ListFilterCriteria.mapperJson.decodeFromString<Map<Long, ListFilterCriteria>>(json)
+
+        assertFalse(json.contains("not stored"))
+        assertEquals(stored.mapValues { it.value.copy(searchQuery = null) }, restored)
     }
 
     @Test
-    fun escapedJoinEscapesSeparatorAndEscape() {
-        assertEquals("a\\,b,c\\\\d", ListFilterCriteria.joinEscaped(listOf("a,b", "c\\d")))
-    }
-
-    @Test
-    fun splitOfLegacySingleValueIsUnchanged() {
-        assertEquals(listOf("Category 1"), ListFilterCriteria.splitEscaped("Category 1"))
-        assertEquals(listOf("IN_PROCESS"), ListFilterCriteria.splitEscaped("IN_PROCESS"))
-    }
-
-    @Test
-    fun splitKeepsDanglingEscape() {
-        assertEquals(listOf("abc\\"), ListFilterCriteria.splitEscaped("abc\\"))
+    fun unknownKeysAreIgnored() {
+        val restored = ListFilterCriteria.mapperJson.decodeFromString<ListFilterCriteria>(
+            """{"searchCategories":["Work"],"addedInNewerVersion":true}"""
+        )
+        assertEquals(ListFilterCriteria(searchCategories = listOf("Work")), restored)
     }
 }
