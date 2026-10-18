@@ -204,12 +204,8 @@ class ListViewModel(
     fun onAction(action: ListAction) {
         when(action) {
             is ListAction.OnListFilterCriteriaChanged -> {
-                val previousListFilterCriteria = _state.value.listFilterCriteria
                 updateList(_state.value.listSortedBy, _state.value.listSortedByAscending, action.listFilterCriteria)
-                // searchQuery isn't stored, so typing in the search bar needs no write
-                val calendarId = loadedCalendarId
-                if (calendarId != null && action.listFilterCriteria.copy(searchQuery = null) != previousListFilterCriteria.copy(searchQuery = null))
-                    userAppPreferencesStore.listFilterCriteria += (calendarId to action.listFilterCriteria)
+                userAppPreferencesStore.listFilterCriteria += (loadedCalendarId!! to action.listFilterCriteria)
             }
             is ListAction.OnToggleFilterBar -> { _state.update { it.copy(showListFilterRow = !_state.value.showListFilterRow) } }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
@@ -223,10 +219,10 @@ class ListViewModel(
                 _state.update { it.copy(listLayout = action.listLayout) }
                 userAppPreferencesStore.listLayout = action.listLayout
             }
-            is ListAction.OnSearchBarExpanded -> {
+            is ListAction.OnUpdateSearch -> {
                 _state.update { it.copy(
                     listFilterCriteria = it.listFilterCriteria.copy(
-                        searchQuery = if(action.isExpanded) "" else null,
+                        searchQuery = action.searchString,
                     )
                 ).recompute() }
                 refreshDragAndDropList()

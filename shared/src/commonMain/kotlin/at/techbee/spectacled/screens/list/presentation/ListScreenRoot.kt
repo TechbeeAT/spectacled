@@ -119,7 +119,7 @@ fun ListScreenRoot(
         if (state.multiselectItems != null)
             listViewModel.onAction(ListAction.OnClearMultiselectItems)
         else
-            listViewModel.onAction(ListAction.OnSearchBarExpanded(false))
+            listViewModel.onAction(ListAction.OnUpdateSearch(null))
     }
 
     MaterialTheme(colorScheme = getColorSchemeForSeedColor(state.calendar.color)) {

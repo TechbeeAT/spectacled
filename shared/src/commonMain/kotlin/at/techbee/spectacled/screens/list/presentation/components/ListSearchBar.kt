@@ -41,7 +41,7 @@ fun ListSearchBar(
         TextField(
             placeholder = { Text(stringResource(Res.string.search)) },
             value = listFilterCriteria.searchQuery ?: "",
-            onValueChange = { onAction(ListAction.OnListFilterCriteriaChanged(listFilterCriteria.copy(searchQuery = it))) },
+            onValueChange = { onAction(ListAction.OnUpdateSearch(it)) },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
                 keyboardType = KeyboardType.Filter,

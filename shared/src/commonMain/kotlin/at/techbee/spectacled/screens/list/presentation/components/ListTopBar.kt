@@ -193,14 +193,7 @@ fun ListTopBar(
 
                 Row {
                     TextButton(
-                        onClick = {
-                            if (state.showSearchBar) {
-                                onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchQuery = null)))
-                            } else {
-                                onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchQuery = "")))
-                            }
-                        },
-                        //elevation = if (state.showSearchBar) ButtonDefaults.buttonElevation(defaultElevation = 1.dp) else null,
+                        onClick = { onAction(ListAction.OnUpdateSearch(if(state.showSearchBar) null else "")) },
                         colors = if (state.showSearchBar) ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) else ButtonDefaults.textButtonColors(),
                     ) {
                         Icon(

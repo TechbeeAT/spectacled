@@ -13,7 +13,7 @@ sealed interface ListAction {
     data class OnSortedByChanged(val listSortedBy: ListSortedBy, val listSortedByAscending: Boolean): ListAction
     data class OnViewModeChanged(val listLayout: ListLayout): ListAction
     object OnTriggerSync: ListAction
-    data class OnSearchBarExpanded(val isExpanded: Boolean): ListAction
+    data class OnUpdateSearch(val searchString: String?): ListAction
     data class OnNavigateUp(val navigateUp: Boolean): ListAction
     data class OnToggleProgress(val icalEntryId: Long): ListAction
     data class OnUpdateSnackbar(val message: String?): ListAction
