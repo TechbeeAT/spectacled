@@ -53,9 +53,13 @@ class ListViewModel(
 
     private var observationJob: Job? = null
 
+    /** Set synchronously in [load], unlike `state.calendar`, which only follows once the calendar is read. */
+    private var loadedCalendarId: Long? = null
+
 
     fun load(calendarId: Long) {
         observationJob?.cancel()
+        loadedCalendarId = calendarId
 
         _state.update { it.copy(
             isRefreshing = true,
@@ -200,8 +204,12 @@ class ListViewModel(
     fun onAction(action: ListAction) {
         when(action) {
             is ListAction.OnListFilterCriteriaChanged -> {
+                val previousListFilterCriteria = _state.value.listFilterCriteria
                 updateList(_state.value.listSortedBy, _state.value.listSortedByAscending, action.listFilterCriteria)
-                userAppPreferencesStore.listFilterCriteria = userAppPreferencesStore.listFilterCriteria.plus(mapOf(state.value.calendar.id to action.listFilterCriteria))
+                // searchQuery isn't stored, so typing in the search bar needs no write
+                val calendarId = loadedCalendarId
+                if (calendarId != null && action.listFilterCriteria.copy(searchQuery = null) != previousListFilterCriteria.copy(searchQuery = null))
+                    userAppPreferencesStore.listFilterCriteria += (calendarId to action.listFilterCriteria)
             }
             is ListAction.OnToggleFilterBar -> { _state.update { it.copy(showListFilterRow = !_state.value.showListFilterRow) } }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
