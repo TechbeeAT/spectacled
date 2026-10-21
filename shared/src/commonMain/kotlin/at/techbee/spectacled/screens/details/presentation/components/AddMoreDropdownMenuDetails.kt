@@ -3,9 +3,10 @@ package at.techbee.spectacled.screens.details.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalGridApi
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AddAlarm
 import androidx.compose.material.icons.outlined.AddLink
 import androidx.compose.material.icons.outlined.AddLocation
 import androidx.compose.material.icons.outlined.AddTask
@@ -32,6 +33,7 @@ import at.techbee.spectacled.screens.details.presentation.DetailsSheetOrDialog
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.alarm
 import spectacled.shared.generated.resources.attachment_by_url
 import spectacled.shared.generated.resources.attachment_file
 import spectacled.shared.generated.resources.attachment_from_gallery
@@ -67,8 +69,10 @@ fun AddMoreDropdownMenuDetails(
             modifier = Modifier.padding(8.dp)
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            maxItemsInEachRow = 3
         ) {
             SquareDropdownMenuItem(
                 text = stringResource(Res.string.attachment_file),
@@ -97,8 +101,10 @@ fun AddMoreDropdownMenuDetails(
             modifier = Modifier.padding(8.dp)
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            maxItemsInEachRow = 3
         ) {
 
             if (getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID)) {
@@ -137,8 +143,10 @@ fun AddMoreDropdownMenuDetails(
             modifier = Modifier.padding(8.dp)
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            maxItemsInEachRow = 3
         ) {
 
             SquareDropdownMenuItem(
@@ -158,6 +166,15 @@ fun AddMoreDropdownMenuDetails(
                     enabled = !hasLocation,
                     onClick = {
                         onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.EDIT_LOCATION))
+                        onDismiss()
+                    },
+                )
+
+                SquareDropdownMenuItem(
+                    text = stringResource(Res.string.alarm),
+                    icon = Icons.Outlined.AddAlarm,
+                    onClick = {
+                        onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.ADD_ALARM))
                         onDismiss()
                     },
                 )

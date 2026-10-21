@@ -59,6 +59,7 @@ import at.techbee.spectacled.screens.core.presentation.components.StatusWithProg
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.core.rememberFilePicker
 import at.techbee.spectacled.screens.core.rememberImagePicker
+import at.techbee.spectacled.screens.details.presentation.components.AddAlarmBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.AddMoreDropdownMenuDetails
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.AddUrlAttachmentBottomSheet
@@ -239,6 +240,12 @@ fun DetailsScreenRoot(
                     onUrlConfirmed = { detailsViewModel.onAction(DetailsAction.OnAddUrlAttachment(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
+            DetailsSheetOrDialog.ADD_ALARM -> {
+                AddAlarmBottomSheet(
+                    onAlarmConfirmed = { TODO() },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            }
             null -> {}
         }
 

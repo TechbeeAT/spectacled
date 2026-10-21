@@ -161,6 +161,8 @@
     <string name="add_url">Add URL</string>
     <string name="location">Location</string>
     <string name="add_location">Add location</string>
+    <string name="alarm">Alarm</string>
+    <string name="add_alarm">Add alarm</string>
     <string name="add">Add</string>
     <string name="link_file_by_url">Link file by URL</string>
     <string name="link_file_by_url_hint">The file stays on its server - Spectacled only stores the link and downloads it when opened.</string>
