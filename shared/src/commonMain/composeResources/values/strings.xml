@@ -163,6 +163,7 @@
     <string name="add_location">Add location</string>
     <string name="alarm">Alarm</string>
     <string name="add_alarm">Add alarm</string>
+    <string name="alarm_presets">Alarm presets</string>
     <string name="alarm_relative">Relative</string>
     <string name="alarm_absolute">Date &amp; time</string>
     <string name="alarm_before">before</string>

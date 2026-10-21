@@ -17,7 +17,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
@@ -43,9 +43,9 @@ import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
@@ -66,6 +66,7 @@ import spectacled.shared.generated.resources.alarm_fires_in_past
 import spectacled.shared.generated.resources.alarm_needs_reference_date
 import spectacled.shared.generated.resources.alarm_offset_after
 import spectacled.shared.generated.resources.alarm_offset_before
+import spectacled.shared.generated.resources.alarm_presets
 import spectacled.shared.generated.resources.alarm_relative
 import spectacled.shared.generated.resources.alarm_unit_days
 import spectacled.shared.generated.resources.alarm_unit_hours
@@ -171,7 +172,7 @@ fun AddAlarmBottomSheet(
                     alarm?.let { onAlarmConfirmed(it) }
                     onDismiss()
                 },
-                enabled = alarm != null && triggerTime != null
+                enabled = alarm != null && triggerTime != null && triggerTime > Clock.System.now()
             ) {
                 Text(stringResource(Res.string.add))
             }
@@ -270,14 +271,20 @@ private fun RelativeAlarmEditor(
         if (relatedTo == AlarmTriggerRelation.END) Res.string.date_due else Res.string.date_start
     )
 
+    Text(
+        text = stringResource(Res.string.alarm_presets),
+        style = MaterialTheme.typography.labelLarge
+    )
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
         // Quick picks: "At Due", "15 minutes before Due", ...
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PRESETS.forEach { preset ->
                 val (presetAmount, presetUnit) = preset
-                SuggestionChip(
+                FilterChip(
                     onClick = { onPresetSelected(preset) },
+                    selected = amountText == presetAmount.toString() && unit == presetUnit && isBefore,
                     label = {
                         Text(
                             if (presetAmount == 0)
@@ -294,6 +301,8 @@ private fun RelativeAlarmEditor(
             }
         }
 
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
         // Custom: [ 15 ] Minutes | Hours | Days | Weeks
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -307,6 +316,30 @@ private fun RelativeAlarmEditor(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.width(88.dp)
             )
+            SingleChoiceSegmentedButtonRow {
+                AlarmOffsetUnit.entries.forEachIndexed { index, offsetUnit ->
+                    SegmentedButton(
+                        selected = unit == offsetUnit,
+                        onClick = { onUnitChanged(offsetUnit) },
+                        shape = SegmentedButtonDefaults.itemShape(index, AlarmOffsetUnit.entries.size),
+                        label = {
+                            Text(
+                                text = stringResource(offsetUnit.nameRes),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    )
+                    /*
+                    FilterChip(
+                        selected = unit == offsetUnit,
+                        onClick = { onUnitChanged(offsetUnit) },
+                        label = { Text(stringResource(offsetUnit.nameRes)) }
+                    )
+                     */
+                }
+            }
+            /*
             FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 AlarmOffsetUnit.entries.forEach { offsetUnit ->
                     FilterChip(
@@ -316,6 +349,8 @@ private fun RelativeAlarmEditor(
                     )
                 }
             }
+
+             */
         }
 
         // before | after    Start | Due
@@ -323,31 +358,40 @@ private fun RelativeAlarmEditor(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             itemVerticalAlignment = Alignment.CenterVertically
         ) {
-            FilterChip(
-                selected = isBefore,
-                onClick = { onIsBeforeChanged(true) },
-                label = { Text(stringResource(Res.string.alarm_before)) }
-            )
-            FilterChip(
-                selected = !isBefore,
-                onClick = { onIsBeforeChanged(false) },
-                label = { Text(stringResource(Res.string.alarm_after)) }
-            )
 
-            Text("·", modifier = Modifier.padding(horizontal = 4.dp))
+            SingleChoiceSegmentedButtonRow {
+                SegmentedButton(
+                    selected = isBefore,
+                    onClick = { onIsBeforeChanged(true) },
+                    label = { Text(stringResource(Res.string.alarm_before)) },
+                    shape = SegmentedButtonDefaults.itemShape(0, 2)
+                )
+                SegmentedButton(
+                    selected = !isBefore,
+                    onClick = { onIsBeforeChanged(false) },
+                    label = { Text(stringResource(Res.string.alarm_after)) },
+                    shape = SegmentedButtonDefaults.itemShape(1, 2)
+                )
+            }
 
-            FilterChip(
-                selected = relatedTo == AlarmTriggerRelation.START,
-                enabled = startAvailable,
-                onClick = { onRelatedToChanged(AlarmTriggerRelation.START) },
-                label = { Text(stringResource(Res.string.date_start)) }
-            )
-            FilterChip(
-                selected = relatedTo == AlarmTriggerRelation.END,
-                enabled = dueAvailable,
-                onClick = { onRelatedToChanged(AlarmTriggerRelation.END) },
-                label = { Text(stringResource(Res.string.date_due)) }
-            )
+            //Text("·", modifier = Modifier.padding(horizontal = 4.dp))
+
+            SingleChoiceSegmentedButtonRow {
+                SegmentedButton(
+                    selected = relatedTo == AlarmTriggerRelation.START,
+                    enabled = startAvailable,
+                    onClick = { onRelatedToChanged(AlarmTriggerRelation.START) },
+                    label = { Text(stringResource(Res.string.date_start)) },
+                    shape = SegmentedButtonDefaults.itemShape(0, 2)
+                )
+                SegmentedButton(
+                    selected = relatedTo == AlarmTriggerRelation.END,
+                    enabled = dueAvailable,
+                    onClick = { onRelatedToChanged(AlarmTriggerRelation.END) },
+                    label = { Text(stringResource(Res.string.date_due)) },
+                    shape = SegmentedButtonDefaults.itemShape(1, 2)
+                )
+            }
         }
 
         // Summary of the custom selection, e.g. "15 minutes before Due"
