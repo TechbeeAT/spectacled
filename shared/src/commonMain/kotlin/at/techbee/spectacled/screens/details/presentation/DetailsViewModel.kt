@@ -16,6 +16,7 @@ import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
+import at.techbee.spectacled.screens.core.domain.Alarm
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -364,6 +365,7 @@ class DetailsViewModel(
             is DetailsAction.OnNewCalendarIdSelected -> { onNewCalendarIdSelected(action.calendarId) }
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
             is DetailsAction.OnAddUrlAttachment -> { onAddUrlAttachment(action.url) }
+            is DetailsAction.OnAddAlarm -> { onAddAlarm(action.alarm) }
             is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentUid) }
             is DetailsAction.OnShowDeleteAttachmentDialog -> { _state.update { it.copy(deleteAttachmentUid = action.attachmentUid) } }
             is DetailsAction.OnDeleteAttachment -> {
@@ -528,6 +530,22 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     url = newUrl,
+                    lastModified = IcsDateTime.now(),
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
+                )
+            )
+        }
+    }
+
+    private fun onAddAlarm(alarm: Alarm) {
+
+        if(!state.value.allowEditing())
+            return
+
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    alarms = it.icalEntry.alarms + alarm,
                     lastModified = IcsDateTime.now(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )

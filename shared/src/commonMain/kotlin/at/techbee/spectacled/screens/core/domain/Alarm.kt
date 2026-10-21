@@ -1,11 +1,8 @@
 package at.techbee.spectacled.screens.core.domain
 
-import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.IcsDuration
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -96,10 +93,3 @@ data class UpcomingAlarm(
     val alarm: Alarm,
     val triggerAt: Instant
 )
-
-/** The instant of this value, resolving DATE and floating DATE-TIME values in [deviceTimeZone]. */
-private fun IcsDateTime.resolvedInstant(deviceTimeZone: TimeZone): Instant =
-    if (isDateOnly || timeZone == null)
-        instant.toLocalDateTime(TimeZone.UTC).toInstant(deviceTimeZone)    // both are stored as UTC wall-clock
-    else
-        instant

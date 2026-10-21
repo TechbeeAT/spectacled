@@ -242,7 +242,8 @@ fun DetailsScreenRoot(
                 )
             DetailsSheetOrDialog.ADD_ALARM -> {
                 AddAlarmBottomSheet(
-                    onAlarmConfirmed = { TODO() },
+                    icalEntry = detailsState.icalEntry,
+                    onAlarmConfirmed = { detailsViewModel.onAction(DetailsAction.OnAddAlarm(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
             }

@@ -102,6 +102,16 @@ data class IcsDateTime(
     fun toLocalDateTime(): LocalDateTime = instant.toLocalDateTime(effectiveZone())
 
     /**
+     * The actual point in time of this value. DATE and floating DATE-TIME values have no zone of
+     * their own (they are stored as UTC wall-clock), they are resolved in [deviceTimeZone].
+     */
+    fun resolvedInstant(deviceTimeZone: TimeZone): Instant =
+        if (isDateOnly || timeZone == null)
+            instant.toLocalDateTime(TimeZone.UTC).toInstant(deviceTimeZone)
+        else
+            instant
+
+    /**
      * Returns a new [IcsDateTime] instance with the specified [newZone], preserving the local time
      * components (year, month, day, hour, etc.) by converting the current [instant] from its
      * effective time zone to the new one.
