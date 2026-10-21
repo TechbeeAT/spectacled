@@ -53,9 +53,13 @@ class ListViewModel(
 
     private var observationJob: Job? = null
 
+    /** Set synchronously in [load], unlike `state.calendar`, which only follows once the calendar is read. */
+    private var loadedCalendarId: Long? = null
+
 
     fun load(calendarId: Long) {
         observationJob?.cancel()
+        loadedCalendarId = calendarId
 
         _state.update { it.copy(
             isRefreshing = true,
@@ -68,6 +72,7 @@ class ListViewModel(
             listSortedByAscending = userAppPreferencesStore.listSortedByAscending,
             listLayout = userAppPreferencesStore.listLayout,
             listCollapsedGroups = userAppPreferencesStore.listCollapsedGroups,
+            listFilterCriteria = userAppPreferencesStore.listFilterCriteria.get(calendarId)?: ListFilterCriteria(),
             spectacledVariant = spectacledVariant
         ).recompute() }
         refreshDragAndDropList()   // drop whatever the previously opened calendar left behind
@@ -200,6 +205,10 @@ class ListViewModel(
         when(action) {
             is ListAction.OnListFilterCriteriaChanged -> {
                 updateList(_state.value.listSortedBy, _state.value.listSortedByAscending, action.listFilterCriteria)
+                loadedCalendarId?.let {
+                    userAppPreferencesStore.listFilterCriteria += (it to action.listFilterCriteria)
+                }
+
             }
             is ListAction.OnToggleFilterBar -> { _state.update { it.copy(showListFilterRow = !_state.value.showListFilterRow) } }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
@@ -213,10 +222,10 @@ class ListViewModel(
                 _state.update { it.copy(listLayout = action.listLayout) }
                 userAppPreferencesStore.listLayout = action.listLayout
             }
-            is ListAction.OnSearchBarExpanded -> {
+            is ListAction.OnUpdateSearch -> {
                 _state.update { it.copy(
                     listFilterCriteria = it.listFilterCriteria.copy(
-                        searchQuery = if(action.isExpanded) "" else null,
+                        searchQuery = action.searchString,
                     )
                 ).recompute() }
                 refreshDragAndDropList()
@@ -231,6 +240,13 @@ class ListViewModel(
             is ListAction.OnToggleMultiselectItem -> toggleMultiselectItem(action.icalEntryId)
             ListAction.OnClearMultiselectItems -> { _state.update { it.copy(multiselectItems = null) } }
             is ListAction.OnShowDeleteSelectedItemsDialog -> { _state.update { it.copy(showDeleteSelectedItemsDialog = action.showDialog) }}
+            is ListAction.OnSwipeToDelete -> {
+                // Select (never toggle) the swiped entry so it is part of the dialog and the swiped box resets on dismiss
+                _state.update { it.copy(
+                    multiselectItems = (it.multiselectItems ?: emptyList()).let { items -> if(action.icalEntryId in items) items else items + action.icalEntryId },
+                    showDeleteSelectedItemsDialog = true
+                ) }
+            }
             ListAction.OnDeleteSelectedItems -> onDeleteSelectedItems()
             is ListAction.OnShowMoveSelectedItemsDialog -> { _state.update { it.copy(showMoveSelectedItemsDialog = action.showDialog) }}
             is ListAction.OnMoveSelectedItems -> onMoveSelectedItems(action.targetCalendarId)

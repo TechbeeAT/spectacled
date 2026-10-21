@@ -10,21 +10,15 @@ import spectacled.shared.generated.resources.provider_category_self_hosted
 import spectacled.shared.generated.resources.provider_disroot_description
 import spectacled.shared.generated.resources.provider_fastmail_description
 import spectacled.shared.generated.resources.provider_flag_australia
-import spectacled.shared.generated.resources.provider_flag_belgium
-import spectacled.shared.generated.resources.provider_flag_european_union
 import spectacled.shared.generated.resources.provider_flag_france
 import spectacled.shared.generated.resources.provider_flag_germany
 import spectacled.shared.generated.resources.provider_flag_netherlands
 import spectacled.shared.generated.resources.provider_flag_switzerland
 import spectacled.shared.generated.resources.provider_hetzner_description
 import spectacled.shared.generated.resources.provider_infomaniak_description
-import spectacled.shared.generated.resources.provider_mailfence_description
 import spectacled.shared.generated.resources.provider_murena_description
 import spectacled.shared.generated.resources.provider_nextcloud_description
-import spectacled.shared.generated.resources.provider_posteo_description
 import spectacled.shared.generated.resources.provider_radicale_description
-import spectacled.shared.generated.resources.provider_tabdigital_description
-import spectacled.shared.generated.resources.provider_tag_anonymous_payments
 import spectacled.shared.generated.resources.provider_tag_free_plan
 import spectacled.shared.generated.resources.provider_tag_free_trial
 import spectacled.shared.generated.resources.provider_tag_gdpr
@@ -37,8 +31,8 @@ import spectacled.shared.generated.resources.provider_woelkli_description
 
 enum class CalDavProviderCategory(val headline: StringResource) {
     NEXTCLOUD(Res.string.provider_category_nextcloud),
-    SELF_HOSTED(Res.string.provider_category_self_hosted),
-    EMAIL(Res.string.provider_category_email)
+    EMAIL(Res.string.provider_category_email),
+    SELF_HOSTED(Res.string.provider_category_self_hosted)
 }
 
 enum class CalDavProvider(
@@ -69,6 +63,21 @@ enum class CalDavProvider(
         "https://murena.io/remote.php/dav"
     ),
 
+    FASTMAIL(
+        "Fastmail",
+        Res.string.provider_fastmail_description,
+        "https://www.fastmail.com",
+        listOf(
+            Res.string.provider_flag_australia,
+            Res.string.provider_tag_power_users,
+            Res.string.provider_tag_free_trial
+        ),
+        listOf(CalendarComponent.VTODO, CalendarComponent.VJOURNAL),
+        CalDavProviderCategory.EMAIL,
+        calDavUrl = "https://caldav.fastmail.com/"
+    ),
+
+    /*
     TABDIGITAL(
         "Tab.Digital",
         Res.string.provider_tabdigital_description,
@@ -86,23 +95,7 @@ enum class CalDavProvider(
         ),
         CalDavProviderCategory.NEXTCLOUD
     ),
-
-    HETZNER(
-        "Hetzner Storage Share",
-        Res.string.provider_hetzner_description,
-        "https://www.hetzner.com/storage/storage-share/",
-        listOf(
-            Res.string.provider_flag_germany,
-            Res.string.provider_tag_nextcloud,
-            Res.string.provider_tag_gdpr,
-            Res.string.provider_tag_power_users
-        ),
-        listOf(
-            CalendarComponent.VTODO,
-            CalendarComponent.VJOURNAL
-        ),
-        CalDavProviderCategory.NEXTCLOUD
-    ),
+     */
 
     WOELKLI(
         "woelkli",
@@ -132,6 +125,25 @@ enum class CalDavProvider(
             Res.string.provider_tag_open_source,
             Res.string.provider_tag_privacy,
             Res.string.provider_tag_free_plan
+        ),
+        listOf(
+            CalendarComponent.VTODO,
+            CalendarComponent.VJOURNAL
+        ),
+        CalDavProviderCategory.NEXTCLOUD,
+        calDavUrl = "https://cloud.disroot.org/remote.php/dav"
+    ),
+
+
+    HETZNER(
+        "Hetzner Storage Share",
+        Res.string.provider_hetzner_description,
+        "https://www.hetzner.com/storage/storage-share/",
+        listOf(
+            Res.string.provider_flag_germany,
+            Res.string.provider_tag_nextcloud,
+            Res.string.provider_tag_gdpr,
+            Res.string.provider_tag_power_users
         ),
         listOf(
             CalendarComponent.VTODO,
@@ -203,32 +215,21 @@ enum class CalDavProvider(
 
  */
 
-    FASTMAIL(
-        "Fastmail",
-        Res.string.provider_fastmail_description,
-        "https://www.fastmail.com",
-        listOf(
-            Res.string.provider_flag_australia,
-            Res.string.provider_tag_power_users,
-            Res.string.provider_tag_free_trial
-        ),
-        listOf(CalendarComponent.VTODO),
-        CalDavProviderCategory.EMAIL
-    ),
-
     INFOMANIAK(
         "Infomaniak",
         Res.string.provider_infomaniak_description,
-        "https://www.infomaniak.com",
+        "https://www.infomaniak.com/goto/en/home?utm_term=643c252cecbd9",
         listOf(
             Res.string.provider_flag_switzerland,
             Res.string.provider_tag_privacy,
             Res.string.provider_tag_gdpr
         ),
         listOf(CalendarComponent.VTODO),
-        CalDavProviderCategory.EMAIL
+        CalDavProviderCategory.EMAIL,
+        calDavUrl = "https://sync.infomaniak.com"
     ),
 
+    /* mailfence only allows creation of calendars in their web interface which would never support VTODO or VJOURNAL
     MAILFENCE(
         "Mailfence",
         Res.string.provider_mailfence_description,
@@ -239,8 +240,11 @@ enum class CalDavProvider(
             Res.string.provider_tag_gdpr
         ),
         listOf(CalendarComponent.VTODO),
-        CalDavProviderCategory.EMAIL
+        CalDavProviderCategory.EMAIL,
+        calDavUrl = "https://mailfence.com"
     ),
+
+     */
 /*
     RUNBOX(
         "Runbox",
@@ -269,6 +273,7 @@ enum class CalDavProvider(
 
  */
 
+    /* Posteo allows the creation of new calendars only on the web interface which never adds VTODO or VJOURNAL support
     POSTEO(
         "Posteo",
         Res.string.provider_posteo_description,
@@ -282,6 +287,7 @@ enum class CalDavProvider(
         listOf(CalendarComponent.VTODO),
         CalDavProviderCategory.EMAIL
     )
+     */
     ;
 
     val hasTodo = supportedCalendarComponents.contains(CalendarComponent.VTODO)

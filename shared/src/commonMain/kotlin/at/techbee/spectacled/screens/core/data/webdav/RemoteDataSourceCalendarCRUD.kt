@@ -68,8 +68,9 @@ suspend fun createCalendarMultiplatform(
                     components = newCalendar.supportedComponents
                         .map { CalendarComp(name = it.name) }
                         .ifEmpty { listOf(CalendarComp(CalendarComponent.VJOURNAL.name), CalendarComp(CalendarComponent.VTODO.name)) }
-                ),
-                currentUserPrincipal = CurrentUserPrincipal()
+                )
+                // Only settable properties may go here: RFC 5689 requires the whole MKCOL to fail
+                // if any property is rejected, e.g. a protected one like current-user-principal.
             )
         )
     )
@@ -87,15 +88,19 @@ suspend fun createCalendarMultiplatform(
 
 
         if(!response.status.isSuccess()) {
+            // The body (an mkcol-response) names the precondition or property the server rejected
+            val body = response.bodyAsText()
+            val details = "${response.status.description} ${response.status.value}\n$body".trim()
+            Napier.w("MKCOL failed: $details")
             return when (response.status) {
-                HttpStatusCode.Forbidden ->    // Missing bind privilege on calendar-home-set
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_privileges), "${response.status.description} ${response.status.value}")
+                HttpStatusCode.Forbidden ->    // Missing bind privilege on calendar-home-set, or a rejected property
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_privileges).appendDavErrorMessage(body), details)
                 HttpStatusCode.Conflict ->
-                    UpsertCalendarResult.Failed(response.status,getString(Res.string.calendar_create_failed_conflict), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status,getString(Res.string.calendar_create_failed_conflict).appendDavErrorMessage(body), details)
                 HttpStatusCode.MethodNotAllowed ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_unsupported), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_unsupported).appendDavErrorMessage(body), details)
                 else ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed).appendDavErrorMessage(body), details)
             }
         }
     }
@@ -214,15 +219,17 @@ suspend fun updateCalDavCalendarMultiplatform(
 
 
         if(!response.status.isSuccess()) {
+            val body = response.bodyAsText()
+            val details = "${response.status.description} ${response.status.value}\n$body".trim()
             return when (response.status) {
                 HttpStatusCode.Forbidden ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed_privileges), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed_privileges).appendDavErrorMessage(body), details)
                 HttpStatusCode.Conflict ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed_conflict), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed_conflict).appendDavErrorMessage(body), details)
                 HttpStatusCode.NotFound ->
                     UpsertCalendarResult.NotFound
                 else ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed), "${response.status.description} ${response.status.value}")
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed).appendDavErrorMessage(body), details)
             }
         }
     }
@@ -298,17 +305,18 @@ suspend fun deleteCalendarMultiplatform(
         accept(ContentType.Application.Xml)
     }.let { response ->
 
+        val body = if (response.status.isSuccess()) null else response.bodyAsText()
         return when {
             response.status.isSuccess() -> DeleteCalendarResult.SuccessfullyDeleted
             response.status == HttpStatusCode.Forbidden ->  // Missing bind privilege on calendar-home-set
-                DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_failed_privileges), "Status: ${response.status.description} ${response.status.value}")
+                DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_failed_privileges).appendDavErrorMessage(body), "Status: ${response.status.description} ${response.status.value}")
             response.status == HttpStatusCode.NotFound ->    // Calendar was already deleted
                 DeleteCalendarResult.AlreadyDeleted
             response.status == HttpStatusCode.MethodNotAllowed ->
-                DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_forbidden), "Status: ${response.status.description} ${response.status.value}")
+                DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_forbidden).appendDavErrorMessage(body), "Status: ${response.status.description} ${response.status.value}")
             response.status == HttpStatusCode.Conflict ->
-                DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_forbidden_locked), "Status: ${response.status.description} ${response.status.value}")
-            else -> DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_failed), "Status: ${response.bodyAsText()} (${response.status})")
+                DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_forbidden_locked).appendDavErrorMessage(body), "Status: ${response.status.description} ${response.status.value}")
+            else -> DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_failed).appendDavErrorMessage(body), "Status: $body (${response.status})")
         }
     }
 }

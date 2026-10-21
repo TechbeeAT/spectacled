@@ -30,6 +30,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val showSheetOrDialog: DetailsSheetOrDialog? = null,
     val showDrawingCanvasBottomSheet: DetailsAction.OnShowDrawingCanvasBottomSheet = DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
     val deleteAttachmentUid: String? = null,      // uid of the attachment the delete confirmation dialog asks about
+    val deleteSubtaskId: Long? = null,            // uid of the subtask the delete confirmation dialog asks about
 
     val launchPickerAction: AttachmentPickerAction? = null,      // One-shot signal to the screen to launch a platform picker.
 
@@ -55,7 +56,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
 }
 
 enum class DetailsSheetOrDialog {
-    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, EDIT_LOCATION, ADD_ATTACHMENT_URL
+    DELETE, MOVE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, EDIT_LOCATION, ADD_ATTACHMENT_URL
 }
 
 // Action to perform right after the details screen opens

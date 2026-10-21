@@ -102,7 +102,9 @@ fun CalendarCard(
                 modifier = Modifier
                     .combinedClickable(
                         onClick = {
-                            if (!editEditFoldersModeEnabled)
+                            if (editEditFoldersModeEnabled)
+                                onAction(AccountListAction.OnEditAccountFolders(null))
+                            else
                                 onAction(AccountListAction.OnCalendarClicked(calendar.id))
                         },
                         onLongClick = {

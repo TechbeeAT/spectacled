@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.details.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -51,7 +51,6 @@ fun AddSubtaskBottomSheet(
     ) {
 
     var subtaskSummary by rememberSaveable { mutableStateOf("") }
-    val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -59,14 +58,32 @@ fun AddSubtaskBottomSheet(
         focusRequester.requestFocus()
     }
 
+    fun onAddSubtask() {
+        if (subtaskSummary.isNotBlank()) {
+            onSubtaskAdded(subtaskSummary)
+            subtaskSummary = ""
+            focusRequester.requestFocus()
+        }
+    }
+
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
         headline = stringResource(Res.string.add_subtask),
         menuActionRight = {
-            TextButton(
-                onClick = { onDismiss() },
-            ) {
-                Text(stringResource(Res.string.done))
+            AnimatedVisibility(subtaskSummary.isNotBlank()) {
+                TextButton(
+                    onClick = { onAddSubtask() }
+                ) {
+                    Text(stringResource(Res.string.add_subtask))
+                }
+            }
+
+            AnimatedVisibility(!subtaskSummary.isNotBlank()) {
+                TextButton(
+                    onClick = { onDismiss() }
+                ) {
+                    Text(stringResource(Res.string.done))
+                }
             }
         },
     ) {
@@ -82,13 +99,7 @@ fun AddSubtaskBottomSheet(
                 placeholder = { Text(stringResource(Res.string.summary)) },
                 trailingIcon = {
                     IconButton(
-                        onClick = {
-                            if (subtaskSummary.isNotBlank()) {
-                                onSubtaskAdded(subtaskSummary)
-                                subtaskSummary = ""
-                            }
-                            keyboardController?.hide()
-                        },
+                        onClick = { onAddSubtask() },
                         enabled = subtaskSummary.isNotBlank(),
                         content = { Icon(Icons.Outlined.AddTask, stringResource(Res.string.add_task)) }
                     )
@@ -99,12 +110,7 @@ fun AddSubtaskBottomSheet(
                     imeAction = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = {
-                        if (subtaskSummary.isNotBlank()) {
-                            onSubtaskAdded(subtaskSummary)
-                            subtaskSummary = ""
-                        }
-                    }
+                    onDone = { onAddSubtask() }
                 ),
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)

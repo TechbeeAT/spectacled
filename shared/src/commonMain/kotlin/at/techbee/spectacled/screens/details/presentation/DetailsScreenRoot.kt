@@ -3,7 +3,6 @@ package at.techbee.spectacled.screens.details.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -19,19 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.AddBox
-import androidx.compose.material.icons.outlined.AddLink
-import androidx.compose.material.icons.outlined.AddLocation
-import androidx.compose.material.icons.outlined.AddTask
-import androidx.compose.material.icons.outlined.Attachment
-import androidx.compose.material.icons.outlined.DatasetLinked
-import androidx.compose.material.icons.outlined.Gesture
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Restore
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -60,11 +49,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
-import at.techbee.spectacled.screens.core.Platforms
-import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
-import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
@@ -73,17 +59,18 @@ import at.techbee.spectacled.screens.core.presentation.components.StatusWithProg
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.core.rememberFilePicker
 import at.techbee.spectacled.screens.core.rememberImagePicker
+import at.techbee.spectacled.screens.details.presentation.components.AddMoreDropdownMenuDetails
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.AddUrlAttachmentBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DeleteAttachmentDialog
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
-import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DetailsTopBar
 import at.techbee.spectacled.screens.details.presentation.components.DrawingCanvasBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.EditLocationBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.EditUrlBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.MoreActionsDropdownMenu
 import at.techbee.spectacled.screens.details.presentation.components.MoveIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
@@ -91,21 +78,11 @@ import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_attachment
-import spectacled.shared.generated.resources.add_drawing
-import spectacled.shared.generated.resources.add_from_gallery
-import spectacled.shared.generated.resources.add_location
-import spectacled.shared.generated.resources.add_photo
-import spectacled.shared.generated.resources.add_subtask
-import spectacled.shared.generated.resources.add_url
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.done
-import spectacled.shared.generated.resources.link_file_by_url
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.restore
-import spectacled.shared.generated.resources.subtask
-import spectacled.shared.generated.resources.subtasks_not_supported_in_collection
 import spectacled.shared.generated.resources.undo
 import kotlin.time.ExperimentalTime
 
@@ -195,13 +172,6 @@ fun DetailsScreenRoot(
                     onConfirm = { newCalendarId -> detailsViewModel.onAction(DetailsAction.OnMove(newCalendarId)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
-            DetailsSheetOrDialog.MORE ->
-                DetailsMoreBottomSheet(
-                    onAction = { action -> detailsViewModel.onAction(action) },
-                    icalEntry = detailsState.icalEntry,
-                    canWriteContent = detailsState.allowEditing(),
-                    claudeUserApiKeyProvided = !detailsState.claudeUserApiKey.isNullOrEmpty()
-                )
             DetailsSheetOrDialog.COLOR_SELECTOR ->
                 BottomSheetWithMenu(
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) },
@@ -279,6 +249,16 @@ fun DetailsScreenRoot(
                     attachment = attachment,
                     onConfirm = { detailsViewModel.onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowDeleteAttachmentDialog(null)) }
+                )
+            }
+
+        detailsState.deleteSubtaskId
+            ?.let { id -> detailsState.subtasks.find { it.id == id } }
+            ?.let { subtask ->
+                DeleteIcalEntryDialog(
+                    icalEntry = subtask,
+                    onConfirm = { detailsViewModel.onAction(DetailsAction.OnDeleteSubtask(subtask.id)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowDeleteSubtaskDialog(null)) }
                 )
             }
 
@@ -415,6 +395,7 @@ fun DetailsScreenRoot(
                             }
 
                             var addMoreExpanded by remember { mutableStateOf(false) }
+                            var moreActionsExpanded by remember { mutableStateOf(false) }
 
                             IconButton(
                                 onClick = { addMoreExpanded = true },
@@ -422,112 +403,32 @@ fun DetailsScreenRoot(
                             ) {
                                 Icon(Icons.Outlined.AddBox, "Add more")
 
-                                DropdownMenu(
-                                    expanded = addMoreExpanded,
-                                    onDismissRequest = { addMoreExpanded = false }
-                                ) {
-
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.add_attachment)) },
-                                        leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.FILE))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.link_file_by_url)) },
-                                        leadingIcon = { Icon(Icons.Outlined.DatasetLinked, stringResource(Res.string.link_file_by_url)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.ADD_ATTACHMENT_URL))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    if (getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID)) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_photo)) },
-                                            leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
-                                            onClick = {
-                                                detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.PHOTO))
-                                                addMoreExpanded = false
-                                            },
-                                        )
-                                    }
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.add_from_gallery)) },
-                                        leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.GALLERY))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.add_drawing)) },
-                                        leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.add_url)) },
-                                        leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
-                                        enabled = detailsState.icalEntry.url == null,
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.EDIT_URL))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    if(detailsState.icalEntry.isTask()) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_location)) },
-                                            leadingIcon = { Icon(Icons.Outlined.AddLocation, stringResource(Res.string.add_location)) },
-                                            enabled = detailsState.icalEntry.location == null,
-                                            onClick = {
-                                                detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.EDIT_LOCATION))
-                                                addMoreExpanded = false
-                                            },
-                                        )
-                                    }
-
-                                    DropdownMenuItem(
-                                        text = {
-                                            Column {
-                                                Text(stringResource(Res.string.add_subtask))
-                                                if (detailsState.calendar?.isTasksSupported() != true)
-                                                    Text(
-                                                        text = stringResource(Res.string.subtasks_not_supported_in_collection),
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
-                                            }
-                                        },
-                                        leadingIcon = { Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.ADD_SUBTASKS))
-                                            addMoreExpanded = false
-                                        },
-                                        enabled = detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
-                                    )
-                                }
+                                AddMoreDropdownMenuDetails(
+                                    addMoreExpanded = addMoreExpanded,
+                                    onDismiss = { addMoreExpanded = false },
+                                    onAction = { action -> detailsViewModel.onAction(action) },
+                                    hasLocation = detailsState.icalEntry.location != null,
+                                    hasUrl = detailsState.icalEntry.url != null,
+                                    isTask = detailsState.icalEntry.isTask(),
+                                    calendarSupportsTasks = detailsState.calendar?.isTasksSupported() == true
+                                )
                             }
-
 
                             VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 8.dp))
 
                             IconButton(
-                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.MORE)) }
+                                onClick = { moreActionsExpanded = true }
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.MoreVert,
                                     contentDescription = stringResource(Res.string.more)
+                                )
+                                MoreActionsDropdownMenu(
+                                    expanded = moreActionsExpanded,
+                                    icalEntry = detailsState.icalEntry,
+                                    canWriteContent = detailsState.allowEditing(),
+                                    onDismiss = { moreActionsExpanded = false },
+                                    onAction = { action -> detailsViewModel.onAction(action) }
                                 )
                             }
                         }

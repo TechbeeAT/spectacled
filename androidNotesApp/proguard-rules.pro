@@ -19,3 +19,12 @@
 -keepclassmembers class * {
     @androidx.compose.runtime.Composable *;
 }
+
+# Glance instantiates widget ActionCallbacks reflectively by class name
+# (RunCallbackAction.run → getDeclaredConstructor().newInstance()). R8 full mode
+# otherwise strips their unused no-arg constructor and onAction, so the callback
+# fails silently (e.g. the widget checkbox never persists the task progress).
+-keep class * implements androidx.glance.appwidget.action.ActionCallback {
+    <init>();
+    *** onAction(...);
+}

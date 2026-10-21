@@ -1,9 +1,13 @@
 package at.techbee.spectacled.screens.list.presentation.datastructures
 
 import at.techbee.spectacled.screens.core.domain.Status
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.json.Json
 
+@Serializable
 data class ListFilterCriteria(
-    val searchQuery: String? = null,
+    @Transient val searchQuery: String? = null,
     val searchCategories: List<String> = emptyList(),
     /** A `null` element stands for entries without a status. */
     val filterStatus: List<Status?> = emptyList(),
@@ -37,33 +41,10 @@ data class ListFilterCriteria(
     )
 
     companion object {
-        private const val SEPARATOR = ','
-        private const val ESCAPE = '\\'
-
-        /**
-         * Joins [values] into one string separated by commas, escaping commas and backslashes inside
-         * a value, so that [splitEscaped] restores the list exactly (categories may contain commas).
-         */
-        fun joinEscaped(values: List<String>): String =
-            values.joinToString(separator = SEPARATOR.toString()) { value ->
-                value.replace("$ESCAPE", "$ESCAPE$ESCAPE").replace("$SEPARATOR", "$ESCAPE$SEPARATOR")
-            }
-
-        /** Reverse of [joinEscaped]. A string without escapes or separators yields a single value. */
-        fun splitEscaped(joined: String): List<String> = buildList {
-            val current = StringBuilder()
-            var escaped = false
-            for (char in joined) {
-                when {
-                    escaped -> { current.append(char); escaped = false }
-                    char == ESCAPE -> escaped = true
-                    char == SEPARATOR -> { add(current.toString()); current.clear() }
-                    else -> current.append(char)
-                }
-            }
-            if (escaped)
-                current.append(ESCAPE)   // a dangling escape is kept literally
-            add(current.toString())
+        val mapperJson = Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+            coerceInputValues = true
         }
     }
 }
