@@ -184,7 +184,10 @@ fun AddAlarmBottomSheet(
         }
     ) {
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 AlarmMode.entries.forEachIndexed { index, alarmMode ->
@@ -276,10 +279,16 @@ private fun RelativeAlarmEditor(
         style = MaterialTheme.typography.labelLarge
     )
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
 
         // Quick picks: "At Due", "15 minutes before Due", ...
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
             PRESETS.forEach { preset ->
                 val (presetAmount, presetUnit) = preset
                 FilterChip(
