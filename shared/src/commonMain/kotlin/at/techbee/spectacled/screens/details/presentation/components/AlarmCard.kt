@@ -36,13 +36,13 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.alarm
-import spectacled.shared.generated.resources.alarm_fires_at
 import spectacled.shared.generated.resources.alarm_already_passed
+import spectacled.shared.generated.resources.alarm_fires_at
+import spectacled.shared.generated.resources.alarm_invalid_alarm_trigger_time
 import spectacled.shared.generated.resources.alarm_missing_reference_date
 import spectacled.shared.generated.resources.alarm_not_notifying
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
-import spectacled.shared.generated.resources.alarm_invalid_alarm_trigger_time
 import spectacled.shared.generated.resources.delete
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
@@ -196,3 +196,41 @@ private fun AlarmCard_Relative_past_readonly_Preview() {
     }
 }
 
+@Preview
+@Composable
+private fun AlarmCard_Relative_invalid_Preview() {
+
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        Scaffold {
+            AlarmCard(
+                alarm = Alarm(
+                    trigger = AlarmTrigger.Relative(IcsDuration(isNegative = true, days = 1))
+                ),
+                icalEntry = IcalEntry.getSampleTask().copy(dtStart = null, due = null),
+                allowEditing = false,
+                onAction = {},
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun AlarmCard_not_notifying_Preview() {
+
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        Scaffold {
+            AlarmCard(
+                alarm = Alarm(
+                    action = Alarm.ACTION_EMAIL,
+                    trigger = AlarmTrigger.Relative(IcsDuration(isNegative = true, days = 1))
+                ),
+                icalEntry = IcalEntry.getSampleTask().copy(dtStart = IcsDateTime(Instant.DISTANT_PAST, false)),
+                allowEditing = false,
+                onAction = {},
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+    }
+}
