@@ -122,6 +122,13 @@ fun AlarmCard(
                             fontStyle = FontStyle.Italic,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                    Text(
+                        text = "Beta-Info: This feature is still under development. Actual functionality is not yet implemented.",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
 
 
