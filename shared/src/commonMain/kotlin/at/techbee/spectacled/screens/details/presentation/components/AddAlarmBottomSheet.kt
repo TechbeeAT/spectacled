@@ -26,7 +26,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -297,7 +299,8 @@ private fun RelativeAlarmEditor(
             isError = amountText.toIntOrNull() == null,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.width(88.dp)
+            modifier = Modifier.width(88.dp),
+            textStyle = TextStyle(textAlign = TextAlign.Center)
         )
 
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
