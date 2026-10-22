@@ -20,8 +20,8 @@ import spectacled.shared.generated.resources.date_start
 
 /**
  * The amount of this duration for display, e.g. "1 day 2 hours", without its sign - before/after
- * is said by the surrounding text (see [relativeTriggerText]). The components are shown as they
- * are stored, so "P1W" reads "1 week" and "P7D" reads "7 days".
+ * is said by the surrounding text (see [AlarmTrigger.Relative.toDisplayString]). The components
+ * are shown as they are stored, so "P1W" reads "1 week" and "P7D" reads "7 days".
  */
 @Composable
 fun IcsDuration.toDisplayString(): String = buildList {
@@ -37,16 +37,16 @@ fun IcsDuration.toDisplayString(): String = buildList {
  * alarm card and the add sheet, so both always describe an alarm the same way.
  */
 @Composable
-fun relativeTriggerText(trigger: AlarmTrigger.Relative): String {
+fun AlarmTrigger.Relative.toDisplayString(): String {
     val reference = stringResource(
-        if (trigger.relatedTo == AlarmTriggerRelation.END) Res.string.date_due else Res.string.date_start
+        if (relatedTo == AlarmTriggerRelation.END) Res.string.date_due else Res.string.date_start
     )
-    return if (trigger.duration.isZero())
+    return if (duration.isZero())
         stringResource(Res.string.alarm_at_reference, reference)
     else
         stringResource(
-            if (trigger.duration.isNegative) Res.string.alarm_offset_before else Res.string.alarm_offset_after,
-            trigger.duration.toDisplayString(),
+            if (duration.isNegative) Res.string.alarm_offset_before else Res.string.alarm_offset_after,
+            duration.toDisplayString(),
             reference
         )
 }

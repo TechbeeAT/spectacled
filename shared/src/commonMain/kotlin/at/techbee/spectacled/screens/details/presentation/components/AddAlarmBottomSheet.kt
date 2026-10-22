@@ -281,7 +281,7 @@ private fun RelativeAlarmEditor(
                     onClick = { onPresetSelected(preset) },
                     selected = amountText == presetAmount.toString() && unit == presetUnit && isBefore,
                     label = {
-                        Text(relativeTriggerText(AlarmTrigger.Relative(presetUnit.toDuration(presetAmount, isBefore = true), relatedTo)))
+                        Text(AlarmTrigger.Relative(presetUnit.toDuration(presetAmount, isBefore = true), relatedTo).toDisplayString())
                     }
                 )
             }
@@ -359,7 +359,7 @@ private fun RelativeAlarmEditor(
         // Summary of the custom selection, e.g. "15 minutes before Due"
         amountText.toIntOrNull()?.let { amount ->
             Text(
-                text = relativeTriggerText(AlarmTrigger.Relative(unit.toDuration(amount, isBefore), relatedTo)),
+                text = AlarmTrigger.Relative(unit.toDuration(amount, isBefore), relatedTo).toDisplayString(),
                 style = MaterialTheme.typography.bodyMedium
             )
         }

@@ -98,7 +98,7 @@ fun AlarmCard(
 
                     if (alarm.trigger is AlarmTrigger.Relative) {
                         Text(
-                            text = relativeTriggerText(alarm.trigger),
+                            text = alarm.trigger.toDisplayString(),
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
