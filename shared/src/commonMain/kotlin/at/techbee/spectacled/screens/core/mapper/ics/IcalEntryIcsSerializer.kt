@@ -221,6 +221,10 @@ fun serializeVJournal(icalEntry: IcalEntry, fileManager: FileManager? = null): S
         lines += it.unfoldedLine
     }
 
+    icalEntry.alarms.forEach { alarm ->
+        lines += serializeAlarm(alarm)
+    }
+
     lines += "END:${icalEntry.calendarComponent.name}"    // END:VJOURNAL or BEGIN:VTODO
 
     return lines.joinToString("\r\n", transform = ::foldIcsLine)
