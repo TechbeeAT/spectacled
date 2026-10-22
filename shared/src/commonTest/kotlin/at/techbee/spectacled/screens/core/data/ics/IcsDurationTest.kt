@@ -3,7 +3,9 @@ package at.techbee.spectacled.screens.core.data.ics
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class IcsDurationTest {
@@ -34,6 +36,12 @@ class IcsDurationTest {
     @Test
     fun format_weeksMixedWithOtherComponentsAreWrittenAsDays() {
         assertEquals("P9DT1H", IcsDuration(weeks = 1, days = 2, hours = 1).format())
+    }
+
+    @Test
+    fun isZero() {
+        listOf("PT0S", "-PT0S", "P0D", "+PT0M").forEach { assertTrue(IcsDuration.parse(it)!!.isZero(), it) }
+        listOf("-PT15M", "P1W", "PT1S").forEach { assertFalse(IcsDuration.parse(it)!!.isZero(), it) }
     }
 
     @Test

@@ -27,7 +27,6 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.IcsDuration
 import at.techbee.spectacled.screens.core.domain.Alarm
 import at.techbee.spectacled.screens.core.domain.AlarmTrigger
-import at.techbee.spectacled.screens.core.domain.AlarmTriggerRelation
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
@@ -36,14 +35,9 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.alarm
-import spectacled.shared.generated.resources.alarm_at_reference
 import spectacled.shared.generated.resources.alarm_fires_at
 import spectacled.shared.generated.resources.alarm_fires_in_past
 import spectacled.shared.generated.resources.alarm_invalid_alarm_trigger_time
-import spectacled.shared.generated.resources.alarm_offset_after
-import spectacled.shared.generated.resources.alarm_offset_before
-import spectacled.shared.generated.resources.date_due
-import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.delete
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
@@ -90,17 +84,7 @@ fun AlarmCard(
 
                     if (alarm.trigger is AlarmTrigger.Relative) {
                         Text(
-                            text = if (alarm.trigger.duration == IcsDuration())
-                                stringResource(
-                                    Res.string.alarm_at_reference,
-                                    stringResource(if (alarm.trigger.relatedTo == AlarmTriggerRelation.END) Res.string.date_due else Res.string.date_start)
-                                )
-                            else
-                                stringResource(
-                                    if (alarm.trigger.duration.isNegative) Res.string.alarm_offset_before else Res.string.alarm_offset_after,
-                                    alarm.trigger.duration.format(),
-                                    stringResource(if (alarm.trigger.relatedTo == AlarmTriggerRelation.END) Res.string.date_due else Res.string.date_start)
-                                ),
+                            text = relativeTriggerText(alarm.trigger),
                             style = MaterialTheme.typography.labelSmall
                         )
                     }

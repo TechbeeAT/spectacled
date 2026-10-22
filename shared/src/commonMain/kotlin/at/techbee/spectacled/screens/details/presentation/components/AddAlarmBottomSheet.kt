@@ -49,9 +49,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.compose.resources.PluralStringResource
 import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.add
@@ -59,23 +57,16 @@ import spectacled.shared.generated.resources.add_alarm
 import spectacled.shared.generated.resources.alarm
 import spectacled.shared.generated.resources.alarm_absolute
 import spectacled.shared.generated.resources.alarm_after
-import spectacled.shared.generated.resources.alarm_at_reference
 import spectacled.shared.generated.resources.alarm_before
 import spectacled.shared.generated.resources.alarm_fires_at
 import spectacled.shared.generated.resources.alarm_fires_in_past
 import spectacled.shared.generated.resources.alarm_needs_reference_date
-import spectacled.shared.generated.resources.alarm_offset_after
-import spectacled.shared.generated.resources.alarm_offset_before
 import spectacled.shared.generated.resources.alarm_presets
 import spectacled.shared.generated.resources.alarm_relative
 import spectacled.shared.generated.resources.alarm_unit_days
 import spectacled.shared.generated.resources.alarm_unit_hours
 import spectacled.shared.generated.resources.alarm_unit_minutes
 import spectacled.shared.generated.resources.alarm_unit_weeks
-import spectacled.shared.generated.resources.alarm_x_days
-import spectacled.shared.generated.resources.alarm_x_hours
-import spectacled.shared.generated.resources.alarm_x_minutes
-import spectacled.shared.generated.resources.alarm_x_weeks
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
@@ -85,11 +76,11 @@ import kotlin.time.Instant
 private enum class AlarmMode { RELATIVE, ABSOLUTE }
 
 /** The units offered for a relative alarm, mapped onto the RFC 5545 duration components. */
-private enum class AlarmOffsetUnit(val nameRes: StringResource, val amountRes: PluralStringResource) {
-    MINUTES(Res.string.alarm_unit_minutes, Res.plurals.alarm_x_minutes),
-    HOURS(Res.string.alarm_unit_hours, Res.plurals.alarm_x_hours),
-    DAYS(Res.string.alarm_unit_days, Res.plurals.alarm_x_days),
-    WEEKS(Res.string.alarm_unit_weeks, Res.plurals.alarm_x_weeks);
+private enum class AlarmOffsetUnit(val nameRes: StringResource) {
+    MINUTES(Res.string.alarm_unit_minutes),
+    HOURS(Res.string.alarm_unit_hours),
+    DAYS(Res.string.alarm_unit_days),
+    WEEKS(Res.string.alarm_unit_weeks);
 
     fun toDuration(amount: Int, isBefore: Boolean) = when (this) {
         MINUTES -> IcsDuration(isNegative = isBefore, minutes = amount)
@@ -270,10 +261,6 @@ private fun RelativeAlarmEditor(
     onRelatedToChanged: (AlarmTriggerRelation) -> Unit,
     onPresetSelected: (Pair<Int, AlarmOffsetUnit>) -> Unit
 ) {
-    val referenceName = stringResource(
-        if (relatedTo == AlarmTriggerRelation.END) Res.string.date_due else Res.string.date_start
-    )
-
     Text(
         text = stringResource(Res.string.alarm_presets),
         style = MaterialTheme.typography.labelLarge
@@ -295,16 +282,7 @@ private fun RelativeAlarmEditor(
                     onClick = { onPresetSelected(preset) },
                     selected = amountText == presetAmount.toString() && unit == presetUnit && isBefore,
                     label = {
-                        Text(
-                            if (presetAmount == 0)
-                                stringResource(Res.string.alarm_at_reference, referenceName)
-                            else
-                                stringResource(
-                                    Res.string.alarm_offset_before,
-                                    pluralStringResource(presetUnit.amountRes, presetAmount, presetAmount),
-                                    referenceName
-                                )
-                        )
+                        Text(relativeTriggerText(AlarmTrigger.Relative(presetUnit.toDuration(presetAmount, isBefore = true), relatedTo)))
                     }
                 )
             }
@@ -406,14 +384,7 @@ private fun RelativeAlarmEditor(
         // Summary of the custom selection, e.g. "15 minutes before Due"
         amountText.toIntOrNull()?.let { amount ->
             Text(
-                text = if (amount == 0)
-                    stringResource(Res.string.alarm_at_reference, referenceName)
-                else
-                    stringResource(
-                        if (isBefore) Res.string.alarm_offset_before else Res.string.alarm_offset_after,
-                        pluralStringResource(unit.amountRes, amount, amount),
-                        referenceName
-                    ),
+                text = relativeTriggerText(AlarmTrigger.Relative(unit.toDuration(amount, isBefore), relatedTo)),
                 style = MaterialTheme.typography.bodyMedium
             )
         }

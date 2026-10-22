@@ -50,6 +50,9 @@ data class IcsDuration(
         }
     }
 
+    /** True for "PT0S", "-PT0S", "P0D", ... - the alarm fires exactly at the reference date. */
+    fun isZero(): Boolean = weeks == 0 && days == 0 && hours == 0 && minutes == 0 && seconds == 0
+
     /** Formats the value in RFC 5545 syntax. A zero duration is written as "PT0S". */
     fun format(): String = buildString {
         if (isNegative) append('-')
