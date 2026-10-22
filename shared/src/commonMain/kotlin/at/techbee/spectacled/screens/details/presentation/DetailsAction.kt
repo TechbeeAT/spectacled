@@ -28,6 +28,7 @@ sealed interface DetailsAction {
     data class OnAddAttachment(val fileName: String, val bytes: ByteArray, val mimeType: String?): DetailsAction
     data class OnAddUrlAttachment(val url: Url): DetailsAction
     data class OnAddAlarm(val alarm: Alarm): DetailsAction
+    data class OnDeleteAlarm(val alarm: Alarm): DetailsAction
     data class OnOpenAttachment(val attachmentUid: String): DetailsAction
     data class OnShowDeleteAttachmentDialog(val attachmentUid: String?): DetailsAction
     data class OnDeleteAttachment(val attachmentUid: String): DetailsAction

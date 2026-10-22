@@ -366,6 +366,7 @@ class DetailsViewModel(
             is DetailsAction.OnAddAttachment -> { onAddAttachment(action.fileName, action.bytes, action.mimeType) }
             is DetailsAction.OnAddUrlAttachment -> { onAddUrlAttachment(action.url) }
             is DetailsAction.OnAddAlarm -> { onAddAlarm(action.alarm) }
+            is DetailsAction.OnDeleteAlarm -> { onDeleteAlarm(action.alarm) }
             is DetailsAction.OnOpenAttachment -> { onOpenAttachment(action.attachmentUid) }
             is DetailsAction.OnShowDeleteAttachmentDialog -> { _state.update { it.copy(deleteAttachmentUid = action.attachmentUid) } }
             is DetailsAction.OnDeleteAttachment -> {
@@ -546,6 +547,22 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     alarms = it.icalEntry.alarms + alarm,
+                    lastModified = IcsDateTime.now(),
+                    syncState = it.icalEntry.syncState.afterLocalEdit()
+                )
+            )
+        }
+    }
+
+    private fun onDeleteAlarm(alarm: Alarm) {
+
+        if(!state.value.allowEditing())
+            return
+
+        _state.update {
+            it.copy(
+                icalEntry = it.icalEntry.copy(
+                    alarms = it.icalEntry.alarms - alarm,
                     lastModified = IcsDateTime.now(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
