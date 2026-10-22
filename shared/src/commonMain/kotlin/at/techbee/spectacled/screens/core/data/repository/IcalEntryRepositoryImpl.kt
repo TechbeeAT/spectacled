@@ -342,6 +342,9 @@ class IcalEntryRepositoryImpl(
                 UpcomingAlarm(
                     alarmId = alarmDto.id,
                     icalEntryId = alarmDto.icalEntryId,
+                    calendarId = entry.calendarId,
+                    entryUid = entry.uid,
+                    entrySummary = entry.summary,
                     alarm = alarmDto.toDomain(),
                     triggerAt = Instant.fromEpochMilliseconds(alarmDto.triggerAt ?: return@mapNotNull null)
                 )

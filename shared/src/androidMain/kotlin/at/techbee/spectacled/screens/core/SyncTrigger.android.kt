@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
@@ -60,6 +61,7 @@ class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineW
     private val calendarRepository: CalendarRepository by inject()
     private val icalEntryRepository: IcalEntryRepository by inject()
     private val fileManager: PlatformFileManager by inject()
+    private val alarmCoordinator: AlarmCoordinator by inject()
 
     override suspend fun doWork(): Result {
 
@@ -67,7 +69,7 @@ class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineW
 
         if (targetCalendarIds.isNullOrEmpty()) {
             // Default behavior: Sync everything
-            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
+            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client, alarmCoordinator)
         } else {
             SyncCoordinator.syncSpecificCalendars(
                 targetCalendarIds,
@@ -75,7 +77,8 @@ class SyncWorker(val appContext: Context, params: WorkerParameters) : CoroutineW
                 icalEntryRepository,
                 fileManager,
                 credentialStore,
-                client
+                client,
+                alarmCoordinator
             )
         }
 

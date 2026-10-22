@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core
 
 import at.techbee.spectacled.screens.core.data.CredentialStore
 import at.techbee.spectacled.screens.core.data.Credentials
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.DefaultWebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.data.webdav.DeleteResourceResult
@@ -84,7 +85,8 @@ class SyncCoordinator(
             icalEntryRepository: IcalEntryRepository,
             fileManager: FileManager,
             credentialStore: CredentialStore,
-            client: HttpClient
+            client: HttpClient,
+            alarmCoordinator: AlarmCoordinator
         ) {
             calendarRepository.getAllPrincipals().forEach { principal ->
                 val credentials = credentialStore.load(principal.principalUrl)
@@ -113,6 +115,9 @@ class SyncCoordinator(
             // empty trashbin for items older than 30 days
             val cutoffDate = IcsDateTime(Clock.System.now().minus(30.days), false)
             icalEntryRepository.deleteTrashed(cutoffDate)
+
+            // The sync may have added, moved or removed alarms.
+            alarmCoordinator.reconcile()
         }
 
         suspend fun syncSpecificCalendars(
@@ -121,7 +126,8 @@ class SyncCoordinator(
             icalEntryRepository: IcalEntryRepository,
             fileManager: FileManager,
             credentialStore: CredentialStore,
-            client: HttpClient
+            client: HttpClient,
+            alarmCoordinator: AlarmCoordinator
         ) {
             val calendars = calendarRepository.getCalendarsByIds(calendarIds)
 
@@ -135,6 +141,8 @@ class SyncCoordinator(
                     }
                 }
             }
+
+            alarmCoordinator.reconcile()
         }
     }
 
