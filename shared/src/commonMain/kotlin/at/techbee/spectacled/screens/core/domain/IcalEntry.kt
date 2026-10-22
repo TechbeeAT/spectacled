@@ -78,6 +78,7 @@ data class IcalEntry(
     val syncState: SyncState = SyncState.LOCAL_MODIFIED,
     val extraProperties: List<RawIcsProperty> = emptyList(),
     val attachments: List<Attachment> = emptyList(),
+    val alarms: List<Alarm> = emptyList(),
     val etag: String? = null,
     val href: Url? = null,
     val calendarComponent: CalendarComponent,

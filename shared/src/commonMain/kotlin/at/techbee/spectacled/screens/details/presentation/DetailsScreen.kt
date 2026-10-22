@@ -83,6 +83,7 @@ import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.applyMarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
+import at.techbee.spectacled.screens.details.presentation.components.AlarmCard
 import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.details.presentation.components.FormattingBar
@@ -403,6 +404,22 @@ fun DetailsScreen(
                         onClick = onAction,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
+                }
+            }
+
+            AnimatedVisibility(state.icalEntry.alarms.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                ) {
+                    state.icalEntry.alarms.forEach { alarm ->
+                        AlarmCard(
+                            alarm = alarm,
+                            icalEntry = state.icalEntry,
+                            allowEditing = state.allowEditing(),
+                            onAction = onAction
+                        )
+                    }
                 }
             }
 

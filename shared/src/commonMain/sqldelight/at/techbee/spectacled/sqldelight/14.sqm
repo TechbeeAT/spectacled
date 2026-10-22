@@ -1,0 +1,12 @@
+CREATE TABLE AlarmDto (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    icalEntryId INTEGER NOT NULL REFERENCES IcalEntryDto(id) ON DELETE CASCADE,
+    uid TEXT,
+    action TEXT,
+    icsBlock TEXT NOT NULL,
+    triggerAt INTEGER,
+    lastNotifiedAt INTEGER
+);
+
+CREATE INDEX idx_alarm_icalEntryId ON AlarmDto(icalEntryId);
+CREATE INDEX idx_alarm_triggerAt ON AlarmDto(triggerAt);

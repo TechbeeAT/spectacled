@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.details.presentation
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.domain.Alarm
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.components.PathData
@@ -26,6 +27,8 @@ sealed interface DetailsAction {
     data class OnUpdateLocation(val location: String?): DetailsAction
     data class OnAddAttachment(val fileName: String, val bytes: ByteArray, val mimeType: String?): DetailsAction
     data class OnAddUrlAttachment(val url: Url): DetailsAction
+    data class OnAddAlarm(val alarm: Alarm): DetailsAction
+    data class OnDeleteAlarm(val alarm: Alarm): DetailsAction
     data class OnOpenAttachment(val attachmentUid: String): DetailsAction
     data class OnShowDeleteAttachmentDialog(val attachmentUid: String?): DetailsAction
     data class OnDeleteAttachment(val attachmentUid: String): DetailsAction

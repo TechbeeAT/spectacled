@@ -21,6 +21,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.domain.UpcomingAlarm
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import io.ktor.http.HttpStatusCode
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -446,6 +448,8 @@ private class FakeIcalEntryRepository(
     override suspend fun deleteTrashed(cutoffDateTime: IcsDateTime) = TODO()
     override suspend fun deleteAttachment(id: Long) = TODO()
     override suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment> = TODO()
+    override suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm> = TODO()
+    override suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant) = TODO()
 }
 
 private class FakeCalendarRepository : CalendarRepository {
