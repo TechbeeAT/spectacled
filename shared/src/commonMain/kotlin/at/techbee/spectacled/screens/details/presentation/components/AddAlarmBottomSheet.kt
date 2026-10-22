@@ -3,7 +3,6 @@ package at.techbee.spectacled.screens.details.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -290,54 +289,32 @@ private fun RelativeAlarmEditor(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-        // Custom: [ 15 ] Minutes | Hours | Days | Weeks
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedTextField(
-                value = amountText,
-                onValueChange = onAmountTextChanged,
-                isError = amountText.toIntOrNull() == null,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.width(88.dp)
-            )
-            SingleChoiceSegmentedButtonRow {
-                AlarmOffsetUnit.entries.forEachIndexed { index, offsetUnit ->
-                    SegmentedButton(
-                        selected = unit == offsetUnit,
-                        onClick = { onUnitChanged(offsetUnit) },
-                        shape = SegmentedButtonDefaults.itemShape(index, AlarmOffsetUnit.entries.size),
-                        label = {
-                            Text(
-                                text = stringResource(offsetUnit.nameRes),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    )
-                    /*
-                    FilterChip(
-                        selected = unit == offsetUnit,
-                        onClick = { onUnitChanged(offsetUnit) },
-                        label = { Text(stringResource(offsetUnit.nameRes)) }
-                    )
-                     */
-                }
-            }
-            /*
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                AlarmOffsetUnit.entries.forEach { offsetUnit ->
-                    FilterChip(
-                        selected = unit == offsetUnit,
-                        onClick = { onUnitChanged(offsetUnit) },
-                        label = { Text(stringResource(offsetUnit.nameRes)) }
-                    )
-                }
-            }
+        // Custom: [ 15 ], then Minutes | Hours | Days | Weeks on their own row - next to the field
+        // the unit labels would be truncated on phone widths.
+        OutlinedTextField(
+            value = amountText,
+            onValueChange = onAmountTextChanged,
+            isError = amountText.toIntOrNull() == null,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.width(88.dp)
+        )
 
-             */
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            AlarmOffsetUnit.entries.forEachIndexed { index, offsetUnit ->
+                SegmentedButton(
+                    selected = unit == offsetUnit,
+                    onClick = { onUnitChanged(offsetUnit) },
+                    shape = SegmentedButtonDefaults.itemShape(index, AlarmOffsetUnit.entries.size),
+                    label = {
+                        Text(
+                            text = stringResource(offsetUnit.nameRes),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                )
+            }
         }
 
         // before | after    Start | Due
@@ -360,8 +337,6 @@ private fun RelativeAlarmEditor(
                     shape = SegmentedButtonDefaults.itemShape(1, 2)
                 )
             }
-
-            //Text("·", modifier = Modifier.padding(horizontal = 4.dp))
 
             SingleChoiceSegmentedButtonRow {
                 SegmentedButton(

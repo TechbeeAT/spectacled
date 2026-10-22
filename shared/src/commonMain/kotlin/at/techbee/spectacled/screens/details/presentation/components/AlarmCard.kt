@@ -27,6 +27,7 @@ import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.IcsDuration
 import at.techbee.spectacled.screens.core.domain.Alarm
 import at.techbee.spectacled.screens.core.domain.AlarmTrigger
+import at.techbee.spectacled.screens.core.domain.AlarmTriggerRelation
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
@@ -36,7 +37,11 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.alarm
 import spectacled.shared.generated.resources.alarm_fires_at
-import spectacled.shared.generated.resources.alarm_fires_in_past
+import spectacled.shared.generated.resources.alarm_already_passed
+import spectacled.shared.generated.resources.alarm_missing_reference_date
+import spectacled.shared.generated.resources.alarm_not_notifying
+import spectacled.shared.generated.resources.date_due
+import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.alarm_invalid_alarm_trigger_time
 import spectacled.shared.generated.resources.delete
 import kotlin.time.Clock
@@ -52,8 +57,9 @@ fun AlarmCard(
     modifier: Modifier = Modifier
 ) {
 
+    val triggerTime = alarm.triggerTime(icalEntry)
+
     Card(
-        onClick = { },
         elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent),
         modifier = modifier
@@ -75,10 +81,18 @@ fun AlarmCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = stringResource(
-                            Res.string.alarm_fires_at,
-                            alarm.triggerTime(icalEntry)?.let { IcsDateTime(it, isDateOnly = false, timeZone = TimeZone.currentSystemDefault()).formatLocalized(IcsDateTimeFormat.DATE_TIME)  } ?: stringResource(Res.string.alarm_invalid_alarm_trigger_time)
-                        ),
+                        text = when {
+                            triggerTime != null -> stringResource(
+                                Res.string.alarm_fires_at,
+                                IcsDateTime(triggerTime, isDateOnly = false, timeZone = TimeZone.currentSystemDefault()).formatLocalized(IcsDateTimeFormat.DATE_TIME)
+                            )
+                            // Relative, but the entry has no start/due (anymore) to relate to.
+                            alarm.trigger is AlarmTrigger.Relative -> stringResource(
+                                Res.string.alarm_missing_reference_date,
+                                stringResource(if (alarm.trigger.relatedTo == AlarmTriggerRelation.END) Res.string.date_due else Res.string.date_start)
+                            )
+                            else -> stringResource(Res.string.alarm_invalid_alarm_trigger_time)
+                        },
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -89,12 +103,24 @@ fun AlarmCard(
                         )
                     }
 
-                    if((alarm.triggerTime(icalEntry)?:Instant.DISTANT_PAST) < Clock.System.now())
+                    if (triggerTime != null && triggerTime < Clock.System.now())
                         Text(
-                            text = stringResource(Res.string.alarm_fires_in_past),
+                            text = stringResource(Res.string.alarm_already_passed),
                             style = MaterialTheme.typography.labelSmall,
                             fontStyle = FontStyle.Italic,
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                    // E.g. an EMAIL alarm set by another client: kept and synced, but never shown here.
+                    if (!alarm.isNotifying())
+                        Text(
+                            text = stringResource(
+                                Res.string.alarm_not_notifying,
+                                alarm.action?.lowercase()?.replaceFirstChar { it.uppercase() } ?: stringResource(Res.string.alarm)
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                 }
 

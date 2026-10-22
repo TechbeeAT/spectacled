@@ -202,6 +202,11 @@
     <string name="alarm_fires_in_past">This time is in the past, the alarm will not go off.</string>
     <string name="alarm_needs_reference_date">Set a start or due date to add an alarm relative to it.</string>
     <string name="alarm_invalid_alarm_trigger_time">Invalid alarm trigger time</string>
+    <!-- %1$s: "Start" or "Due" -->
+    <string name="alarm_missing_reference_date">No %1$s date - this alarm won't go off</string>
+    <string name="alarm_already_passed">Already passed</string>
+    <!-- %1$s: the iCalendar alarm action, e.g. "Email" -->
+    <string name="alarm_not_notifying">%1$s alarm - no notification on this device</string>
     <string name="add">Add</string>
     <string name="link_file_by_url">Link file by URL</string>
     <string name="link_file_by_url_hint">The file stays on its server - Spectacled only stores the link and downloads it when opened.</string>
