@@ -40,6 +40,11 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.findByName("spectacled")
+            // Packs native debug symbols of the bundled .so libraries into the AAB, so
+            // Play can symbolicate native crashes and ANRs without a separate upload.
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
         }
     }
     compileOptions {
