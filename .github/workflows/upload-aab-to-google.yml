@@ -1,11 +1,17 @@
 name: Create and upload app bundles to Google Play
 
-# The tag suffix *is* the Google Play track:
+# The tag suffix picks the highest Google Play track; every lower test track gets the
+# same build too, so testers on a lower track never lag behind a higher one:
 #
-#   v1.0.62-internal  -> internal    (completed)
-#   v1.0.62-alpha     -> alpha       (completed)   closed testing
-#   v1.0.62-beta      -> beta        (completed)   open testing
-#   v1.0.62           -> production  (draft)       published by hand in the Play Console
+#   v1.0.62-internal  -> internal                                (completed)
+#   v1.0.62-alpha     -> alpha            + internal             (completed)   closed testing
+#   v1.0.62-beta      -> beta             + internal, alpha      (completed)   open testing
+#   v1.0.62           -> production       + internal, alpha, beta
+#                        (draft, published by hand in the Play Console; the test tracks
+#                        get it completed right away)
+#
+# The bundle is uploaded once, to the highest track; the lower tracks are then pointed
+# at the same versionCode (what "promote release" does in the Play Console).
 #
 # Any other suffix (-rc, -Beta, a typo) fails the job rather than guessing a track.
 on:
@@ -20,6 +26,8 @@ jobs:
     outputs:
       track: ${{ steps.play.outputs.track }}
       status: ${{ steps.play.outputs.status }}
+      lowerTracks: ${{ steps.play.outputs.lowerTracks }}
+      versionCode: ${{ steps.play.outputs.versionCode }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,15 +44,19 @@ jobs:
             *) echo "::error::Not a version tag: '$TAG'. Run this on a v* tag." ; exit 1 ;;
           esac
           case "$TAG" in
-            *-internal) track=internal;   status=completed ;;
-            *-alpha)    track=alpha;      status=completed ;;
-            *-beta)     track=beta;       status=completed ;;
+            *-internal) track=internal;   status=completed; lower="" ;;
+            *-alpha)    track=alpha;      status=completed; lower="internal" ;;
+            *-beta)     track=beta;       status=completed; lower="internal alpha" ;;
             *-*)        echo "::error::Unrecognised suffix in '$TAG'. Use -internal, -alpha, -beta, or no suffix for production." ; exit 1 ;;
-            *)          track=production; status=draft ;;
+            *)          track=production; status=draft;     lower="internal alpha beta" ;;
           esac
+          # Same source the Android modules read their versionCode from.
+          versionCode="$(python3 -c 'import tomllib; print(tomllib.load(open("gradle/libs.versions.toml", "rb"))["versions"]["appBuildNumber"])')"
           echo "track=$track" >> "$GITHUB_OUTPUT"
           echo "status=$status" >> "$GITHUB_OUTPUT"
-          echo "$TAG -> track=$track status=$status"
+          echo "lowerTracks=$lower" >> "$GITHUB_OUTPUT"
+          echo "versionCode=$versionCode" >> "$GITHUB_OUTPUT"
+          echo "$TAG -> track=$track status=$status lowerTracks=[${lower}] versionCode=$versionCode"
 
       - uses: actions/setup-java@v6
         with:
@@ -137,3 +149,44 @@ jobs:
           mappingFile: ${{ steps.mapping.outputs.path }}
           track: ${{ needs.build.outputs.track }}
           status: ${{ needs.build.outputs.status }}
+
+      # The bundle already exists on Play now, so the lower tracks only need to point at
+      # its versionCode. All of them change in a single edit, so either every lower track
+      # is updated or none is.
+      - name: Roll out to lower test tracks (${{ needs.build.outputs.lowerTracks }})
+        if: needs.build.outputs.lowerTracks != ''
+        env:
+          SERVICE_ACCOUNT_JSON: ${{ secrets.google_play_service_account_json }}
+          PACKAGE_NAME: ${{ matrix.packageName }}
+          VERSION_CODE: ${{ needs.build.outputs.versionCode }}
+          TRACKS: ${{ needs.build.outputs.lowerTracks }}
+        run: |
+          pip install --quiet google-auth requests
+          python3 - <<'PY'
+          import json, os
+          from google.auth.transport.requests import AuthorizedSession
+          from google.oauth2 import service_account
+
+          creds = service_account.Credentials.from_service_account_info(
+              json.loads(os.environ["SERVICE_ACCOUNT_JSON"]),
+              scopes=["https://www.googleapis.com/auth/androidpublisher"],
+          )
+          session = AuthorizedSession(creds)
+          base = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{os.environ['PACKAGE_NAME']}/edits"
+
+          def call(method, url, **kwargs):
+              r = session.request(method, url, **kwargs)
+              if not r.ok:
+                  raise SystemExit(f"::error::{method} {url} -> {r.status_code}: {r.text}")
+              return r.json()
+
+          edit = call("POST", base)["id"]
+          for track in os.environ["TRACKS"].split():
+              call("PUT", f"{base}/{edit}/tracks/{track}", json={
+                  "track": track,
+                  "releases": [{"versionCodes": [os.environ["VERSION_CODE"]], "status": "completed"}],
+              })
+              print(f"{track}: versionCode {os.environ['VERSION_CODE']} (completed)")
+          call("POST", f"{base}/{edit}:commit")
+          print("Edit committed.")
+          PY
