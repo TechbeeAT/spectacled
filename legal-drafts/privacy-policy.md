@@ -132,7 +132,7 @@ The website links to external services such as GitHub, Mastodon, PayPal (donatio
 
 ## 8. App stores and downloads
 
-When you download the apps from Google Play, the Apple App Store, F-Droid or GitHub, the respective platform processes data (e.g. your account, device information, download and usage statistics) on its own responsibility and under its own privacy policy. We may receive aggregated, non-personal statistics from these platforms (e.g. the number of installations).
+When you download or purchase the apps from Google Play, the Apple App Store, F-Droid or GitHub, the respective platform processes data (e.g. your account, payment details, device information, download and usage statistics) on its own responsibility and under its own privacy policy. We may receive aggregated, non-personal statistics from these platforms (e.g. the number of installations or sales). We do not receive your payment details.
 
 ## 9. Contacting us and contributing
 
