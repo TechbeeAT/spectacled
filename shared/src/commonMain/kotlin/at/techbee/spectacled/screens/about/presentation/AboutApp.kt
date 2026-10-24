@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,7 @@ import spectacled.shared.generated.resources.about_version
 import spectacled.shared.generated.resources.copyright_info
 import spectacled.shared.generated.resources.logo_nlnet
 import spectacled.shared.generated.resources.logo_techbee_xml
+import spectacled.shared.generated.resources.privacy_policy
 import spectacled.shared.generated.resources.terms_conditions
 
 @Composable
@@ -86,32 +88,64 @@ fun AboutApp(
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
-
-            TextButton(
-                content = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(Res.string.terms_conditions),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.OpenInNew, 
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    content = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.terms_conditions),
+                                style = MaterialTheme.typography.titleMedium,
                             )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    },
+                    onClick = {
+                        try {
+                            uriHandler.openUri("https://spectacled.techbee.at/terms-of-service/")
+                        } catch (e: Exception) {
+                            Napier.w(e.stackTraceToString())
+                        }
                     }
-                },
-                onClick = {
-                    try {
-                        uriHandler.openUri("https://www.techbee.at/")   // TODO: Update URL
-                    } catch (e: Exception) {
-                        Napier.w(e.stackTraceToString())
+                )
+
+                VerticalDivider(modifier = Modifier.height(24.dp))
+
+                TextButton(
+                    content = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.privacy_policy),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    },
+                    onClick = {
+                        try {
+                            uriHandler.openUri("https://spectacled.techbee.at/privacy-policy/")
+                        } catch (e: Exception) {
+                            Napier.w(e.stackTraceToString())
+                        }
                     }
-                }
-            )
+                )
+            }
+
             Text(
                 text = stringResource(Res.string.copyright_info),
                 style = MaterialTheme.typography.bodyLarge
