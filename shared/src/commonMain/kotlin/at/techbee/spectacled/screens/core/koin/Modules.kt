@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.core.koin
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
@@ -39,6 +40,7 @@ val sharedModule = module {
     singleOf(::DefaultWebDavRemoteIcalEntryDataSource) { bind<WebDavRemoteIcalEntryDataSource>() }
 
     singleOf(::MoveIcalEntriesUseCase)
+    singleOf(::AlarmCoordinator)
 
     viewModelOf(::ListViewModel)
     viewModelOf(::AccountListViewModel)

@@ -17,6 +17,7 @@ import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Alarm
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -78,6 +79,7 @@ class DetailsViewModel(
     private val shareManager: PlatformShareManager,
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
     private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
+    private val alarmCoordinator: AlarmCoordinator,
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -702,9 +704,13 @@ class DetailsViewModel(
             )
         }
 
-        viewModelScope.launch { 
+        viewModelScope.launch {
             icalEntryRepository.insertOrUpdateIcalEntry(entryToSave)
             platformSyncTrigger.triggerWidgetUpdate()
+            if (entryToSave.isDoneOrCancelled() || entryToSave.syncState.isDeletedState())
+                alarmCoordinator.onEntriesDoneOrDeleted(listOf(entryToSave.id))
+            else
+                alarmCoordinator.reconcile()
         }
         Napier.d("Entry saved")
     }
@@ -736,6 +742,7 @@ class DetailsViewModel(
                 val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
                 SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendarWithSyncLock(calendar)
+                alarmCoordinator.reconcile()
                 val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.calendarId, icalEntry.uid) ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
@@ -809,6 +816,7 @@ class DetailsViewModel(
             if(getPlatform().platform == Platforms.WASM)
                 syncAndAwaitResult(savedSubtask)
             platformSyncTrigger.triggerWidgetUpdate()
+            alarmCoordinator.reconcile()
         }
         Napier.d("Entry saved")
     }
@@ -823,6 +831,7 @@ class DetailsViewModel(
 
         viewModelScope.launch {
             icalEntryRepository.markAsDeleted(listOf(subtaskIcalEntryId))
+            alarmCoordinator.onEntriesDoneOrDeleted(listOf(subtaskIcalEntryId))
         }
     }
 
@@ -855,6 +864,10 @@ class DetailsViewModel(
                 lastModified = updatedSubtask.lastModified,
                 syncState = updatedSubtask.syncState
             )
+            if (updatedSubtask.isDoneOrCancelled())
+                alarmCoordinator.onEntriesDoneOrDeleted(listOf(updatedSubtask.id))
+            else
+                alarmCoordinator.reconcile()
         }
     }
 

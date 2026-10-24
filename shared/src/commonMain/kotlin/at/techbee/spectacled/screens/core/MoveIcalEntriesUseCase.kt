@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core
 
 import at.techbee.spectacled.screens.core.data.CredentialStore
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
@@ -27,6 +28,7 @@ class MoveIcalEntriesUseCase(
     private val remoteIcalEntryDataSource: WebDavRemoteIcalEntryDataSource,
     private val fileManager: FileManager,
     private val syncTrigger: SyncTrigger,
+    private val alarmCoordinator: AlarmCoordinator,
 ) {
 
     suspend fun move(icalEntryIds: List<Long>, targetCalendarId: Long) {
@@ -37,6 +39,8 @@ class MoveIcalEntriesUseCase(
         val entries = icalEntryRepository.getIcalEntriesWithSubtasks(icalEntryIds)
         ensureAttachmentsDownloaded(entries)
         icalEntryRepository.moveIcalEntriesToCalendar(icalEntryIds, targetCalendarId)
+        // The originals are marked deleted, the copies have new ids - re-key their alarms.
+        alarmCoordinator.onEntriesDoneOrDeleted(entries.map { it.id })
 
         val affectedCalendarIds = (entries.map { it.calendarId } + targetCalendarId).distinct()
         syncTrigger.requestImmediate(affectedCalendarIds)

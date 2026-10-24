@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
@@ -44,6 +45,7 @@ class ListViewModel(
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
     private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
     private val client: HttpClient,
+    private val alarmCoordinator: AlarmCoordinator,
     val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -366,6 +368,7 @@ class ListViewModel(
                         it.toIcalEntries(calendarId, batchCategory, spectacledVariant, includeSubtasks = createSubtasks)
                     }
                     toInsert.forEach { icalEntryRepository.insertOrUpdateIcalEntry(it) }
+                    alarmCoordinator.reconcile()
 
                     if(toInsert.isNotEmpty()) {
                         syncTrigger.requestImmediate(listOf(calendarId))
@@ -439,7 +442,11 @@ class ListViewModel(
 
         viewModelScope.launch {
             // Recurring entries are read-only, so exclude them even if a selection somehow contains one.
-            _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(withoutRecurringEntries(it)) }
+            _state.value.multiselectItems?.let { selected ->
+                val ids = withoutRecurringEntries(selected)
+                icalEntryRepository.markAsDeleted(ids)
+                alarmCoordinator.onEntriesDoneOrDeleted(ids)
+            }
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
             _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false) }
@@ -511,6 +518,10 @@ class ListViewModel(
                 lastModified = updatedEntry.lastModified,
                 syncState = updatedEntry.syncState
             )
+            if (updatedEntry.isDoneOrCancelled())
+                alarmCoordinator.onEntriesDoneOrDeleted(listOf(updatedEntry.id))
+            else
+                alarmCoordinator.reconcile()
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
         }

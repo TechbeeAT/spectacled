@@ -58,6 +58,7 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.SyncTrigger
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
@@ -339,6 +340,7 @@ class ToggleTaskAction : ActionCallback, KoinComponent {
     ) {
         val icalEntryRepository: IcalEntryRepository by inject()
         val syncTrigger: SyncTrigger by inject()
+        val alarmCoordinator: AlarmCoordinator by inject()
 
         val entryId = parameters[EntryIdKey] ?: return
         val isChecked = parameters[IsCheckedKey] ?: return
@@ -360,6 +362,10 @@ class ToggleTaskAction : ActionCallback, KoinComponent {
             lastModified = updatedEntry.lastModified,
             syncState = updatedEntry.syncState
         )
+        if (updatedEntry.isDoneOrCancelled())
+            alarmCoordinator.onEntriesDoneOrDeleted(listOf(updatedEntry.id))
+        else
+            alarmCoordinator.reconcile()
         syncTrigger.requestImmediate(listOf(updatedEntry.calendarId))
 
         SpectacledWidget().update(context, glanceId)
