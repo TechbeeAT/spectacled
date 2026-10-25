@@ -1,1 +1,1 @@
-Open-source journal synced over CalDAV with your own server
+Open-source journals synced over CalDAV with your own server

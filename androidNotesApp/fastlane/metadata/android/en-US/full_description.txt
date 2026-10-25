@@ -5,7 +5,6 @@ Features
 • Organise notes in multiple collections
 • Search, filter and sort your notes, with a list layout configurable per collection
 • Attachments (files, photos, links), inline or linked
-• Link related notes with parent/child relationships
 • Add subtasks to a note when the collection supports tasks
 • Home screen widget
 • Light and dark theme

@@ -5,7 +5,6 @@ Features
 • Organise entries in multiple collections
 • Search, filter and sort your entries, with a list layout configurable per collection
 • Attachments (files, photos, links), inline or linked
-• Link related entries with parent/child relationships
 • Add subtasks to an entry when the collection supports tasks
 • Home screen widget
 • Light and dark theme
