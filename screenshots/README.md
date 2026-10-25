@@ -1,7 +1,7 @@
 # Store screenshots
 
-Renders the real screens of all three apps off-screen on the JVM, at App Store and Play Store
-sizes. You don't need an emulator, a simulator or a CalDAV server.
+Renders the real screens of all three apps off-screen on the JVM, at App Store, Mac App Store
+and Play Store sizes (iPhone, iPhone Duo unfolded, iPad, MacBook, Android phone and tablets). You don't need an emulator, a simulator or a CalDAV server.
 
 ```bash
 ./gradlew :screenshots:generateScreenshots                 # all apps
