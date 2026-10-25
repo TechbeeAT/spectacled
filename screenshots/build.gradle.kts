@@ -20,6 +20,7 @@ dependencies {
     implementation(libs.kotlinx.coroutinesSwing)
     implementation(libs.koin.core)
     implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.mock)   // the generator runs offline, see Main.kt
 }
 
 val outputDir = layout.buildDirectory.dir("screenshots")

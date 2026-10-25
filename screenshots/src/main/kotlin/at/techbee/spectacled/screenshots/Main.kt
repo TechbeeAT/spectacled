@@ -8,7 +8,10 @@ import at.techbee.spectacled.doInitKoin
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_NO_CRITERIA
 import at.techbee.spectacled.screens.core.data.LIST_COLLAPSED_GROUP_TRASHBIN
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.theme.ThemeOption
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -20,8 +23,10 @@ import kotlinx.coroutines.withTimeout
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.koin.core.Koin
+import org.koin.dsl.module
 import org.koin.mp.KoinPlatform
 import java.io.File
+import java.io.IOException
 import java.util.Locale
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
@@ -65,7 +70,14 @@ fun main(args: Array<String>) {
         runBlocking(Dispatchers.Main) {
             doInitKoin(variant)
             val koin = KoinPlatform.getKoin()
-            val sampleData = SampleData.seed(variant, sampleDataFile, koin.get(), koin.get())
+            // Offline: the fake account must never reach the network. Syncs the app requests
+            // (e.g. when a details screen closes) fail at once and are undone by resetSyncStatus.
+            koin.loadModules(
+                listOf(module { single { HttpClient(MockEngine { throw IOException("Screenshots are rendered offline") }) } }),
+                allowOverride = true
+            )
+            val calendarRepository = koin.get<CalendarRepository>()
+            val sampleData = SampleData.seed(variant, sampleDataFile, calendarRepository, koin.get())
             val preferences = koin.get<PlatformUserAppPreferencesStore>()
 
             for (locale in locales) {
@@ -74,6 +86,7 @@ fun main(args: Array<String>) {
                     for (theme in themes) {
                         for (scene in scenes) {
                             resetPreferences(preferences, variant, theme)
+                            SampleData.resetSyncStatus(calendarRepository, sampleData.calendarId)
                             val png = render(koin, variant, device, sampleData, scene)
                             val file = File(outDir, "${variant.name.lowercase()}/$locale/${device.folder}/${scene.name}-${theme.name.lowercase()}.png")
                             file.parentFile.mkdirs()

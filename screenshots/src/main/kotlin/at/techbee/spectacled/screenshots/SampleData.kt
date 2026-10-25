@@ -5,14 +5,20 @@ import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.domain.CalDavPrivilege
 import at.techbee.spectacled.screens.core.domain.Calendar
+import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
+import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import io.ktor.http.Url
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.sql.DriverManager
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 internal class SeededSampleData(
     val calendarId: Long,
@@ -28,11 +34,27 @@ internal object SampleData {
     /** The "today" screenshot_entries.sql was written for: its dates are shifted by today minus this. */
     private val SAMPLE_DATA_TODAY = LocalDate.of(2026, 7, 16)
 
-    // Never contacted: nothing in a scene syncs, and .example is reserved (RFC 2606).
+    // Never contacted: the generator's HttpClient is offline (see Main.kt), and .example is reserved (RFC 2606).
     private val principalUrl = Url("https://dav.example.com/principals/alex/")
     private val homeCollectionUrl = Url("https://dav.example.com/calendars/alex/")
 
     private val quotedIcsDate = Regex("'(\\d{4})(\\d{2})(\\d{2})(T\\d{6}Z?)?'")
+
+    private val SYNCED get() = CalendarSyncStatus(CalendarSyncStatusType.SYNCED)
+
+    /**
+     * Shows the calendar as synced again. Leaving a details screen requests a sync (OnDispose),
+     * which fails against the offline HttpClient of the generator; called before every scene, this
+     * lets such a sync from the previous scene finish and then undoes its "sync problem".
+     */
+    suspend fun resetSyncStatus(calendarRepository: CalendarRepository, calendarId: Long) {
+        delay(300.milliseconds)   // a sync requested while the previous scene closed gets to start
+        withTimeoutOrNull(10.seconds) {
+            while (calendarRepository.getCalendarById(calendarId)?.calendarSyncStatus?.type == CalendarSyncStatusType.IN_PROGRESS)
+                delay(20.milliseconds)
+        }
+        calendarRepository.updateCalendarSyncStatus(SYNCED.serialize(), syncToken = null, id = calendarId)
+    }
 
     suspend fun seed(
         variant: SpectacledVariant,
@@ -64,7 +86,7 @@ internal object SampleData {
                 ctag = null,
                 supportedComponents = listOf(variant.mainCalendarComponent),
                 calDavPrivileges = listOf(CalDavPrivilege.ALL),
-                calendarSyncStatus = null,
+                calendarSyncStatus = SYNCED,
                 syncToken = null
             ),
             homeCollectionUrl

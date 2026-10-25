@@ -24,6 +24,9 @@ Defaults: locale `en`, both themes, all devices, all scenes.
 - **Isolated data.** Each run gets a fresh `user.home` under `build/screenshots-home/` with its
   own database, preferences and a fake account on `dav.example.com`. Credentials go to the
   software key vault, so your real desktop app data and the OS keychain are never touched.
+- **Offline, shown as synced.** The HttpClient is replaced by one that fails every request, so
+  nothing reaches the network. The calendar is stored as synced, and before each scene the
+  generator undoes the failed sync the app requests whenever a details screen closes.
 - **Sample data.** Entries come from `sample-data/screenshot_entries.sql`, filtered by uid prefix
   (`sample-journal-`, `sample-note-`, `sample-task-`). Their dates are shifted so that the file's
   "today" (2026-07-16) becomes the day of the run, which keeps "due tomorrow" due tomorrow.
