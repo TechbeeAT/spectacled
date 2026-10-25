@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screenshots
 
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.account.presentation.AccountListAction
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import at.techbee.spectacled.screens.details.presentation.DetailsSheetOrDialog
 import at.techbee.spectacled.screens.list.presentation.ListAction
@@ -32,6 +33,10 @@ internal fun scenesFor(variant: SpectacledVariant): List<Scene> = when (variant)
             list(ListAction.OnToggleFilterBar)
         },
         Scene("06_accounts") { openAccounts() },
+        Scene("07_add_account") {
+            openAccounts()
+            accounts(AccountListAction.OnShowAddPrincipalBottomSheet(true))
+        },
     )
 
     SpectacledVariant.NOTES -> listOf(
@@ -42,6 +47,10 @@ internal fun scenesFor(variant: SpectacledVariant): List<Scene> = when (variant)
             details(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COLOR_SELECTOR))
         },
         Scene("04_accounts") { openAccounts() },
+        Scene("05_add_account") {
+            openAccounts()
+            accounts(AccountListAction.OnShowAddPrincipalBottomSheet(true))
+        },
     )
 
     SpectacledVariant.TASKS -> listOf(
@@ -55,5 +64,9 @@ internal fun scenesFor(variant: SpectacledVariant): List<Scene> = when (variant)
             details(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.TASK_STATUS_PICKER))
         },
         Scene("04_accounts") { openAccounts() },
+        Scene("05_add_account") {
+            openAccounts()
+            accounts(AccountListAction.OnShowAddPrincipalBottomSheet(true))
+        },
     )
 }
