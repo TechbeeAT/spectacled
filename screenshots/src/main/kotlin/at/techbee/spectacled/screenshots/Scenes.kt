@@ -18,50 +18,24 @@ internal class Scene(
 )
 
 /** The screenshots per app, in store order. The file name is the scene name. */
-internal fun scenesFor(variant: SpectacledVariant): List<Scene> = when (variant) {
+internal fun scenesFor(variant: SpectacledVariant): List<Scene> {
+    // The entry of 02_entry, shown again in 03 with its categories open.
+    val entryUid = when (variant) {
+        SpectacledVariant.JOURNALS -> "sample-journal-diary-2"
+        SpectacledVariant.NOTES -> "sample-note-recipe"
+        SpectacledVariant.TASKS -> "sample-task-website-relaunch"
+    }
 
-    SpectacledVariant.JOURNALS -> listOf(
-        Scene("01_list") { openList() },
-        Scene("02_entry") { openDetails("sample-journal-diary-2") },
-        Scene("03_meeting_minutes") { openDetails("sample-journal-minutes-1") },
-        Scene("04_categories") {
-            openDetails("sample-journal-diary-1")
-            details(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.CATEGORY_SELECTOR))
-        },
-        Scene("05_filter") {
-            openList()
-            list(ListAction.OnToggleFilterBar)
-        },
-        Scene("06_accounts") { openAccounts() },
-        Scene("07_add_account") {
-            openAccounts()
-            accounts(AccountListAction.OnShowAddPrincipalBottomSheet(true))
-        },
-    )
-
-    SpectacledVariant.NOTES -> listOf(
-        Scene("01_list") { openList() },
-        Scene("02_recipe") { openDetails("sample-note-recipe") },
-        Scene("03_color") {
-            openDetails("sample-note-ideas")
-            details(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COLOR_SELECTOR))
-        },
-        Scene("04_accounts") { openAccounts() },
-        Scene("05_add_account") {
-            openAccounts()
-            accounts(AccountListAction.OnShowAddPrincipalBottomSheet(true))
-        },
-    )
-
-    SpectacledVariant.TASKS -> listOf(
+    return listOf(
         Scene("01_list") {
             openList()
-            list(ListAction.OnSortedByChanged(ListSortedBy.DUE, listSortedByAscending = false))
+            if (variant == SpectacledVariant.TASKS)
+                list(ListAction.OnSortedByChanged(ListSortedBy.DUE, listSortedByAscending = false))
         },
-        Scene("02_project") { openDetails("sample-task-website-relaunch") },
-        Scene("03_status") {
-            openDetails("sample-task-plan-japan")
-            details(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.TASK_STATUS_PICKER))
+        Scene("02_entry") { openDetails(entryUid) },
+        Scene("03_categories") {
+            openDetails(entryUid)
+            details(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.CATEGORY_SELECTOR))
         },
         Scene("04_accounts") { openAccounts() },
         Scene("05_add_account") {
