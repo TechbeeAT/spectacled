@@ -82,6 +82,7 @@ source packages. Other useful targets (swap the variant freely):
 ./gradlew :composeJournalsApp:wasmJsBrowserDevelopmentRun  # web, needs :server:run for CalDAV
 ./gradlew :androidJournalsApp:assembleDebug                # needs local.properties → sdk.dir
 ./gradlew :server:test
+./gradlew :screenshots:generateScreenshots                # store screenshots, see screenshots/README.md
 ```
 
 Always use `./gradlew`, never a system `gradle`. Android builds need `local.properties`
