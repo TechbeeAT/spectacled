@@ -31,6 +31,7 @@ internal fun scenesFor(variant: SpectacledVariant): List<Scene> = when (variant)
             openList()
             list(ListAction.OnToggleFilterBar)
         },
+        Scene("06_accounts") { openAccounts() },
     )
 
     SpectacledVariant.NOTES -> listOf(
