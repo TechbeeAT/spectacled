@@ -1,0 +1,27 @@
+spectacled Journals is a journal app built on open standards. Every entry is a dated iCalendar VJOURNAL, synced over CalDAV with the server of your choice — no proprietary backend and no lock-in.
+
+Features
+• Write dated journal entries with summary, description, categories and classification
+• Organise entries in multiple collections
+• Search, filter and sort your entries, with a list layout configurable per collection
+• Attachments (files, photos, links), inline or linked
+• Link related entries with parent/child relationships
+• Add subtasks to an entry when the collection supports tasks
+• Home screen widget
+• Light and dark theme
+
+Your data stays yours
+• Works with any CalDAV server you already trust — Nextcloud, Radicale and many others
+• No account with us, no proprietary backend, no tracking
+• Everything is cached locally and syncs in the background, so the app stays usable offline
+• Plain iCalendar (RFC 5545): your entries remain readable by any other standards-compliant app
+
+Optional AI assistance
+Paste text and let an AI turn it into entries or subtasks. This is off unless you configure it: bring your own Claude API key, or point it at a local or self-hosted OpenAI-compatible server (Ollama, LM Studio, llama.cpp, LocalAI).
+
+Part of a family
+spectacled Journals, spectacled Notes and spectacled Tasks share one open-source codebase and are available for Android, iOS, the web and the desktop.
+
+Please note: journals and notes are stored as VJOURNAL, which not every CalDAV server supports. Nextcloud-based servers do; several CalDAV-capable mail providers only support tasks. The app suggests providers that are known to work.
+
+Spectacled is open source under the Apache License 2.0. Translations are managed on Weblate — help translate the apps at https://hosted.weblate.org/projects/spectacled/
