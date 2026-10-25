@@ -19,11 +19,18 @@ internal class Scene(
 
 /** The screenshots per app, in store order. The file name is the scene name. */
 internal fun scenesFor(variant: SpectacledVariant): List<Scene> {
-    // The entry of 02_entry, shown again in 03 with its categories open.
-    val entryUid = when (variant) {
-        SpectacledVariant.JOURNALS -> "sample-journal-diary-2"
-        SpectacledVariant.NOTES -> "sample-note-recipe"
-        SpectacledVariant.TASKS -> "sample-task-website-relaunch"
+    // 02 shows the first entry, 03 a different one with its categories open.
+    val (entryUid, categoriesEntryUid) = when (variant) {
+        SpectacledVariant.JOURNALS -> "sample-journal-diary-2" to "sample-journal-minutes-1"
+        SpectacledVariant.NOTES -> "sample-note-recipe" to "sample-note-ideas"
+        SpectacledVariant.TASKS -> "sample-task-website-relaunch" to "sample-task-plan-japan"
+    }
+
+    // 07 shows a third entry with the app's own picker sheet open.
+    val (pickerEntryUid, pickerSheet) = when (variant) {
+        SpectacledVariant.JOURNALS -> "sample-journal-diary-1" to DetailsSheetOrDialog.JOURNAL_STATUS_PICKER
+        SpectacledVariant.NOTES -> "sample-note-gifts" to DetailsSheetOrDialog.COLOR_SELECTOR
+        SpectacledVariant.TASKS -> "sample-task-passport" to DetailsSheetOrDialog.TASK_STATUS_PICKER
     }
 
     return listOf(
@@ -34,13 +41,21 @@ internal fun scenesFor(variant: SpectacledVariant): List<Scene> {
         },
         Scene("02_entry") { openDetails(entryUid) },
         Scene("03_categories") {
-            openDetails(entryUid)
+            openDetails(categoriesEntryUid)
             details(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.CATEGORY_SELECTOR))
         },
         Scene("04_accounts") { openAccounts() },
         Scene("05_add_account") {
             openAccounts()
             accounts(AccountListAction.OnShowAddPrincipalBottomSheet(true))
+        },
+        Scene("06_filter") {
+            openList()
+            list(ListAction.OnToggleFilterBar)
+        },
+        Scene("07_${pickerSheet.name.lowercase()}") {
+            openDetails(pickerEntryUid)
+            details(DetailsAction.OnShowSheetOrDialog(pickerSheet))
         },
     )
 }
