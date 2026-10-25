@@ -53,7 +53,7 @@ internal fun scenesFor(variant: SpectacledVariant): List<Scene> {
             openList()
             list(ListAction.OnToggleFilterBar)
         },
-        Scene("07_${pickerSheet.name.lowercase()}") {
+        Scene("07_picker") {
             openDetails(pickerEntryUid)
             details(DetailsAction.OnShowSheetOrDialog(pickerSheet))
         },
