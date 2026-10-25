@@ -22,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
+import org.jetbrains.skia.Surface
 import org.koin.core.Koin
 import org.koin.dsl.module
 import org.koin.mp.KoinPlatform
@@ -87,7 +88,7 @@ fun main(args: Array<String>) {
                         for (scene in scenes) {
                             resetPreferences(preferences, variant, theme)
                             SampleData.resetSyncStatus(calendarRepository)
-                            val png = render(koin, variant, device, sampleData, scene)
+                            val png = render(koin, variant, device, theme, sampleData, scene)
                             val file = File(outDir, "${variant.name.lowercase()}/$locale/${device.folder}/${scene.name}-${theme.name.lowercase()}.png")
                             file.parentFile.mkdirs()
                             file.writeBytes(png)
@@ -121,6 +122,7 @@ private suspend fun render(
     koin: Koin,
     variant: SpectacledVariant,
     device: Device,
+    theme: ThemeOption,
     sampleData: SeededSampleData,
     scene: Scene
 ): ByteArray {
@@ -154,11 +156,32 @@ private suspend fun render(
             frames.cancelAndJoin()
         }
 
-        return frame().encodeToData(EncodedImageFormat.PNG)?.bytes
+        return withSystemBars(frame(), device, dark = theme == ThemeOption.DARK)
+            .encodeToData(EncodedImageFormat.PNG)?.bytes
             ?: error("Could not encode ${scene.name} as PNG")
     } finally {
         composeScene.close()
         sceneScope.clear()
+    }
+}
+
+/**
+ * Draws the device's status bar and home indicator over [app]. They are a scene of their own, so
+ * they end up above everything the app draws, including sheets and their scrims.
+ */
+private fun withSystemBars(app: Image, device: Device, dark: Boolean): Image {
+    if (device.systemBars == SystemBarsStyle.NONE)
+        return app
+    val overlayScene = ImageComposeScene(device.widthPx, device.heightPx, Density(device.density)) {
+        SystemBarsOverlay(device, dark)
+    }
+    try {
+        val surface = Surface.makeRasterN32Premul(device.widthPx, device.heightPx)
+        surface.canvas.drawImage(app, 0f, 0f)
+        surface.canvas.drawImage(overlayScene.render(), 0f, 0f)
+        return surface.makeImageSnapshot()
+    } finally {
+        overlayScene.close()
     }
 }
 

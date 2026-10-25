@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.material3)
     implementation(libs.compose.ui)
+    implementation(libs.material.icons.extended)   // Android status bar icons
     implementation(libs.androidx.lifecycle.viewmodelCompose)
     implementation(libs.kotlinx.coroutinesSwing)
     implementation(libs.koin.core)

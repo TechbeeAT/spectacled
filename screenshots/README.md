@@ -13,7 +13,7 @@ and Play Store sizes (iPhone, iPhone Duo unfolded, iPad, MacBook, Android phone 
 ```
 
 Output: `screenshots/build/screenshots/<app>/<locale>/<device>/<scene>-<theme>.png`. These are
-plain screen contents, ready to be framed by AppLaunchFlow or any other tool.
+full screens including the status bar, ready to be framed by AppLaunchFlow or any other tool.
 
 Each filter takes comma-separated values and matches a device or scene by the start of its name.
 Defaults: locale `en`, both themes, all devices, all scenes.
@@ -52,8 +52,10 @@ a device size, edit `Device.kt`.
 
 ## Limits
 
-- There's no system chrome (status bar, home indicator) and the UI is the same on iOS and
-  Android, as it is in the app.
+- The status bar (9:41, full signal and battery) and the home indicator or gesture handle are
+  drawn by the generator (`SystemBars.kt`); the app gets the matching insets per device
+  (`Device.kt`), so its layout leaves room for them as on the device. The MacBook has none.
+  The app UI itself is the same on iOS and Android, as it is in the app.
 - Emoji and missing glyphs fall back to the fonts installed on the machine that renders. Render
   on a Mac for Apple emoji.
 - UI held only in composable state (a dropdown menu, for example) can't be opened from a scene.

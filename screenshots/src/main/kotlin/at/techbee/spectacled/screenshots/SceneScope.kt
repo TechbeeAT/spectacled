@@ -6,10 +6,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.lifecycle.ViewModelStore
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.account.presentation.AccountListAction
@@ -97,8 +100,18 @@ internal class SceneScope(
     }
 
     /** The same arrangement SpectacledApp uses, without navigation: nothing here navigates. */
+    @OptIn(InternalComposeUiApi::class)
     @Composable
     fun Content() {
+        // The insets the device reports, so the app leaves room for its status bar and home
+        // indicator; SystemBarsOverlay draws them on top of the rendered frame.
+        CompositionLocalProvider(LocalPlatformWindowInsets provides systemBarInsets(device)) {
+            ScreenContent()
+        }
+    }
+
+    @Composable
+    private fun ScreenContent() {
         AppTheme(spectacledVariant = variant) {
             Surface(
                 modifier = Modifier.fillMaxSize(),
