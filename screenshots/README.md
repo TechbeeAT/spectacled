@@ -22,10 +22,11 @@ Defaults: locale `en`, both themes, all devices, all scenes.
 
 - **Separate module, not a test.** `:shared:allTests` and CI never run it.
 - **Isolated data.** Each run gets a fresh `user.home` under `build/screenshots-home/` with its
-  own database, preferences and a fake account on `dav.example.com`. Credentials go to the
-  software key vault, so your real desktop app data and the OS keychain are never touched.
+  own database, preferences and two fake accounts (private and work) with a few calendars each.
+  Credentials go to the software key vault, so your real desktop app data and the OS keychain
+  are never touched.
 - **Offline, shown as synced.** The HttpClient is replaced by one that fails every request, so
-  nothing reaches the network. The calendar is stored as synced, and before each scene the
+  nothing reaches the network. The calendars are stored as synced, and before each scene the
   generator undoes the failed sync the app requests whenever a details screen closes.
 - **Sample data.** Entries come from `sample-data/screenshot_entries.sql`, filtered by uid prefix
   (`sample-journal-`, `sample-note-`, `sample-task-`). Their dates are shifted so that the file's

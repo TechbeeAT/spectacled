@@ -86,7 +86,7 @@ fun main(args: Array<String>) {
                     for (theme in themes) {
                         for (scene in scenes) {
                             resetPreferences(preferences, variant, theme)
-                            SampleData.resetSyncStatus(calendarRepository, sampleData.calendarId)
+                            SampleData.resetSyncStatus(calendarRepository)
                             val png = render(koin, variant, device, sampleData, scene)
                             val file = File(outDir, "${variant.name.lowercase()}/$locale/${device.folder}/${scene.name}-${theme.name.lowercase()}.png")
                             file.parentFile.mkdirs()
