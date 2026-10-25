@@ -87,7 +87,6 @@ fun SplashScreen(
             )
         }
     }
-
 }
 
 @Preview
@@ -102,7 +101,7 @@ fun SplashScreen_Preview() {
     }
 }
 
-@Preview
+@Preview(uiMode = 32)   // 32 = UI_MODE_NIGHT_YES
 @Composable
 fun SplashScreen_no_progress_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
