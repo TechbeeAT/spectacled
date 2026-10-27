@@ -144,6 +144,10 @@ private class FakeIcalEntryRepository(
 
     override suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant) { notified[alarmId] = notifiedAt }
 
+    override suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant) {
+        alarms.filter { it.alarmId !in notified && it.triggerAt < before }.forEach { notified[it.alarmId] = notifiedAt }
+    }
+
     override suspend fun getIcalEntryById(id: Long): IcalEntry? = entries.find { it.id == id }
 
     // --- not exercised by the alarm coordinator ---

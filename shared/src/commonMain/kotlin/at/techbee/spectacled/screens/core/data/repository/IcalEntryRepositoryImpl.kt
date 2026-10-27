@@ -357,6 +357,15 @@ class IcalEntryRepositoryImpl(
         }
     }
 
+    override suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant) {
+        withContext(ioDispatcher) {
+            getDatabase().alarm_dtoQueries.markAlarmsNotifiedBefore(
+                lastNotifiedAt = notifiedAt.toEpochMilliseconds(),
+                beforeMillis = before.toEpochMilliseconds()
+            )
+        }
+    }
+
     override suspend fun markAsDeleted(ids: List<Long>) {
         withContext(ioDispatcher) {
             getDatabase().icalentry_dtoQueries.markAsDeleted(ids)
@@ -370,8 +379,9 @@ class IcalEntryRepositoryImpl(
 
         // 1. Re-create each entry in the target calendar. Same uid keeps its identity; clearing
         //    href/etag makes the sync engine PUT it as a new resource into the target collection.
+        val db = getDatabase()
         entriesToMove.forEach { entry ->
-            insertOrUpdateIcalEntry(
+            val copy = insertOrUpdateIcalEntry(
                 entry.copy(
                     id = 0L,
                     calendarId = targetCalendarId,
@@ -381,6 +391,15 @@ class IcalEntryRepositoryImpl(
                     attachments = entry.attachments.map { it.remappedForMove() }
                 )
             )
+            // The copy is a new row, so saveAlarms found no previous alarms to carry the local
+            // notification state over from - do it here, or an alarm that already fired would
+            // count as missed and fire again.
+            val originalAlarms = db.alarm_dtoQueries.getAlarmsForEntry(entry.id).awaitAsList()
+            db.alarm_dtoQueries.getAlarmsForEntry(copy.id).awaitAsList().forEach { copied ->
+                originalAlarms
+                    .firstOrNull { it.lastNotifiedAt != null && it.triggerAt == copied.triggerAt && (if (copied.uid != null) it.uid == copied.uid else it.icsBlock == copied.icsBlock) }
+                    ?.let { db.alarm_dtoQueries.updateLastNotifiedAt(lastNotifiedAt = it.lastNotifiedAt, id = copied.id) }
+            }
         }
 
         // 2. Mark the originals deleted. The sync engine DELETEs them from the source collection;

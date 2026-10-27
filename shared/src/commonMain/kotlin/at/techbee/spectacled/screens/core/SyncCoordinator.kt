@@ -87,7 +87,7 @@ class SyncCoordinator(
             credentialStore: CredentialStore,
             client: HttpClient,
             alarmCoordinator: AlarmCoordinator
-        ) {
+        ) = try {
             calendarRepository.getAllPrincipals().forEach { principal ->
                 val credentials = credentialStore.load(principal.principalUrl)
                 calendarRepository
@@ -115,8 +115,8 @@ class SyncCoordinator(
             // empty trashbin for items older than 30 days
             val cutoffDate = IcsDateTime(Clock.System.now().minus(30.days), false)
             icalEntryRepository.deleteTrashed(cutoffDate)
-
-            // The sync may have added, moved or removed alarms.
+        } finally {
+            // The sync may have added, moved or removed alarms - also when it failed half way.
             alarmCoordinator.reconcile()
         }
 
@@ -128,7 +128,7 @@ class SyncCoordinator(
             credentialStore: CredentialStore,
             client: HttpClient,
             alarmCoordinator: AlarmCoordinator
-        ) {
+        ) = try {
             val calendars = calendarRepository.getCalendarsByIds(calendarIds)
 
             coroutineScope {
@@ -141,7 +141,7 @@ class SyncCoordinator(
                     }
                 }
             }
-
+        } finally {
             alarmCoordinator.reconcile()
         }
     }

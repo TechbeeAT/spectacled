@@ -10,15 +10,18 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
-import kotlin.time.Instant
 
 /**
  * Keeps the platform's scheduled alarms in line with the database.
  *
  * [reconcile] is the single entry point and is called whenever alarms may have changed: after a
- * local save, after a sync, at app start and from platform hooks (boot, time zone change). It
- * doesn't diff: it reads the next alarms and hands the whole list to the [AlarmScheduler], which
- * is simpler than tracking individual changes and heals any state the platform lost.
+ * local save, after a sync, at app start and from platform hooks such as boot. It doesn't diff:
+ * it reads the next alarms and hands the whole list to the [AlarmScheduler], which is simpler
+ * than tracking individual changes and heals any state the platform lost.
+ *
+ * Trigger times are computed when an entry is saved (IcalEntryRepositoryImpl.saveAlarms), so a
+ * reconcile alone doesn't move all-day or floating alarms after a time zone change - that
+ * needs the stored times recomputed first.
  */
 class AlarmCoordinator(
     private val icalEntryRepository: IcalEntryRepository,
@@ -51,16 +54,16 @@ class AlarmCoordinator(
 
         // Alarms that were missed: show them late rather than never, within the grace period ...
         val missed = icalEntryRepository.getUpcomingAlarms(
-            from = Instant.DISTANT_PAST,
+            from = now - MISSED_ALARM_GRACE_PERIOD,
             until = now,
             limit = Long.MAX_VALUE
         )
         missed.forEach { upcoming ->
-            if (upcoming.triggerAt >= now - MISSED_ALARM_GRACE_PERIOD)
-                alarmScheduler.showNow(upcoming.toScheduledAlarm())
-            // ... and either way never again.
+            alarmScheduler.showNow(upcoming.toScheduledAlarm())
             icalEntryRepository.markAlarmNotified(upcoming.alarmId, now)
         }
+        // ... and write off anything older, so it is neither shown nor queried again.
+        icalEntryRepository.markAlarmsNotifiedBefore(before = now - MISSED_ALARM_GRACE_PERIOD, notifiedAt = now)
 
         val upcoming = icalEntryRepository.getUpcomingAlarms(
             from = now,

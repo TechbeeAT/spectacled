@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
@@ -57,6 +58,7 @@ class AccountListViewModel(
     private val credentialStore: PlatformCredentialStore,
     private val platformSyncTrigger: PlatformSyncTrigger,
     private val webDavCalendarDataSource: WebDavRemoteCalendarDataSource,
+    private val alarmCoordinator: AlarmCoordinator,
     val spectacledVariant: SpectacledVariant,
     val userAppPreferencesStore: PlatformUserAppPreferencesStore
     ): ViewModel() {
@@ -162,6 +164,7 @@ class AccountListViewModel(
         viewModelScope.launch {
             credentialStore.clear(principal.principalUrl)
             calendarRepository.deletePrincipal(principal.id)
+            alarmCoordinator.reconcile()   // its entries' alarms are gone with it
             _state.update { it.copy(
                 processingState = ProcessingState.Success(message = getString(Res.string.account_successfully_removed)),
                 showRemovePrincipalDialog = null,
@@ -187,6 +190,7 @@ class AccountListViewModel(
                     when (remoteResult) {
                         is DeleteCalendarResult.SuccessfullyDeleted, is DeleteCalendarResult.AlreadyDeleted -> {
                             calendarRepository.deleteCalendar(calendar.id)
+                            alarmCoordinator.reconcile()
                             _state.update { it.copy(
                                 processingState = ProcessingState.Success(message = getString(Res.string.calendar_successfully_deleted)),
                                 editFoldersOfPrincipal = null,
@@ -370,6 +374,8 @@ class AccountListViewModel(
                     val localCalendars = calendarRepository.getCalendarsForPrincipalUrl(principal.principalUrl.toString())
                     val removedCalendars = localCalendars.filter { localCalendar -> discoveredCalendars.none { calendar -> calendar.url == localCalendar.url}  }
                     removedCalendars.forEach { calendarRepository.deleteCalendar(it.id) }
+                    if (removedCalendars.isNotEmpty())
+                        alarmCoordinator.reconcile()
                     // Todo: inform user that calendar was removed!
 
                     calendarsToSync.addAll(localCalendars)

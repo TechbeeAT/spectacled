@@ -71,4 +71,7 @@ interface IcalEntryRepository {
 
     /** Records that a notification was shown for the stored alarm [alarmId]. Local only, never synced. */
     suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant)
+
+    /** Marks every alarm due before [before] that was never notified, in one statement. */
+    suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant)
 }

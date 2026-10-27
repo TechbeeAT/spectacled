@@ -40,7 +40,8 @@ val sharedModule = module {
     singleOf(::DefaultWebDavRemoteIcalEntryDataSource) { bind<WebDavRemoteIcalEntryDataSource>() }
 
     singleOf(::MoveIcalEntriesUseCase)
-    singleOf(::AlarmCoordinator)
+    // Not singleOf: Koin would try to resolve the defaulted Clock parameter too.
+    single { AlarmCoordinator(get(), get()) }
 
     viewModelOf(::ListViewModel)
     viewModelOf(::AccountListViewModel)

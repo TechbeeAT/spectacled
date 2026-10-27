@@ -57,3 +57,7 @@ DELETE FROM AlarmDto WHERE icalEntryId = ?;
 
 updateLastNotifiedAt:
 UPDATE AlarmDto SET lastNotifiedAt = :lastNotifiedAt WHERE id = :id;
+
+-- Alarms too old to still be shown are written off in one statement instead of one per row.
+markAlarmsNotifiedBefore:
+UPDATE AlarmDto SET lastNotifiedAt = :lastNotifiedAt WHERE triggerAt < :beforeMillis AND lastNotifiedAt IS NULL;
