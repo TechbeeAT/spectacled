@@ -1,9 +1,21 @@
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.baselineprofile)
 }
+
+// Release signing values come from environment variables (CI) or, locally, from the
+// git-ignored local.properties. Surrounding quotes are optional in local.properties.
+val localProperties = Properties().apply {
+    providers.fileContents(rootProject.layout.projectDirectory.file("local.properties"))
+        .asText.orNull?.let { load(it.reader()) }
+}
+fun signingValue(key: String): String? =
+    (providers.environmentVariable(key).orNull ?: localProperties.getProperty(key))
+        ?.trim()?.removeSurrounding("\"")
 
 android {
     namespace = "at.techbee.spectacled.tasks"
@@ -23,10 +35,10 @@ android {
     }
     signingConfigs {
         create("spectacled") {
-            storeFile = file(System.getenv("ANDROID_KEYSTORE") ?: "/dev/null")
-            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("ANDROID_KEY_ALIAS_TASKS")
-            keyPassword = System.getenv("ANDROID_KEY_PASSWORD_TASKS")
+            storeFile = file(signingValue("ANDROID_KEYSTORE") ?: "/dev/null")
+            storePassword = signingValue("ANDROID_KEYSTORE_PASSWORD")
+            keyAlias = signingValue("ANDROID_KEY_ALIAS_TASKS")
+            keyPassword = signingValue("ANDROID_KEY_PASSWORD_TASKS")
         }
     }
     buildTypes {
@@ -55,10 +67,18 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Profiles come from :baselineprofileTasks, see README → Baseline Profiles.
+baselineProfile {
+    // Uses the startup profile to put startup code in the primary DEX file.
+    dexLayoutOptimization = true
+}
+
 dependencies {
     implementation(projects.composeTasksApp)
     implementation(projects.shared)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(projects.baselineprofileTasks)
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
 
