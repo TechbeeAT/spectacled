@@ -226,6 +226,7 @@ fun AddPrincipalBottomSheet(
 
         HorizontalPager(
             state = pagerState,
+            userScrollEnabled = false,
             modifier = Modifier.fillMaxSize()
         ) { page ->
             if (page == 0) {
