@@ -1,3 +1,4 @@
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -5,6 +6,16 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.baselineprofile)
 }
+
+// Release signing values come from environment variables (CI) or, locally, from the
+// git-ignored local.properties. Surrounding quotes are optional in local.properties.
+val localProperties = Properties().apply {
+    providers.fileContents(rootProject.layout.projectDirectory.file("local.properties"))
+        .asText.orNull?.let { load(it.reader()) }
+}
+fun signingValue(key: String): String? =
+    (providers.environmentVariable(key).orNull ?: localProperties.getProperty(key))
+        ?.trim()?.removeSurrounding("\"")
 
 android {
     namespace = "at.techbee.spectacled.tasks"
@@ -24,10 +35,10 @@ android {
     }
     signingConfigs {
         create("spectacled") {
-            storeFile = file(System.getenv("ANDROID_KEYSTORE") ?: "/dev/null")
-            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("ANDROID_KEY_ALIAS_TASKS")
-            keyPassword = System.getenv("ANDROID_KEY_PASSWORD_TASKS")
+            storeFile = file(signingValue("ANDROID_KEYSTORE") ?: "/dev/null")
+            storePassword = signingValue("ANDROID_KEYSTORE_PASSWORD")
+            keyAlias = signingValue("ANDROID_KEY_ALIAS_TASKS")
+            keyPassword = signingValue("ANDROID_KEY_PASSWORD_TASKS")
         }
     }
     buildTypes {
