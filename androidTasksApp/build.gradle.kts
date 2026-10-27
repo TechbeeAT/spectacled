@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.baselineprofile)
 }
 
 android {
@@ -55,10 +56,18 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Profiles come from :baselineprofileTasks, see README → Baseline Profiles.
+baselineProfile {
+    // Uses the startup profile to put startup code in the primary DEX file.
+    dexLayoutOptimization = true
+}
+
 dependencies {
     implementation(projects.composeTasksApp)
     implementation(projects.shared)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(projects.baselineprofileTasks)
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
 
