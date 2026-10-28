@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core
 
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
@@ -17,19 +18,20 @@ actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
     private val calendarRepository: CalendarRepository by inject()
     private val icalEntryRepository: IcalEntryRepository by inject()
     private val fileManager: PlatformFileManager by inject()
+    private val alarmCoordinator: AlarmCoordinator by inject()
     private val client: HttpClient by inject()
     private val scope = MainScope()
 
 
     actual override fun requestImmediate() {
         scope.launch {
-            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
+            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client, alarmCoordinator)
         }
     }
 
     actual override fun requestImmediate(calendarIds: List<Long>) {
         scope.launch {
-            SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
+            SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, fileManager, credentialStore, client, alarmCoordinator)
         }
     }
 

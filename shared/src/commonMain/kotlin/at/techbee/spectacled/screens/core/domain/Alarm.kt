@@ -90,6 +90,9 @@ data class UpcomingAlarm(
     /** Row id of the stored alarm, used to mark it as notified. */
     val alarmId: Long,
     val icalEntryId: Long,
+    val calendarId: Long,
+    val entryUid: String,
+    val entrySummary: String?,
     val alarm: Alarm,
     val triggerAt: Instant
 )

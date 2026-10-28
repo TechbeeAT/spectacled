@@ -42,6 +42,7 @@ import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import org.koin.compose.koinInject
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -78,6 +79,7 @@ fun SpectacledApp(
     val syncTrigger = koinInject<PlatformSyncTrigger>()
     val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
     val calendarRepository = koinInject<CalendarRepository>()
+    val alarmCoordinator = koinInject<AlarmCoordinator>()
 
     val accountListViewModel = koinViewModel<AccountListViewModel>()
     val listViewModel = koinViewModel<ListViewModel>()
@@ -234,6 +236,8 @@ fun SpectacledApp(
         LaunchedEffect(Unit) {
             syncTrigger.schedulePeriodic()
             syncTrigger.requestImmediate()
+            // Pick up alarms that were missed while the app wasn't running and refresh the schedule.
+            alarmCoordinator.reconcile()
         }
 
         LaunchedEffect(Unit) {
