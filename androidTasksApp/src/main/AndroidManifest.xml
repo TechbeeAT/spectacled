@@ -3,6 +3,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
         android:name=".TasksApplication"
@@ -71,6 +74,21 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/spectacled_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="at.techbee.spectacled.screens.core.alarm.AlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name="at.techbee.spectacled.screens.core.alarm.AlarmSystemEventReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
         </receiver>
 
         <provider

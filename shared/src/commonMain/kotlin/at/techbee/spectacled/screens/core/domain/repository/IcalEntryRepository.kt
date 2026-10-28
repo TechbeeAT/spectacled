@@ -74,4 +74,10 @@ interface IcalEntryRepository {
 
     /** Marks every alarm due before [before] that was never notified, in one statement. */
     suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant)
+
+    /**
+     * Recomputes every stored trigger time from its entry. Needed after the device's time zone
+     * changed: all-day and floating dates are resolved in the device zone when the entry is saved.
+     */
+    suspend fun recomputeAlarmTriggerTimes()
 }

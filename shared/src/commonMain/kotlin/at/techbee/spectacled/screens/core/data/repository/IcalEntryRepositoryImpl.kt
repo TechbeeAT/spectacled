@@ -357,6 +357,19 @@ class IcalEntryRepositoryImpl(
         }
     }
 
+    override suspend fun recomputeAlarmTriggerTimes() = withContext(ioDispatcher) {
+        val db = getDatabase()
+        val entries = mutableMapOf<Long, IcalEntry?>()
+        db.alarm_dtoQueries.getAllAlarms().awaitAsList().forEach { alarmDto ->
+            val entry = entries.getOrPut(alarmDto.icalEntryId) {
+                db.icalentry_dtoQueries.getIcalEntryById(alarmDto.icalEntryId).awaitAsOneOrNull()?.toDomain()
+            } ?: return@forEach
+            val triggerAt = alarmDto.toDomain().triggerTime(entry)?.toEpochMilliseconds()
+            if (triggerAt != alarmDto.triggerAt)
+                db.alarm_dtoQueries.updateTriggerAt(triggerAt = triggerAt, id = alarmDto.id)
+        }
+    }
+
     override suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant) {
         withContext(ioDispatcher) {
             getDatabase().alarm_dtoQueries.markAlarmsNotifiedBefore(

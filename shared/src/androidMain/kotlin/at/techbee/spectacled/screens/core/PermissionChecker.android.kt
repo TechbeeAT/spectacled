@@ -16,12 +16,15 @@ import androidx.core.content.ContextCompat
  */
 private const val ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK"
 
+private const val POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS"
+
 /** First OS version that enforces the local network permission (Android 17). */
 private const val SDK_LOCAL_NETWORK_ENFORCED = 37
 
 /** The Android permission behind this one, or null where this OS version does not gate it. */
 internal fun AppPermission.manifestPermission(): String? = when (this) {
     AppPermission.LOCAL_NETWORK -> ACCESS_LOCAL_NETWORK.takeIf { Build.VERSION.SDK_INT >= SDK_LOCAL_NETWORK_ENFORCED }
+    AppPermission.NOTIFICATIONS -> POST_NOTIFICATIONS.takeIf { Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU }
 }
 
 /** The Activity this Context is hosted by, unwrapping the wrappers Compose may hand over. */
