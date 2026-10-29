@@ -144,7 +144,9 @@ fun AddPrincipalBottomSheet(
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val scope = rememberCoroutineScope()
     var showInsecureConnectionAlert by rememberSaveable { mutableStateOf(false) }
-    var credentials by rememberSaveable { mutableStateOf<Credentials?>(null) }
+    // Plain remember: Credentials (holding a ktor Url) can't go into Android's saved state, and a
+    // non-null value crashed the app on backgrounding. The form re-reports it from its saved fields.
+    var credentials by remember { mutableStateOf<Credentials?>(null) }
 
     LaunchedEffect(selectedPage) {
         if (selectedPage == AddPrincipalBottomSheetPage.SELECTION)
