@@ -3,8 +3,11 @@ package at.techbee.spectacled.screens.core.presentation.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,6 +24,7 @@ import spectacled.shared.generated.resources.select_folder
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarSelectorBottomSheet(
+    sheetState: SheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
     principals: List<Principal>,
     homeCollections: List<HomeCollection>,
     calendars: List<Calendar>,
@@ -31,6 +35,7 @@ fun CalendarSelectorBottomSheet(
 ) {
 
     BottomSheetWithMenu(
+        sheetState = sheetState,
         onDismiss = { onDismiss() },
         headline = headlineText,
         menuActionRight = {
