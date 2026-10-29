@@ -377,34 +377,73 @@ class IcalEntryRepositoryImpl(
         // Re-read fresh so any attachments downloaded just before the move are picked up.
         val entriesToMove = getIcalEntriesWithSubtasks(icalEntryIds)
 
-        // 1. Re-create each entry in the target calendar. Same uid keeps its identity; clearing
-        //    href/etag makes the sync engine PUT it as a new resource into the target collection.
-        val db = getDatabase()
+        // 1. Re-create each entry in the target calendar. Same uid keeps its identity.
         entriesToMove.forEach { entry ->
-            val copy = insertOrUpdateIcalEntry(
-                entry.copy(
-                    id = 0L,
-                    calendarId = targetCalendarId,
-                    href = null,
-                    etag = null,
-                    syncState = SyncState.LOCAL_MODIFIED,
-                    attachments = entry.attachments.map { it.remappedForMove() }
-                )
-            )
-            // The copy is a new row, so saveAlarms found no previous alarms to carry the local
-            // notification state over from - do it here, or an alarm that already fired would
-            // count as missed and fire again.
-            val originalAlarms = db.alarm_dtoQueries.getAlarmsForEntry(entry.id).awaitAsList()
-            db.alarm_dtoQueries.getAlarmsForEntry(copy.id).awaitAsList().forEach { copied ->
-                originalAlarms
-                    .firstOrNull { it.lastNotifiedAt != null && it.triggerAt == copied.triggerAt && (if (copied.uid != null) it.uid == copied.uid else it.icsBlock == copied.icsBlock) }
-                    ?.let { db.alarm_dtoQueries.updateLastNotifiedAt(lastNotifiedAt = it.lastNotifiedAt, id = copied.id) }
-            }
+            recreateInCalendar(entry, targetCalendarId, uid = entry.uid, parentUid = entry.parentUid)
         }
 
         // 2. Mark the originals deleted. The sync engine DELETEs them from the source collection;
         //    we only mark locally and let it reconcile the ordering with the server.
         markAsDeleted(entriesToMove.map { it.id })
+    }
+
+    override suspend fun copyIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long): List<Long> = withContext(ioDispatcher) {
+
+        // Re-read fresh so any attachments downloaded just before the copy are picked up.
+        val entriesToCopy = getIcalEntriesWithSubtasks(icalEntryIds)
+
+        // A copy is a new entry, so it needs a new uid - even in another collection, two entries
+        // sharing a uid would be treated as the same one. Copied subtasks are re-linked to their
+        // copied parent; a link to a parent that wasn't copied only survives inside its own
+        // collection, elsewhere it would dangle.
+        val newUids = entriesToCopy.associate { it.uid to IcalEntry.getRandomUUID() }
+        val now = IcsDateTime.now()
+        entriesToCopy.map { entry ->
+            recreateInCalendar(
+                // Attachment uids are unique too - reusing them would re-assign the original's
+                // attachment rows to the copy.
+                entry = entry.copy(
+                    created = now,
+                    dtstamp = now,
+                    lastModified = now,
+                    sequence = null,
+                    attachments = entry.attachments.map { it.copy(uid = IcalEntry.getRandomUUID()) }
+                ),
+                targetCalendarId = targetCalendarId,
+                uid = newUids.getValue(entry.uid),
+                parentUid = entry.parentUid?.let { parentUid ->
+                    newUids[parentUid] ?: parentUid.takeIf { entry.calendarId == targetCalendarId }
+                }
+            )
+        }
+    }
+
+    // Writes [entry] as a new row in [targetCalendarId] under [uid]. Clearing href/etag makes the
+    // sync engine PUT it as a new resource into the target collection.
+    private suspend fun recreateInCalendar(entry: IcalEntry, targetCalendarId: Long, uid: String, parentUid: String?): Long {
+        val db = getDatabase()
+        val copy = insertOrUpdateIcalEntry(
+            entry.copy(
+                id = 0L,
+                calendarId = targetCalendarId,
+                uid = uid,
+                parentUid = parentUid,
+                href = null,
+                etag = null,
+                syncState = SyncState.LOCAL_MODIFIED,
+                attachments = entry.attachments.map { it.remappedForMove() }
+            )
+        )
+        // The copy is a new row, so saveAlarms found no previous alarms to carry the local
+        // notification state over from - do it here, or an alarm that already fired would
+        // count as missed and fire again.
+        val originalAlarms = db.alarm_dtoQueries.getAlarmsForEntry(entry.id).awaitAsList()
+        db.alarm_dtoQueries.getAlarmsForEntry(copy.id).awaitAsList().forEach { copied ->
+            originalAlarms
+                .firstOrNull { it.lastNotifiedAt != null && it.triggerAt == copied.triggerAt && (if (copied.uid != null) it.uid == copied.uid else it.icsBlock == copied.icsBlock) }
+                ?.let { db.alarm_dtoQueries.updateLastNotifiedAt(lastNotifiedAt = it.lastNotifiedAt, id = copied.id) }
+        }
+        return copy.id
     }
 
     override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = withContext(ioDispatcher) {

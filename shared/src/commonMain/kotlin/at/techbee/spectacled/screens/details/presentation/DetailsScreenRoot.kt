@@ -51,6 +51,7 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
@@ -73,7 +74,6 @@ import at.techbee.spectacled.screens.details.presentation.components.EditUrlBott
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.MoreActionsDropdownMenu
 import at.techbee.spectacled.screens.details.presentation.components.MoveOrCopyIcalEntryDialog
-import at.techbee.spectacled.screens.details.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor

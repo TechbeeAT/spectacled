@@ -47,6 +47,14 @@ interface IcalEntryRepository {
      */
     suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long)
 
+    /**
+     * Copies the given entries (and, recursively, their subtasks) to [targetCalendarId], which may
+     * also be their current collection. Unlike a move, each copy gets a new uid (copied subtasks
+     * are re-linked to their copied parent) and the originals are left untouched.
+     * Returns the ids of the copies. Their attachments still point to the originals' local files.
+     */
+    suspend fun copyIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long): List<Long>
+
     suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState)
     suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>)
     suspend fun updateColor(id: Long, color: Color?, lastModified: IcsDateTime?, syncState: SyncState)

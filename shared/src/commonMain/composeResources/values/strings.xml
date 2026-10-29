@@ -261,6 +261,11 @@
     <string name="copy_entry_x">Copy entry "%1$s"?</string>
     <string name="copy_entry_info">This creates a copy of this entry in the selected folder. Choose the current folder to create the copy right next to the original.</string>
     <string name="move_selected">Move selected</string>
+    <string name="copy_selected">Copy selected</string>
+    <plurals name="copy_selected_info">
+        <item quantity="one">This creates a copy of the selected entry in the chosen folder. Choose the current folder to create the copy right next to the original.</item>
+        <item quantity="other">This creates copies of the selected %1$d entries in the chosen folder. Choose the current folder to create the copies right next to the originals.</item>
+    </plurals>
     <plurals name="move_selected_warning">
         <item quantity="one">This moves the selected entry to the chosen folder and removes it from the current one.</item>
         <item quantity="other">This moves the selected %1$d entries to the chosen folder and removes them from the current one.</item>

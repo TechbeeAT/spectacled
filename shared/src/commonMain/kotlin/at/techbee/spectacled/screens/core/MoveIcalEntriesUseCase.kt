@@ -13,7 +13,8 @@ import io.ktor.http.Url
 
 /**
  * Moves entries (and, recursively, their subtasks) to another calendar. Shared by the details and
- * list screens.
+ * list screens. [copy] works the same way but keeps the originals, see
+ * IcalEntryRepository.copyIcalEntriesToCalendar.
  *
  * CalDAV has no reliable cross-collection move, so the repository re-creates each entry in the
  * target collection and marks the original deleted. Before that, this use case makes sure every
@@ -47,9 +48,45 @@ class MoveIcalEntriesUseCase(
         syncTrigger.triggerWidgetUpdate()
     }
 
+    suspend fun copy(icalEntryIds: List<Long>, targetCalendarId: Long) {
+
+        if(icalEntryIds.isEmpty())
+            return
+
+        // Same pre-download as for a move: the copies re-upload local attachment files into the target.
+        ensureAttachmentsDownloaded(icalEntryRepository.getIcalEntriesWithSubtasks(icalEntryIds))
+        val copyIds = icalEntryRepository.copyIcalEntriesToCalendar(icalEntryIds, targetCalendarId)
+        duplicateLocalAttachmentFiles(copyIds)
+        // The copies are new entries - schedule their alarms.
+        alarmCoordinator.reconcile()
+
+        syncTrigger.requestImmediate(listOf(targetCalendarId))
+        syncTrigger.triggerWidgetUpdate()
+    }
+
+    // Gives each copy its own local attachment files, so deleting an attachment of the original
+    // (which deletes its file) can't break the copy. Best-effort: on failure the copy keeps
+    // sharing the original's file.
+    private suspend fun duplicateLocalAttachmentFiles(copyIds: List<Long>) {
+        copyIds.forEach { copyId ->
+            icalEntryRepository.getAttachmentsForEntry(copyId).forEach { attachment ->
+                val localPath = attachment.localPath ?: return@forEach
+                try {
+                    val newPath = fileManager.saveAttachment(
+                        "${attachment.uid}_${attachment.fileName ?: "file"}",
+                        fileManager.readAttachment(localPath)
+                    )
+                    icalEntryRepository.insertOrUpdateAttachment(attachment.copy(localPath = newPath))
+                } catch (e: Exception) {
+                    Napier.d("Copy of attachment file failed for attachment ${attachment.uid}: ${e.message}")
+                }
+            }
+        }
+    }
+
     // Best-effort: downloads any server-only attachment (no local copy) of the given entries and
     // persists its local path. A failure leaves the attachment as remote-only, in which case the
-    // move keeps its existing server reference instead of losing it.
+    // move or copy keeps its existing server reference instead of losing it.
     private suspend fun ensureAttachmentsDownloaded(entries: List<IcalEntry>) {
 
         val credentialsByCalendar = mutableMapOf<Long, Credentials?>()

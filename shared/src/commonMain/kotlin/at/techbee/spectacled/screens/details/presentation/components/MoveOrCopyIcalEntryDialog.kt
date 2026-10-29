@@ -26,6 +26,7 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelector
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -36,8 +37,6 @@ import spectacled.shared.generated.resources.copy_entry_x
 import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.move_entry_warning
 import spectacled.shared.generated.resources.move_entry_x
-
-enum class MoveOrCopyMode { MOVE, COPY }
 
 /**
  * Lets the user pick the target collection for moving or copying [icalEntry].
