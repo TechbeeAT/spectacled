@@ -28,10 +28,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -281,6 +283,12 @@ fun DetailsScreenRoot(
 
         if(detailsState.icalEntry.calendarId == 0L && detailsState.isInitialized) {
             CalendarSelectorBottomSheet(
+                // A new entry needs a folder, so the sheet must not be dismissable until one is picked
+                sheetState = rememberBottomSheetState(
+                    initialValue = SheetValue.Expanded,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                    confirmValueChange = { it != SheetValue.Hidden }
+                ),
                 principals = detailsState.allPrincipals,
                 homeCollections = detailsState.allHomeCollections,
                 calendars = detailsState.allCalendars.filter { it.canWriteContent() },

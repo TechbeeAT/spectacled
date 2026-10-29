@@ -449,6 +449,8 @@ class ListViewModel(
     }
 
     private fun onDeleteEntry(icalEntryId: Long) {
+        // Close the dialog first so it can neither stay open on missing write access nor hang on a failing delete
+        _state.update { it.copy(showSwipeToDeleteDialog = null) }
         if(!state.value.calendar.canWriteContent())
             return
 
@@ -457,7 +459,6 @@ class ListViewModel(
             alarmCoordinator.onEntriesDoneOrDeleted(listOf(icalEntryId))
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
-            _state.update { it.copy(showSwipeToDeleteDialog = null) }
         }
     }
 
