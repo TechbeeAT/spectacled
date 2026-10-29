@@ -1096,9 +1096,9 @@ class DetailsViewModel(
 
         val currentState = _state.value
 
-        // An untouched new entry has no row yet, so there is nothing to copy. Recurring entries
-        // are excluded like in the list.
-        if(currentState.icalEntry.syncState == SyncState.LOCAL_NEW || currentState.icalEntry.isRecurring()) {
+        // A brand-new entry has no row yet, so there is nothing to copy (the menu item is disabled
+        // for it). Recurring entries are excluded like in the list.
+        if(currentState.icalEntry.id == 0L || currentState.icalEntry.isRecurring()) {
             _state.update { it.copy(showSheetOrDialog = null) }
             return
         }
@@ -1107,9 +1107,11 @@ class DetailsViewModel(
 
         // Attachment download + DB work + sync trigger - keep it off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
-            // The copy is made from the database, so flush edits the debounced auto-save
-            // may not have written yet.
-            if(currentState.allowEditing()) {
+            // The copy is made from the database, so flush edits the debounced auto-save may not
+            // have written yet - only if there are any. Compared against the stored row rather
+            // than the undo checkpoint, which is recorded before its save completes.
+            val storedEntry = icalEntryRepository.getIcalEntryById(currentState.icalEntry.id)
+            if(currentState.allowEditing() && (storedEntry == null || !currentState.icalEntry.hasSameContentAs(storedEntry))) {
                 icalEntryRepository.insertOrUpdateIcalEntry(currentState.icalEntry)
                 platformSyncTrigger.requestImmediate(listOf(currentState.icalEntry.calendarId))
             }

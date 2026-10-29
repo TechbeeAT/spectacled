@@ -476,7 +476,11 @@ class IcalEntryRepositoryImpl(
 
         val db = getDatabase()
         db.icalentry_dtoQueries.getSubtasksByParentUid(entry.calendarId, entry.uid).awaitAsList().forEach { childDto ->
-            collectWithSubtasks(db.loadIcalEntry(childDto), acc)
+            val child = db.loadIcalEntry(childDto)
+            // A deleted subtask that isn't synced yet is still in the db - it must not be
+            // re-created as a live entry in a copy or move. Left behind, sync deletes it as usual.
+            if (!child.syncState.isDeletedState())
+                collectWithSubtasks(child, acc)
         }
     }
 

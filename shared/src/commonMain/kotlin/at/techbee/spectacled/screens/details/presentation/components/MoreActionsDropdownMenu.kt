@@ -89,8 +89,9 @@ fun MoreActionsDropdownMenu(
                     onDismiss()
                 },
                 // No write access needed: the copy may target any writable collection, even from a
-                // read-only one. Recurring entries can't be copied, like in the list.
-                enabled = !icalEntry.isRecurring()
+                // read-only one. Recurring entries can't be copied, like in the list, and a
+                // brand-new entry has no stored row to copy yet.
+                enabled = !icalEntry.isRecurring() && icalEntry.id != 0L
             )
 
             SquareDropdownMenuItem(
