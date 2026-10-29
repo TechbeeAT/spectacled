@@ -441,6 +441,7 @@
     <string name="folder_create_failed_privileges">Folder couldn't be created due to missing privileges.</string>
     <string name="folder_create_failed_conflict">Parent does not exist or folder already exists.</string>
     <string name="folder_create_failed_unsupported">Server doesn't support creation of new folders.</string>
+    <string name="folder_no_connection">The server couldn't be reached. Folders can only be created, changed or deleted while you are online - please check your internet connection and try again.</string>
     <string name="folder_create_failed_component">Creation of folder with supported component failed.</string>
     <string name="folder_fetch_failed">Folder couldn't be fetched.</string>
     <string name="folder_parse_failed">Folder couldn't be parsed.</string>

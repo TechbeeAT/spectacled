@@ -14,6 +14,7 @@ import at.techbee.spectacled.screens.core.data.webdav.DiscoverHomeCollectionsRes
 import at.techbee.spectacled.screens.core.data.webdav.DiscoverPrincipalsResult
 import at.techbee.spectacled.screens.core.data.webdav.UpsertCalendarResult
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteCalendarDataSource
+import at.techbee.spectacled.screens.core.data.webdav.isNetworkError
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
@@ -35,6 +36,7 @@ import spectacled.shared.generated.resources.account_added_updated
 import spectacled.shared.generated.resources.account_successfully_removed
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.credentials_not_found_readd_account
+import spectacled.shared.generated.resources.folder_no_connection
 import spectacled.shared.generated.resources.folder_successfully_added_updated
 import spectacled.shared.generated.resources.folder_successfully_deleted
 import spectacled.shared.generated.resources.folders_synced
@@ -205,8 +207,9 @@ class AccountListViewModel(
                     }
                 }
             } catch (e: Exception) {
+                val message = if(e.isNetworkError()) getString(Res.string.folder_no_connection) else e.message ?: getString(Res.string.unknown_error)
                 _state.update { it.copy(
-                    processingState = ProcessingState.Error(message = e.message?:"")
+                    processingState = ProcessingState.Error(message = message, detail = e.stackTraceToString())
                 ) }
             }
         }
@@ -442,7 +445,8 @@ class AccountListViewModel(
                 }
 
             } catch (e: Exception) {
-                _state.update { it.copy(processingState = ProcessingState.Error(message = e.message ?: getString(Res.string.unknown_error), detail = e.stackTraceToString())) }
+                val message = if(e.isNetworkError()) getString(Res.string.folder_no_connection) else e.message ?: getString(Res.string.unknown_error)
+                _state.update { it.copy(processingState = ProcessingState.Error(message = message, detail = e.stackTraceToString())) }
                 Napier.e(e.stackTraceToString())
             }
         }
