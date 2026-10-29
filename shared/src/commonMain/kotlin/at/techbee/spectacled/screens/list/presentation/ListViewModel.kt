@@ -54,8 +54,6 @@ class ListViewModel(
     val dragAndDropList = mutableStateListOf<IcalEntry>()
 
     private var observationJob: Job? = null
-    // A running move/copy of the selected entries - a second confirm must not start another one.
-    private var moveOrCopyJob: Job? = null
 
     /** Set synchronously in [load], unlike `state.calendar`, which only follows once the calendar is read. */
     private var loadedCalendarId: Long? = null
@@ -474,7 +472,11 @@ class ListViewModel(
         // Recurring entries are read-only, so exclude them even if a selection somehow contains one.
         val ids = _state.value.multiselectItems?.let { withoutRecurringEntries(it) } ?: return
 
-        launchMoveOrCopy { moveIcalEntriesUseCase.move(ids, targetCalendarId) }
+        // Off the Main dispatcher: the use case may download attachments before the local move.
+        viewModelScope.launch(ioDispatcher) {
+            moveIcalEntriesUseCase.move(ids, targetCalendarId)
+            _state.update { it.copy(multiselectItems = null, showMoveOrCopySelectedItemsDialog = null) }
+        }
     }
 
     private fun onCopySelectedItems(targetCalendarId: Long) {
@@ -484,22 +486,10 @@ class ListViewModel(
         // Recurring entries are read-only, so exclude them like for a move.
         val ids = _state.value.multiselectItems?.let { withoutRecurringEntries(it) } ?: return
 
-        launchMoveOrCopy { moveIcalEntriesUseCase.copy(ids, targetCalendarId) }
-    }
-
-    // Closes the dialog right away, so the operation (which may first download attachments)
-    // can't be confirmed twice, and ignores the call while a previous one is still running.
-    private fun launchMoveOrCopy(operation: suspend () -> Unit) {
-
-        if(moveOrCopyJob?.isActive == true)
-            return
-
-        _state.update { it.copy(showMoveOrCopySelectedItemsDialog = null) }
-
-        // Off the Main dispatcher: the use case may download attachments before the local work.
-        moveOrCopyJob = viewModelScope.launch(ioDispatcher) {
-            operation()
-            _state.update { it.copy(multiselectItems = null) }
+        // Off the Main dispatcher: the use case may download attachments before the local copy.
+        viewModelScope.launch(ioDispatcher) {
+            moveIcalEntriesUseCase.copy(ids, targetCalendarId)
+            _state.update { it.copy(multiselectItems = null, showMoveOrCopySelectedItemsDialog = null) }
         }
     }
 

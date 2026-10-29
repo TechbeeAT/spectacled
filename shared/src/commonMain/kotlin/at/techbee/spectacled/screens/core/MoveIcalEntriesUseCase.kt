@@ -4,7 +4,6 @@ import at.techbee.spectacled.screens.core.data.CredentialStore
 import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
-import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
@@ -63,9 +62,9 @@ class MoveIcalEntriesUseCase(
         val copyIds = icalEntryRepository.copyIcalEntriesToCalendar(
             icalEntryIds,
             targetCalendarId,
-            sameCalendarSummarySuffix = " (${getString(Res.string.entry_copy)})",
-            copyLocalFile = { copyLocalAttachmentFile(it) }
+            sameCalendarSummarySuffix = " (${getString(Res.string.entry_copy)})"
         )
+        duplicateLocalAttachmentFiles(copyIds.values)
         // The copies are new entries - schedule their alarms.
         alarmCoordinator.reconcile()
 
@@ -74,18 +73,23 @@ class MoveIcalEntriesUseCase(
         return copyIds
     }
 
-    // Duplicates the local file of a copied attachment (already carrying its new uid) and returns
-    // the new path, or null on failure.
-    private fun copyLocalAttachmentFile(attachment: Attachment): String? {
-        val localPath = attachment.localPath ?: return null
-        return try {
-            fileManager.saveAttachment(
-                "${attachment.uid}_${attachment.fileName ?: "file"}",
-                fileManager.readAttachment(localPath)
-            )
-        } catch (e: Exception) {
-            Napier.d("Copy of attachment file failed for attachment ${attachment.uid}: ${e.message}")
-            null
+    // Gives each copy its own local attachment files, so deleting an attachment of the original
+    // (which deletes its file) can't break the copy. Best-effort: on failure the copy keeps
+    // sharing the original's file.
+    private suspend fun duplicateLocalAttachmentFiles(copyIds: Collection<Long>) {
+        copyIds.forEach { copyId ->
+            icalEntryRepository.getAttachmentsForEntry(copyId).forEach { attachment ->
+                val localPath = attachment.localPath ?: return@forEach
+                try {
+                    val newPath = fileManager.saveAttachment(
+                        "${attachment.uid}_${attachment.fileName ?: "file"}",
+                        fileManager.readAttachment(localPath)
+                    )
+                    icalEntryRepository.insertOrUpdateAttachment(attachment.copy(localPath = newPath))
+                } catch (e: Exception) {
+                    Napier.d("Copy of attachment file failed for attachment ${attachment.uid}: ${e.message}")
+                }
+            }
         }
     }
 

@@ -53,15 +53,13 @@ interface IcalEntryRepository {
      * are re-linked to their copied parent) and the originals are left untouched. Entries of
      * [icalEntryIds] copied within their own collection get [sameCalendarSummarySuffix] appended
      * to their summary, so they can be told apart from the original.
-     * Each copied attachment with a local file gets its own file via [copyLocalFile], which
-     * returns the new path (or null to keep sharing the original's file).
-     * Returns the id of each copy keyed by the id of its original.
+     * Returns the id of each copy keyed by the id of its original. The copies' attachments still
+     * point to the originals' local files.
      */
     suspend fun copyIcalEntriesToCalendar(
         icalEntryIds: List<Long>,
         targetCalendarId: Long,
-        sameCalendarSummarySuffix: String,
-        copyLocalFile: suspend (attachment: Attachment) -> String?
+        sameCalendarSummarySuffix: String
     ): Map<Long, Long>
 
     suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState)

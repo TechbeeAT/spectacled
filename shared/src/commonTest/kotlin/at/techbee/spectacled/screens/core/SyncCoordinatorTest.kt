@@ -440,7 +440,7 @@ private class FakeIcalEntryRepository(
     override suspend fun getIcalEntriesByCalendar(calendarId: Long): List<IcalEntry> = TODO()
     override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = TODO()
     override suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long) = TODO()
-    override suspend fun copyIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long, sameCalendarSummarySuffix: String, copyLocalFile: suspend (attachment: Attachment) -> String?): Map<Long, Long> = TODO()
+    override suspend fun copyIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long, sameCalendarSummarySuffix: String): Map<Long, Long> = TODO()
     override suspend fun markAsDeleted(ids: List<Long>) = TODO()
     override suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState) = TODO()
     override suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>) = TODO()
