@@ -29,4 +29,5 @@ interface CalendarRepository {
     suspend fun deletePrincipal(id: Long)
     suspend fun deleteCalendar(id: Long)
     suspend fun updateCalendarSyncStatus(calendarSyncStatus: String?, syncToken: String?, id: Long)
+    suspend fun resetSyncToken(id: Long)
 }

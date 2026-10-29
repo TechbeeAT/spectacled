@@ -345,21 +345,13 @@ class AccountListViewModel(
                                 homeCollection.calDavPrivileges = discoverCalendarsResult.calDavPrivileges
                                 calendarRepository.upsertHomeCollection(homeCollection, principal.principalUrl)
 
-                                val disabledCalendarUrls = _state.value.calendars.filter { it.calendarSyncStatus?.type == CalendarSyncStatusType.DISABLED }.map { it.url }
-
                                 discoverCalendarsResult.calendars.forEach { calendar ->
 
                                     if(calendar.supportedComponents.none { it == spectacledVariant.mainCalendarComponent })
                                         return@forEach     // skip calendars that don't support the mainCalendarComponent of the app
 
-                                    calendarRepository.upsertCalendar(
-                                        calendar =
-                                            if(calendar.url in disabledCalendarUrls)    // remember disabled state
-                                                calendar.copy(calendarSyncStatus = CalendarSyncStatus(type = CalendarSyncStatusType.DISABLED))
-                                            else
-                                                calendar,
-                                        homeCollectionUrl = homeCollection.url
-                                    )
+                                    // the sync status (incl. a disabled sync) and sync token of known calendars are kept by the upsert
+                                    calendarRepository.upsertCalendar(calendar = calendar, homeCollectionUrl = homeCollection.url)
                                 }
                                 discoveredCalendars.addAll(discoverCalendarsResult.calendars)
                             }
@@ -455,8 +447,8 @@ class AccountListViewModel(
         viewModelScope.launch {
 
             if(forgetSyncToken) {
-                calendars.forEach { calendar ->
-                    calendarRepository.updateCalendarSyncStatus(calendar.calendarSyncStatus?.serialize(), calendar.syncToken, calendar.id)
+                syncRelevantCalendars.forEach { calendar ->
+                    calendarRepository.resetSyncToken(calendar.id)
                 }
             }
 

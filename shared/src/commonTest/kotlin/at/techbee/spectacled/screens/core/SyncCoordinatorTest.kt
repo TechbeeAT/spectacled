@@ -546,4 +546,5 @@ private class FakeCalendarRepository : CalendarRepository {
     override suspend fun upsertCalendar(calendar: Calendar, homeCollectionUrl: Url): Long = TODO()
     override suspend fun deletePrincipal(id: Long) = TODO()
     override suspend fun deleteCalendar(id: Long) = TODO()
+    override suspend fun resetSyncToken(id: Long) = TODO()
 }

@@ -55,8 +55,6 @@ SET
     ctag = :ctag,
     supportedComponents = :supportedComponents,
     calDavPrivileges = :calDavPrivileges,
-    calendarSyncStatus = :calendarSyncStatus,
-    syncToken = :syncToken,
     attachmentCollectionUrl = :attachmentCollectionUrl
 WHERE
     url = :url
@@ -99,6 +97,10 @@ SET
    syncToken = :syncToken
 WHERE
    id = :id;
+
+-- Only the sync token, so a concurrently written sync status isn't overwritten with a stale one
+resetSyncToken:
+UPDATE CalendarDto SET syncToken = NULL WHERE id = :id;
 
 
 
