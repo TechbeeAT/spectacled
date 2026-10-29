@@ -28,6 +28,9 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
@@ -35,7 +38,10 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.test.assertNull
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Drives the SyncCoordinator's conflict/sync state machine through its public
@@ -335,6 +341,63 @@ class SyncCoordinatorTest {
         first.join()
         assertEquals(1, remote.syncCollectionCount)
     }
+
+    // --- sync status is never left IN_PROGRESS ---
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun cancelledSync_restoresPreviousStatus() = runTest {
+        val calRepo = FakeCalendarRepository()
+        val remote = FakeRemote(syncCollectionResult = { awaitCancellation() })
+        val cal = calendar().copy(calendarSyncStatus = CalendarSyncStatus(CalendarSyncStatusType.SYNCED))
+
+        val job = launch { fakeSyncCoordinator(remote, FakeIcalEntryRepository(), calRepo).syncCalendarWithSyncLock(cal) }
+        runCurrent()
+        assertEquals(CalendarSyncStatusType.IN_PROGRESS, calRepo.lastStatusType())
+
+        job.cancel()   // e.g. WorkManager stopping the worker or the iOS background task expiring
+        job.join()
+
+        assertEquals(CalendarSyncStatusType.SYNCED, calRepo.lastStatusType())
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun cancelledSync_neverRestoresStaleInProgress() = runTest {
+        val calRepo = FakeCalendarRepository()
+        val remote = FakeRemote(syncCollectionResult = { awaitCancellation() })
+        // left behind e.g. by a process that was killed during a sync
+        val cal = calendar().copy(calendarSyncStatus = CalendarSyncStatus(CalendarSyncStatusType.IN_PROGRESS))
+
+        val job = launch { fakeSyncCoordinator(remote, FakeIcalEntryRepository(), calRepo).syncCalendarWithSyncLock(cal) }
+        runCurrent()
+        job.cancel()
+        job.join()
+
+        assertNull(calRepo.statuses.last())
+    }
+
+    @Test
+    fun cancellationExceptionWithoutCancellation_marksFailed() = runTest {
+        val calRepo = FakeCalendarRepository()
+        val remote = FakeRemote(syncCollectionResult = { throw CancellationException("request timed out") })
+
+        fakeSyncCoordinator(remote, FakeIcalEntryRepository(), calRepo).syncCalendarWithSyncLock(calendar())
+
+        assertEquals(CalendarSyncStatusType.FAILED, calRepo.lastStatusType())
+    }
+
+    @Test
+    fun errorDuringSync_marksFailedAndRethrows() = runTest {
+        val calRepo = FakeCalendarRepository()
+        val remote = FakeRemote(syncCollectionResult = { throw NotImplementedError() })
+
+        assertFailsWith<NotImplementedError> {
+            fakeSyncCoordinator(remote, FakeIcalEntryRepository(), calRepo).syncCalendarWithSyncLock(calendar())
+        }
+
+        assertEquals(CalendarSyncStatusType.FAILED, calRepo.lastStatusType())
+    }
 }
 
 // --- Fakes ---
@@ -461,6 +524,7 @@ private class FakeCalendarRepository : CalendarRepository {
         statuses.lastOrNull()?.let { CalendarSyncStatus.deserialize(it).type }
 
     override suspend fun updateCalendarSyncStatus(calendarSyncStatus: String?, syncToken: String?, id: Long) {
+        currentCoroutineContext().ensureActive()   // like the real withContext(ioDispatcher) write: fails once cancelled
         statuses += calendarSyncStatus
     }
 
