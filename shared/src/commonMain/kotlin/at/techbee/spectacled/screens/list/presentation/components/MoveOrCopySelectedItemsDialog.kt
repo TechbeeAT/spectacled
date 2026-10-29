@@ -65,11 +65,12 @@ fun MoveOrCopySelectedItemsDialog(
         )
     }
     // The move/copy runs in the background (it may first download attachments) and the dialog is
-    // closed once it is done - until then, show progress and don't allow confirming again.
+    // closed once it is done - until then, show progress and don't allow confirming again or
+    // dismissing (reopening the dialog would allow starting a second run).
     var isInProgress by remember { mutableStateOf(false) }
 
     AlertDialog(
-        onDismissRequest = { onDismiss() },
+        onDismissRequest = { if (!isInProgress) onDismiss() },
         confirmButton = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (isInProgress)
@@ -94,7 +95,8 @@ fun MoveOrCopySelectedItemsDialog(
         },
         dismissButton = {
             TextButton(
-                onClick = { onDismiss() }
+                onClick = { onDismiss() },
+                enabled = !isInProgress
             ) {
                 Text(stringResource(Res.string.cancel))
             }
