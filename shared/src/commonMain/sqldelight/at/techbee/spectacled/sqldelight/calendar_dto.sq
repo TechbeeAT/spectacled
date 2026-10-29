@@ -98,10 +98,6 @@ SET
 WHERE
    id = :id;
 
--- Only the sync token, so a concurrently written sync status isn't overwritten with a stale one
-resetSyncToken:
-UPDATE CalendarDto SET syncToken = NULL WHERE id = :id;
-
 
 
 delete:

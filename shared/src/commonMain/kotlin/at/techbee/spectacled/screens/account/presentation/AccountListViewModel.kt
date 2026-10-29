@@ -139,7 +139,7 @@ class AccountListViewModel(
             is AccountListAction.OnAddPrincipal -> { runAccountDiscovery(action.credentials) }
             is AccountListAction.OnCreateOrUpdateCalendar -> { createOrUpdateCalendar(action.principal, action.homeCollection, action.calendar) }
             is AccountListAction.OnDismissCreateOrUpdateCalendarBottomSheet -> { _state.update { it.copy(showAddOrUpdateCalendarBottomSheet = null) } }
-            is AccountListAction.OnSyncCalendars -> { onSyncCalendars(action.calendars, true) }
+            is AccountListAction.OnSyncCalendars -> { onSyncCalendars(action.calendars) }
             is AccountListAction.OnRerunAccountDiscovery -> { rerunAccountDiscovery(action.principals) }
             is AccountListAction.OnUpdatePrincipalPassword -> { rerunAccountDiscovery(action.principal, action.newPassword) }
             is AccountListAction.OnShowSyncInfoDialog -> { _state.update { it.copy(showSyncInfoDialog = action) } }
@@ -440,17 +440,11 @@ class AccountListViewModel(
         }
     }
 
-    private fun onSyncCalendars(calendars: List<Calendar>, forgetSyncToken: Boolean = false) {
+    private fun onSyncCalendars(calendars: List<Calendar>) {
 
         val syncRelevantCalendars = calendars.filter { it.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED }
 
         viewModelScope.launch {
-
-            if(forgetSyncToken) {
-                syncRelevantCalendars.forEach { calendar ->
-                    calendarRepository.resetSyncToken(calendar.id)
-                }
-            }
 
             platformSyncTrigger.requestImmediate(syncRelevantCalendars.map { it.id })
 

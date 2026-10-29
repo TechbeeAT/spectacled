@@ -188,10 +188,4 @@ class CalendarRepositoryImpl(
             getDatabase().calendar_dtoQueries.updateCalendarSyncStatus(calendarSyncStatus, syncToken, id)
         }
     }
-
-    override suspend fun resetSyncToken(id: Long) {
-        withContext(ioDispatcher) {
-            getDatabase().calendar_dtoQueries.resetSyncToken(id)
-        }
-    }
 }
