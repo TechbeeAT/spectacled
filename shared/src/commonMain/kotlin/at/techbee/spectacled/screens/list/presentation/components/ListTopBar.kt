@@ -423,10 +423,13 @@ fun ListTopBar(
                             }
                         )
 
+                        HorizontalDivider(modifier = Modifier.padding(8.dp))
+
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = stringResource(Res.string.delete_selected)
+                                    text = stringResource(Res.string.delete_selected),
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             },
                             enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
@@ -434,7 +437,8 @@ fun ListTopBar(
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.DeleteOutline,
-                                    contentDescription = stringResource(Res.string.delete_selected)
+                                    contentDescription = stringResource(Res.string.delete_selected),
+                                    tint = MaterialTheme.colorScheme.error
                                 )
                             }
                         )
