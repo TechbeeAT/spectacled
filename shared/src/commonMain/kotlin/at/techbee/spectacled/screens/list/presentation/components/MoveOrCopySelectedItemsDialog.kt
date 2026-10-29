@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.list.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,11 +74,12 @@ fun MoveOrCopySelectedItemsDialog(
         onDismissRequest = { if (!isInProgress) onDismiss() },
         confirmButton = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isInProgress)
+                AnimatedVisibility (isInProgress) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         strokeWidth = 2.dp
                     )
+                }
                 TextButton(
                     onClick = {
                         selectedCalendarId?.let {
