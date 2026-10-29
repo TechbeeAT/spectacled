@@ -49,7 +49,7 @@ sealed interface DetailsAction {
 
     object OnDelete: DetailsAction
     data class OnMove(val newCalendarId: Long): DetailsAction
-    object OnCreateCopy: DetailsAction
+    data class OnCreateCopy(val targetCalendarId: Long): DetailsAction
     object OnDispose: DetailsAction
     object OnRestoreEntry: DetailsAction
     object OnShare: DetailsAction

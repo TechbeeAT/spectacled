@@ -202,7 +202,7 @@ class DetailsViewModel(
 
 
     @OptIn(ExperimentalUuidApi::class)
-    fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
+    fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false, targetCalendarId: Long? = null) {
         viewModelScope.launch {
             //saveIcalEntry(false)
             val originalIcalEntry = icalEntryRepository.getIcalEntryById(icalEntryIdToCopy)
@@ -214,8 +214,13 @@ class DetailsViewModel(
                 ) }
                 return@launch
             }
+            // The copy may go to another collection than the original - fall back to the
+            // original's collection if the target is unknown or not writable.
+            val targetCalendar = targetCalendarId
+                ?.let { calendarRepository.getCalendarById(it) }
+                ?.takeIf { it.canWriteContent() }
             val copiedIcalEntry = IcalEntry(
-                calendarId = originalIcalEntry.calendarId,
+                calendarId = targetCalendar?.id ?: originalIcalEntry.calendarId,
                 summary = (originalIcalEntry.summary?:"") + if (isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${
                     getString(
                         Res.string.entry_copy
@@ -233,6 +238,8 @@ class DetailsViewModel(
                 originalIcalEntry = copiedIcalEntry,
                 changeBackstack = listOf(copiedIcalEntry),
                 undoRestoreMarker = null,
+                calendar = targetCalendar ?: it.calendar,
+                showSheetOrDialog = null,
                 isLoading = false,
                 isInitialized = true,
                 navigateUp = false
@@ -334,7 +341,7 @@ class DetailsViewModel(
             is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
             is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
             is DetailsAction.OnLaunchPicker -> { _state.update { it.copy(launchPickerAction = action.pickerAction) } }
-            DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
+            is DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id, targetCalendarId = action.targetCalendarId) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
                     SyncState.USER_DECIDED_SERVER_WINS -> saveAndAwaitSync(action.syncState)

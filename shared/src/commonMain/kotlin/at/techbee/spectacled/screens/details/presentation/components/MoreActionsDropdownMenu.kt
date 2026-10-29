@@ -85,7 +85,7 @@ fun MoreActionsDropdownMenu(
                 text = stringResource(Res.string.copy),
                 icon = Icons.Outlined.FileCopy,
                 onClick = {
-                    onAction(DetailsAction.OnCreateCopy)
+                    onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COPY))
                     onDismiss()
                 },
                 enabled = canWriteContent

@@ -72,7 +72,8 @@ import at.techbee.spectacled.screens.details.presentation.components.EditLocatio
 import at.techbee.spectacled.screens.details.presentation.components.EditUrlBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.MoreActionsDropdownMenu
-import at.techbee.spectacled.screens.details.presentation.components.MoveIcalEntryDialog
+import at.techbee.spectacled.screens.details.presentation.components.MoveOrCopyIcalEntryDialog
+import at.techbee.spectacled.screens.details.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
@@ -164,15 +165,22 @@ fun DetailsScreenRoot(
                     onConfirm = { detailsViewModel.onAction(DetailsAction.OnDelete) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
-            DetailsSheetOrDialog.MOVE ->
-                MoveIcalEntryDialog(
+            DetailsSheetOrDialog.MOVE, DetailsSheetOrDialog.COPY -> {
+                val isCopy = detailsState.showSheetOrDialog == DetailsSheetOrDialog.COPY
+                MoveOrCopyIcalEntryDialog(
                     icalEntry = detailsState.icalEntry,
+                    mode = if (isCopy) MoveOrCopyMode.COPY else MoveOrCopyMode.MOVE,
                     principals = detailsState.allPrincipals,
                     homeCollections = detailsState.allHomeCollections,
                     calendars = detailsState.allCalendars.filter { it.canWriteContent() },
-                    onConfirm = { newCalendarId -> detailsViewModel.onAction(DetailsAction.OnMove(newCalendarId)) },
+                    onConfirm = { calendarId ->
+                        detailsViewModel.onAction(
+                            if (isCopy) DetailsAction.OnCreateCopy(calendarId) else DetailsAction.OnMove(calendarId)
+                        )
+                    },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
+            }
             DetailsSheetOrDialog.COLOR_SELECTOR ->
                 BottomSheetWithMenu(
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) },
