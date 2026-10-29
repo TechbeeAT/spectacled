@@ -144,7 +144,8 @@ fun AddPrincipalBottomSheet(
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val scope = rememberCoroutineScope()
     var showInsecureConnectionAlert by rememberSaveable { mutableStateOf(false) }
-    var credentials by rememberSaveable { mutableStateOf<Credentials?>(null) }
+    // Credentials should be remember (not saveable) as KTOR Url cannot be stored saveable and the saving would crash in the background
+    var credentials by remember { mutableStateOf<Credentials?>(null) }
 
     LaunchedEffect(selectedPage) {
         if (selectedPage == AddPrincipalBottomSheetPage.SELECTION)
