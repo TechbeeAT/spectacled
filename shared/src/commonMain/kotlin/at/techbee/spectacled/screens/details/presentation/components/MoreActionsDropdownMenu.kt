@@ -87,8 +87,8 @@ fun MoreActionsDropdownMenu(
                 onClick = {
                     onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COPY))
                     onDismiss()
-                },
-                enabled = canWriteContent
+                }
+                // always enabled: the copy may target any writable collection, even from a read-only one
             )
 
             SquareDropdownMenuItem(

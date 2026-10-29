@@ -54,14 +54,21 @@ fun MoveOrCopyIcalEntryDialog(
     onDismiss: () -> Unit
 ) {
 
-    var selectedCalendarId by remember { mutableStateOf(icalEntry.calendarId) }
+    // The current collection is not offered when it is read-only (copying out of it is allowed),
+    // so preselect the first writable collection instead.
+    var selectedCalendarId by remember {
+        mutableStateOf(
+            icalEntry.calendarId.takeIf { id -> calendars.any { it.id == id } } ?: calendars.firstOrNull()?.id
+        )
+    }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(selectedCalendarId) },
-                enabled = mode == MoveOrCopyMode.COPY || icalEntry.calendarId != selectedCalendarId
+                onClick = { selectedCalendarId?.let { onConfirm(it) } },
+                enabled = selectedCalendarId != null
+                        && (mode == MoveOrCopyMode.COPY || icalEntry.calendarId != selectedCalendarId)
             ) {
                 Text(stringResource(if (mode == MoveOrCopyMode.COPY) Res.string.copy else Res.string.move))
             }
