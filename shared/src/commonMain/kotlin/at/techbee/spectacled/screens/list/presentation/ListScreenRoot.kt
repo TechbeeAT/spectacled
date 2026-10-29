@@ -196,8 +196,10 @@ fun ListScreenRoot(
                 calendars = state.allCalendars.filter { it.canWriteContent() },
                 onConfirm = { targetCalendarId ->
                     listViewModel.onAction(
-                        if (moveOrCopyMode == MoveOrCopyMode.COPY) ListAction.OnCopySelectedItems(targetCalendarId)
-                        else ListAction.OnMoveSelectedItems(targetCalendarId)
+                        when(moveOrCopyMode) {
+                            MoveOrCopyMode.COPY -> ListAction.OnCopySelectedItems(targetCalendarId)
+                            MoveOrCopyMode.MOVE -> ListAction.OnMoveSelectedItems(targetCalendarId)
+                        }
                     )
                 },
                 onDismiss = { listViewModel.onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(null)) }
