@@ -297,6 +297,7 @@
     <string name="format_italic">Italic</string>
     <string name="format_underline">Underline</string>
     <string name="undo">Undo</string>
+    <string name="redo">Redo</string>
 
     <string name="theme">Theme</string>
     <string name="theme_system">Default (System)</string>

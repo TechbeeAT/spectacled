@@ -34,6 +34,7 @@ sealed interface DetailsAction {
     data class OnDeleteAttachment(val attachmentUid: String): DetailsAction
     data class OnUpdateDrawing(val replaceAttachmentUid: String?, val paths: List<PathData>, val width: Float, val height: Float): DetailsAction
     object OnUndo: DetailsAction
+    object OnRedo: DetailsAction
 
     data class OnNewCalendarIdSelected(val calendarId: Long): DetailsAction
 

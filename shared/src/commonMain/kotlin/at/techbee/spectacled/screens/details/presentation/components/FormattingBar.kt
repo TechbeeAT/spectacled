@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.details.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Redo
 import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
@@ -33,6 +35,7 @@ import spectacled.shared.generated.resources.close
 import spectacled.shared.generated.resources.format_bold
 import spectacled.shared.generated.resources.format_italic
 import spectacled.shared.generated.resources.format_underline
+import spectacled.shared.generated.resources.redo
 import spectacled.shared.generated.resources.undo
 
 /**
@@ -46,6 +49,8 @@ fun FormattingBar(
     onReleaseFocus: () -> Unit,
     onUndo: () -> Unit,
     allowUndo: Boolean,
+    onRedo: () -> Unit,
+    allowRedo: Boolean,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -66,6 +71,15 @@ fun FormattingBar(
                 modifier = Modifier.focusProperties { canFocus = false }
             ) {
                 Icon(Icons.AutoMirrored.Outlined.Undo, contentDescription = stringResource(Res.string.undo))
+            }
+
+            AnimatedVisibility(allowRedo) {
+                IconButton(
+                    onClick = { onRedo() },
+                    modifier = Modifier.focusProperties { canFocus = false }
+                ) {
+                    Icon(Icons.AutoMirrored.Outlined.Redo, contentDescription = stringResource(Res.string.redo))
+                }
             }
 
             VerticalDivider(modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp).height(24.dp))
@@ -112,6 +126,8 @@ private fun FormattingBar_Preview() {
                 onReleaseFocus = {},
                 onUndo = {},
                 allowUndo = true,
+                onRedo = {},
+                allowRedo = true,
             )
         }
     }
@@ -128,6 +144,8 @@ private fun FormattingBar_BlockUndo_Preview() {
                 onReleaseFocus = {},
                 onUndo = {},
                 allowUndo = false,
+                onRedo = {},
+                allowRedo = false,
             )
         }
     }
