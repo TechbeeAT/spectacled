@@ -78,6 +78,7 @@ data class ListState(
     val showListFilterRow: Boolean = false,
 
     val showDeleteSelectedItemsDialog: Boolean = false,
+    val showSwipeToDeleteDialog: Long? = null,
     val showMoveSelectedItemsDialog: Boolean = false,
     val showUpdateColorOfSelectedBottomSheet: Boolean = false,
     val showUpdateCategoryOfSelectedBottomSheet: Boolean = false,

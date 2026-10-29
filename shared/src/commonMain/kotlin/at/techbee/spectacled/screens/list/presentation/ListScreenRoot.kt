@@ -174,6 +174,16 @@ fun ListScreenRoot(
                 )
         }
 
+        if(state.showSwipeToDeleteDialog != null) {
+            state.icalEntries.find { it.id == state.showSwipeToDeleteDialog }?.let { icalEntry ->
+                DeleteIcalEntryDialog(
+                    icalEntry = icalEntry,
+                    onConfirm = { listViewModel.onAction(ListAction.OnDeleteEntry(icalEntry.id)) },
+                    onDismiss = { listViewModel.onAction(ListAction.OnShowSwipeToDeleteDialog(null)) }
+                )
+            }
+        }
+
         if (state.showMoveSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
             MoveSelectedItemsDialog(
                 itemCount = state.multiselectItems?.size ?: 0,

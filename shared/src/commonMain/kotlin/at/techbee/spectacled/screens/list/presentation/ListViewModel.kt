@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
-import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ai.AI_BATCH_CATEGORY_PREFIX
@@ -74,7 +74,7 @@ class ListViewModel(
             listSortedByAscending = userAppPreferencesStore.listSortedByAscending,
             listLayout = userAppPreferencesStore.listLayout,
             listCollapsedGroups = userAppPreferencesStore.listCollapsedGroups,
-            listFilterCriteria = userAppPreferencesStore.listFilterCriteria.get(calendarId)?: ListFilterCriteria(),
+            listFilterCriteria = userAppPreferencesStore.listFilterCriteria[calendarId] ?: ListFilterCriteria(),
             spectacledVariant = spectacledVariant
         ).recompute() }
         refreshDragAndDropList()   // drop whatever the previously opened calendar left behind
@@ -242,14 +242,9 @@ class ListViewModel(
             is ListAction.OnToggleMultiselectItem -> toggleMultiselectItem(action.icalEntryId)
             ListAction.OnClearMultiselectItems -> { _state.update { it.copy(multiselectItems = null) } }
             is ListAction.OnShowDeleteSelectedItemsDialog -> { _state.update { it.copy(showDeleteSelectedItemsDialog = action.showDialog) }}
-            is ListAction.OnSwipeToDelete -> {
-                // Select (never toggle) the swiped entry so it is part of the dialog and the swiped box resets on dismiss
-                _state.update { it.copy(
-                    multiselectItems = (it.multiselectItems ?: emptyList()).let { items -> if(action.icalEntryId in items) items else items + action.icalEntryId },
-                    showDeleteSelectedItemsDialog = true
-                ) }
-            }
             ListAction.OnDeleteSelectedItems -> onDeleteSelectedItems()
+            is ListAction.OnShowSwipeToDeleteDialog -> { _state.update { it.copy(showSwipeToDeleteDialog = action.icalEntryId) } }
+            is ListAction.OnDeleteEntry -> onDeleteEntry(action.icalEntryId)
             is ListAction.OnShowMoveSelectedItemsDialog -> { _state.update { it.copy(showMoveSelectedItemsDialog = action.showDialog) }}
             is ListAction.OnMoveSelectedItems -> onMoveSelectedItems(action.targetCalendarId)
             is ListAction.OnUpdateOrderNo -> onUpdateOrderNo(action.fromIndex, action.toIndex)
@@ -450,6 +445,19 @@ class ListViewModel(
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
             _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false) }
+        }
+    }
+
+    private fun onDeleteEntry(icalEntryId: Long) {
+        if(!state.value.calendar.canWriteContent())
+            return
+
+        viewModelScope.launch {
+            icalEntryRepository.markAsDeleted(listOf(icalEntryId))
+            alarmCoordinator.onEntriesDoneOrDeleted(listOf(icalEntryId))
+            syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
+            syncTrigger.triggerWidgetUpdate()
+            _state.update { it.copy(showSwipeToDeleteDialog = null) }
         }
     }
 

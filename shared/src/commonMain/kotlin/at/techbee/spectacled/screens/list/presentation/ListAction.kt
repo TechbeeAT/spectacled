@@ -22,8 +22,9 @@ sealed interface ListAction {
     object OnClearMultiselectItems: ListAction
     object OnSelectAllMultiselectItems: ListAction
     data class OnShowDeleteSelectedItemsDialog(val showDialog: Boolean): ListAction
-    data class OnSwipeToDelete(val icalEntryId: Long): ListAction
     object OnDeleteSelectedItems: ListAction
+    data class OnShowSwipeToDeleteDialog(val icalEntryId: Long?): ListAction
+    data class OnDeleteEntry(val icalEntryId: Long): ListAction
     data class OnShowMoveSelectedItemsDialog(val showDialog: Boolean): ListAction
     data class OnMoveSelectedItems(val targetCalendarId: Long): ListAction
 
