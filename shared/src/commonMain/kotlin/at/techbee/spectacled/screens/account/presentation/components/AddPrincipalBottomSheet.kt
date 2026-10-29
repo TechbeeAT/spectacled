@@ -42,11 +42,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -131,7 +128,6 @@ enum class AddPrincipalBottomSheetPage { SELECTION, USE_EXISTING, SELECT_FROM_LI
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPrincipalBottomSheet(
-    sheetState: SheetState,
     processingState: ProcessingState,
     isFirstAccount: Boolean,
     userAppPreferencesStore: UserAppPreferencesStore,
@@ -167,7 +163,6 @@ fun AddPrincipalBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
-        sheetState = sheetState,
         showLoadingIndicator = processingState is ProcessingState.Processing,
         gesturesEnabled = false,
         menuActionLeft = {
@@ -887,7 +882,6 @@ private fun AddAccountScreen_Preview_Idle() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             AddPrincipalBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                 processingState = ProcessingState.Idle,
                 isFirstAccount = true,
                 userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
@@ -906,7 +900,6 @@ private fun AddAccountScreen_Preview_Processing() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
         Scaffold {
             AddPrincipalBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                 processingState = ProcessingState.Processing,
                 isFirstAccount = false,
                 userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.NOTES),

@@ -21,11 +21,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -208,7 +206,6 @@ fun AccountListScreenRoot(
         // visibility would pop all of them open on the very first frame.
         if (state.showAddPrincipalBottomSheet) {
             AddPrincipalBottomSheet(
-                sheetState = rememberExpandedSheetState(),
                 processingState = state.processingState,
                 isFirstAccount = state.principals.isEmpty(),
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
@@ -219,7 +216,6 @@ fun AccountListScreenRoot(
 
         state.showUpdatePrincipalPasswordBottomSheet?.principal?.let { principal ->
             UpdatePrincipalPasswordBottomSheet(
-                sheetState = rememberExpandedSheetState(),
                 processingState = state.processingState,
                 principal = principal,
                 onAction = { action -> viewModel.onAction(action) },
@@ -230,7 +226,6 @@ fun AccountListScreenRoot(
 
         if (state.showAboutBottomSheet) {
             BottomSheetWithMenu(
-                sheetState = rememberExpandedSheetState(),
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
                 menuActionRight = {
                     TextButton(
@@ -247,7 +242,6 @@ fun AccountListScreenRoot(
 
         if (state.showSettingsBottomSheet) {
             SettingsBottomSheet(
-                sheetState = rememberExpandedSheetState(),
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) }
             )
@@ -255,7 +249,6 @@ fun AccountListScreenRoot(
 
         state.showAddOrUpdateCalendarBottomSheet?.let {
             CreateOrUpdateCalendarBottomSheet(
-                sheetState = rememberExpandedSheetState(),
                 principal = it.principal,
                 homeCollection = it.homeCollection,
                 calendar = it.calendar,
@@ -271,18 +264,3 @@ fun AccountListScreenRoot(
         }
     }
 }
-
-
-/**
- * A sheet state that starts out expanded, so the sheet is fully shown as soon as it enters
- * composition, and that skips the partially expanded detent.
- *
- * Created per sheet inside the block that shows it: a sheet state hoisted across open/close cycles
- * would keep the [SheetValue.Hidden] left behind by a swipe-dismissal and reopen the sheet invisibly.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun rememberExpandedSheetState() = rememberBottomSheetState(
-    initialValue = SheetValue.Expanded,
-    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-)

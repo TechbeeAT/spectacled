@@ -7,11 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,13 +28,11 @@ import spectacled.shared.generated.resources.status_no_status
 @Composable
 fun JournalStatusPickerBottomSheet(
     status: Status?,
-    sheetState: SheetState,
     onStatusUpdated: (Status?) -> Unit,
     onDismiss: () -> Unit
 ) {
 
     BottomSheetWithMenu(
-        sheetState = sheetState,
         onDismiss = { onDismiss() },
         menuActionRight = {
             TextButton(
@@ -87,7 +82,6 @@ private fun JournalStatusPickerBottomSheet_Preview() {
         Scaffold {
             JournalStatusPickerBottomSheet(
                 status = Status.FINAL,
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 onStatusUpdated = {},
                 onDismiss = {}
             )
@@ -103,7 +97,6 @@ private fun JournalStatusPickerBottomSheet_NO_STATUS_Preview() {
         Scaffold {
             JournalStatusPickerBottomSheet(
                 status = null,
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 onStatusUpdated = {},
                 onDismiss = {}
             )

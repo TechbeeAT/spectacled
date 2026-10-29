@@ -5,11 +5,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -38,14 +35,12 @@ fun DrawingCanvasBottomSheet(
     replaceAttachmentUid: String?,
     onDrawingUpdated: (String?, List<PathData>, Float, Float) -> Unit,
     onDismiss: () -> Unit,
-    sheetState: SheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
     ) {
 
     val pathData = remember { mutableStateListOf<PathData>().apply { initialPathData?.let { addAll(it) } } }
     var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     BottomSheetWithMenu(
-        sheetState = sheetState,
         onDismiss = { onDismiss() },
         headline = stringResource(Res.string.drawing),
         menuActionRight = {

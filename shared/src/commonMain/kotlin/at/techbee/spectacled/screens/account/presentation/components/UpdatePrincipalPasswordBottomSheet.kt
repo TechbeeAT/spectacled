@@ -18,11 +18,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,7 +53,6 @@ import spectacled.shared.generated.resources.update_password_button
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UpdatePrincipalPasswordBottomSheet(
-    sheetState: SheetState,
     principal: Principal,
     processingState: ProcessingState,
     onAction: (AccountListAction.OnUpdatePrincipalPassword) -> Unit,
@@ -75,7 +71,6 @@ fun UpdatePrincipalPasswordBottomSheet(
     BottomSheetWithMenu(
         headline = stringResource(Res.string.update_password),
         onDismiss = { onDismiss() },
-        sheetState = sheetState,
         gesturesEnabled = false,
         showLoadingIndicator = processingState is ProcessingState.Processing,
         menuActionLeft = {
@@ -175,9 +170,7 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Idle() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             UpdatePrincipalPasswordBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
-                //credentials = Credentials("https://localhost/dav", "my username", "my password"),
                 processingState = ProcessingState.Idle,
                 onAction = {},
                 onDismiss = {}
@@ -194,9 +187,7 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Processing() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             UpdatePrincipalPasswordBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
-                //credentials = Credentials("https://localhost/dav", "my username", "my password"),
                 processingState = ProcessingState.Processing,
                 onAction = {},
                 onDismiss = {}
@@ -213,9 +204,7 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Error() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             UpdatePrincipalPasswordBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
-                //credentials = Credentials("https://localhost/dav", "my username", "my password"),
                 processingState = ProcessingState.Error("This is an error", "Here are the details"),
                 onAction = {},
                 onDismiss = {}

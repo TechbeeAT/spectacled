@@ -16,14 +16,11 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TriStateCheckbox
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -56,7 +53,6 @@ fun TaskStatusProgressPickerBottomSheet(
     status: Status?,
     percentComplete: Long?,
     priority: Long?,
-    sheetState: SheetState,
     onProgressUpdated: (Long) -> Unit,
     onStatusUpdated: (Status?) -> Unit,
     onPriorityUpdated: (Long?) -> Unit,
@@ -64,7 +60,6 @@ fun TaskStatusProgressPickerBottomSheet(
 ) {
 
     BottomSheetWithMenu(
-        sheetState = sheetState,
         onDismiss = { onDismiss() },
         menuActionRight = {
             TextButton(
@@ -193,7 +188,6 @@ private fun TaskStatusProgressPickerBottomSheet_Preview() {
                 status = null,
                 percentComplete = 0L,
                 priority = 5,
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 onStatusUpdated = {},
                 onProgressUpdated = {},
                 onPriorityUpdated = {},
@@ -213,7 +207,6 @@ private fun TaskStatusProgressPickerBottomSheet_inprocess_Preview() {
                 status = Status.IN_PROCESS,
                 percentComplete = 33,
                 priority = null,
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 onStatusUpdated = {},
                 onProgressUpdated = {},
                 onPriorityUpdated = {},

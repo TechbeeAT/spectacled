@@ -31,7 +31,7 @@ import at.techbee.spectacled.theme.AppTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheetWithMenu(
-    sheetState: SheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
+    sheetState: SheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
     headline: String? = null,
     menuActionLeft: @Composable () -> Unit = { },
     menuActionRight: @Composable () -> Unit = { },

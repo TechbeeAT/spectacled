@@ -4,11 +4,8 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,7 +21,6 @@ import spectacled.shared.generated.resources.no_date
 @Composable
 fun DatePickerBottomSheet(
     icsDateTime: IcsDateTime,
-    sheetState: SheetState,
     allowNoDate: Boolean,
     onDateSelected: (IcsDateTime?) -> Unit,
     onDismiss: () -> Unit,
@@ -45,7 +41,6 @@ fun DatePickerBottomSheet(
     }
 
     BottomSheetWithMenu(
-        sheetState = sheetState,
         onDismiss = { onDismiss() },
         menuActionRight = {
             TextButton(
@@ -76,7 +71,6 @@ private fun DatePickerBottomSheet_Preview() {
 
     DatePickerBottomSheet(
         icsDateTime = IcsDateTime.now(),
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
         allowNoDate = false,
         onDateSelected = {},
         onDismiss = {}
@@ -90,7 +84,6 @@ private fun DatePickerBottomSheet_allow_no_date_Preview() {
 
     DatePickerBottomSheet(
         icsDateTime = IcsDateTime.now(),
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
         allowNoDate = true,
         onDateSelected = {},
         onDismiss = {}

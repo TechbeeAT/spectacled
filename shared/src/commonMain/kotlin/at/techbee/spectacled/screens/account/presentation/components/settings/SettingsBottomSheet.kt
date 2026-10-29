@@ -14,12 +14,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -42,7 +39,6 @@ import spectacled.shared.generated.resources.close
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsBottomSheet(
-    sheetState: SheetState,
     userAppPreferencesStore: UserAppPreferencesStore,
     onDismiss: () -> Unit,
 ) {
@@ -61,7 +57,6 @@ fun SettingsBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
-        sheetState = sheetState,
         gesturesEnabled = false,
         menuActionLeft = { },
         menuActionRight = {
@@ -130,7 +125,6 @@ private fun SettingsBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             SettingsBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
                 onDismiss = {}
             )

@@ -11,12 +11,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,7 +54,6 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CreateOrUpdateCalendarBottomSheet(
-    sheetState: SheetState,
     principal: Principal,
     homeCollection: HomeCollection,
     calendar: Calendar,
@@ -96,7 +92,6 @@ fun CreateOrUpdateCalendarBottomSheet(
         else
             stringResource(Res.string.update_folder),
         onDismiss = { onDismiss() },
-        sheetState = sheetState,
         gesturesEnabled = false,
         showLoadingIndicator = processingState is ProcessingState.Processing,
         menuActionLeft = {
@@ -242,7 +237,6 @@ private fun CreateOrUpdateCalendarBottomSheet_create_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             CreateOrUpdateCalendarBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
                 homeCollection = HomeCollection.getHomeCollectionForPreview(),
                 calendar = Calendar.getCalendarForPreview(),
@@ -264,7 +258,6 @@ private fun CreateOrUpdateCalendarBottomSheet_update_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             CreateOrUpdateCalendarBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 principal = Principal.getPrincipalForPreview(),
                 homeCollection = HomeCollection.getHomeCollectionForPreview(),
                 calendar = Calendar.getCalendarForPreview().copy(id = 1L),
