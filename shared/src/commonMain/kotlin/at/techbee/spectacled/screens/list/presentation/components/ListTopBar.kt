@@ -315,7 +315,7 @@ fun ListTopBar(
                                                 if (state.listSortedBy.name == sortedByOption.name && state.listSortedBy != ListSortedBy.DRAGANDDROP)
                                                     onAction(ListAction.OnSortedByChanged(sortedByOption, !state.listSortedByAscending))
                                                 else
-                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, sortedByOption.defaultAsc))
+                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, true))
                                             },
                                             leadingIcon = {
                                                 Icon(painterResource(sortedByOption.displayIcon), null)

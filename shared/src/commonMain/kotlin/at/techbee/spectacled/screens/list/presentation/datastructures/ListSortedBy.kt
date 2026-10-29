@@ -21,16 +21,15 @@ import spectacled.shared.generated.resources.sort_alphabetically
 
 enum class ListSortedBy(
     val displayName: StringResource,
-    val defaultAsc: Boolean,
     val displayIcon: DrawableResource
 ) {
-    ALPHABETICALLY(Res.string.sort_alphabetically, true, Res.drawable.ic_sorted_by_summary),
-    CREATED(Res.string.created, false, Res.drawable.ic_sorted_by_created),
-    LAST_MODIFIED(Res.string.last_modified, false, Res.drawable.ic_sorted_by_last_modified),
-    DATE(Res.string.date, false, Res.drawable.ic_sorted_by_date),
-    START(Res.string.date_start, false, Res.drawable.ic_sorted_by_start),
-    DUE(Res.string.date_due, false, Res.drawable.ic_sorted_by_due),
-    DRAGANDDROP(Res.string.drag_and_drop, true, Res.drawable.ic_sorted_by_draganddrop);
+    ALPHABETICALLY(Res.string.sort_alphabetically, Res.drawable.ic_sorted_by_summary),
+    CREATED(Res.string.created, Res.drawable.ic_sorted_by_created),
+    LAST_MODIFIED(Res.string.last_modified, Res.drawable.ic_sorted_by_last_modified),
+    DATE(Res.string.date, Res.drawable.ic_sorted_by_date),
+    START(Res.string.date_start, Res.drawable.ic_sorted_by_start),
+    DUE(Res.string.date_due, Res.drawable.ic_sorted_by_due),
+    DRAGANDDROP(Res.string.drag_and_drop, Res.drawable.ic_sorted_by_draganddrop);
 
     companion object {
         fun entriesFor(spectacledVariant: SpectacledVariant): List<ListSortedBy> {

@@ -171,21 +171,25 @@ data class ListState(
         val ascending = listSortedByAscending
         return when (listSortedBy) {
             ListSortedBy.CREATED -> {
-                if (ascending) icalEntries.sortedBy { it.created.instant }
-                else icalEntries.sortedByDescending { it.created.instant }
+                // switching ascending and descending for date fields as this is more intuitive for users
+                if (ascending) icalEntries.sortedByDescending { it.created.instant }
+                else icalEntries.sortedBy { it.created.instant }
             }
             ListSortedBy.LAST_MODIFIED -> {
-                if (ascending) icalEntries.sortedBy { it.lastModified?.instant ?: it.created.instant }
-                else icalEntries.sortedByDescending { it.lastModified?.instant ?: it.created.instant }
+                // switching ascending and descending for date fields as this is more intuitive for users
+                if (ascending) icalEntries.sortedByDescending { it.lastModified?.instant ?: it.created.instant }
+                else icalEntries.sortedBy { it.lastModified?.instant ?: it.created.instant }
             }
             ListSortedBy.DATE, ListSortedBy.START -> {
                 val comparator = compareBy<IcalEntry> { it.dtStart?.toLocalDateTime() }
-                val order = if (ascending) comparator else comparator.reversed()
+                // switching ascending and descending for date fields as this is more intuitive for users
+                val order = if (ascending) comparator.reversed() else comparator
                 icalEntries.sortedWith(compareBy<IcalEntry> { it.dtStart == null }.then(order))
             }
             ListSortedBy.DUE -> {
                 val comparator = compareBy<IcalEntry> { it.due?.toLocalDateTime() }
-                val order = if (ascending) comparator.reversed() else comparator
+                // switching ascending and descending for date fields as this is more intuitive for users
+                val order = if (ascending) comparator else comparator.reversed()
                 icalEntries.sortedWith(compareBy<IcalEntry> { it.due == null }.then(order))
             }
             ListSortedBy.ALPHABETICALLY -> {
