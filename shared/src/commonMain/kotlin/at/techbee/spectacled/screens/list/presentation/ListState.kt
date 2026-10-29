@@ -188,7 +188,7 @@ data class ListState(
                 val order = if (ascending) comparator.reversed() else comparator
                 icalEntries.sortedWith(compareBy<IcalEntry> { it.due == null }.then(order))
             }
-            ListSortedBy.SUMMARY -> {
+            ListSortedBy.ALPHABETICALLY -> {
                 val selector: (IcalEntry) -> String = { it.summary?.uppercase() ?: it.description?.uppercase() ?: "" }
                 if (ascending) icalEntries.sortedBy(selector)
                 else icalEntries.sortedByDescending(selector)
@@ -257,7 +257,7 @@ data class ListState(
             ListSortedBy.DUE -> datetimeBucketSections(entries, ListGrouping.dueGroups) { it.due }
             ListSortedBy.DATE -> daySections(entries)
             // No grouping criterion: a single header-less block.
-            ListSortedBy.SUMMARY, ListSortedBy.DRAGANDDROP -> listOf(
+            ListSortedBy.ALPHABETICALLY, ListSortedBy.DRAGANDDROP -> listOf(
                 ListSection(key = "grouped_all", header = null, entries = entries, kind = ListSection.Kind.GROUPED)
             )
         }
@@ -322,7 +322,7 @@ data class ListState(
             ListSortedBy.START -> ListGrouping.getGrouping(ListGrouping.startGroups, dtStart) == null
             ListSortedBy.DUE -> ListGrouping.getGrouping(ListGrouping.dueGroups, due) == null
             ListSortedBy.DATE -> dtStart == null
-            ListSortedBy.SUMMARY, ListSortedBy.DRAGANDDROP -> false
+            ListSortedBy.ALPHABETICALLY, ListSortedBy.DRAGANDDROP -> false
         }
     }
 

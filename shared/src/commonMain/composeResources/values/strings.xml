@@ -120,6 +120,7 @@
 
     <string name="sort_ascending">Ascending</string>
     <string name="sort_descending">Descending</string>
+    <string name="sort_alphabetically">Alphabetically</string>
     <string name="created">Created</string>
     <string name="last_modified">Last modified</string>
     <string name="date">Date</string>

@@ -17,27 +17,27 @@ import spectacled.shared.generated.resources.ic_sorted_by_last_modified
 import spectacled.shared.generated.resources.ic_sorted_by_start
 import spectacled.shared.generated.resources.ic_sorted_by_summary
 import spectacled.shared.generated.resources.last_modified
-import spectacled.shared.generated.resources.summary
+import spectacled.shared.generated.resources.sort_alphabetically
 
 enum class ListSortedBy(
     val displayName: StringResource,
     val defaultAsc: Boolean,
     val displayIcon: DrawableResource
 ) {
+    ALPHABETICALLY(Res.string.sort_alphabetically, true, Res.drawable.ic_sorted_by_summary),
     CREATED(Res.string.created, false, Res.drawable.ic_sorted_by_created),
     LAST_MODIFIED(Res.string.last_modified, false, Res.drawable.ic_sorted_by_last_modified),
     DATE(Res.string.date, false, Res.drawable.ic_sorted_by_date),
     START(Res.string.date_start, false, Res.drawable.ic_sorted_by_start),
     DUE(Res.string.date_due, false, Res.drawable.ic_sorted_by_due),
-    SUMMARY(Res.string.summary, true, Res.drawable.ic_sorted_by_summary),
     DRAGANDDROP(Res.string.drag_and_drop, true, Res.drawable.ic_sorted_by_draganddrop);
 
     companion object {
         fun entriesFor(spectacledVariant: SpectacledVariant): List<ListSortedBy> {
             return when (spectacledVariant) {
-                SpectacledVariant.JOURNALS -> listOf(DATE, CREATED, LAST_MODIFIED, SUMMARY)
-                SpectacledVariant.NOTES -> listOf(CREATED, LAST_MODIFIED, SUMMARY, DRAGANDDROP)
-                SpectacledVariant.TASKS -> listOf(CREATED, LAST_MODIFIED, START, DUE, SUMMARY, DRAGANDDROP)  // TODO
+                SpectacledVariant.JOURNALS -> listOf(ALPHABETICALLY, DATE, CREATED, LAST_MODIFIED)
+                SpectacledVariant.NOTES -> listOf(ALPHABETICALLY, CREATED, LAST_MODIFIED, DRAGANDDROP)
+                SpectacledVariant.TASKS -> listOf(ALPHABETICALLY, CREATED, LAST_MODIFIED, START, DUE, DRAGANDDROP)  // TODO
             }
         }
     }
