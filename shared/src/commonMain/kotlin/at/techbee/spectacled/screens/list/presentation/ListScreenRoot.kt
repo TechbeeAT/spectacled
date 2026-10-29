@@ -190,6 +190,8 @@ fun ListScreenRoot(
 
         if (state.showUpdateColorOfSelectedBottomSheet && state.multiselectItems?.isNotEmpty() == true) {
             BottomSheetWithMenu(
+                // The picker is taller than half the screen; without this the sheet settles at half height
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                 onDismiss = { listViewModel.onAction(ListAction.OnShowUpdateColorOfSelectedBottomSheet(false)) },
                 menuActionRight = {
                     TextButton(

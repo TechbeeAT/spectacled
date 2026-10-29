@@ -175,6 +175,8 @@ fun DetailsScreenRoot(
                 )
             DetailsSheetOrDialog.COLOR_SELECTOR ->
                 BottomSheetWithMenu(
+                    // The picker is taller than half the screen; without this the sheet settles at half height
+                    sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) },
                     menuActionRight = {
                         TextButton(
