@@ -390,7 +390,8 @@ class IcalEntryRepositoryImpl(
     override suspend fun copyIcalEntriesToCalendar(
         icalEntryIds: List<Long>,
         targetCalendarId: Long,
-        sameCalendarSummarySuffix: String
+        sameCalendarSummarySuffix: String,
+        copyLocalFile: suspend (attachment: Attachment) -> String?
     ): Map<Long, Long> = withContext(ioDispatcher) {
 
         // Re-read fresh so any attachments downloaded just before the copy are picked up.
@@ -418,7 +419,14 @@ class IcalEntryRepositoryImpl(
                     dtstamp = now,
                     lastModified = now,
                     sequence = null,
-                    attachments = entry.attachments.map { it.copy(uid = IcalEntry.getRandomUUID()) }
+                    attachments = entry.attachments.map { attachment ->
+                        val copiedAttachment = attachment.copy(uid = IcalEntry.getRandomUUID())
+                        // Own file for the copy: deleting the original's attachment deletes its
+                        // file. If duplicating fails, sharing the file still beats losing it.
+                        copiedAttachment.copy(
+                            localPath = copiedAttachment.localPath?.let { copyLocalFile(copiedAttachment) ?: it }
+                        )
+                    }
                 ),
                 targetCalendarId = targetCalendarId,
                 uid = newUids.getValue(entry.uid),
@@ -476,7 +484,11 @@ class IcalEntryRepositoryImpl(
 
         val db = getDatabase()
         db.icalentry_dtoQueries.getSubtasksByParentUid(entry.calendarId, entry.uid).awaitAsList().forEach { childDto ->
-            collectWithSubtasks(db.loadIcalEntry(childDto), acc)
+            val child = db.loadIcalEntry(childDto)
+            // A deleted subtask that isn't synced yet is still in the db - it must not be
+            // re-created as a live entry in a copy or move. Left behind, sync deletes it as usual.
+            if (!child.syncState.isDeletedState())
+                collectWithSubtasks(child, acc)
         }
     }
 

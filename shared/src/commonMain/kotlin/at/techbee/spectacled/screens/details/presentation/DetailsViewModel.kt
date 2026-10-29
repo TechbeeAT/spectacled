@@ -20,6 +20,7 @@ import at.techbee.spectacled.screens.core.domain.Alarm
 import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
+import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.MAX_INLINE_ATTACHMENT_BYTES
 import at.techbee.spectacled.screens.core.domain.MIMETYPE_SVG
@@ -141,20 +142,23 @@ class DetailsViewModel(
         viewModelScope.launch {
             val icalEntry = icalEntryRepository.getIcalEntryById(icalEntryId) ?: return@launch
             val calendar = calendarRepository.getCalendarById(icalEntry.calendarId) ?: return@launch
-
-            _state.update { it.copy(
-                icalEntry = icalEntry,
-                originalIcalEntry = icalEntry,
-                changeBackstack = listOf(icalEntry),
-                undoRestoreMarker = null,
-                calendar = calendar,
-                isLoading = false,
-                isInitialized = true,
-                navigateUp = false
-            ) }
-
-            observeIcalEntry(icalEntry.calendarId, icalEntry.uid)
+            showEntry(icalEntry, calendar)
         }
+    }
+
+    private fun showEntry(icalEntry: IcalEntry, calendar: Calendar) {
+        _state.update { it.copy(
+            icalEntry = icalEntry,
+            originalIcalEntry = icalEntry,
+            changeBackstack = listOf(icalEntry),
+            undoRestoreMarker = null,
+            calendar = calendar,
+            isLoading = false,
+            isInitialized = true,
+            navigateUp = false
+        ) }
+
+        observeIcalEntry(icalEntry.calendarId, icalEntry.uid)
     }
 
     fun loadNew(
@@ -1096,9 +1100,12 @@ class DetailsViewModel(
 
         val currentState = _state.value
 
-        // An untouched new entry has no row yet, so there is nothing to copy. Recurring entries
-        // are excluded like in the list.
-        if(currentState.icalEntry.syncState == SyncState.LOCAL_NEW || currentState.icalEntry.isRecurring()) {
+        // isLoading also guards against a second confirm while a copy is running. An untouched
+        // new entry has no row yet (the menu item is disabled for it), and recurring entries are
+        // excluded like in the list.
+        if(currentState.isLoading
+            || currentState.icalEntry.syncState == SyncState.LOCAL_NEW
+            || currentState.icalEntry.isRecurring()) {
             _state.update { it.copy(showSheetOrDialog = null) }
             return
         }
@@ -1107,19 +1114,26 @@ class DetailsViewModel(
 
         // Attachment download + DB work + sync trigger - keep it off the Main dispatcher.
         viewModelScope.launch(ioDispatcher) {
-            // The copy is made from the database, so flush edits the debounced auto-save
-            // may not have written yet.
-            if(currentState.allowEditing()) {
-                icalEntryRepository.insertOrUpdateIcalEntry(currentState.icalEntry)
-                platformSyncTrigger.requestImmediate(listOf(currentState.icalEntry.calendarId))
-            }
+            // The copy is made from the database, so first write edits that aren't stored yet
+            // (debounced or in-flight auto-save) - or the whole entry, if it was never saved
+            // (id 0, e.g. a new entry with shared text). Compared against the stored row, not the
+            // undo checkpoint, which is recorded before its save completes.
+            val storedEntry = currentState.icalEntry.id.takeIf { it != 0L }?.let { icalEntryRepository.getIcalEntryById(it) }
+            val needsFlush = currentState.allowEditing()
+                    && (storedEntry == null || !currentState.icalEntry.hasSameContentAs(storedEntry))
+            val sourceId = if(needsFlush) {
+                icalEntryRepository.insertOrUpdateIcalEntry(currentState.icalEntry).id
+                    .also { platformSyncTrigger.requestImmediate(listOf(currentState.icalEntry.calendarId)) }
+            } else currentState.icalEntry.id
 
-            val copyId = moveIcalEntriesUseCase.copy(listOf(currentState.icalEntry.id), targetCalendarId)[currentState.icalEntry.id]
-            if(copyId == null) {
+            val copy = moveIcalEntriesUseCase.copy(listOf(sourceId), targetCalendarId)[sourceId]
+                ?.let { copyId -> icalEntryRepository.getIcalEntryById(copyId) }
+            val copyCalendar = copy?.let { calendarRepository.getCalendarById(it.calendarId) }
+            if(copy == null || copyCalendar == null) {
                 _state.update { it.copy(isLoading = false, snackbarText = getString(Res.string.unexpected_error_occurred)) }
                 return@launch
             }
-            load(copyId)
+            showEntry(copy, copyCalendar)
         }
     }
 

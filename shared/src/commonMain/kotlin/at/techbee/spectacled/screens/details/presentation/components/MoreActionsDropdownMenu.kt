@@ -30,6 +30,7 @@ import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.SpectacledDropdownMenu
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.formatLocalized
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.SquareDropdownMenuItem
@@ -89,8 +90,9 @@ fun MoreActionsDropdownMenu(
                     onDismiss()
                 },
                 // No write access needed: the copy may target any writable collection, even from a
-                // read-only one. Recurring entries can't be copied, like in the list.
-                enabled = !icalEntry.isRecurring()
+                // read-only one. Recurring entries can't be copied, like in the list, and an
+                // untouched new entry has nothing to copy yet.
+                enabled = !icalEntry.isRecurring() && icalEntry.syncState != SyncState.LOCAL_NEW
             )
 
             SquareDropdownMenuItem(
