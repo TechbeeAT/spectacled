@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
@@ -59,6 +60,7 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.list.presentation.ListAction
 import at.techbee.spectacled.screens.list.presentation.ListState
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
@@ -72,6 +74,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_selection
+import spectacled.shared.generated.resources.copy
 import spectacled.shared.generated.resources.date_selector
 import spectacled.shared.generated.resources.delete_selected
 import spectacled.shared.generated.resources.filter
@@ -414,11 +417,26 @@ fun ListTopBar(
                                 Text(text = stringResource(Res.string.move))
                             },
                             enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
-                            onClick = { onAction(ListAction.OnShowMoveSelectedItemsDialog(true)) },
+                            onClick = { onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(MoveOrCopyMode.MOVE)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Outlined.DriveFileMove,
                                     contentDescription = stringResource(Res.string.move)
+                                )
+                            }
+                        )
+
+                        DropdownMenuItem(
+                            text = {
+                                Text(text = stringResource(Res.string.copy))
+                            },
+                            // no write access needed: copying out of a read-only collection is allowed
+                            enabled = state.multiselectItems?.isNotEmpty() == true,
+                            onClick = { onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(MoveOrCopyMode.COPY)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.FileCopy,
+                                    contentDescription = stringResource(Res.string.copy)
                                 )
                             }
                         )

@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
@@ -25,8 +26,9 @@ sealed interface ListAction {
     object OnDeleteSelectedItems: ListAction
     data class OnShowSwipeToDeleteDialog(val icalEntryId: Long?): ListAction
     data class OnDeleteEntry(val icalEntryId: Long): ListAction
-    data class OnShowMoveSelectedItemsDialog(val showDialog: Boolean): ListAction
+    data class OnShowMoveOrCopySelectedItemsDialog(val mode: MoveOrCopyMode?): ListAction
     data class OnMoveSelectedItems(val targetCalendarId: Long): ListAction
+    data class OnCopySelectedItems(val targetCalendarId: Long): ListAction
 
     data class OnShowDateSelectorBottomSheet(val show: Boolean): ListAction
     data class OnShowUpdateColorOfSelectedBottomSheet(val show: Boolean): ListAction

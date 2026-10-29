@@ -245,8 +245,9 @@ class ListViewModel(
             ListAction.OnDeleteSelectedItems -> onDeleteSelectedItems()
             is ListAction.OnShowSwipeToDeleteDialog -> { _state.update { it.copy(showSwipeToDeleteDialog = action.icalEntryId) } }
             is ListAction.OnDeleteEntry -> onDeleteEntry(action.icalEntryId)
-            is ListAction.OnShowMoveSelectedItemsDialog -> { _state.update { it.copy(showMoveSelectedItemsDialog = action.showDialog) }}
+            is ListAction.OnShowMoveOrCopySelectedItemsDialog -> { _state.update { it.copy(showMoveOrCopySelectedItemsDialog = action.mode) }}
             is ListAction.OnMoveSelectedItems -> onMoveSelectedItems(action.targetCalendarId)
+            is ListAction.OnCopySelectedItems -> onCopySelectedItems(action.targetCalendarId)
             is ListAction.OnUpdateOrderNo -> onUpdateOrderNo(action.fromIndex, action.toIndex)
             ListAction.OnPersistOrderNo -> onPersistOrderNo()
             is ListAction.OnToggleListGroupExpanded -> onToggleListGroupExpanded(action.listGroup)
@@ -474,7 +475,21 @@ class ListViewModel(
         // Off the Main dispatcher: the use case may download attachments before the local move.
         viewModelScope.launch(ioDispatcher) {
             moveIcalEntriesUseCase.move(ids, targetCalendarId)
-            _state.update { it.copy(multiselectItems = null, showMoveSelectedItemsDialog = false) }
+            _state.update { it.copy(multiselectItems = null, showMoveOrCopySelectedItemsDialog = null) }
+        }
+    }
+
+    private fun onCopySelectedItems(targetCalendarId: Long) {
+
+        // No write access needed on the source: copying out of a read-only collection is allowed,
+        // the dialog only offers writable targets.
+        // Recurring entries are read-only, so exclude them like for a move.
+        val ids = _state.value.multiselectItems?.let { withoutRecurringEntries(it) } ?: return
+
+        // Off the Main dispatcher: the use case may download attachments before the local copy.
+        viewModelScope.launch(ioDispatcher) {
+            moveIcalEntriesUseCase.copy(ids, targetCalendarId)
+            _state.update { it.copy(multiselectItems = null, showMoveOrCopySelectedItemsDialog = null) }
         }
     }
 
