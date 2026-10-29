@@ -108,6 +108,7 @@
     <string name="trashbin_x">Trashbin (%1$d)</string>
 
     <string name="search">Search…</string>
+    <string name="clear_search">Clear search</string>
     <string name="filter">Filter…</string>
     <string name="hide_completed_tasks">Hide completed tasks</string>
     <string name="add_journal">Add journal</string>
