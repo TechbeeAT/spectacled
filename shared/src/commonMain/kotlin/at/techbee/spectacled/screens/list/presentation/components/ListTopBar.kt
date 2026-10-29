@@ -426,8 +426,6 @@ fun ListTopBar(
                             }
                         )
 
-                        HorizontalDivider(modifier = Modifier.padding(8.dp))
-
                         DropdownMenuItem(
                             text = {
                                 Text(text = stringResource(Res.string.copy))
@@ -442,6 +440,8 @@ fun ListTopBar(
                                 )
                             }
                         )
+
+                        HorizontalDivider(modifier = Modifier.padding(8.dp))
 
                         DropdownMenuItem(
                             text = {
