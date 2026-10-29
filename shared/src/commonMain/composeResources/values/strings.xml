@@ -157,7 +157,7 @@
     <string name="entry_deleted">Entry deleted</string>
     <string name="subtask">Subtask</string>
     <string name="add_subtask">Add subtask</string>
-    <string name="subtasks_not_supported_in_collection">Not supported in this collection</string>
+    <string name="subtasks_not_supported_in_folder">Not supported in this folder</string>
     <string name="show_deleted_subtasks">Show deleted subtasks</string>
     <string name="url">URL</string>
     <string name="add_url">Add URL</string>
@@ -257,11 +257,11 @@
         <item quantity="other">Are you sure you want to delete the selected %1$d entries?</item>
     </plurals>
     <string name="move_entry_x">Move entry "%1$s"?</string>
-    <string name="move_entry_warning">This creates a copy of this entry in the new calendar and deletes the current one.</string>
+    <string name="move_entry_warning">This creates a copy of this entry in the new folder and deletes the current one.</string>
     <string name="move_selected">Move selected</string>
     <plurals name="move_selected_warning">
-        <item quantity="one">This moves the selected entry to the chosen calendar and removes it from the current one.</item>
-        <item quantity="other">This moves the selected %1$d entries to the chosen calendar and removes them from the current one.</item>
+        <item quantity="one">This moves the selected entry to the chosen folder and removes it from the current one.</item>
+        <item quantity="other">This moves the selected %1$d entries to the chosen folder and removes them from the current one.</item>
     </plurals>
     <string name="pin">Pin</string>
     <string name="unpin">Unpin</string>
@@ -390,20 +390,19 @@
     <string name="openai_info">Point this at a local or self-hosted server that speaks the OpenAI API (Ollama, LM Studio, llama.cpp, LocalAI).</string>
 
     <string name="sync_info">Sync info</string>
-    <string name="reload_calendars_folders">Reload calendars/folders</string>
     <string name="reload_folders">Reload folders</string>
     <string name="show_more">Show more</string>
 
-    <string name="calendar_could_not_be_deleted">Calendar could not be deleted: %1$s</string>
+    <string name="folder_could_not_be_deleted">Folder could not be deleted: %1$s</string>
     <string name="include_support_for_subtasks">Include support for subtasks</string>
-    <string name="no_compatible_folders_found">No compatible folders/calendars found</string>
-    <string name="add_folder_calendar">Add folder/calendar</string>
-    <string name="insufficient_access_rights_create_folder">Insufficient access rights to create a new folder/calendar.</string>
+    <string name="no_compatible_folders_found">No compatible folders found</string>
+    <string name="add_folder">Add folder</string>
+    <string name="insufficient_access_rights_create_folder">Insufficient access rights to create a new folder.</string>
 
-    <string name="selected_calendar">Selected calendar</string>
-    <string name="select_calendar">Select calendar</string>
+    <string name="selected_folder">Selected folder</string>
+    <string name="select_folder">Select folder</string>
     <string name="no_account_name">No account name</string>
-    <string name="unnamed_calendar">Unnamed calendar</string>
+    <string name="unnamed_folder">Unnamed folder</string>
     <string name="unknown">Unknown</string>
     <string name="file_size_kb">%1$d KB</string>
     <string name="percent_complete">%1$d %</string>
@@ -416,13 +415,13 @@
 
     <string name="account_added_updated">Account added/updated</string>
     <string name="account_successfully_removed">Account successfully removed</string>
-    <string name="calendar_successfully_added_updated">Calendar successfully added/updated</string>
-    <string name="calendar_successfully_deleted">Calendar successfully deleted</string>
-    <string name="calendars_synced">Calendars synced</string>
+    <string name="folder_successfully_added_updated">Folder successfully added/updated</string>
+    <string name="folder_successfully_deleted">Folder successfully deleted</string>
+    <string name="folders_synced">Folders synced</string>
     <string name="credentials_not_found_readd_account">Credentials not found, please remove this account and add it again.</string>
     <string name="login_message_not_authorized">Not authorized. Please check your username and password.</string>
     <string name="server_not_found">Server not found.</string>
-    <string name="some_calendars_failed_to_sync">Some calendars failed to sync. Please check the calendars for details.</string>
+    <string name="some_folders_failed_to_sync">Some folders failed to sync. Please check the folders for details.</string>
     <string name="unknown_error">Unknown error</string>
     <string name="unknown_error_occurred">Unknown error occurred.</string>
 
@@ -433,23 +432,23 @@
     <string name="sync_error_connection_error">Connection error. Please check your internet connection and try again.</string>
     <string name="sync_error_server_error">An unexpected server error occurred. Please try again.</string>
     <string name="sync_error_request_failed">Request error. Please check your server, username and password and try again.</string>
-    <string name="sync_error_calendar_not_fetchable">Calendar couldn't be fetched.</string>
-    <string name="sync_error_calendar_not_parsable">Calendar couldn't be parsed.</string>
+    <string name="sync_error_folder_not_fetchable">Folder couldn't be fetched.</string>
+    <string name="sync_error_folder_not_parsable">Folder couldn't be parsed.</string>
 
-    <string name="calendar_create_failed">Creating collection failed.</string>
-    <string name="calendar_update_failed">Calendar couldn't be updated.</string>
-    <string name="calendar_delete_failed">Calendar couldn't be deleted.</string>
-    <string name="calendar_create_failed_privileges">Calendar couldn't be created due to missing privileges.</string>
-    <string name="calendar_create_failed_conflict">Parent does not exist or calendar already exists.</string>
-    <string name="calendar_create_failed_unsupported">Server doesn't support creation of new collections.</string>
-    <string name="calendar_create_failed_component">Creation of calendar with supported component failed.</string>
-    <string name="calendar_fetch_failed">Calendar couldn't be fetched.</string>
-    <string name="calendar_parse_failed">Calendar couldn't be parsed.</string>
-    <string name="calendar_update_failed_privileges">Calendar couldn't be updated due to missing privileges.</string>
-    <string name="calendar_update_failed_conflict">Calendar couldn't be updated due to conflict.</string>
-    <string name="calendar_delete_failed_privileges">Calendar couldn't be deleted due to missing privileges</string>
-    <string name="calendar_delete_forbidden">Server forbids deleting this calendar</string>
-    <string name="calendar_delete_forbidden_locked">Server forbids deleting this calendar. Locked or server-side constraint.</string>
+    <string name="folder_create_failed">Creating folder failed.</string>
+    <string name="folder_update_failed">Folder couldn't be updated.</string>
+    <string name="folder_delete_failed">Folder couldn't be deleted.</string>
+    <string name="folder_create_failed_privileges">Folder couldn't be created due to missing privileges.</string>
+    <string name="folder_create_failed_conflict">Parent does not exist or folder already exists.</string>
+    <string name="folder_create_failed_unsupported">Server doesn't support creation of new folders.</string>
+    <string name="folder_create_failed_component">Creation of folder with supported component failed.</string>
+    <string name="folder_fetch_failed">Folder couldn't be fetched.</string>
+    <string name="folder_parse_failed">Folder couldn't be parsed.</string>
+    <string name="folder_update_failed_privileges">Folder couldn't be updated due to missing privileges.</string>
+    <string name="folder_update_failed_conflict">Folder couldn't be updated due to conflict.</string>
+    <string name="folder_delete_failed_privileges">Folder couldn't be deleted due to missing privileges</string>
+    <string name="folder_delete_forbidden">Server forbids deleting this folder</string>
+    <string name="folder_delete_forbidden_locked">Server forbids deleting this folder. Locked or server-side constraint.</string>
 
     <string name="ai_response_failed">Fetching AI response failed</string>
     <string name="ai_response_no_text">AI response contained no text</string>

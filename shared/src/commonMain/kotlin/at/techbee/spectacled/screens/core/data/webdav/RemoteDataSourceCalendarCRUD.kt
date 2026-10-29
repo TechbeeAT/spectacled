@@ -27,20 +27,20 @@ import nl.adaptivity.xmlutil.serialization.XmlParsingException
 import nl.adaptivity.xmlutil.xmlStreaming
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.calendar_create_failed
-import spectacled.shared.generated.resources.calendar_create_failed_component
-import spectacled.shared.generated.resources.calendar_create_failed_conflict
-import spectacled.shared.generated.resources.calendar_create_failed_privileges
-import spectacled.shared.generated.resources.calendar_create_failed_unsupported
-import spectacled.shared.generated.resources.calendar_delete_failed
-import spectacled.shared.generated.resources.calendar_delete_failed_privileges
-import spectacled.shared.generated.resources.calendar_delete_forbidden
-import spectacled.shared.generated.resources.calendar_delete_forbidden_locked
-import spectacled.shared.generated.resources.calendar_fetch_failed
-import spectacled.shared.generated.resources.calendar_parse_failed
-import spectacled.shared.generated.resources.calendar_update_failed
-import spectacled.shared.generated.resources.calendar_update_failed_conflict
-import spectacled.shared.generated.resources.calendar_update_failed_privileges
+import spectacled.shared.generated.resources.folder_create_failed
+import spectacled.shared.generated.resources.folder_create_failed_component
+import spectacled.shared.generated.resources.folder_create_failed_conflict
+import spectacled.shared.generated.resources.folder_create_failed_privileges
+import spectacled.shared.generated.resources.folder_create_failed_unsupported
+import spectacled.shared.generated.resources.folder_delete_failed
+import spectacled.shared.generated.resources.folder_delete_failed_privileges
+import spectacled.shared.generated.resources.folder_delete_forbidden
+import spectacled.shared.generated.resources.folder_delete_forbidden_locked
+import spectacled.shared.generated.resources.folder_fetch_failed
+import spectacled.shared.generated.resources.folder_parse_failed
+import spectacled.shared.generated.resources.folder_update_failed
+import spectacled.shared.generated.resources.folder_update_failed_conflict
+import spectacled.shared.generated.resources.folder_update_failed_privileges
 import spectacled.shared.generated.resources.unknown_error_occurred
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -94,13 +94,13 @@ suspend fun createCalendarMultiplatform(
             Napier.w("MKCOL failed: $details")
             return when (response.status) {
                 HttpStatusCode.Forbidden ->    // Missing bind privilege on calendar-home-set, or a rejected property
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_privileges).appendDavErrorMessage(body), details)
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_create_failed_privileges).appendDavErrorMessage(body), details)
                 HttpStatusCode.Conflict ->
-                    UpsertCalendarResult.Failed(response.status,getString(Res.string.calendar_create_failed_conflict).appendDavErrorMessage(body), details)
+                    UpsertCalendarResult.Failed(response.status,getString(Res.string.folder_create_failed_conflict).appendDavErrorMessage(body), details)
                 HttpStatusCode.MethodNotAllowed ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed_unsupported).appendDavErrorMessage(body), details)
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_create_failed_unsupported).appendDavErrorMessage(body), details)
                 else ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_create_failed).appendDavErrorMessage(body), details)
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_create_failed).appendDavErrorMessage(body), details)
             }
         }
     }
@@ -133,7 +133,7 @@ suspend fun createCalendarMultiplatform(
     }.let { response ->
 
         if (!response.status.isSuccess())
-            return UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_fetch_failed), "${response.status.description} ${response.status.value}")
+            return UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_fetch_failed), "${response.status.description} ${response.status.value}")
 
         try {
             val responseBody = response.bodyAsText()
@@ -159,7 +159,7 @@ suspend fun createCalendarMultiplatform(
 
                     // skip calendars that are NOT of resource type calendar and skip if there's no calendar with the requested CalendarComponent supported
                     if (propStat.prop.resourceType?.calendar == null || supportedCalendarComponentSet.none { component -> component == CalendarComponent.VJOURNAL || component == CalendarComponent.VTODO })
-                        UpsertCalendarResult.Failed(HttpStatusCode.UnprocessableEntity, getString(Res.string.calendar_create_failed_component))
+                        UpsertCalendarResult.Failed(HttpStatusCode.UnprocessableEntity, getString(Res.string.folder_create_failed_component))
 
                     return UpsertCalendarResult.Success(newCalendar.copy(
                         url = URLBuilder(newCalendar.url).takeFrom(response.href).build(),
@@ -175,7 +175,7 @@ suspend fun createCalendarMultiplatform(
 
         } catch (e: XmlParsingException) {
             Napier.e("Parsing failed: ${e.message}", e)
-            return UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_parse_failed), e.stackTraceToString())
+            return UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_parse_failed), e.stackTraceToString())
         }
     }
     return UpsertCalendarResult.Failed(HttpStatusCode.UnprocessableEntity, getString(Res.string.unknown_error_occurred))
@@ -223,13 +223,13 @@ suspend fun updateCalDavCalendarMultiplatform(
             val details = "${response.status.description} ${response.status.value}\n$body".trim()
             return when (response.status) {
                 HttpStatusCode.Forbidden ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed_privileges).appendDavErrorMessage(body), details)
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_update_failed_privileges).appendDavErrorMessage(body), details)
                 HttpStatusCode.Conflict ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed_conflict).appendDavErrorMessage(body), details)
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_update_failed_conflict).appendDavErrorMessage(body), details)
                 HttpStatusCode.NotFound ->
                     UpsertCalendarResult.NotFound
                 else ->
-                    UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_update_failed).appendDavErrorMessage(body), details)
+                    UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_update_failed).appendDavErrorMessage(body), details)
             }
         }
     }
@@ -256,7 +256,7 @@ suspend fun updateCalDavCalendarMultiplatform(
     }.let { response ->
 
         if (!response.status.isSuccess())
-            return UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_fetch_failed), "${response.status.description} ${response.status.value}")
+            return UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_fetch_failed), "${response.status.description} ${response.status.value}")
 
         try {
             val responseBody = response.bodyAsText()
@@ -281,7 +281,7 @@ suspend fun updateCalDavCalendarMultiplatform(
             }
         } catch (e: XmlParsingException) {
             Napier.e("Parsing failed: ${e.message}", e)
-            return UpsertCalendarResult.Failed(response.status, getString(Res.string.calendar_parse_failed), e.stackTraceToString())
+            return UpsertCalendarResult.Failed(response.status, getString(Res.string.folder_parse_failed), e.stackTraceToString())
         }
     }
     return UpsertCalendarResult.Failed(HttpStatusCode.UnprocessableEntity, getString(Res.string.unknown_error_occurred))
@@ -309,14 +309,14 @@ suspend fun deleteCalendarMultiplatform(
         return when {
             response.status.isSuccess() -> DeleteCalendarResult.SuccessfullyDeleted
             response.status == HttpStatusCode.Forbidden ->  // Missing bind privilege on calendar-home-set
-                DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_failed_privileges).appendDavErrorMessage(body), "Status: ${response.status.description} ${response.status.value}")
+                DeleteCalendarResult.Failed(response.status, getString(Res.string.folder_delete_failed_privileges).appendDavErrorMessage(body), "Status: ${response.status.description} ${response.status.value}")
             response.status == HttpStatusCode.NotFound ->    // Calendar was already deleted
                 DeleteCalendarResult.AlreadyDeleted
             response.status == HttpStatusCode.MethodNotAllowed ->
-                DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_forbidden).appendDavErrorMessage(body), "Status: ${response.status.description} ${response.status.value}")
+                DeleteCalendarResult.Failed(response.status, getString(Res.string.folder_delete_forbidden).appendDavErrorMessage(body), "Status: ${response.status.description} ${response.status.value}")
             response.status == HttpStatusCode.Conflict ->
-                DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_forbidden_locked).appendDavErrorMessage(body), "Status: ${response.status.description} ${response.status.value}")
-            else -> DeleteCalendarResult.Failed(response.status, getString(Res.string.calendar_delete_failed).appendDavErrorMessage(body), "Status: $body (${response.status})")
+                DeleteCalendarResult.Failed(response.status, getString(Res.string.folder_delete_forbidden_locked).appendDavErrorMessage(body), "Status: ${response.status.description} ${response.status.value}")
+            else -> DeleteCalendarResult.Failed(response.status, getString(Res.string.folder_delete_failed).appendDavErrorMessage(body), "Status: $body (${response.status})")
         }
     }
 }

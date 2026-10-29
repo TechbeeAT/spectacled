@@ -33,15 +33,15 @@ import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.account_added_updated
 import spectacled.shared.generated.resources.account_successfully_removed
-import spectacled.shared.generated.resources.calendar_successfully_added_updated
-import spectacled.shared.generated.resources.calendar_successfully_deleted
-import spectacled.shared.generated.resources.calendars_synced
 import spectacled.shared.generated.resources.credentials_not_found
 import spectacled.shared.generated.resources.credentials_not_found_readd_account
+import spectacled.shared.generated.resources.folder_successfully_added_updated
+import spectacled.shared.generated.resources.folder_successfully_deleted
+import spectacled.shared.generated.resources.folders_synced
 import spectacled.shared.generated.resources.login_message_forbidden
 import spectacled.shared.generated.resources.login_message_not_authorized
 import spectacled.shared.generated.resources.server_not_found
-import spectacled.shared.generated.resources.some_calendars_failed_to_sync
+import spectacled.shared.generated.resources.some_folders_failed_to_sync
 import spectacled.shared.generated.resources.sync_status_not_authorized
 import spectacled.shared.generated.resources.sync_status_not_found
 import spectacled.shared.generated.resources.unknown_error
@@ -192,10 +192,10 @@ class AccountListViewModel(
                             calendarRepository.deleteCalendar(calendar.id)
                             alarmCoordinator.reconcile()
                             _state.update { it.copy(
-                                processingState = ProcessingState.Success(message = getString(Res.string.calendar_successfully_deleted)),
+                                processingState = ProcessingState.Success(message = getString(Res.string.folder_successfully_deleted)),
                                 editFoldersOfPrincipal = null,
                                 showDeleteCalendarDialog = null,
-                                snackbarText = getString(Res.string.calendar_successfully_deleted),
+                                snackbarText = getString(Res.string.folder_successfully_deleted),
                             ) }
                         }
                         is DeleteCalendarResult.Failed -> _state.update { it.copy(
@@ -432,9 +432,9 @@ class AccountListViewModel(
                         Napier.d("Calendar ${calendar.displayName} added")
                         _state.update { it.copy(
                             editFoldersOfPrincipal = null,
-                            snackbarText = getString(Res.string.calendar_successfully_added_updated),
+                            snackbarText = getString(Res.string.folder_successfully_added_updated),
                             showAddOrUpdateCalendarBottomSheet = null,
-                            processingState = ProcessingState.Success(getString(Res.string.calendar_successfully_added_updated)),
+                            processingState = ProcessingState.Success(getString(Res.string.folder_successfully_added_updated)),
                         ) }
                     }
                     UpsertCalendarResult.NotFound -> deleteCalendar(principal, calendar)  // TODO: Inform user that the calendar was deleted in the background
@@ -468,13 +468,13 @@ class AccountListViewModel(
 
             // TODO: Double-Check if this actually works!
             val newProcessingState = if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.SYNCED })
-                ProcessingState.Success(getString(Res.string.calendars_synced))
+                ProcessingState.Success(getString(Res.string.folders_synced))
             else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_AUTHORIZED })
                 ProcessingState.Error(getString(Res.string.sync_status_not_authorized), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
             else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_FOUND })
                 ProcessingState.Error(getString(Res.string.sync_status_not_found), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
             else
-                ProcessingState.Error(getString(Res.string.some_calendars_failed_to_sync))
+                ProcessingState.Error(getString(Res.string.some_folders_failed_to_sync))
 
             _state.update { it.copy(processingState = newProcessingState) }
         }

@@ -44,7 +44,7 @@ import spectacled.shared.generated.resources.image_attachment
 import spectacled.shared.generated.resources.location
 import spectacled.shared.generated.resources.other_attachment
 import spectacled.shared.generated.resources.subtask
-import spectacled.shared.generated.resources.subtasks_not_supported_in_collection
+import spectacled.shared.generated.resources.subtasks_not_supported_in_folder
 import spectacled.shared.generated.resources.url
 
 @OptIn(ExperimentalGridApi::class)
@@ -193,7 +193,7 @@ fun AddMoreDropdownMenuDetails(
 
         if (!calendarSupportsTasks)
             Text(
-                text = stringResource(Res.string.subtasks_not_supported_in_collection),
+                text = stringResource(Res.string.subtasks_not_supported_in_folder),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(8.dp)

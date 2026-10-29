@@ -32,7 +32,7 @@ import io.ktor.http.Url
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_folder_calendar
+import spectacled.shared.generated.resources.add_folder
 import spectacled.shared.generated.resources.insufficient_access_rights_create_folder
 import spectacled.shared.generated.resources.no_account_connected_yet
 import spectacled.shared.generated.resources.no_compatible_folders_found
@@ -110,7 +110,7 @@ fun AccountListScreen(
                                             )
                                         }
                                     ) {
-                                        Text(stringResource(Res.string.add_folder_calendar))
+                                        Text(stringResource(Res.string.add_folder))
                                     }
                                 } else {
                                     Text(

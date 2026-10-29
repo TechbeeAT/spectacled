@@ -34,7 +34,7 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.entry_copy
-import spectacled.shared.generated.resources.reload_calendars_folders
+import spectacled.shared.generated.resources.reload_folders
 import spectacled.shared.generated.resources.retry
 import spectacled.shared.generated.resources.show_more
 import spectacled.shared.generated.resources.sync_info
@@ -101,7 +101,7 @@ fun CalendarSyncInfoDialog(
                 if(calendarSyncStatus.type == CalendarSyncStatusType.NOT_FOUND) {
                     TextButton(
                         onClick = { onReloadCalendars() }
-                    ) { Text(stringResource(Res.string.reload_calendars_folders)) }
+                    ) { Text(stringResource(Res.string.reload_folders)) }
                 }
 
                 AnimatedVisibility(!calendarSyncStatus.details.isNullOrEmpty() && !showMore) {
