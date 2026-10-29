@@ -202,7 +202,7 @@ class DetailsViewModel(
 
 
     @OptIn(ExperimentalUuidApi::class)
-    fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false, targetCalendarId: Long? = null) {
+    fun loadCopy(icalEntryIdToCopy: Long, isRestoredCopy: Boolean = false) {
         viewModelScope.launch {
             //saveIcalEntry(false)
             val originalIcalEntry = icalEntryRepository.getIcalEntryById(icalEntryIdToCopy)
@@ -214,13 +214,8 @@ class DetailsViewModel(
                 ) }
                 return@launch
             }
-            // The copy may go to another collection than the original - fall back to the
-            // original's collection if the target is unknown or not writable.
-            val targetCalendar = targetCalendarId
-                ?.let { calendarRepository.getCalendarById(it) }
-                ?.takeIf { it.canWriteContent() }
             val copiedIcalEntry = IcalEntry(
-                calendarId = targetCalendar?.id ?: originalIcalEntry.calendarId,
+                calendarId = originalIcalEntry.calendarId,
                 summary = (originalIcalEntry.summary?:"") + if (isRestoredCopy) " (${getString(Res.string.entry_restored)})" else " (${
                     getString(
                         Res.string.entry_copy
@@ -238,8 +233,6 @@ class DetailsViewModel(
                 originalIcalEntry = copiedIcalEntry,
                 changeBackstack = listOf(copiedIcalEntry),
                 undoRestoreMarker = null,
-                calendar = targetCalendar ?: it.calendar,
-                showSheetOrDialog = null,
                 isLoading = false,
                 isInitialized = true,
                 navigateUp = false
@@ -341,7 +334,7 @@ class DetailsViewModel(
             is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
             is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
             is DetailsAction.OnLaunchPicker -> { _state.update { it.copy(launchPickerAction = action.pickerAction) } }
-            is DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id, targetCalendarId = action.targetCalendarId) }
+            is DetailsAction.OnCreateCopy -> { onCreateCopy(action.targetCalendarId) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
                     SyncState.USER_DECIDED_SERVER_WINS -> saveAndAwaitSync(action.syncState)
@@ -1094,6 +1087,39 @@ class DetailsViewModel(
         viewModelScope.launch(ioDispatcher) {
             moveIcalEntriesUseCase.move(listOf(entryId), newCalendarId)
             _state.update { it.copy(showSheetOrDialog = null, isLoading = false, navigateUp = true) }
+        }
+    }
+
+    // Same as copying from the list: the copy (with its attachments, alarms and subtasks) is
+    // persisted right away and then opened in place of the original.
+    private fun onCreateCopy(targetCalendarId: Long) {
+
+        val currentState = _state.value
+
+        // An untouched new entry has no row yet, so there is nothing to copy. Recurring entries
+        // are excluded like in the list.
+        if(currentState.icalEntry.syncState == SyncState.LOCAL_NEW || currentState.icalEntry.isRecurring()) {
+            _state.update { it.copy(showSheetOrDialog = null) }
+            return
+        }
+
+        _state.update { it.copy(showSheetOrDialog = null, isLoading = true) }
+
+        // Attachment download + DB work + sync trigger - keep it off the Main dispatcher.
+        viewModelScope.launch(ioDispatcher) {
+            // The copy is made from the database, so flush edits the debounced auto-save
+            // may not have written yet.
+            if(currentState.allowEditing()) {
+                icalEntryRepository.insertOrUpdateIcalEntry(currentState.icalEntry)
+                platformSyncTrigger.requestImmediate(listOf(currentState.icalEntry.calendarId))
+            }
+
+            val copyId = moveIcalEntriesUseCase.copy(listOf(currentState.icalEntry.id), targetCalendarId)[currentState.icalEntry.id]
+            if(copyId == null) {
+                _state.update { it.copy(isLoading = false, snackbarText = getString(Res.string.unexpected_error_occurred)) }
+                return@launch
+            }
+            load(copyId)
         }
     }
 

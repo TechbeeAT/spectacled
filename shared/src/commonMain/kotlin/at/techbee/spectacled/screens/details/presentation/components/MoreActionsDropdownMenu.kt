@@ -87,8 +87,10 @@ fun MoreActionsDropdownMenu(
                 onClick = {
                     onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COPY))
                     onDismiss()
-                }
-                // always enabled: the copy may target any writable collection, even from a read-only one
+                },
+                // No write access needed: the copy may target any writable collection, even from a
+                // read-only one. Recurring entries can't be copied, like in the list.
+                enabled = !icalEntry.isRecurring()
             )
 
             SquareDropdownMenuItem(

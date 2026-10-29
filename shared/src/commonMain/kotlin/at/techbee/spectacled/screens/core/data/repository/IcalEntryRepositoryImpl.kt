@@ -387,7 +387,11 @@ class IcalEntryRepositoryImpl(
         markAsDeleted(entriesToMove.map { it.id })
     }
 
-    override suspend fun copyIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long): List<Long> = withContext(ioDispatcher) {
+    override suspend fun copyIcalEntriesToCalendar(
+        icalEntryIds: List<Long>,
+        targetCalendarId: Long,
+        sameCalendarSummarySuffix: String
+    ): Map<Long, Long> = withContext(ioDispatcher) {
 
         // Re-read fresh so any attachments downloaded just before the copy are picked up.
         val entriesToCopy = getIcalEntriesWithSubtasks(icalEntryIds)
@@ -398,11 +402,18 @@ class IcalEntryRepositoryImpl(
         // collection, elsewhere it would dangle.
         val newUids = entriesToCopy.associate { it.uid to IcalEntry.getRandomUUID() }
         val now = IcsDateTime.now()
-        entriesToCopy.map { entry ->
-            recreateInCalendar(
+        entriesToCopy.associate { entry ->
+            // Only the entries the user picked are marked - copied subtasks hang below their
+            // marked parent anyway.
+            val summary = if (entry.id in icalEntryIds && entry.calendarId == targetCalendarId)
+                (entry.summary ?: "") + sameCalendarSummarySuffix
+            else
+                entry.summary
+            entry.id to recreateInCalendar(
                 // Attachment uids are unique too - reusing them would re-assign the original's
                 // attachment rows to the copy.
                 entry = entry.copy(
+                    summary = summary,
                     created = now,
                     dtstamp = now,
                     lastModified = now,

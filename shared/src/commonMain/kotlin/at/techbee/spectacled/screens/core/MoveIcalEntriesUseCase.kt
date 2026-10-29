@@ -10,6 +10,9 @@ import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import io.github.aakira.napier.Napier
 import io.ktor.http.Url
+import org.jetbrains.compose.resources.getString
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.entry_copy
 
 /**
  * Moves entries (and, recursively, their subtasks) to another calendar. Shared by the details and
@@ -48,26 +51,32 @@ class MoveIcalEntriesUseCase(
         syncTrigger.triggerWidgetUpdate()
     }
 
-    suspend fun copy(icalEntryIds: List<Long>, targetCalendarId: Long) {
+    /** Returns the id of each copy keyed by the id of its original. */
+    suspend fun copy(icalEntryIds: List<Long>, targetCalendarId: Long): Map<Long, Long> {
 
         if(icalEntryIds.isEmpty())
-            return
+            return emptyMap()
 
         // Same pre-download as for a move: the copies re-upload local attachment files into the target.
         ensureAttachmentsDownloaded(icalEntryRepository.getIcalEntriesWithSubtasks(icalEntryIds))
-        val copyIds = icalEntryRepository.copyIcalEntriesToCalendar(icalEntryIds, targetCalendarId)
-        duplicateLocalAttachmentFiles(copyIds)
+        val copyIds = icalEntryRepository.copyIcalEntriesToCalendar(
+            icalEntryIds,
+            targetCalendarId,
+            sameCalendarSummarySuffix = " (${getString(Res.string.entry_copy)})"
+        )
+        duplicateLocalAttachmentFiles(copyIds.values)
         // The copies are new entries - schedule their alarms.
         alarmCoordinator.reconcile()
 
         syncTrigger.requestImmediate(listOf(targetCalendarId))
         syncTrigger.triggerWidgetUpdate()
+        return copyIds
     }
 
     // Gives each copy its own local attachment files, so deleting an attachment of the original
     // (which deletes its file) can't break the copy. Best-effort: on failure the copy keeps
     // sharing the original's file.
-    private suspend fun duplicateLocalAttachmentFiles(copyIds: List<Long>) {
+    private suspend fun duplicateLocalAttachmentFiles(copyIds: Collection<Long>) {
         copyIds.forEach { copyId ->
             icalEntryRepository.getAttachmentsForEntry(copyId).forEach { attachment ->
                 val localPath = attachment.localPath ?: return@forEach
