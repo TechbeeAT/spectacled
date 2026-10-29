@@ -17,7 +17,9 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val subtasks: List<IcalEntry> = emptyList(),
 
     val changeBackstack: List<IcalEntry> = emptyList(),
-    val undoRestoreMarker: IcsDateTime? = null,   // lastModified stamp of an in-flight undo-restore save, so saveIcalEntry() can recognize and skip it
+    val undoRestoreMarker: IcsDateTime? = null,   // lastModified stamp of an in-flight undo/redo-restore save, so saveIcalEntry() can recognize and skip it
+    val redoStack: List<IcalEntry> = emptyList(), // states taken back by onUndo(), most recent last
+    val redoAnchor: IcsDateTime? = null,          // lastModified of the state produced by the latest undo/redo - any edit after it invalidates the redo stack
 
     val allColors: List<Color> = emptyList(),
     val allCategories: List<String> = emptyList(),
@@ -50,6 +52,12 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     fun allowEditing() = calendar?.canWriteContent() == true
             && !icalEntry.syncState.isDeletedState()
             && !icalEntry.isRecurring()
+
+    // Redo is only possible as long as the entry was not edited since the last undo/redo.
+    fun allowRedo() = allowEditing()
+            && redoStack.isNotEmpty()
+            && redoAnchor != null
+            && icalEntry.lastModified == redoAnchor
 
     fun allowRestore() = calendar?.canWriteContent() == true && icalEntry.syncState.isDeletedState()
 

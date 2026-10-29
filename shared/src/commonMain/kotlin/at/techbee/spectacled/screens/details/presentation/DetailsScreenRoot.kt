@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.automirrored.outlined.Redo
 import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.MoreVert
@@ -84,6 +85,7 @@ import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.more
+import spectacled.shared.generated.resources.redo
 import spectacled.shared.generated.resources.restore
 import spectacled.shared.generated.resources.undo
 import kotlin.time.ExperimentalTime
@@ -371,6 +373,15 @@ fun DetailsScreenRoot(
                                 modifier = Modifier.focusProperties { canFocus = false }
                             ) {
                                 Icon(Icons.AutoMirrored.Outlined.Undo, contentDescription = stringResource(Res.string.undo))
+                            }
+
+                            AnimatedVisibility(detailsState.allowRedo()) {
+                                IconButton(
+                                    onClick = { detailsViewModel.onAction(DetailsAction.OnRedo) },
+                                    modifier = Modifier.focusProperties { canFocus = false }
+                                ) {
+                                    Icon(Icons.AutoMirrored.Outlined.Redo, contentDescription = stringResource(Res.string.redo))
+                                }
                             }
 
                             VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 8.dp))

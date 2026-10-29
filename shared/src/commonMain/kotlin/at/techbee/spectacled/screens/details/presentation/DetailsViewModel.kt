@@ -99,7 +99,7 @@ class DetailsViewModel(
                         && entry.calendarId != 0L
                         && entry.syncState != SyncState.SYNCED
                         && entry.syncState != SyncState.LOCAL_NEW) {   // untouched new entry: don't create a row for it at all
-                        // onUndo() bumps lastModified to restore a prior checkpoint even though its
+                        // onUndo()/onRedo() bump lastModified to restore a prior checkpoint even though its
                         // content already matches that checkpoint - that save must still go through
                         // so the restore is actually persisted (saveIcalEntry() itself already skips
                         // re-recording it on the backstack, via undoRestoreMarker).
@@ -147,6 +147,8 @@ class DetailsViewModel(
                 originalIcalEntry = icalEntry,
                 changeBackstack = listOf(icalEntry),
                 undoRestoreMarker = null,
+                redoStack = emptyList(),
+                redoAnchor = null,
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
@@ -182,6 +184,8 @@ class DetailsViewModel(
                 originalIcalEntry = newIcalEntry,
                 changeBackstack = listOf(newIcalEntry),
                 undoRestoreMarker = null,
+                redoStack = emptyList(),
+                redoAnchor = null,
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
@@ -233,6 +237,8 @@ class DetailsViewModel(
                 originalIcalEntry = copiedIcalEntry,
                 changeBackstack = listOf(copiedIcalEntry),
                 undoRestoreMarker = null,
+                redoStack = emptyList(),
+                redoAnchor = null,
                 isLoading = false,
                 isInitialized = true,
                 navigateUp = false
@@ -377,6 +383,7 @@ class DetailsViewModel(
             }
             is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
             is DetailsAction.OnUndo -> { onUndo() }
+            is DetailsAction.OnRedo -> { onRedo() }
         }
     }
 
@@ -692,13 +699,16 @@ class DetailsViewModel(
         val entryToSave = _state.value.icalEntry.copy(syncState = syncState)
 
         _state.update {
-            // A save caused by onUndo() restoring a prior checkpoint must not be recorded as a
-            // new one - it would silently reinflate the very stack onUndo() just popped.
+            // A save caused by onUndo()/onRedo() restoring a checkpoint must not be recorded as a
+            // new one - both already brought the backstack into the right shape themselves.
             val isUndoRestoreSave = it.undoRestoreMarker != null && it.undoRestoreMarker == entryToSave.lastModified
             it.copy(
                 icalEntry = entryToSave,
                 changeBackstack = if(isUndoRestoreSave) it.changeBackstack else it.changeBackstack.plus(entryToSave),
                 undoRestoreMarker = if(isUndoRestoreSave) null else it.undoRestoreMarker,
+                // A genuinely new change branches off the undo history, so what was undone is gone for good.
+                redoStack = if(isUndoRestoreSave) it.redoStack else emptyList(),
+                redoAnchor = if(isUndoRestoreSave) it.redoAnchor else null,
                 showSheetOrDialog = if(navigateUp) null else _state.value.showSheetOrDialog,
                 navigateUp = navigateUp
             )
@@ -1144,7 +1154,32 @@ class DetailsViewModel(
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 ),
                 changeBackstack = newBackstack,
-                undoRestoreMarker = restoreTimestamp
+                undoRestoreMarker = restoreTimestamp,
+                redoStack = it.redoStack.plus(it.icalEntry),     // the current state (incl. not yet saved edits) can be redone
+                redoAnchor = restoreTimestamp
+            )
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    private fun onRedo() {
+
+        if(!state.value.allowRedo())
+            return
+
+        val restoreTimestamp = IcsDateTime.now()
+
+        _state.update {
+            val target = it.redoStack.last().copy(
+                lastModified = restoreTimestamp,
+                syncState = it.icalEntry.syncState.afterLocalEdit()
+            )
+            it.copy(
+                icalEntry = target,
+                changeBackstack = it.changeBackstack.plus(target),   // becomes the newest checkpoint again, so it can be undone once more
+                undoRestoreMarker = restoreTimestamp,
+                redoStack = it.redoStack.dropLast(1),
+                redoAnchor = restoreTimestamp
             )
         }
     }

@@ -574,7 +574,9 @@ fun DetailsScreen(
                     keyboardController?.hide()
                 },
                 onUndo = { onAction(DetailsAction.OnUndo) },
-                allowUndo = state.changeBackstack.size > 1
+                allowUndo = state.changeBackstack.size > 1,
+                onRedo = { onAction(DetailsAction.OnRedo) },
+                allowRedo = state.allowRedo()
             )
         }
     }
