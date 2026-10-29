@@ -9,7 +9,7 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -71,6 +71,7 @@ object IOSSyncEntryPoint : KoinComponent {
     }
 
     fun cancelBackgroundSync() {
-        bgScope.cancel()
+        // Only cancel the running syncs - cancelling bgScope itself would make every later launch a silent no-op
+        bgScope.coroutineContext.cancelChildren()
     }
 }

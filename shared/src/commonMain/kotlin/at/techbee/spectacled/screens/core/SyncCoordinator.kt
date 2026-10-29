@@ -32,9 +32,14 @@ import io.ktor.client.plugins.ServerResponseException
 import io.ktor.http.Url
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
@@ -219,62 +224,44 @@ class SyncCoordinator(
             }
 
         } catch (e: HttpRequestTimeoutException) { // Thrown when a request exceeds the configured timeout period.
-            calendarRepository.updateCalendarSyncStatus(
-                CalendarSyncStatus(
-                    CalendarSyncStatusType.FAILED,
-                    CalendarSyncError.CONNECTION_TIMED_OUT,
-                    e.stackTraceToString()
-                ).serialize(), calendar.syncToken, calendar.id
-            )
+            writeFinalSyncStatus(calendar, CalendarSyncStatus(CalendarSyncStatusType.FAILED, CalendarSyncError.CONNECTION_TIMED_OUT, e.stackTraceToString()))
         } catch (e: SocketTimeoutException) { // Standard Java/Kotlin IO exceptions often encountered during connectivity issues (e.g., airplane mode).
-            calendarRepository.updateCalendarSyncStatus(
-                CalendarSyncStatus(
-                    CalendarSyncStatusType.FAILED,
-                    CalendarSyncError.CONNECTION_TIMED_OUT,
-                    e.stackTraceToString()
-                ).serialize(), calendar.syncToken, calendar.id
-            )
+            writeFinalSyncStatus(calendar, CalendarSyncStatus(CalendarSyncStatusType.FAILED, CalendarSyncError.CONNECTION_TIMED_OUT, e.stackTraceToString()))
         } catch (e: ConnectTimeoutException) { // Standard Java/Kotlin IO exceptions often encountered during connectivity issues (e.g., airplane mode).
-            calendarRepository.updateCalendarSyncStatus(
-                CalendarSyncStatus(
-                    CalendarSyncStatusType.FAILED,
-                    CalendarSyncError.CONNECTION_TIMED_OUT,
-                    e.stackTraceToString()
-                ).serialize(), calendar.syncToken, calendar.id
-            )
+            writeFinalSyncStatus(calendar, CalendarSyncStatus(CalendarSyncStatusType.FAILED, CalendarSyncError.CONNECTION_TIMED_OUT, e.stackTraceToString()))
         } catch (e: ClientRequestException) {  // Thrown for 4xx status codes (Client errors like 404 Not Found or 401 Unauthorized).
-            calendarRepository.updateCalendarSyncStatus(
-                CalendarSyncStatus(
-                    CalendarSyncStatusType.FAILED,
-                    CalendarSyncError.REQUEST_ERROR,
-                    e.stackTraceToString()
-                ).serialize(), calendar.syncToken, calendar.id
-            )
+            writeFinalSyncStatus(calendar, CalendarSyncStatus(CalendarSyncStatusType.FAILED, CalendarSyncError.REQUEST_ERROR, e.stackTraceToString()))
         } catch (e: ServerResponseException) {  // Thrown for 5xx status codes (Server errors).
-            calendarRepository.updateCalendarSyncStatus(
-                CalendarSyncStatus(
-                    CalendarSyncStatusType.FAILED,
-                    CalendarSyncError.SERVER_ERROR,
-                    e.stackTraceToString()
-                ).serialize(), calendar.syncToken, calendar.id
-            )
+            writeFinalSyncStatus(calendar, CalendarSyncStatus(CalendarSyncStatusType.FAILED, CalendarSyncError.SERVER_ERROR, e.stackTraceToString()))
         } catch (e: ResponseException) {   //The base class for all exceptions related to non-success HTTP responses.
-            calendarRepository.updateCalendarSyncStatus(
-                CalendarSyncStatus(
-                    CalendarSyncStatusType.FAILED,
-                    CalendarSyncError.CONNECTION_ERROR,
-                    e.stackTraceToString()
-                ).serialize(), calendar.syncToken, calendar.id
-            )
-        } catch (e: Exception) {   //The base class for all exceptions related to non-success HTTP responses.
-            calendarRepository.updateCalendarSyncStatus(
-                CalendarSyncStatus(
-                    CalendarSyncStatusType.FAILED,
-                    CalendarSyncError.UNKNOWN,
-                    e.stackTraceToString()
-                ).serialize(), calendar.syncToken, calendar.id
-            )
+            writeFinalSyncStatus(calendar, CalendarSyncStatus(CalendarSyncStatusType.FAILED, CalendarSyncError.CONNECTION_ERROR, e.stackTraceToString()))
+        } catch (e: CancellationException) {
+            if (currentCoroutineContext().isActive) {
+                // Not a cancellation of this sync (e.g. a request timeout surfacing as CancellationException), treat as failure
+                writeFinalSyncStatus(calendar, CalendarSyncStatus(CalendarSyncStatusType.FAILED, CalendarSyncError.UNKNOWN, e.stackTraceToString()))
+            } else {
+                // The sync was cancelled (WorkManager stopped the worker, the iOS background task expired, a sibling
+                // calendar's sync failed, ...). Nothing went wrong with this calendar, so fall back to the status it had
+                // before - but never back to IN_PROGRESS, which would keep the progress indicator spinning forever.
+                // Rethrow, cancellation must not be swallowed.
+                writeFinalSyncStatus(calendar, calendar.calendarSyncStatus?.takeIf { it.type != CalendarSyncStatusType.IN_PROGRESS })
+                throw e
+            }
+        } catch (e: Exception) {
+            writeFinalSyncStatus(calendar, CalendarSyncStatus(CalendarSyncStatusType.FAILED, CalendarSyncError.UNKNOWN, e.stackTraceToString()))
+        } catch (e: Throwable) {    // Errors (e.g. NotImplementedError) aren't Exceptions, but must not leave the calendar IN_PROGRESS either
+            writeFinalSyncStatus(calendar, CalendarSyncStatus(CalendarSyncStatusType.FAILED, CalendarSyncError.UNKNOWN, e.stackTraceToString()))
+            throw e
         }
+    }
+
+    /**
+     * Replaces the IN_PROGRESS status when a sync ends abnormally. Runs in [NonCancellable]: when the sync's coroutine
+     * was cancelled, any further suspending call (like this DB write) would otherwise throw immediately, and the
+     * calendar would stay IN_PROGRESS in the database.
+     */
+    private suspend fun writeFinalSyncStatus(calendar: Calendar, status: CalendarSyncStatus?) = withContext(NonCancellable) {
+        calendarRepository.updateCalendarSyncStatus(status?.serialize(), calendar.syncToken, calendar.id)
     }
 
     private suspend fun syncWithoutSyncToken(calendar: Calendar) {
