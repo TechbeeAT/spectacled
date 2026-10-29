@@ -53,13 +53,13 @@ fun MoveOrCopyIcalEntryDialog(
     onDismiss: () -> Unit
 ) {
 
-    // The current collection is not offered when it is read-only (copying out of it is allowed),
-    // so preselect the first writable collection instead.
-    var selectedCalendarId by remember {
-        mutableStateOf(
-            icalEntry.calendarId.takeIf { id -> calendars.any { it.id == id } } ?: calendars.firstOrNull()?.id
-        )
-    }
+    // Only the user's own pick is remembered; until then the default follows [calendars], which
+    // may still be loading when the dialog opens. The current collection is not offered when it
+    // is read-only (copying out of it is allowed), so fall back to the first writable one.
+    var userSelectedCalendarId by remember { mutableStateOf<Long?>(null) }
+    val selectedCalendarId = userSelectedCalendarId
+        ?: icalEntry.calendarId.takeIf { id -> calendars.any { it.id == id } }
+        ?: calendars.firstOrNull()?.id
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -105,7 +105,7 @@ fun MoveOrCopyIcalEntryDialog(
                     homeCollections = homeCollections,
                     calendars = calendars,
                     selectedCalendarId = selectedCalendarId,
-                    onCalendarIdSelected = { selectedCalendarId = it },
+                    onCalendarIdSelected = { userSelectedCalendarId = it },
                     modifier = Modifier.fillMaxWidth()
                 )
 

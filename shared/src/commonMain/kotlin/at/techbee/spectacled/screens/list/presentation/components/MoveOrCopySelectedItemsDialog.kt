@@ -58,13 +58,13 @@ fun MoveOrCopySelectedItemsDialog(
     onDismiss: () -> Unit
 ) {
 
-    // The current collection is not offered when it is read-only (copying out of it is allowed),
-    // so preselect the first writable collection instead.
-    var selectedCalendarId by remember {
-        mutableStateOf(
-            sourceCalendarId.takeIf { id -> calendars.any { it.id == id } } ?: calendars.firstOrNull()?.id
-        )
-    }
+    // Only the user's own pick is remembered; until then the default follows [calendars], which
+    // may still be loading when the dialog opens. The current collection is not offered when it
+    // is read-only (copying out of it is allowed), so fall back to the first writable one.
+    var userSelectedCalendarId by remember { mutableStateOf<Long?>(null) }
+    val selectedCalendarId = userSelectedCalendarId
+        ?: sourceCalendarId.takeIf { id -> calendars.any { it.id == id } }
+        ?: calendars.firstOrNull()?.id
     // The move/copy runs in the background (it may first download attachments) and the dialog is
     // closed once it is done - until then, show progress and don't allow confirming again or
     // dismissing (reopening the dialog would allow starting a second run).
@@ -123,7 +123,7 @@ fun MoveOrCopySelectedItemsDialog(
                     homeCollections = homeCollections,
                     calendars = calendars,
                     selectedCalendarId = selectedCalendarId,
-                    onCalendarIdSelected = { selectedCalendarId = it },
+                    onCalendarIdSelected = { userSelectedCalendarId = it },
                     modifier = Modifier.fillMaxWidth()
                 )
 
