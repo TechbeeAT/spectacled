@@ -334,7 +334,7 @@ class DetailsViewModel(
             is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
             is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
             is DetailsAction.OnLaunchPicker -> { _state.update { it.copy(launchPickerAction = action.pickerAction) } }
-            DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
+            is DetailsAction.OnCreateCopy -> { onCreateCopy(action.targetCalendarId) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
                     SyncState.USER_DECIDED_SERVER_WINS -> saveAndAwaitSync(action.syncState)
@@ -1087,6 +1087,41 @@ class DetailsViewModel(
         viewModelScope.launch(ioDispatcher) {
             moveIcalEntriesUseCase.move(listOf(entryId), newCalendarId)
             _state.update { it.copy(showSheetOrDialog = null, isLoading = false, navigateUp = true) }
+        }
+    }
+
+    // Same as copying from the list: the copy (with its attachments, alarms and subtasks) is
+    // persisted right away and then opened in place of the original.
+    private fun onCreateCopy(targetCalendarId: Long) {
+
+        val currentState = _state.value
+
+        // A brand-new entry has no row yet, so there is nothing to copy (the menu item is disabled
+        // for it). Recurring entries are excluded like in the list.
+        if(currentState.icalEntry.id == 0L || currentState.icalEntry.isRecurring()) {
+            _state.update { it.copy(showSheetOrDialog = null) }
+            return
+        }
+
+        _state.update { it.copy(showSheetOrDialog = null, isLoading = true) }
+
+        // Attachment download + DB work + sync trigger - keep it off the Main dispatcher.
+        viewModelScope.launch(ioDispatcher) {
+            // The copy is made from the database, so flush edits the debounced auto-save may not
+            // have written yet - only if there are any. Compared against the stored row rather
+            // than the undo checkpoint, which is recorded before its save completes.
+            val storedEntry = icalEntryRepository.getIcalEntryById(currentState.icalEntry.id)
+            if(currentState.allowEditing() && (storedEntry == null || !currentState.icalEntry.hasSameContentAs(storedEntry))) {
+                icalEntryRepository.insertOrUpdateIcalEntry(currentState.icalEntry)
+                platformSyncTrigger.requestImmediate(listOf(currentState.icalEntry.calendarId))
+            }
+
+            val copyId = moveIcalEntriesUseCase.copy(listOf(currentState.icalEntry.id), targetCalendarId)[currentState.icalEntry.id]
+            if(copyId == null) {
+                _state.update { it.copy(isLoading = false, snackbarText = getString(Res.string.unexpected_error_occurred)) }
+                return@launch
+            }
+            load(copyId)
         }
     }
 

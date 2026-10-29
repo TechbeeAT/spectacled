@@ -15,6 +15,7 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.formatLocalized
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListGrouping
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
@@ -79,7 +80,7 @@ data class ListState(
 
     val showDeleteSelectedItemsDialog: Boolean = false,
     val showSwipeToDeleteDialog: Long? = null,
-    val showMoveSelectedItemsDialog: Boolean = false,
+    val showMoveOrCopySelectedItemsDialog: MoveOrCopyMode? = null,
     val showUpdateColorOfSelectedBottomSheet: Boolean = false,
     val showUpdateCategoryOfSelectedBottomSheet: Boolean = false,
     val showDateSelectorBottomSheet: Boolean = false,

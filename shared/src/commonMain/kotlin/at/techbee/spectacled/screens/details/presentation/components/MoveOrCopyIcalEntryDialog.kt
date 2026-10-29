@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
+import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -25,17 +26,26 @@ import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelector
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.copy
+import spectacled.shared.generated.resources.copy_entry_info
+import spectacled.shared.generated.resources.copy_entry_x
 import spectacled.shared.generated.resources.move
 import spectacled.shared.generated.resources.move_entry_warning
 import spectacled.shared.generated.resources.move_entry_x
 
+/**
+ * Lets the user pick the target collection for moving or copying [icalEntry].
+ * Moving requires a different collection, copying may also target the current one.
+ */
 @Composable
-fun MoveIcalEntryDialog(
+fun MoveOrCopyIcalEntryDialog(
     icalEntry: IcalEntry,
+    mode: MoveOrCopyMode,
     principals: List<Principal>,
     homeCollections: List<HomeCollection>,
     calendars: List<Calendar>,
@@ -43,16 +53,23 @@ fun MoveIcalEntryDialog(
     onDismiss: () -> Unit
 ) {
 
-    var selectedCalendarId by remember { mutableStateOf(icalEntry.calendarId) }
+    // The current collection is not offered when it is read-only (copying out of it is allowed),
+    // so preselect the first writable collection instead.
+    var selectedCalendarId by remember {
+        mutableStateOf(
+            icalEntry.calendarId.takeIf { id -> calendars.any { it.id == id } } ?: calendars.firstOrNull()?.id
+        )
+    }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(selectedCalendarId) },
-                enabled = icalEntry.calendarId != selectedCalendarId
+                onClick = { selectedCalendarId?.let { onConfirm(it) } },
+                enabled = selectedCalendarId != null
+                        && (mode == MoveOrCopyMode.COPY || icalEntry.calendarId != selectedCalendarId)
             ) {
-                Text(stringResource(Res.string.move))
+                Text(stringResource(if (mode == MoveOrCopyMode.COPY) Res.string.copy else Res.string.move))
             }
         },
         dismissButton = {
@@ -62,10 +79,17 @@ fun MoveIcalEntryDialog(
                 Text(stringResource(Res.string.cancel))
             }
         },
-        icon = { Icon(Icons.AutoMirrored.Outlined.DriveFileMove, null) },
+        icon = {
+            Icon(
+                if (mode == MoveOrCopyMode.COPY) Icons.Outlined.FileCopy else Icons.AutoMirrored.Outlined.DriveFileMove,
+                null
+            )
+        },
         title = {
             Text(
-                text = stringResource(Res.string.move_entry_x, icalEntry.summary ?: icalEntry.description ?: ""),
+                text = stringResource(
+                    if (mode == MoveOrCopyMode.COPY) Res.string.copy_entry_x else Res.string.move_entry_x,
+                    icalEntry.summary ?: icalEntry.description ?: ""),
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
@@ -85,7 +109,7 @@ fun MoveIcalEntryDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text(stringResource(Res.string.move_entry_warning))
+                Text(stringResource(if (mode == MoveOrCopyMode.COPY) Res.string.copy_entry_info else Res.string.move_entry_warning))
             }
         }
     )
@@ -93,12 +117,32 @@ fun MoveIcalEntryDialog(
 
 @Preview
 @Composable
-private fun MoveIcalEntryDialog_Preview() {
+private fun MoveOrCopyIcalEntryDialog_Move_Preview() {
 
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
-            MoveIcalEntryDialog(
+            MoveOrCopyIcalEntryDialog(
                 icalEntry = IcalEntry.getSampleIcalEntry(),
+                mode = MoveOrCopyMode.MOVE,
+                calendars = listOf(Calendar.getCalendarForPreview()),
+                homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
+                principals = listOf(Principal.getPrincipalForPreview()),
+                onConfirm = { },
+                onDismiss = {}
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun MoveOrCopyIcalEntryDialog_Copy_Preview() {
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            MoveOrCopyIcalEntryDialog(
+                icalEntry = IcalEntry.getSampleIcalEntry(),
+                mode = MoveOrCopyMode.COPY,
                 calendars = listOf(Calendar.getCalendarForPreview()),
                 homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
                 principals = listOf(Principal.getPrincipalForPreview()),

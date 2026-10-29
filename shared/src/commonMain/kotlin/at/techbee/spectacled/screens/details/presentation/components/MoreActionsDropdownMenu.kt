@@ -85,10 +85,13 @@ fun MoreActionsDropdownMenu(
                 text = stringResource(Res.string.copy),
                 icon = Icons.Outlined.FileCopy,
                 onClick = {
-                    onAction(DetailsAction.OnCreateCopy)
+                    onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COPY))
                     onDismiss()
                 },
-                enabled = canWriteContent
+                // No write access needed: the copy may target any writable collection, even from a
+                // read-only one. Recurring entries can't be copied, like in the list, and a
+                // brand-new entry has no stored row to copy yet.
+                enabled = !icalEntry.isRecurring() && icalEntry.id != 0L
             )
 
             SquareDropdownMenuItem(

@@ -60,6 +60,7 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
@@ -69,7 +70,7 @@ import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesB
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterElement
 import at.techbee.spectacled.screens.list.presentation.components.ListSearchBar
 import at.techbee.spectacled.screens.list.presentation.components.ListTopBar
-import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
+import at.techbee.spectacled.screens.list.presentation.components.MoveOrCopySelectedItemsDialog
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import kotlinx.coroutines.delay
 import kotlinx.datetime.TimeZone
@@ -184,15 +185,24 @@ fun ListScreenRoot(
             }
         }
 
-        if (state.showMoveSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
-            MoveSelectedItemsDialog(
+        val moveOrCopyMode = state.showMoveOrCopySelectedItemsDialog
+        if (moveOrCopyMode != null && state.multiselectItems?.isNotEmpty() == true) {
+            MoveOrCopySelectedItemsDialog(
                 itemCount = state.multiselectItems?.size ?: 0,
+                mode = moveOrCopyMode,
                 sourceCalendarId = state.calendar.id,
                 principals = state.allPrincipals,
                 homeCollections = state.allHomeCollections,
                 calendars = state.allCalendars.filter { it.canWriteContent() },
-                onConfirm = { targetCalendarId -> listViewModel.onAction(ListAction.OnMoveSelectedItems(targetCalendarId)) },
-                onDismiss = { listViewModel.onAction(ListAction.OnShowMoveSelectedItemsDialog(false)) }
+                onConfirm = { targetCalendarId ->
+                    listViewModel.onAction(
+                        when(moveOrCopyMode) {
+                            MoveOrCopyMode.COPY -> ListAction.OnCopySelectedItems(targetCalendarId)
+                            MoveOrCopyMode.MOVE -> ListAction.OnMoveSelectedItems(targetCalendarId)
+                        }
+                    )
+                },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(null)) }
             )
         }
 
