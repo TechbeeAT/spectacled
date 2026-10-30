@@ -39,6 +39,7 @@ include(":androidJournalsApp")
 include(":composeJournalsApp")
 include(":androidTasksApp")
 include(":composeTasksApp")
+include(":screenshots")
 include(":server")
 include(":shared")
 
