@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.DatasetLinked
 import androidx.compose.material.icons.outlined.Gesture
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -38,6 +39,7 @@ import spectacled.shared.generated.resources.attachment_by_url
 import spectacled.shared.generated.resources.attachment_file
 import spectacled.shared.generated.resources.attachment_from_gallery
 import spectacled.shared.generated.resources.attachment_photo
+import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.drawing
 import spectacled.shared.generated.resources.file_attachment
 import spectacled.shared.generated.resources.image_attachment
@@ -148,6 +150,15 @@ fun AddMoreDropdownMenuDetails(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             maxItemsInEachRow = 3
         ) {
+
+            SquareDropdownMenuItem(
+                text = stringResource(Res.string.color),
+                icon = Icons.Outlined.Palette,
+                onClick = {
+                    onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COLOR_SELECTOR))
+                    onDismiss()
+                },
+            )
 
             SquareDropdownMenuItem(
                 text = stringResource(Res.string.url),

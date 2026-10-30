@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.outlined.Redo
 import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -52,11 +51,11 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
-import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.core.rememberFilePicker
@@ -82,7 +81,6 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
-import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.redo
@@ -385,16 +383,6 @@ fun DetailsScreenRoot(
                             }
 
                             VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 8.dp))
-
-                            IconButton(
-                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COLOR_SELECTOR)) },
-                                enabled = detailsState.allowEditing() && !detailsState.isLoading
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Palette,
-                                    contentDescription = stringResource(Res.string.color)
-                                )
-                            }
 
                             IconButton(
                                 onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.CATEGORY_SELECTOR)) },
