@@ -20,8 +20,8 @@ import kotlin.time.Duration.Companion.days
  * than tracking individual changes and heals any state the platform lost.
  *
  * Trigger times are computed when an entry is saved (IcalEntryRepositoryImpl.saveAlarms), so a
- * reconcile alone doesn't move all-day or floating alarms after a time zone change - that
- * needs the stored times recomputed first.
+ * reconcile alone doesn't move all-day or floating alarms after a time zone change - that is
+ * what [onTimeOrTimeZoneChanged] is for.
  */
 class AlarmCoordinator(
     private val icalEntryRepository: IcalEntryRepository,
@@ -72,6 +72,12 @@ class AlarmCoordinator(
         )
         alarmScheduler.replaceAll(upcoming.map { it.toScheduledAlarm() })
         Napier.d("Alarms reconciled: ${missed.size} missed, ${upcoming.size} scheduled")
+    }
+
+    /** The device's clock or time zone changed: stored trigger times may be off, recompute first. */
+    suspend fun onTimeOrTimeZoneChanged() {
+        icalEntryRepository.recomputeAlarmTriggerTimes()
+        reconcile()
     }
 
     /**

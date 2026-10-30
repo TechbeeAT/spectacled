@@ -17,7 +17,13 @@ enum class AppPermission {
      * that it came for free with `INTERNET`. Denied TCP connects do not fail fast, they time
      * out, so an app that never asks looks broken rather than blocked.
      */
-    LOCAL_NETWORK
+    LOCAL_NETWORK,
+
+    /**
+     * Showing notifications, used for alarms. Android 13 (API 33) gates this behind
+     * `android.permission.POST_NOTIFICATIONS`; iOS asks through UNUserNotificationCenter.
+     */
+    NOTIFICATIONS
 }
 
 enum class PermissionStatus {

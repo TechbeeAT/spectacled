@@ -109,6 +109,17 @@ class AlarmCoordinatorTest {
     }
 
     @Test
+    fun onTimeOrTimeZoneChanged_recomputesBeforeReconciling() = runTest {
+        val repository = FakeIcalEntryRepository(alarms = listOf(upcoming(1L, now + 1.hours)))
+        val scheduler = FakeAlarmScheduler()
+
+        AlarmCoordinator(repository, scheduler, fixedClock).onTimeOrTimeZoneChanged()
+
+        assertEquals(1, repository.recomputeCalls)
+        assertEquals(1, scheduler.replaceAllCalls.size)
+    }
+
+    @Test
     fun schedulingKey_isTheUidOrStableForEqualBlocks() {
         val alarm = Alarm(uid = null, trigger = AlarmTrigger.Relative(IcsDuration(isNegative = true, minutes = 15)), description = "x")
 
@@ -149,6 +160,9 @@ private class FakeIcalEntryRepository(
     }
 
     override suspend fun getIcalEntryById(id: Long): IcalEntry? = entries.find { it.id == id }
+
+    var recomputeCalls = 0
+    override suspend fun recomputeAlarmTriggerTimes() { recomputeCalls++ }
 
     // --- not exercised by the alarm coordinator ---
     override fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>> = TODO()

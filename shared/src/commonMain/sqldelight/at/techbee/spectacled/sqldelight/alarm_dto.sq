@@ -52,6 +52,12 @@ INSERT INTO AlarmDto (
     lastNotifiedAt
 ) VALUES (?, ?, ?, ?, ?, ?);
 
+getAllAlarms:
+SELECT * FROM AlarmDto;
+
+updateTriggerAt:
+UPDATE AlarmDto SET triggerAt = :triggerAt WHERE id = :id;
+
 deleteAlarmsForEntry:
 DELETE FROM AlarmDto WHERE icalEntryId = ?;
 
