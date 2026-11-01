@@ -92,7 +92,7 @@ The same text goes to all three apps on Google Play, so describe the family, not
 
 ## 4. Write the release notes
 
-Create two files. Write them in English, for users, not developers. Describe what changed
+Create these files. Write them in English, for users, not developers. Describe what changed
 for the user, not how it was implemented.
 
 **`release-notes/<tag>/github.md`**: the body of the GitHub release (beta and production
@@ -118,7 +118,14 @@ channel). Plain text, no Markdown. Short `•` bullet lines are fine. It must be
 500 characters**: check with `wc -m`. The upload workflow fails the job above that limit.
 Include only the most important points.
 
-Show both drafts to the user and apply their edits before continuing.
+**`release-notes/<tag>/testflight/whattotest-en-US`**: the TestFlight "What to Test" text
+(alpha, beta and production; the iOS workflow does not run for internal). Plain text, no
+Markdown, **at most 4000 characters**. It is written for testers: what changed, and what
+they should try out or watch for, including risky areas such as sync, migrations and
+notifications. For a first release on a channel, use the introduction plus a short note
+on what to try first. If the file is missing, the workflow falls back to the Play text.
+
+Show all drafts to the user and apply their edits before continuing.
 
 ## 5. Set the version
 
@@ -142,7 +149,7 @@ toml file.
 4. Open a PR against `main` titled `Release <tag>`. The body contains:
    - the version/build change and the channel
    - which previous tag the notes are based on
-   - the Play text, and the GitHub notes in a `<details>` block
+   - the Play text, and the GitHub and TestFlight notes in `<details>` blocks
    - the commands to run after merging:
 
      ```bash

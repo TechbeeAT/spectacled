@@ -141,3 +141,61 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+  # TestFlight "What to Test" from release-notes/<tag>/testflight/whattotest-en-US,
+  # written by the /release skill; falls back to the Google Play text. Runs on Linux
+  # because it mostly waits for App Store Connect to finish processing the uploads.
+  what-to-test:
+    name: Set What to Test for ${{ matrix.app }}
+    needs: ios
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: journals
+            bundleId: at.techbee.spectacled.journals
+          - app: notes
+            bundleId: at.techbee.spectacled.notes
+          - app: tasks
+            bundleId: at.techbee.spectacled.tasks
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve notes and version
+        id: notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          for f in "release-notes/$TAG/testflight/whattotest-en-US" "release-notes/$TAG/play/whatsnew-en-US"; do
+            if [ -f "$f" ]; then
+              echo "Using $f"
+              echo "file=$f" >> "$GITHUB_OUTPUT"
+              break
+            fi
+          done
+          [ -f "release-notes/$TAG/testflight/whattotest-en-US" ] || [ -f "release-notes/$TAG/play/whatsnew-en-US" ] \
+            || echo "::warning::No release notes for $TAG; TestFlight builds stay without What to Test."
+          echo "version=$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
+          echo "build=$(sed -n 's/^CURRENT_PROJECT_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        if: steps.notes.outputs.file != ''
+        with:
+          python-version: '3.12'
+
+      - name: Set What to Test
+        if: steps.notes.outputs.file != ''
+        env:
+          ASC_KEY_ID: ${{ secrets.asc_api_key_id }}
+          ASC_ISSUER_ID: ${{ secrets.asc_api_key_issuer_id }}
+          ASC_KEY_PATH: ${{ runner.temp }}/asc_key.p8
+        run: |
+          echo -n "${{ secrets.asc_api_key_p8_base64 }}" | base64 --decode > "$ASC_KEY_PATH"
+          pip install --quiet "pyjwt[crypto]==2.10.1"
+          python3 .github/scripts/testflight_what_to_test.py \
+            --bundle-id "${{ matrix.bundleId }}" \
+            --version "${{ steps.notes.outputs.version }}" \
+            --build "${{ steps.notes.outputs.build }}" \
+            --notes-file "${{ steps.notes.outputs.file }}"
