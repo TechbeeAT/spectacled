@@ -19,6 +19,7 @@ import androidx.core.content.edit
 import at.techbee.spectacled.shared.R
 import at.techbee.spectacled.widget.SpectacledWidget
 import io.github.aakira.napier.Napier
+import androidx.core.net.toUri
 
 private const val NOTIFICATION_CHANNEL_ALARMS = "alarms"
 
@@ -126,7 +127,7 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             action = AlarmReceiver.ACTION_ALARM
             // Identifies the registration (filterEquals), not just the extras.
-            data = Uri.parse("spectacled-alarm://$keyString")
+            data = "spectacled-alarm://$keyString".toUri()
             alarm?.let {
                 putExtra(AlarmReceiver.EXTRA_ENTRY_ID, it.icalEntryId)
                 putExtra(AlarmReceiver.EXTRA_ALARM_KEY, it.key.alarmKey)
@@ -139,5 +140,3 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
     }
 }
 
-/** Stable notification id / request code for this alarm, so later calls address the same one. */
-internal fun ScheduledAlarmKey.notificationId(): Int = asString().hashCode()

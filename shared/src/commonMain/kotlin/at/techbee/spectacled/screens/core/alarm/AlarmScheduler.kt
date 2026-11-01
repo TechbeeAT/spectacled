@@ -14,6 +14,9 @@ data class ScheduledAlarmKey(
 ) {
     /** A single string for platforms that identify requests by name, e.g. UNUserNotificationCenter. */
     fun asString() = "$icalEntryId:$alarmKey"
+
+    /** Stable notification id / request code for this alarm, so later calls address the same one. */
+    fun notificationId(): Int = asString().hashCode()
 }
 
 /** Everything a platform needs to schedule and later show the notification for one alarm. */
