@@ -125,6 +125,17 @@ they should try out or watch for, including risky areas such as sync, migrations
 notifications. For a first release on a channel, use the introduction plus a short note
 on what to try first. If the file is missing, the workflow falls back to the Play text.
 
+**`release-notes/<tag>/appstore/whatsnew-en-US`** (production only): the App Store
+"What's New in This Version" ("Neue Funktionen in dieser Version"), shown to everyone in
+the App Store version history. Plain text, no Markdown, **at most 4000 characters**. It is
+longer than the Play text but just as user-facing, with no testing instructions. If the
+file is missing, the workflow falls back to the Play text. An app's first App Store version
+has no such field, so skip this file when no production tag exists yet.
+
+The App Store "Werbetext" (Promotional Text, 170 characters) is marketing copy that is not
+tied to a version, and the user edits it by hand. For a production release, you may
+suggest a new one in the PR description, but do not write a file for it.
+
 Show all drafts to the user and apply their edits before continuing.
 
 ## 5. Set the version
@@ -149,7 +160,7 @@ toml file.
 4. Open a PR against `main` titled `Release <tag>`. The body contains:
    - the version/build change and the channel
    - which previous tag the notes are based on
-   - the Play text, and the GitHub and TestFlight notes in `<details>` blocks
+   - the Play text, and the GitHub, TestFlight and App Store notes in `<details>` blocks
    - the commands to run after merging:
 
      ```bash
