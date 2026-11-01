@@ -35,6 +35,7 @@ class AlarmCoordinatorTest {
         calendarId = 7L,
         entryUid = "entry-$entryId",
         entrySummary = "Task $entryId",
+        entryDescription = null,
         alarm = Alarm(uid = uid, trigger = AlarmTrigger.Relative(IcsDuration()), description = "Reminder $alarmId"),
         triggerAt = triggerAt
     )
@@ -120,6 +121,33 @@ class AlarmCoordinatorTest {
     }
 
     @Test
+    fun onAlarmFired_showsAndMarksTheMatchingAlarm() = runTest {
+        val due = upcoming(20L, now, entryId = 3L)
+        val repository = FakeIcalEntryRepository(alarms = listOf(due, upcoming(21L, now, entryId = 4L)))
+        val scheduler = FakeAlarmScheduler()
+
+        AlarmCoordinator(repository, scheduler, fixedClock).onAlarmFired(3L, "alarm-20", now)
+
+        assertEquals(listOf(20L), scheduler.shown.map { it.alarmId })
+        assertEquals(setOf(20L), repository.notified.keys)
+    }
+
+    @Test
+    fun onAlarmFired_staysSilentForAnAlarmThatIsGoneOrAlreadyNotified() = runTest {
+        val due = upcoming(30L, now)
+        val repository = FakeIcalEntryRepository(alarms = listOf(due))
+        val scheduler = FakeAlarmScheduler()
+        val coordinator = AlarmCoordinator(repository, scheduler, fixedClock)
+
+        coordinator.onAlarmFired(1L, "alarm-30", now)
+        coordinator.onAlarmFired(1L, "alarm-30", now)        // fired again, already notified
+        coordinator.onAlarmFired(1L, "deleted-alarm", now)   // no longer exists
+        coordinator.onAlarmFired(1L, "alarm-30", now - 1.minutes)  // moved since it was scheduled
+
+        assertEquals(listOf(30L), scheduler.shown.map { it.alarmId })
+    }
+
+    @Test
     fun schedulingKey_isTheUidOrStableForEqualBlocks() {
         val alarm = Alarm(uid = null, trigger = AlarmTrigger.Relative(IcsDuration(isNegative = true, minutes = 15)), description = "x")
 
@@ -134,7 +162,6 @@ private class FakeAlarmScheduler : AlarmScheduler {
     val shown = mutableListOf<ScheduledAlarm>()
     val dismissed = mutableListOf<ScheduledAlarmKey>()
 
-    override suspend fun requestPermissionIfNeeded() = true
     override fun replaceAll(alarms: List<ScheduledAlarm>) { replaceAllCalls += alarms }
     override fun showNow(alarm: ScheduledAlarm) { shown += alarm }
     override fun dismiss(key: ScheduledAlarmKey) { dismissed += key }

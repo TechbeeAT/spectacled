@@ -96,6 +96,8 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableColumn
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.alarm_notifications_allow
+import spectacled.shared.generated.resources.alarm_notifications_blocked
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
@@ -112,7 +114,9 @@ fun DetailsScreen(
     state: DetailsState,
     onAction: (DetailsAction) -> Unit,
     modifier: Modifier = Modifier,
-    onEditorFocusChanged: (Boolean) -> Unit = {}
+    onEditorFocusChanged: (Boolean) -> Unit = {},
+    notificationsBlocked: Boolean = false,
+    onAllowNotifications: () -> Unit = {}
 ) {
     // Deliberately not rememberSaveable: focus itself is not restored after process death, so a
     // saved `true` would show the formatting bar and hide the FAB with no keyboard up.
@@ -412,6 +416,23 @@ fun DetailsScreen(
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                 ) {
+                    if (notificationsBlocked && state.icalEntry.alarms.any { it.isNotifying() }) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.alarm_notifications_blocked),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = onAllowNotifications) {
+                                Text(stringResource(Res.string.alarm_notifications_allow))
+                            }
+                        }
+                    }
+
                     state.icalEntry.alarms.forEach { alarm ->
                         AlarmCard(
                             alarm = alarm,

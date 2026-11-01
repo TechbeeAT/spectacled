@@ -28,6 +28,7 @@ data class ScheduledAlarm(
     val calendarId: Long,
     val entryUid: String,
     val entrySummary: String?,
+    val entryDescription: String?,
     val alarmDescription: String?,
     val triggerAt: Instant
 )
@@ -38,8 +39,6 @@ data class ScheduledAlarm(
  */
 interface AlarmScheduler {
 
-    /** Asks for the notification permission where one is needed. True if notifications may be shown. */
-    suspend fun requestPermissionIfNeeded(): Boolean
 
     /**
      * Replaces every *pending* alarm with [alarms]: anything scheduled before and not in the list
@@ -56,7 +55,6 @@ interface AlarmScheduler {
 }
 
 expect class PlatformAlarmScheduler : AlarmScheduler {
-    override suspend fun requestPermissionIfNeeded(): Boolean
     override fun replaceAll(alarms: List<ScheduledAlarm>)
     override fun showNow(alarm: ScheduledAlarm)
     override fun dismiss(key: ScheduledAlarmKey)

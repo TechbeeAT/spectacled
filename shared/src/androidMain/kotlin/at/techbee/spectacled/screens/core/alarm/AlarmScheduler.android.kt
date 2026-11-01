@@ -37,12 +37,6 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
     private val alarmManager get() = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     private val prefs get() = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    /**
-     * Only reports the state: a runtime permission can't be requested from an application
-     * context. Asking is done from the UI via PermissionRequester (AppPermission.NOTIFICATIONS).
-     */
-    actual override suspend fun requestPermissionIfNeeded(): Boolean = canPostNotifications()
-
     actual override fun replaceAll(alarms: List<ScheduledAlarm>) {
         val previousKeys = prefs.getStringSet(PREFS_KEY_SCHEDULED, emptySet()) ?: emptySet()
         val newKeys = alarms.map { it.key.asString() }.toSet()
@@ -81,11 +75,16 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         } ?: Intent()
 
+        // The summary, or for an entry without one the first line of its description.
+        val title = alarm.entrySummary?.takeIf { it.isNotBlank() }
+            ?: alarm.entryDescription?.lineSequence()?.firstOrNull { it.isNotBlank() }
+            ?: context.getString(R.string.alarm_notification_default_title)
+
         val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ALARMS)
             .setSmallIcon(R.drawable.ic_notification_alarm)
-            .setContentTitle(alarm.entrySummary ?: context.getString(R.string.alarm_notification_default_title))
+            .setContentTitle(title)
             // The description usually repeats the summary (the app sets it so), then it adds nothing.
-            .setContentText(alarm.alarmDescription?.takeIf { it != alarm.entrySummary })
+            .setContentText(alarm.alarmDescription?.takeIf { it.isNotBlank() && it != title })
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)

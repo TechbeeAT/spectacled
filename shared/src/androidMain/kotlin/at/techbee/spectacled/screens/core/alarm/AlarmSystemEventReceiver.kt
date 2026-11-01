@@ -12,8 +12,9 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
- * AlarmManager forgets everything on reboot, and a clock or time zone change can move alarm
- * times - all of them are answered by a reconcile.
+ * AlarmManager forgets everything on reboot, a clock or time zone change can move alarm times,
+ * and once the user grants exact alarms the inexact registrations should be replaced - all of
+ * them are answered by a reconcile.
  */
 class AlarmSystemEventReceiver : BroadcastReceiver(), KoinComponent {
 
@@ -27,7 +28,7 @@ class AlarmSystemEventReceiver : BroadcastReceiver(), KoinComponent {
                 Napier.d("Reconciling alarms after $action")
                 when (action) {
                     Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_TIME_CHANGED -> alarmCoordinator.onTimeOrTimeZoneChanged()
-                    else -> alarmCoordinator.reconcile()   // BOOT_COMPLETED, MY_PACKAGE_REPLACED
+                    else -> alarmCoordinator.reconcile()   // BOOT_COMPLETED, MY_PACKAGE_REPLACED, exact alarms granted
                 }
             } finally {
                 pendingResult.finish()

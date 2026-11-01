@@ -10,6 +10,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant
 
 /**
  * Keeps the platform's scheduled alarms in line with the database.
@@ -74,6 +76,25 @@ class AlarmCoordinator(
         Napier.d("Alarms reconciled: ${missed.size} missed, ${upcoming.size} scheduled")
     }
 
+    /**
+     * A platform alarm registered by [AlarmScheduler.replaceAll] went off. The alarm is looked up
+     * fresh, so one that was deleted, moved, completed or already notified since it was scheduled
+     * stays silent. Runs under the same lock as [reconcile], so a reconcile at the same moment
+     * can't show the same alarm a second time as "missed".
+     */
+    suspend fun onAlarmFired(icalEntryId: Long, alarmKey: String, triggerAt: Instant) = reconcileMutex.withLock {
+        val alarm = icalEntryRepository
+            .getUpcomingAlarms(from = triggerAt, until = triggerAt + 1.milliseconds, limit = Long.MAX_VALUE)
+            .firstOrNull { it.icalEntryId == icalEntryId && it.alarm.schedulingKey() == alarmKey }
+
+        if (alarm == null) {
+            Napier.d("Alarm $icalEntryId/$alarmKey fired but is no longer due, skipping")
+        } else {
+            alarmScheduler.showNow(alarm.toScheduledAlarm())
+            icalEntryRepository.markAlarmNotified(alarm.alarmId, clock.now())
+        }
+    }
+
     /** The device's clock or time zone changed: stored trigger times may be off, recompute first. */
     suspend fun onTimeOrTimeZoneChanged() {
         icalEntryRepository.recomputeAlarmTriggerTimes()
@@ -104,6 +125,7 @@ fun UpcomingAlarm.toScheduledAlarm() = ScheduledAlarm(
     calendarId = calendarId,
     entryUid = entryUid,
     entrySummary = entrySummary,
+    entryDescription = entryDescription,
     alarmDescription = alarm.description,
     triggerAt = triggerAt
 )
