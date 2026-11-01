@@ -188,11 +188,48 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Full history and tags: the fallback below needs the previous tag on this channel.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
       - name: Download all build artifacts
         uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
+
+      # Release notes come from release-notes/<tag>/github.md, written by the
+      # /release skill and merged with the version bump. Without that file, GitHub
+      # generates notes against the previous tag of the SAME channel, so a production
+      # release lists everything since the last production release, not the last beta.
+      - name: Prepare release notes
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="release-notes/$TAG/github.md"
+          if [ -f "$notes" ]; then
+            echo "Using $notes"
+            cp "$notes" "$RUNNER_TEMP/release-notes.md"
+            exit 0
+          fi
+          case "$TAG" in
+            *-internal) channel='-internal$' ;;
+            *-alpha)    channel='-alpha$' ;;
+            *-beta)     channel='-beta$' ;;
+            *-*)        channel='' ;;
+            *)          channel='^v[^-]*$' ;;   # production: no suffix
+          esac
+          previous=""
+          if [ -n "$channel" ]; then
+            previous="$(git tag --merged "$TAG" --list 'v*' --sort=-creatordate \
+              | grep -vxF -e "$TAG" | grep -E -e "$channel" | head -n 1 || true)"
+          fi
+          echo "No $notes; generating notes since '${previous:-<first commit>}'"
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+            -f tag_name="$TAG" ${previous:+-f previous_tag_name="$previous"} \
+            --jq .body > "$RUNNER_TEMP/release-notes.md"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v3
@@ -202,5 +239,5 @@ jobs:
           # when this workflow is dispatched manually against such a tag.
           prerelease: ${{ contains(github.ref_name, '-internal') || contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') }}
           files: dist/*
-          generate_release_notes: true
+          body_path: ${{ runner.temp }}/release-notes.md
           fail_on_unmatched_files: true
