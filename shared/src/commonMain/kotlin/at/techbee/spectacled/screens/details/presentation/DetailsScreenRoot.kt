@@ -47,8 +47,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
+import at.techbee.spectacled.screens.core.AppPermission
+import at.techbee.spectacled.screens.core.PermissionChecker
+import at.techbee.spectacled.screens.core.PermissionStatus
+import at.techbee.spectacled.screens.core.data.NOTIFICATION_PERMISSION_REQUESTED
+import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
@@ -60,6 +67,7 @@ import at.techbee.spectacled.screens.core.presentation.components.StatusWithProg
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.core.rememberFilePicker
 import at.techbee.spectacled.screens.core.rememberImagePicker
+import at.techbee.spectacled.screens.core.rememberPermissionRequester
 import at.techbee.spectacled.screens.details.presentation.components.AddAlarmBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.AddMoreDropdownMenuDetails
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
@@ -78,6 +86,7 @@ import at.techbee.spectacled.screens.details.presentation.components.ResolveSync
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
@@ -114,6 +123,37 @@ fun DetailsScreenRoot(
     val imagePicker = rememberImagePicker { pickedFile ->
         pickedFile?.let {
             detailsViewModel.onAction(DetailsAction.OnAddAttachment(it.name, it.bytes, it.mimeType))
+        }
+    }
+
+    // Alarms need the notification permission. It is asked for once on its own, as soon as an
+    // entry with an alarm is shown (opened, or an alarm was just added). After that only the
+    // "Allow" button above the alarms asks again - asking on every open would keep sending the
+    // user to the app settings once Android stops showing the dialog.
+    val permissionChecker = koinInject<PermissionChecker>()
+    val userAppPreferencesStore = koinInject<UserAppPreferencesStore>()
+    var notificationPermissionStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+    // Exact alarms are only ever asked for through the hint: granting them means a settings page.
+    var exactAlarmsStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        notificationPermissionStatus = permissionChecker.status(AppPermission.NOTIFICATIONS)
+        exactAlarmsStatus = permissionChecker.status(AppPermission.EXACT_ALARMS)
+    }
+    val permissionRequester = rememberPermissionRequester { permission, status ->
+        when (permission) {
+            AppPermission.NOTIFICATIONS -> notificationPermissionStatus = status
+            AppPermission.EXACT_ALARMS -> exactAlarmsStatus = status
+            AppPermission.LOCAL_NETWORK -> Unit
+        }
+    }
+    val hasNotifyingAlarm = detailsState.icalEntry.alarms.any { it.isNotifying() }
+    LaunchedEffect(hasNotifyingAlarm, notificationPermissionStatus) {
+        if (hasNotifyingAlarm
+            && notificationPermissionStatus == PermissionStatus.DENIED
+            && userAppPreferencesStore.load(NOTIFICATION_PERMISSION_REQUESTED) == null
+        ) {
+            userAppPreferencesStore.save(NOTIFICATION_PERMISSION_REQUESTED, "true")
+            permissionRequester.request(AppPermission.NOTIFICATIONS)
         }
     }
 
@@ -477,7 +517,11 @@ fun DetailsScreenRoot(
                     state = detailsState,
                     onAction = { action -> detailsViewModel.onAction(action) },
                     modifier = Modifier.fillMaxSize(),
-                    onEditorFocusChanged = { isEditorFocused = it }
+                    onEditorFocusChanged = { isEditorFocused = it },
+                    notificationsBlocked = notificationPermissionStatus == PermissionStatus.DENIED,
+                    onAllowNotifications = { permissionRequester.request(AppPermission.NOTIFICATIONS) },
+                    exactAlarmsBlocked = exactAlarmsStatus == PermissionStatus.DENIED,
+                    onAllowExactAlarms = { permissionRequester.request(AppPermission.EXACT_ALARMS) }
                 )
 
                 CustomBottomSnackbarHost(snackbarHostState = snackbarHostState)

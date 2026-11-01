@@ -14,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +42,7 @@ import spectacled.shared.generated.resources.alarm_fires_at
 import spectacled.shared.generated.resources.alarm_invalid_alarm_trigger_time
 import spectacled.shared.generated.resources.alarm_missing_reference_date
 import spectacled.shared.generated.resources.alarm_not_notifying
+import spectacled.shared.generated.resources.alarm_notifications_allow
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.delete
@@ -142,6 +144,29 @@ fun AlarmCard(
                     }
                 }
             }
+        }
+    }
+}
+
+/** A missing permission that keeps alarms from working as expected, with a button to grant it. */
+@Composable
+fun AlarmPermissionHint(
+    text: String,
+    onAllow: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.weight(1f)
+        )
+        TextButton(onClick = onAllow) {
+            Text(stringResource(Res.string.alarm_notifications_allow))
         }
     }
 }

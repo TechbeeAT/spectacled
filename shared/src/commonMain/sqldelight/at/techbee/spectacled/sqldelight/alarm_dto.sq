@@ -52,6 +52,13 @@ INSERT INTO AlarmDto (
     lastNotifiedAt
 ) VALUES (?, ?, ?, ?, ?, ?);
 
+-- Alarms whose trigger time still matters: notified ones already went off.
+getUnnotifiedAlarms:
+SELECT * FROM AlarmDto WHERE lastNotifiedAt IS NULL;
+
+updateTriggerAt:
+UPDATE AlarmDto SET triggerAt = :triggerAt WHERE id = :id;
+
 deleteAlarmsForEntry:
 DELETE FROM AlarmDto WHERE icalEntryId = ?;
 

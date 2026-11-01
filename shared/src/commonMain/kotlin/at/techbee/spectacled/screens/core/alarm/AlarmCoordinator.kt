@@ -3,13 +3,18 @@ package at.techbee.spectacled.screens.core.alarm
 import at.techbee.spectacled.screens.core.domain.Alarm
 import at.techbee.spectacled.screens.core.domain.UpcomingAlarm
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
+import at.techbee.spectacled.screens.core.ioDispatcher
 import at.techbee.spectacled.screens.core.mapper.dto.toIcsBlock
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant
 
 /**
  * Keeps the platform's scheduled alarms in line with the database.
@@ -20,13 +25,18 @@ import kotlin.time.Duration.Companion.days
  * than tracking individual changes and heals any state the platform lost.
  *
  * Trigger times are computed when an entry is saved (IcalEntryRepositoryImpl.saveAlarms), so a
- * reconcile alone doesn't move all-day or floating alarms after a time zone change - that
- * needs the stored times recomputed first.
+ * reconcile alone doesn't move all-day or floating alarms after a time zone change - that is
+ * what [onTimeOrTimeZoneChanged] is for.
  */
 class AlarmCoordinator(
     private val icalEntryRepository: IcalEntryRepository,
     private val alarmScheduler: AlarmScheduler,
-    private val clock: Clock = Clock.System
+    private val clock: Clock = Clock.System,
+    /**
+     * Where the work runs. Callers are mostly on the main thread (a ViewModel after each save),
+     * and the platform calls are not cheap - on Android up to 50 AlarmManager IPCs per reconcile.
+     */
+    private val dispatcher: CoroutineDispatcher = ioDispatcher
 ) {
 
     companion object {
@@ -49,7 +59,7 @@ class AlarmCoordinator(
 
     private val reconcileMutex = Mutex()
 
-    suspend fun reconcile() = reconcileMutex.withLock {
+    suspend fun reconcile() = withContext(dispatcher) { reconcileMutex.withLock {
         val now = clock.now()
 
         // Alarms that were missed: show them late rather than never, within the grace period ...
@@ -59,8 +69,9 @@ class AlarmCoordinator(
             limit = Long.MAX_VALUE
         )
         missed.forEach { upcoming ->
-            alarmScheduler.showNow(upcoming.toScheduledAlarm())
-            icalEntryRepository.markAlarmNotified(upcoming.alarmId, now)
+            // Not shown (e.g. no permission yet): leave it, a later reconcile can still show it.
+            if (alarmScheduler.showNow(upcoming.toScheduledAlarm()))
+                icalEntryRepository.markAlarmNotified(upcoming.alarmId, now)
         }
         // ... and write off anything older, so it is neither shown nor queried again.
         icalEntryRepository.markAlarmsNotifiedBefore(before = now - MISSED_ALARM_GRACE_PERIOD, notifiedAt = now)
@@ -72,13 +83,38 @@ class AlarmCoordinator(
         )
         alarmScheduler.replaceAll(upcoming.map { it.toScheduledAlarm() })
         Napier.d("Alarms reconciled: ${missed.size} missed, ${upcoming.size} scheduled")
+    } }
+
+    /**
+     * A platform alarm registered by [AlarmScheduler.replaceAll] went off. The alarm is looked up
+     * fresh, so one that was deleted, moved, completed or already notified since it was scheduled
+     * stays silent. Runs under the same lock as [reconcile], so a reconcile at the same moment
+     * can't show the same alarm a second time as "missed".
+     */
+    suspend fun onAlarmFired(icalEntryId: Long, alarmKey: String, triggerAt: Instant) = withContext(dispatcher) { reconcileMutex.withLock {
+        val alarm = icalEntryRepository
+            .getUpcomingAlarms(from = triggerAt, until = triggerAt + 1.milliseconds, limit = Long.MAX_VALUE)
+            .firstOrNull { it.icalEntryId == icalEntryId && it.alarm.schedulingKey() == alarmKey }
+
+        if (alarm == null) {
+            Napier.d("Alarm $icalEntryId/$alarmKey fired but is no longer due, skipping")
+        } else if (alarmScheduler.showNow(alarm.toScheduledAlarm())) {
+            icalEntryRepository.markAlarmNotified(alarm.alarmId, clock.now())
+        }
+        // Not shown: the next reconcile picks it up as missed, within the grace period.
+    } }
+
+    /** The device's clock or time zone changed: stored trigger times may be off, recompute first. */
+    suspend fun onTimeOrTimeZoneChanged() {
+        icalEntryRepository.recomputeAlarmTriggerTimes()
+        reconcile()
     }
 
     /**
      * Called when entries were completed or deleted: their notifications, if shown, are stale.
      * [reconcile] alone wouldn't remove them, it only touches pending alarms.
      */
-    suspend fun onEntriesDoneOrDeleted(icalEntryIds: List<Long>) {
+    suspend fun onEntriesDoneOrDeleted(icalEntryIds: List<Long>) = withContext(dispatcher) {
         icalEntryIds.forEach { icalEntryId ->
             icalEntryRepository.getIcalEntryById(icalEntryId)?.alarms?.forEach { alarm ->
                 alarmScheduler.dismiss(ScheduledAlarmKey(icalEntryId, alarm.schedulingKey()))
@@ -98,6 +134,7 @@ fun UpcomingAlarm.toScheduledAlarm() = ScheduledAlarm(
     calendarId = calendarId,
     entryUid = entryUid,
     entrySummary = entrySummary,
+    entryDescription = entryDescription,
     alarmDescription = alarm.description,
     triggerAt = triggerAt
 )

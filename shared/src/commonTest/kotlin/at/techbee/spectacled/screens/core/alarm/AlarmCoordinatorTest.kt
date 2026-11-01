@@ -12,6 +12,7 @@ import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.UpcomingAlarm
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import io.ktor.http.Url
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -29,12 +30,16 @@ class AlarmCoordinatorTest {
     private val now = Instant.parse("2026-10-22T12:00:00Z")
     private val fixedClock = object : Clock { override fun now() = this@AlarmCoordinatorTest.now }
 
+    private fun coordinator(repository: IcalEntryRepository, scheduler: AlarmScheduler) =
+        AlarmCoordinator(repository, scheduler, fixedClock, dispatcher = Dispatchers.Unconfined)
+
     private fun upcoming(alarmId: Long, triggerAt: Instant, entryId: Long = 1L, uid: String? = "alarm-$alarmId") = UpcomingAlarm(
         alarmId = alarmId,
         icalEntryId = entryId,
         calendarId = 7L,
         entryUid = "entry-$entryId",
         entrySummary = "Task $entryId",
+        entryDescription = null,
         alarm = Alarm(uid = uid, trigger = AlarmTrigger.Relative(IcsDuration()), description = "Reminder $alarmId"),
         triggerAt = triggerAt
     )
@@ -47,7 +52,7 @@ class AlarmCoordinatorTest {
         val repository = FakeIcalEntryRepository(alarms = listOf(justMissed, missedYesterday, tooOld))
         val scheduler = FakeAlarmScheduler()
 
-        AlarmCoordinator(repository, scheduler, fixedClock).reconcile()
+        coordinator(repository, scheduler).reconcile()
 
         assertEquals(listOf(2L, 1L), scheduler.shown.map { it.alarmId }, "earliest first")
         assertEquals(setOf(1L, 2L, 3L), repository.notified.keys, "every missed alarm is marked, shown or not")
@@ -62,7 +67,7 @@ class AlarmCoordinatorTest {
         val repository = FakeIcalEntryRepository(alarms = listOf(inAnHour, inAWeek, beyondHorizon))
         val scheduler = FakeAlarmScheduler()
 
-        AlarmCoordinator(repository, scheduler, fixedClock).reconcile()
+        coordinator(repository, scheduler).reconcile()
 
         assertEquals(1, scheduler.replaceAllCalls.size)
         assertEquals(
@@ -85,7 +90,7 @@ class AlarmCoordinatorTest {
         val repository = FakeIcalEntryRepository(alarms = many)
         val scheduler = FakeAlarmScheduler()
 
-        AlarmCoordinator(repository, scheduler, fixedClock).reconcile()
+        coordinator(repository, scheduler).reconcile()
 
         assertEquals(AlarmCoordinator.MAX_SCHEDULED_ALARMS.toInt(), scheduler.replaceAllCalls.single().size)
         assertEquals((1..50).map { it.toLong() }, scheduler.replaceAllCalls.single().map { it.alarmId }, "the earliest ones")
@@ -99,13 +104,70 @@ class AlarmCoordinatorTest {
         val repository = FakeIcalEntryRepository(entries = listOf(entry))
         val scheduler = FakeAlarmScheduler()
 
-        AlarmCoordinator(repository, scheduler, fixedClock).onEntriesDoneOrDeleted(listOf(5L, 999L))
+        coordinator(repository, scheduler).onEntriesDoneOrDeleted(listOf(5L, 999L))
 
         assertEquals(
             listOf(ScheduledAlarmKey(5L, "alarm-a"), ScheduledAlarmKey(5L, withoutUid.schedulingKey())),
             scheduler.dismissed
         )
         assertEquals(1, scheduler.replaceAllCalls.size, "an unknown entry id is skipped, the reconcile still runs")
+    }
+
+    @Test
+    fun onTimeOrTimeZoneChanged_recomputesBeforeReconciling() = runTest {
+        val repository = FakeIcalEntryRepository(alarms = listOf(upcoming(1L, now + 1.hours)))
+        val scheduler = FakeAlarmScheduler()
+
+        coordinator(repository, scheduler).onTimeOrTimeZoneChanged()
+
+        assertEquals(1, repository.recomputeCalls)
+        assertEquals(1, scheduler.replaceAllCalls.size)
+    }
+
+    @Test
+    fun onAlarmFired_showsAndMarksTheMatchingAlarm() = runTest {
+        val due = upcoming(20L, now, entryId = 3L)
+        val repository = FakeIcalEntryRepository(alarms = listOf(due, upcoming(21L, now, entryId = 4L)))
+        val scheduler = FakeAlarmScheduler()
+
+        coordinator(repository, scheduler).onAlarmFired(3L, "alarm-20", now)
+
+        assertEquals(listOf(20L), scheduler.shown.map { it.alarmId })
+        assertEquals(setOf(20L), repository.notified.keys)
+    }
+
+    @Test
+    fun onAlarmFired_staysSilentForAnAlarmThatIsGoneOrAlreadyNotified() = runTest {
+        val due = upcoming(30L, now)
+        val repository = FakeIcalEntryRepository(alarms = listOf(due))
+        val scheduler = FakeAlarmScheduler()
+        val coordinator = coordinator(repository, scheduler)
+
+        coordinator.onAlarmFired(1L, "alarm-30", now)
+        coordinator.onAlarmFired(1L, "alarm-30", now)        // fired again, already notified
+        coordinator.onAlarmFired(1L, "deleted-alarm", now)   // no longer exists
+        coordinator.onAlarmFired(1L, "alarm-30", now - 1.minutes)  // moved since it was scheduled
+
+        assertEquals(listOf(30L), scheduler.shown.map { it.alarmId })
+    }
+
+    @Test
+    fun alarmsThatCouldNotBeShownStayUnnotifiedAndAreShownLater() = runTest {
+        // Fired a minute ago, the receiver couldn't show it.
+        val fired = upcoming(40L, now - 1.minutes)
+        val missed = upcoming(41L, now - 1.hours)
+        val repository = FakeIcalEntryRepository(alarms = listOf(fired, missed))
+        val scheduler = FakeAlarmScheduler().apply { canShow = false }
+        val coordinator = coordinator(repository, scheduler)
+
+        coordinator.onAlarmFired(1L, "alarm-40", now - 1.minutes)
+        coordinator.reconcile()
+        assertTrue(repository.notified.isEmpty(), "nothing was shown, so nothing may be marked")
+
+        scheduler.canShow = true      // e.g. the user granted the permission
+        coordinator.reconcile()
+        assertEquals(setOf(40L, 41L), repository.notified.keys)
+        assertEquals(setOf(40L, 41L), scheduler.shown.map { it.alarmId }.toSet())
     }
 
     @Test
@@ -123,9 +185,13 @@ private class FakeAlarmScheduler : AlarmScheduler {
     val shown = mutableListOf<ScheduledAlarm>()
     val dismissed = mutableListOf<ScheduledAlarmKey>()
 
-    override suspend fun requestPermissionIfNeeded() = true
     override fun replaceAll(alarms: List<ScheduledAlarm>) { replaceAllCalls += alarms }
-    override fun showNow(alarm: ScheduledAlarm) { shown += alarm }
+    /** False simulates a platform that can't show notifications, e.g. without the permission. */
+    var canShow = true
+    override fun showNow(alarm: ScheduledAlarm): Boolean {
+        if (canShow) shown += alarm
+        return canShow
+    }
     override fun dismiss(key: ScheduledAlarmKey) { dismissed += key }
 }
 
@@ -149,6 +215,9 @@ private class FakeIcalEntryRepository(
     }
 
     override suspend fun getIcalEntryById(id: Long): IcalEntry? = entries.find { it.id == id }
+
+    var recomputeCalls = 0
+    override suspend fun recomputeAlarmTriggerTimes() { recomputeCalls++ }
 
     // --- not exercised by the alarm coordinator ---
     override fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>> = TODO()

@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core
 
 import android.app.Activity
+import android.app.AlarmManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -16,12 +17,24 @@ import androidx.core.content.ContextCompat
  */
 private const val ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK"
 
+private const val POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS"
+
 /** First OS version that enforces the local network permission (Android 17). */
 private const val SDK_LOCAL_NETWORK_ENFORCED = 37
 
 /** The Android permission behind this one, or null where this OS version does not gate it. */
 internal fun AppPermission.manifestPermission(): String? = when (this) {
     AppPermission.LOCAL_NETWORK -> ACCESS_LOCAL_NETWORK.takeIf { Build.VERSION.SDK_INT >= SDK_LOCAL_NETWORK_ENFORCED }
+    AppPermission.NOTIFICATIONS -> POST_NOTIFICATIONS.takeIf { Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU }
+    AppPermission.EXACT_ALARMS -> null   // special app access, granted on a settings page, see exactAlarmsStatus()
+}
+
+/** Exact alarms are a special app access since Android 12, read from AlarmManager instead. */
+internal fun Context.exactAlarmsStatus(): PermissionStatus {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
+        return PermissionStatus.NOT_APPLICABLE
+    val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    return if (alarmManager.canScheduleExactAlarms()) PermissionStatus.GRANTED else PermissionStatus.DENIED
 }
 
 /** The Activity this Context is hosted by, unwrapping the wrappers Compose may hand over. */
@@ -48,6 +61,8 @@ internal fun Context.openAppSettings() {
 actual class PlatformPermissionChecker(private val context: Context) : PermissionChecker {
 
     actual override fun status(permission: AppPermission): PermissionStatus {
+        if (permission == AppPermission.EXACT_ALARMS)
+            return context.exactAlarmsStatus()
         val manifestPermission = permission.manifestPermission() ?: return PermissionStatus.NOT_APPLICABLE
 
         return if (ContextCompat.checkSelfPermission(context, manifestPermission) == PackageManager.PERMISSION_GRANTED)

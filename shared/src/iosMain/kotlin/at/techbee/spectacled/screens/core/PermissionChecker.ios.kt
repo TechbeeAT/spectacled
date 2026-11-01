@@ -15,6 +15,8 @@ actual class PlatformPermissionChecker : PermissionChecker {
 
     actual override fun status(permission: AppPermission): PermissionStatus = when (permission) {
         AppPermission.LOCAL_NETWORK -> PermissionStatus.UNKNOWN
+        AppPermission.NOTIFICATIONS -> PermissionStatus.UNKNOWN   // asked via UNUserNotificationCenter in a later step
+        AppPermission.EXACT_ALARMS -> PermissionStatus.NOT_APPLICABLE
     }
 
     actual override fun openAppSettings() {

@@ -345,6 +345,7 @@ class IcalEntryRepositoryImpl(
                     calendarId = entry.calendarId,
                     entryUid = entry.uid,
                     entrySummary = entry.summary,
+                    entryDescription = entry.description,
                     alarm = alarmDto.toDomain(),
                     triggerAt = Instant.fromEpochMilliseconds(alarmDto.triggerAt ?: return@mapNotNull null)
                 )
@@ -354,6 +355,28 @@ class IcalEntryRepositoryImpl(
     override suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant) {
         withContext(ioDispatcher) {
             getDatabase().alarm_dtoQueries.updateLastNotifiedAt(lastNotifiedAt = notifiedAt.toEpochMilliseconds(), id = alarmId)
+        }
+    }
+
+    override suspend fun recomputeAlarmTriggerTimes() = withContext(ioDispatcher) {
+        val db = getDatabase()
+        // Not getOrPut: it treats a cached null (entry gone) as missing and would query it again.
+        val entries = mutableMapOf<Long, IcalEntry?>()
+        val changedTriggerTimes = db.alarm_dtoQueries.getUnnotifiedAlarms().awaitAsList().mapNotNull { alarmDto ->
+            if (alarmDto.icalEntryId !in entries)
+                entries[alarmDto.icalEntryId] = db.icalentry_dtoQueries.getIcalEntryById(alarmDto.icalEntryId).awaitAsOneOrNull()?.toDomain()
+            val entry = entries[alarmDto.icalEntryId] ?: return@mapNotNull null
+            val triggerAt = alarmDto.toDomain().triggerTime(entry)?.toEpochMilliseconds()
+            if (triggerAt != alarmDto.triggerAt) alarmDto.id to triggerAt else null
+        }
+        updateAlarmTriggerTimes(db, changedTriggerTimes)
+    }
+
+    /** Writes the given (alarm row id, trigger time) pairs in one transaction. */
+    private suspend fun updateAlarmTriggerTimes(db: SpectacledDatabase, triggerTimes: List<Pair<Long, Long?>>) {
+        if (triggerTimes.isEmpty()) return
+        db.transaction {
+            triggerTimes.forEach { (id, triggerAt) -> db.alarm_dtoQueries.updateTriggerAt(triggerAt = triggerAt, id = id) }
         }
     }
 

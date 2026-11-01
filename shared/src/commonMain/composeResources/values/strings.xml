@@ -208,6 +208,9 @@
     <!-- %1$s: "Start" or "Due" -->
     <string name="alarm_missing_reference_date">No %1$s date - this alarm won't go off</string>
     <string name="alarm_already_passed">Already passed</string>
+    <string name="alarm_notifications_blocked">Notifications are turned off for this app, so alarms will not be shown.</string>
+    <string name="alarm_notifications_allow">Allow</string>
+    <string name="alarm_exact_alarms_blocked">Exact alarms are not allowed for this app, so alarms may go off a few minutes late.</string>
     <!-- %1$s: the iCalendar alarm action, e.g. "Email" -->
     <string name="alarm_not_notifying">%1$s alarm - no notification on this device</string>
     <string name="add">Add</string>

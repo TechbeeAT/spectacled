@@ -93,6 +93,7 @@ data class UpcomingAlarm(
     val calendarId: Long,
     val entryUid: String,
     val entrySummary: String?,
+    val entryDescription: String?,
     val alarm: Alarm,
     val triggerAt: Instant
 )

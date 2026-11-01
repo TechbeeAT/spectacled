@@ -41,6 +41,9 @@ const val OPENAI_BASE_URL = "openai_base_url"
 const val OPENAI_MODEL = "openai_model"
 const val OPENAI_API_KEY = "openai_api_key"
 
+/** Set once the notification permission was asked for on its own, see DetailsScreenRoot. */
+const val NOTIFICATION_PERMISSION_REQUESTED = "notification_permission_requested"
+
 interface UserAppPreferencesStore {
 
     val variant: SpectacledVariant

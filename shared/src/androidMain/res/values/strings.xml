@@ -10,4 +10,9 @@
     <string name="widget_select_calendar">Please select a calendar in widget settings</string>
     <string name="widget_no_entries">No entries found</string>
     <string name="widget_subtask">Subtask</string>
+
+    <!-- Alarm notifications are posted from a BroadcastReceiver, outside the Compose resource environment. -->
+    <string name="alarm_notification_channel_name">Alarms</string>
+    <string name="alarm_notification_channel_description">Reminders for tasks with an alarm</string>
+    <string name="alarm_notification_default_title">Alarm</string>
 </resources>
