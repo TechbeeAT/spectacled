@@ -47,8 +47,12 @@ interface AlarmScheduler {
      */
     fun replaceAll(alarms: List<ScheduledAlarm>)
 
-    /** Shows the notification for [alarm] right away, used for alarms that were missed. */
-    fun showNow(alarm: ScheduledAlarm)
+    /**
+     * Shows the notification for [alarm] right away. Returns false if it could not be shown (e.g.
+     * the notification permission is missing) - the alarm is then not marked as notified, so it is
+     * shown late once that changes, within the missed-alarm grace period.
+     */
+    fun showNow(alarm: ScheduledAlarm): Boolean
 
     /** Removes the shown notification for [key], if any. Pending alarms are not affected. */
     fun dismiss(key: ScheduledAlarmKey)
@@ -56,6 +60,6 @@ interface AlarmScheduler {
 
 expect class PlatformAlarmScheduler : AlarmScheduler {
     override fun replaceAll(alarms: List<ScheduledAlarm>)
-    override fun showNow(alarm: ScheduledAlarm)
+    override fun showNow(alarm: ScheduledAlarm): Boolean
     override fun dismiss(key: ScheduledAlarmKey)
 }

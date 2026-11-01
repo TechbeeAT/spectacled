@@ -4,6 +4,6 @@ package at.techbee.spectacled.screens.core.alarm
 actual class PlatformAlarmScheduler : AlarmScheduler {
 
     actual override fun replaceAll(alarms: List<ScheduledAlarm>) { /* not implemented yet */ }
-    actual override fun showNow(alarm: ScheduledAlarm) { /* not implemented yet */ }
+    actual override fun showNow(alarm: ScheduledAlarm): Boolean = false   // not implemented yet
     actual override fun dismiss(key: ScheduledAlarmKey) { /* not implemented yet */ }
 }

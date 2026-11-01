@@ -38,10 +38,14 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class IcalEntryRepositoryImpl(
-    private val databaseDriverFactory: DatabaseDriverFactory
+    /** Takes a provider instead of the factory so tests can hand in an in-memory database. */
+    private val provideDatabase: suspend () -> SpectacledDatabase
 ) : IcalEntryRepository {
 
-    private suspend fun getDatabase() = databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema)
+    constructor(databaseDriverFactory: DatabaseDriverFactory) :
+            this({ databaseDriverFactory.provideDatabase(SpectacledDatabase.Schema) })
+
+    private suspend fun getDatabase() = provideDatabase()
 
     private val dbFlow = flow {
         emit(getDatabase())

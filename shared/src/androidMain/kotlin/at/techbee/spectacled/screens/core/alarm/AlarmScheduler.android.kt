@@ -62,10 +62,10 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
 
     // Lint can't see the permission check inside canPostNotifications().
     @SuppressLint("MissingPermission")
-    actual override fun showNow(alarm: ScheduledAlarm) {
+    actual override fun showNow(alarm: ScheduledAlarm): Boolean {
         if (!canPostNotifications()) {
             Napier.w("Notification permission missing, alarm for entry ${alarm.icalEntryId} not shown")
-            return
+            return false
         }
         ensureChannel()
 
@@ -99,6 +99,7 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
             .build()
 
         NotificationManagerCompat.from(context).notify(alarm.key.notificationId(), notification)
+        return true
     }
 
     actual override fun dismiss(key: ScheduledAlarmKey) {

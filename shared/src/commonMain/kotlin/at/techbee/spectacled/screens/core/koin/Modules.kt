@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.koin
 
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
+import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
@@ -34,7 +35,8 @@ val sharedModule = module {
         )
     }
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
-    singleOf(::IcalEntryRepositoryImpl) { bind<IcalEntryRepository>() }
+    // Not singleOf: IcalEntryRepositoryImpl has two constructors, the reference would be ambiguous.
+    single<IcalEntryRepository> { IcalEntryRepositoryImpl(get<DatabaseDriverFactory>()) }
 
     singleOf(::DefaultWebDavRemoteCalendarDataSource) { bind<WebDavRemoteCalendarDataSource>() }
     singleOf(::DefaultWebDavRemoteIcalEntryDataSource) { bind<WebDavRemoteIcalEntryDataSource>() }
