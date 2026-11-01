@@ -132,12 +132,18 @@ fun DetailsScreenRoot(
     val permissionChecker = koinInject<PermissionChecker>()
     val userAppPreferencesStore = koinInject<UserAppPreferencesStore>()
     var notificationPermissionStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+    // Exact alarms are only ever asked for through the hint: granting them means a settings page.
+    var exactAlarmsStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         notificationPermissionStatus = permissionChecker.status(AppPermission.NOTIFICATIONS)
+        exactAlarmsStatus = permissionChecker.status(AppPermission.EXACT_ALARMS)
     }
     val permissionRequester = rememberPermissionRequester { permission, status ->
-        if (permission == AppPermission.NOTIFICATIONS)
-            notificationPermissionStatus = status
+        when (permission) {
+            AppPermission.NOTIFICATIONS -> notificationPermissionStatus = status
+            AppPermission.EXACT_ALARMS -> exactAlarmsStatus = status
+            AppPermission.LOCAL_NETWORK -> Unit
+        }
     }
     val hasNotifyingAlarm = detailsState.icalEntry.alarms.any { it.isNotifying() }
     LaunchedEffect(hasNotifyingAlarm, notificationPermissionStatus) {
@@ -503,7 +509,9 @@ fun DetailsScreenRoot(
                     modifier = Modifier.fillMaxSize(),
                     onEditorFocusChanged = { isEditorFocused = it },
                     notificationsBlocked = notificationPermissionStatus == PermissionStatus.DENIED,
-                    onAllowNotifications = { permissionRequester.request(AppPermission.NOTIFICATIONS) }
+                    onAllowNotifications = { permissionRequester.request(AppPermission.NOTIFICATIONS) },
+                    exactAlarmsBlocked = exactAlarmsStatus == PermissionStatus.DENIED,
+                    onAllowExactAlarms = { permissionRequester.request(AppPermission.EXACT_ALARMS) }
                 )
 
                 CustomBottomSnackbarHost(snackbarHostState = snackbarHostState)

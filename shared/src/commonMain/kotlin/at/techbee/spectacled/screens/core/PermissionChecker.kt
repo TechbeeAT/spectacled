@@ -23,7 +23,14 @@ enum class AppPermission {
      * Showing notifications, used for alarms. Android 13 (API 33) gates this behind
      * `android.permission.POST_NOTIFICATIONS`; iOS asks through UNUserNotificationCenter.
      */
-    NOTIFICATIONS
+    NOTIFICATIONS,
+
+    /**
+     * Firing alarms at their exact time. Android 12 (API 31) made this a special app access the
+     * user grants on a settings page, not a dialog, and Android 14 no longer grants it by default.
+     * Without it alarms still fire, but the OS may deliver them minutes late.
+     */
+    EXACT_ALARMS
 }
 
 enum class PermissionStatus {

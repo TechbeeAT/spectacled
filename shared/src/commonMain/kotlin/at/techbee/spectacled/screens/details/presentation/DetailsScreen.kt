@@ -84,6 +84,7 @@ import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformat
 import at.techbee.spectacled.screens.core.presentation.applyMarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
 import at.techbee.spectacled.screens.details.presentation.components.AlarmCard
+import at.techbee.spectacled.screens.details.presentation.components.AlarmPermissionHint
 import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.details.presentation.components.FormattingBar
@@ -96,7 +97,7 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableColumn
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.alarm_notifications_allow
+import spectacled.shared.generated.resources.alarm_exact_alarms_blocked
 import spectacled.shared.generated.resources.alarm_notifications_blocked
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.date_due
@@ -116,7 +117,9 @@ fun DetailsScreen(
     modifier: Modifier = Modifier,
     onEditorFocusChanged: (Boolean) -> Unit = {},
     notificationsBlocked: Boolean = false,
-    onAllowNotifications: () -> Unit = {}
+    onAllowNotifications: () -> Unit = {},
+    exactAlarmsBlocked: Boolean = false,
+    onAllowExactAlarms: () -> Unit = {}
 ) {
     // Deliberately not rememberSaveable: focus itself is not restored after process death, so a
     // saved `true` would show the formatting bar and hide the FAB with no keyboard up.
@@ -416,20 +419,18 @@ fun DetailsScreen(
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                 ) {
-                    if (notificationsBlocked && state.icalEntry.alarms.any { it.isNotifying() }) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-                        ) {
-                            Text(
+                    // Without notifications nothing shows at all, so that one comes first; the
+                    // exact alarm hint only matters once notifications are allowed.
+                    if (state.icalEntry.alarms.any { it.isNotifying() }) {
+                        when {
+                            notificationsBlocked -> AlarmPermissionHint(
                                 text = stringResource(Res.string.alarm_notifications_blocked),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.weight(1f)
+                                onAllow = onAllowNotifications
                             )
-                            TextButton(onClick = onAllowNotifications) {
-                                Text(stringResource(Res.string.alarm_notifications_allow))
-                            }
+                            exactAlarmsBlocked -> AlarmPermissionHint(
+                                text = stringResource(Res.string.alarm_exact_alarms_blocked),
+                                onAllow = onAllowExactAlarms
+                            )
                         }
                     }
 
