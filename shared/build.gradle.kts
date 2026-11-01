@@ -138,11 +138,6 @@ kotlin {
             //implementation(libs.dav4jvm)
         }
 
-        jvmTest.dependencies {
-            // In-memory SQLite for the repository tests
-            implementation(libs.sql.delight.sqlite.driver)
-        }
-
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.sql.delight.native.driver)
