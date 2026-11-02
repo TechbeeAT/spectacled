@@ -76,15 +76,17 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
         } ?: Intent()
 
         // The summary, or for an entry without one the first line of its description.
+        // Title: the entry's summary, or "Alarm" without one. Text: the entry's description, if any;
+        // the expanded notification shows it in full.
         val title = alarm.entrySummary?.takeIf { it.isNotBlank() }
-            ?: alarm.entryDescription?.lineSequence()?.firstOrNull { it.isNotBlank() }
             ?: context.getString(R.string.alarm_notification_default_title)
+        val text = alarm.entryDescription?.takeIf { it.isNotBlank() }
 
         val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ALARMS)
             .setSmallIcon(R.drawable.ic_notification_alarm)
             .setContentTitle(title)
-            // The description usually repeats the summary (the app sets it so), then it adds nothing.
-            .setContentText(alarm.alarmDescription?.takeIf { it.isNotBlank() && it != title })
+            .setContentText(text)
+            .setStyle(text?.let { NotificationCompat.BigTextStyle().bigText(it) })
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
