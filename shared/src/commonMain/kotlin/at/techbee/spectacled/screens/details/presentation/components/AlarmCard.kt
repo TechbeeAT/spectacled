@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
+import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.IcsDuration
 import at.techbee.spectacled.screens.core.domain.Alarm
@@ -31,6 +32,7 @@ import at.techbee.spectacled.screens.core.domain.AlarmTrigger
 import at.techbee.spectacled.screens.core.domain.AlarmTriggerRelation
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.formatLocalized
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import at.techbee.spectacled.theme.AppTheme
 import kotlinx.datetime.TimeZone
@@ -125,12 +127,13 @@ fun AlarmCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                    Text(
-                        text = "Beta-Info: This feature is still under development. Actual functionality is not yet implemented.",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontStyle = FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    if(getPlatform().platform != Platforms.ANDROID)
+                        Text(
+                            text = "Beta-Info: This feature is still under development. Actual functionality is not yet implemented.",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.error
+                        )
                 }
 
 
