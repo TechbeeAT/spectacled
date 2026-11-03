@@ -141,3 +141,116 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+  # TestFlight "What to Test" from release-notes/<tag>/whatsnew/whatsnew-en-US, the
+  # same text Google Play shows as "What's new", so testers on both platforms read the
+  # same notes. Runs on Linux because it mostly waits for App Store Connect to finish
+  # processing the uploads.
+  what-to-test:
+    name: Set What to Test for ${{ matrix.app }}
+    needs: ios
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: journals
+            bundleId: at.techbee.spectacled.journals
+          - app: notes
+            bundleId: at.techbee.spectacled.notes
+          - app: tasks
+            bundleId: at.techbee.spectacled.tasks
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve notes and version
+        id: notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          f="release-notes/$TAG/whatsnew/whatsnew-en-US"
+          if [ -f "$f" ]; then
+            echo "Using $f"
+            echo "file=$f" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No $f; TestFlight builds stay without What to Test."
+          fi
+          echo "version=$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
+          echo "build=$(sed -n 's/^CURRENT_PROJECT_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        if: steps.notes.outputs.file != ''
+        with:
+          python-version: '3.12'
+
+      - name: Set What to Test
+        if: steps.notes.outputs.file != ''
+        env:
+          ASC_KEY_ID: ${{ secrets.asc_api_key_id }}
+          ASC_ISSUER_ID: ${{ secrets.asc_api_key_issuer_id }}
+          ASC_KEY_PATH: ${{ runner.temp }}/asc_key.p8
+        run: |
+          echo -n "${{ secrets.asc_api_key_p8_base64 }}" | base64 --decode > "$ASC_KEY_PATH"
+          pip install --quiet "pyjwt[crypto]==2.10.1"
+          python3 .github/scripts/app_store_connect.py what-to-test \
+            --bundle-id "${{ matrix.bundleId }}" \
+            --version "${{ steps.notes.outputs.version }}" \
+            --build "${{ steps.notes.outputs.build }}" \
+            --notes-file "${{ steps.notes.outputs.file }}"
+
+  # App Store "What's New in This Version" for production tags (no suffix), from the
+  # same release-notes/<tag>/whatsnew/whatsnew-en-US as Google Play. Creates
+  # the App Store version if needed; attaching the build and submitting for review stay
+  # manual in App Store Connect. Skipped for an app's first App Store version.
+  whats-new:
+    name: Set What's New for ${{ matrix.app }}
+    needs: ios
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: journals
+            bundleId: at.techbee.spectacled.journals
+          - app: notes
+            bundleId: at.techbee.spectacled.notes
+          - app: tasks
+            bundleId: at.techbee.spectacled.tasks
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve notes and version
+        id: notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          f="release-notes/$TAG/whatsnew/whatsnew-en-US"
+          if [ -f "$f" ]; then
+            echo "Using $f"
+            echo "file=$f" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No $f; the App Store version stays without What's New."
+          fi
+          echo "version=$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        if: steps.notes.outputs.file != ''
+        with:
+          python-version: '3.12'
+
+      - name: Set What's New
+        if: steps.notes.outputs.file != ''
+        env:
+          ASC_KEY_ID: ${{ secrets.asc_api_key_id }}
+          ASC_ISSUER_ID: ${{ secrets.asc_api_key_issuer_id }}
+          ASC_KEY_PATH: ${{ runner.temp }}/asc_key.p8
+        run: |
+          echo -n "${{ secrets.asc_api_key_p8_base64 }}" | base64 --decode > "$ASC_KEY_PATH"
+          pip install --quiet "pyjwt[crypto]==2.10.1"
+          python3 .github/scripts/app_store_connect.py whats-new \
+            --bundle-id "${{ matrix.bundleId }}" \
+            --version "${{ steps.notes.outputs.version }}" \
+            --notes-file "${{ steps.notes.outputs.file }}"

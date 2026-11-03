@@ -61,6 +61,9 @@ per-variant entry (`ListScreenJournals/Notes/Tasks.kt`).
   `shared/src/commonMain/composeResources/values/strings.xml`. Never hand-edit
   `values-<lang>/strings.xml` — Weblate owns those.
 - **Dependencies:** versions only in `gradle/libs.versions.toml`.
+- **Releases:** run `/release <version> <channel>` (`.claude/skills/release/`). The version
+  lives only in `gradle/libs.versions.toml` and `iosApp/Version.xcconfig`; release notes in
+  `release-notes/<tag>/`. Tags (`v1.2.3[-internal|-alpha|-beta]`) trigger the store workflows.
 - **iOS apps are not Gradle modules.** They are standalone Xcode projects under
   `iosApp/` consuming the shared framework; do not add them to `settings.gradle.kts`
   (there is a comment there explaining why).

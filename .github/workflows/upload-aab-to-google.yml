@@ -90,6 +90,29 @@ jobs:
             echo "$app: bundle=ok mapping=${mapping:-<none found>}"
           done
 
+      - name: Collect "What's new" text
+        # release-notes/<tag>/whatsnew/whatsnew-<locale> (max. 500 characters each),
+        # written by the /release skill. The iOS workflow uses the same text for TestFlight
+        # and the App Store. Missing is fine: Play then shows no release notes.
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          src="release-notes/$TAG/whatsnew"
+          if [ -d "$src" ]; then
+            mkdir -p dist/whatsnew
+            cp "$src"/whatsnew-* dist/whatsnew/
+            for f in dist/whatsnew/*; do
+              chars=$(wc -m < "$f")
+              echo "$(basename "$f"): $chars characters"
+              if [ "$chars" -gt 500 ]; then
+                echo "::error::$f has $chars characters; Google Play allows 500."
+                exit 1
+              fi
+            done
+          else
+            echo "::warning::No $src; uploading without release notes."
+          fi
+
       - uses: actions/upload-artifact@v7
         with:
           name: play-bundles
@@ -129,11 +152,21 @@ jobs:
             echo "::warning::No mapping file for ${{ matrix.app }}; crash reports stay obfuscated."
           fi
 
+      - name: Resolve "What's new" directory
+        id: whatsnew
+        run: |
+          if [ -d dist/whatsnew ]; then
+            echo "path=dist/whatsnew" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"   # the action skips an empty whatsNewDirectory
+          fi
+
       - uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.google_play_service_account_json }}
           packageName: ${{ matrix.packageName }}
           releaseFiles: dist/${{ matrix.app }}/app.aab
           mappingFile: ${{ steps.mapping.outputs.path }}
+          whatsNewDirectory: ${{ steps.whatsnew.outputs.path }}
           track: ${{ needs.build.outputs.track }}
           status: ${{ needs.build.outputs.status }}
