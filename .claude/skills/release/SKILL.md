@@ -120,8 +120,9 @@ Plain text, no Markdown. Short `•` bullet lines are fine. It must be **at most
 characters** (the Google Play limit): check with `wc -m`, since the upload workflow fails
 above it. Because the notes are cumulative, this is a summary of the highlights since the
 last production release, not the full list: pick the changes users notice most, merge
-related ones into one line, and if anything is left out, end with
-"Full release notes on GitHub."
+related ones into one line. If anything is left out of a beta or production text, end
+with "Full release notes on GitHub." Internal and alpha releases get no GitHub release,
+so leave that line out there.
 
 The App Store "Werbetext" (Promotional Text, 170 characters) is marketing copy that is not
 tied to a version, and the user edits it by hand. For a production release, you may
