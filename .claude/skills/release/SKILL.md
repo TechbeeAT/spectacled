@@ -1,6 +1,6 @@
 ---
 name: release
-description: Prepare a Spectacled release for a version and channel the user names - set the version and build number, write channel-aware release notes, and open a release PR. Tagging stays manual after the merge.
+description: Prepare a Spectacled release for a version and channel the user names - set the version and build number, write release notes covering everything since the last production release, and open a release PR. Tagging stays manual after the merge.
 argument-hint: <version> <internal|alpha|beta|production> [build-number]
 disable-model-invocation: true
 ---
@@ -47,27 +47,23 @@ Print the following, then wait for an explicit yes:
 ```
 Version   1.0.77 (77)  ->  <version> (<build>)
 Channel   <channel>    Tag after merge: <tag>
-Notes     since <previous tag on this channel>  (N commits)  |  first release on this channel
+Notes     since <last production tag>  (N commits)  |  introduction (no production release yet)
 Branch    release/<tag>
 ```
 
-## 3. Find the changes since the last release on this channel
+## 3. Find the changes since the last production release
 
-Only consider tags of the same channel:
+The notes always cover everything since the **last production release**, whatever the
+channel. A test release (internal, alpha, beta) therefore repeats what earlier test
+releases already listed, and its notes grow until the next production release. This
+keeps testers on Android and iOS reading the same cumulative list, and the production
+notes are simply the final version of it.
 
-| Channel    | Matches                        |
-|------------|--------------------------------|
-| internal   | `v*-internal`                  |
-| alpha      | `v*-alpha`                     |
-| beta       | `v*-beta`                      |
-| production | `v*` with no `-` suffix        |
+The last production tag is the newest `v*` tag without a `-` suffix:
+`git tag --merged origin/main --list 'v*' --sort=-creatordate | grep -E -e '^v[^-]*$' | head -n 1`.
+The GitHub release workflow's fallback uses the same rule.
 
-Pick the previous tag with
-`git tag --merged origin/main --list 'v*' --sort=-creatordate`, filtered with the table
-above, first result. Use `grep -E -e '<pattern>'`: the patterns start with `-`, which grep
-otherwise reads as an option. The release workflow's fallback uses the same rule.
-
-**If a previous tag exists:** read `git log --format='%h %s%n%b' <previous>..origin/main`.
+**If there is a production tag:** read `git log --format='%h %s%n%b' <tag>..origin/main`.
 PR numbers appear as `(#123)` in commit subjects. For a commit whose subject is unclear,
 read its PR: `gh pr view 123` if `gh` works, otherwise the GitHub MCP tools.
 Leave out commits that users never notice:
@@ -76,27 +72,27 @@ Leave out commits that users never notice:
 - CI, workflows, build scripts and tests
 - pure refactors
 
-Going by commit range means a production release automatically includes everything its
-alphas and betas already shipped.
+For a change that was reworked across several commits, describe only the end result.
 
-**If there is no previous tag on this channel (the first release there):** do not list
-changes. Write an introduction instead, based on `README.md` ("Spectacled" heading, the
-app table, "Why" and "Features"):
+**If there is no production tag yet:** do not list changes. Write an introduction
+instead, on every channel, based on `README.md` ("Spectacled" heading, the app table, "Why"
+and "Features"):
 - what Spectacled is
 - the three apps: Journals, Notes, Tasks
 - CalDAV against the user's own server, no account needed
 - the platforms
 - the main features
 
-The same text goes to all three apps on Google Play, so describe the family, not one app.
+The same text goes to all three apps, so describe the family, not one app.
 
 ## 4. Write the release notes
 
-Create these files. Write them in English, for users, not developers. Describe what changed
-for the user, not how it was implemented.
+Create these two files. Write them in English, for users, not developers. Describe what
+changed for the user, not how it was implemented.
 
 **`release-notes/<tag>/github.md`**: the body of the GitHub release (beta and production
-only; the workflow ignores it for internal and alpha). Markdown:
+only; the workflow ignores it for internal and alpha). Markdown, with the **complete**
+list:
 
 ```markdown
 ## What's new
@@ -106,37 +102,32 @@ only; the workflow ignores it for internal and alpha). Markdown:
 ## Fixes
 - …
 
-**Full changelog**: https://github.com/TechbeeAT/spectacled/compare/<previous>...<tag>
+**Full changelog**: https://github.com/TechbeeAT/spectacled/compare/<last production tag>...<tag>
 ```
 
-Leave out empty sections. You may keep `(#123)` references at the end of bullets. For a
-first release, use the introduction instead of the sections, and leave out the changelog
-link.
+Leave out empty sections. You may keep `(#123)` references at the end of bullets. Before
+the first production release, use the introduction instead of the sections, and leave out
+the changelog link.
 
-**`release-notes/<tag>/play/whatsnew-en-US`**: the Google Play "What's new" text (every
-channel). Plain text, no Markdown. Short `•` bullet lines are fine. It must be **at most
-500 characters**: check with `wc -m`. The upload workflow fails the job above that limit.
-Include only the most important points.
+**`release-notes/<tag>/whatsnew/whatsnew-en-US`**: the store text, used on every channel
+in the same way for both platforms:
+- Google Play "What's new"
+- TestFlight "What to Test" (alpha, beta, production)
+- App Store "What's New in This Version" (production, from the second App Store version on;
+  an app's first App Store version has no such field)
 
-**`release-notes/<tag>/testflight/whattotest-en-US`**: the TestFlight "What to Test" text
-(alpha, beta and production; the iOS workflow does not run for internal). Plain text, no
-Markdown, **at most 4000 characters**. It is written for testers: what changed, and what
-they should try out or watch for, including risky areas such as sync, migrations and
-notifications. For a first release on a channel, use the introduction plus a short note
-on what to try first. If the file is missing, the workflow falls back to the Play text.
-
-**`release-notes/<tag>/appstore/whatsnew-en-US`** (production only): the App Store
-"What's New in This Version" ("Neue Funktionen in dieser Version"), shown to everyone in
-the App Store version history. Plain text, no Markdown, **at most 4000 characters**. It is
-longer than the Play text but just as user-facing, with no testing instructions. If the
-file is missing, the workflow falls back to the Play text. An app's first App Store version
-has no such field, so skip this file when no production tag exists yet.
+Plain text, no Markdown. Short `•` bullet lines are fine. It must be **at most 500
+characters** (the Google Play limit): check with `wc -m`, since the upload workflow fails
+above it. Because the notes are cumulative, this is a summary of the highlights since the
+last production release, not the full list: pick the changes users notice most, merge
+related ones into one line, and if anything is left out, end with
+"Full release notes on GitHub."
 
 The App Store "Werbetext" (Promotional Text, 170 characters) is marketing copy that is not
 tied to a version, and the user edits it by hand. For a production release, you may
 suggest a new one in the PR description, but do not write a file for it.
 
-Show all drafts to the user and apply their edits before continuing.
+Show both drafts to the user and apply their edits before continuing.
 
 ## 5. Set the version
 
@@ -159,8 +150,8 @@ toml file.
 3. Push with `git push -u origin <branch>`.
 4. Open a PR against `main` titled `Release <tag>`. The body contains:
    - the version/build change and the channel
-   - which previous tag the notes are based on
-   - the Play text, and the GitHub, TestFlight and App Store notes in `<details>` blocks
+   - which production tag the notes count from (or: introduction)
+   - the store text, and the GitHub notes in a `<details>` block
    - the commands to run after merging:
 
      ```bash

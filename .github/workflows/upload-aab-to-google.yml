@@ -91,12 +91,13 @@ jobs:
           done
 
       - name: Collect "What's new" text
-        # release-notes/<tag>/play/whatsnew-<locale> (max. 500 characters each), written
-        # by the /release skill. Missing is fine: Play then shows no release notes.
+        # release-notes/<tag>/whatsnew/whatsnew-<locale> (max. 500 characters each),
+        # written by the /release skill. The iOS workflow uses the same text for TestFlight
+        # and the App Store. Missing is fine: Play then shows no release notes.
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          src="release-notes/$TAG/play"
+          src="release-notes/$TAG/whatsnew"
           if [ -d "$src" ]; then
             mkdir -p dist/whatsnew
             cp "$src"/whatsnew-* dist/whatsnew/

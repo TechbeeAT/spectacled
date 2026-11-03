@@ -201,8 +201,8 @@ jobs:
 
       # Release notes come from release-notes/<tag>/github.md, written by the
       # /release skill and merged with the version bump. Without that file, GitHub
-      # generates notes against the previous tag of the SAME channel, so a production
-      # release lists everything since the last production release, not the last beta.
+      # generates them. Either way they cover everything since the last PRODUCTION
+      # release, so test releases are cumulative and grow until the next production one.
       - name: Prepare release notes
         env:
           TAG: ${{ github.ref_name }}
@@ -214,18 +214,12 @@ jobs:
             cp "$notes" "$RUNNER_TEMP/release-notes.md"
             exit 0
           fi
-          case "$TAG" in
-            *-internal) channel='-internal$' ;;
-            *-alpha)    channel='-alpha$' ;;
-            *-beta)     channel='-beta$' ;;
-            *-*)        channel='' ;;
-            *)          channel='^v[^-]*$' ;;   # production: no suffix
-          esac
-          previous=""
-          if [ -n "$channel" ]; then
-            previous="$(git tag --merged "$TAG" --list 'v*' --sort=-creatordate \
-              | grep -vxF -e "$TAG" | grep -E -e "$channel" | head -n 1 || true)"
-          fi
+          previous="$(git tag --merged "$TAG" --list 'v*' --sort=-creatordate \
+            | grep -vxF -e "$TAG" | grep -E -e '^v[^-]*$' | head -n 1 || true)"
+          # No production release yet: count from the very first tag. Leaving
+          # previous_tag_name out would make GitHub pick the last release of any channel.
+          [ -n "$previous" ] || previous="$(git tag --merged "$TAG" --list 'v*' --sort=creatordate \
+            | grep -vxF -e "$TAG" | head -n 1 || true)"
           echo "No $notes; generating notes since '${previous:-<first commit>}'"
           gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
             -f tag_name="$TAG" ${previous:+-f previous_tag_name="$previous"} \

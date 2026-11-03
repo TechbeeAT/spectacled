@@ -142,9 +142,10 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
-  # TestFlight "What to Test" from release-notes/<tag>/testflight/whattotest-en-US,
-  # written by the /release skill; falls back to the Google Play text. Runs on Linux
-  # because it mostly waits for App Store Connect to finish processing the uploads.
+  # TestFlight "What to Test" from release-notes/<tag>/whatsnew/whatsnew-en-US, the
+  # same text Google Play shows as "What's new", so testers on both platforms read the
+  # same notes. Runs on Linux because it mostly waits for App Store Connect to finish
+  # processing the uploads.
   what-to-test:
     name: Set What to Test for ${{ matrix.app }}
     needs: ios
@@ -168,15 +169,13 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          for f in "release-notes/$TAG/testflight/whattotest-en-US" "release-notes/$TAG/play/whatsnew-en-US"; do
-            if [ -f "$f" ]; then
-              echo "Using $f"
-              echo "file=$f" >> "$GITHUB_OUTPUT"
-              break
-            fi
-          done
-          [ -f "release-notes/$TAG/testflight/whattotest-en-US" ] || [ -f "release-notes/$TAG/play/whatsnew-en-US" ] \
-            || echo "::warning::No release notes for $TAG; TestFlight builds stay without What to Test."
+          f="release-notes/$TAG/whatsnew/whatsnew-en-US"
+          if [ -f "$f" ]; then
+            echo "Using $f"
+            echo "file=$f" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No $f; TestFlight builds stay without What to Test."
+          fi
           echo "version=$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
           echo "build=$(sed -n 's/^CURRENT_PROJECT_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
 
@@ -200,8 +199,8 @@ jobs:
             --build "${{ steps.notes.outputs.build }}" \
             --notes-file "${{ steps.notes.outputs.file }}"
 
-  # App Store "What's New in This Version" for production tags (no suffix), from
-  # release-notes/<tag>/appstore/whatsnew-en-US or else the Google Play text. Creates
+  # App Store "What's New in This Version" for production tags (no suffix), from the
+  # same release-notes/<tag>/whatsnew/whatsnew-en-US as Google Play. Creates
   # the App Store version if needed; attaching the build and submitting for review stay
   # manual in App Store Connect. Skipped for an app's first App Store version.
   whats-new:
@@ -228,15 +227,13 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          for f in "release-notes/$TAG/appstore/whatsnew-en-US" "release-notes/$TAG/play/whatsnew-en-US"; do
-            if [ -f "$f" ]; then
-              echo "Using $f"
-              echo "file=$f" >> "$GITHUB_OUTPUT"
-              break
-            fi
-          done
-          [ -f "release-notes/$TAG/appstore/whatsnew-en-US" ] || [ -f "release-notes/$TAG/play/whatsnew-en-US" ] \
-            || echo "::warning::No release notes for $TAG; the App Store version stays without What's New."
+          f="release-notes/$TAG/whatsnew/whatsnew-en-US"
+          if [ -f "$f" ]; then
+            echo "Using $f"
+            echo "file=$f" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No $f; the App Store version stays without What's New."
+          fi
           echo "version=$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-python@v5
