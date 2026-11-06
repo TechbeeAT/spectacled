@@ -33,8 +33,7 @@ import spectacled.shared.generated.resources.about_release_notes
 import spectacled.shared.generated.resources.more_on_github
 
 
-//TODO: Change for Release!!!
-private const val GITHUB_RELEASES_URL = "https://github.com/TechbeeAT/jtxBoard/releases"
+private const val GITHUB_RELEASES_URL = "https://github.com/TechbeeAT/spectacled/releases"
 
 
 
