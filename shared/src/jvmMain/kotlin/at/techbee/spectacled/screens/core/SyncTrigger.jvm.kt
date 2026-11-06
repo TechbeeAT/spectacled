@@ -8,6 +8,7 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -23,7 +24,9 @@ actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
     private val icalEntryRepository: IcalEntryRepository by inject()
     private val fileManager: PlatformFileManager by inject()
     private val alarmCoordinator: AlarmCoordinator by inject()
-    private val scope = CoroutineScope(Dispatchers.Default)
+    // SupervisorJob: a sync that fails with an uncaught Throwable must not cancel the scope,
+    // otherwise every later launch (manual or periodic sync) would silently be a no-op.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
 
 
