@@ -1,10 +1,13 @@
 
 
 > [!NOTE]
-> **Status: internal beta.** All three apps are currently in a closed beta round with a small
-> group of testers, and the **public beta starts soon**. Development moves quickly
-> right now — expect rough edges, frequent releases, and the occasional breaking
-> change. Feedback is what the beta is for: open an
+> **Status: public beta.** All three apps are now in public beta on Android, iOS, and
+> Desktop, and anyone can
+> **[join the test](https://spectacled.techbee.at/want-to-help-me-build-spectacled/)**.
+> The Web version is still in **alpha**: usable for trying things out, but some parts
+> are not settled yet. Development moves quickly right now — expect rough edges,
+> frequent releases, and the occasional breaking change. Feedback is what the beta is
+> for: open an
 > [issue](https://github.com/TechbeeAT/spectacled/issues/new/choose) or write to
 > [spectacled@techbee.at](mailto:spectacled@techbee.at).
 
