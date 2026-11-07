@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.account_added_updated
@@ -43,7 +44,9 @@ import spectacled.shared.generated.resources.folders_synced
 import spectacled.shared.generated.resources.login_message_forbidden
 import spectacled.shared.generated.resources.login_message_not_authorized
 import spectacled.shared.generated.resources.server_not_found
+import spectacled.shared.generated.resources.folders_removed_not_on_server
 import spectacled.shared.generated.resources.some_folders_failed_to_sync
+import spectacled.shared.generated.resources.unnamed_folder
 import spectacled.shared.generated.resources.sync_status_not_authorized
 import spectacled.shared.generated.resources.sync_status_not_found
 import spectacled.shared.generated.resources.unknown_error
@@ -286,6 +289,7 @@ class AccountListViewModel(
                 // and calendars of a principal that couldn't be fully discovered are not removed locally.
                 val failedPrincipalUrls = mutableSetOf<Url>()
                 val calendarsToSync = mutableListOf<Calendar>()
+                val removedCalendarsNotOnServer = mutableListOf<Calendar>()
                 discoverPrincipalsResult.principals.forEach { principal ->
 
                     val discoveredHomeCollections = mutableListOf<HomeCollection>()
@@ -371,21 +375,26 @@ class AccountListViewModel(
                     removedCalendars.forEach { calendarRepository.deleteCalendar(it.id) }
                     if (removedCalendars.isNotEmpty())
                         alarmCoordinator.reconcile()
-                    // Todo: inform user that calendar was removed!
+                    removedCalendarsNotOnServer.addAll(removedCalendars)
 
-                    calendarsToSync.addAll(localCalendars)
+                    calendarsToSync.addAll(localCalendars - removedCalendars.toSet())
                 }
 
                 // Only report success (and close the bottom sheet) if every principal was discovered completely,
                 // otherwise keep the error state set above so the user can see what went wrong.
+                // Folders removed because they are gone on the server are worth more than the success message
+                val removedFoldersMessage = removedCalendarsNotOnServer
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { removedFoldersMessage(it) }
                 if(failedPrincipalUrls.isEmpty()) {
                     _state.update { it.copy(
                         showAddPrincipalBottomSheet = false,
                         processingState = ProcessingState.Success(getString(Res.string.account_added_updated)),
-                        snackbarText = getString(Res.string.account_added_updated)
+                        snackbarText = removedFoldersMessage ?: getString(Res.string.account_added_updated)
                     ) }
                     onSyncCalendars(calendarsToSync)
                 } else {
+                    removedFoldersMessage?.let { message -> _state.update { it.copy(snackbarText = message) } }
                     // still sync what could be discovered, but don't let the sync result overwrite the error state
                     calendarsToSync
                         .filter { it.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED }
@@ -432,7 +441,18 @@ class AccountListViewModel(
                             processingState = ProcessingState.Success(getString(Res.string.folder_successfully_added_updated)),
                         ) }
                     }
-                    UpsertCalendarResult.NotFound -> deleteCalendar(principal, calendar)  // TODO: Inform user that the calendar was deleted in the background
+                    UpsertCalendarResult.NotFound -> {
+                        // The folder is gone on the server, so there is nothing left to delete there - remove the local copy
+                        calendarRepository.deleteCalendar(calendar.id)
+                        alarmCoordinator.reconcile()
+                        val message = removedFoldersMessage(listOf(calendar))
+                        _state.update { it.copy(
+                            editFoldersOfPrincipal = null,
+                            snackbarText = message,
+                            showAddOrUpdateCalendarBottomSheet = null,
+                            processingState = ProcessingState.Success(message),
+                        ) }
+                    }
                     is UpsertCalendarResult.Failed -> _state.update { it.copy(processingState = ProcessingState.Error(message = upsertCalendarResult.message, detail = upsertCalendarResult.details)) }
                 }
 
@@ -442,6 +462,13 @@ class AccountListViewModel(
                 Napier.e(e.stackTraceToString())
             }
         }
+    }
+
+    /** Tells the user which folders were removed from this device because they no longer exist on the server. */
+    private suspend fun removedFoldersMessage(removedCalendars: List<Calendar>): String {
+        val unnamedFolder = getString(Res.string.unnamed_folder)
+        val names = removedCalendars.joinToString(", ") { it.displayName?.takeIf { name -> name.isNotBlank() } ?: unnamedFolder }
+        return getPluralString(Res.plurals.folders_removed_not_on_server, removedCalendars.size, names, removedCalendars.size)
     }
 
     private fun onSyncCalendars(calendars: List<Calendar>) {
