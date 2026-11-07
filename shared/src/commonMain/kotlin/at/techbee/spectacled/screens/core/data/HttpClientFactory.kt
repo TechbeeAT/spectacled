@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.data
 
 
+import at.techbee.spectacled.screens.core.AppLogging
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
@@ -63,7 +64,8 @@ object HttpClientFactory {
                         Napier.d(tag = "HttpClient", message = message)
                     }
                 }
-                level = LogLevel.HEADERS  // replace with LogLevel.ALL for detailed debug logs
+                // Request/response headers only in debug builds - release builds don't log debug messages anyway
+                level = if (AppLogging.isDebugBuild) LogLevel.HEADERS else LogLevel.NONE  // replace with LogLevel.ALL for detailed debug logs
                 sanitizeHeader { header ->
                     // sanitizing x-api-key is specifically for Anthropic
                     header == HttpHeaders.Authorization || header.equals("x-api-key", ignoreCase = true)

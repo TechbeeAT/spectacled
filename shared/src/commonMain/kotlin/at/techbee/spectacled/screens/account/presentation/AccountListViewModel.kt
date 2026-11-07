@@ -28,8 +28,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.account_added_updated
@@ -43,17 +47,23 @@ import spectacled.shared.generated.resources.folders_synced
 import spectacled.shared.generated.resources.login_message_forbidden
 import spectacled.shared.generated.resources.login_message_not_authorized
 import spectacled.shared.generated.resources.server_not_found
+import spectacled.shared.generated.resources.folders_removed_not_on_server
 import spectacled.shared.generated.resources.some_folders_failed_to_sync
+import spectacled.shared.generated.resources.unnamed_folder
 import spectacled.shared.generated.resources.sync_status_not_authorized
 import spectacled.shared.generated.resources.sync_status_not_found
 import spectacled.shared.generated.resources.unknown_error
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 
 
 /** how long the accounts screen is shown before the welcome bottom sheet slides in on first run */
 private val WELCOME_BOTTOM_SHEET_DELAY = 500.milliseconds
+/** How long to wait for a requested sync to finish before giving up on reporting its result */
+private val SYNC_RESULT_TIMEOUT = 2.minutes
 
 class AccountListViewModel(
     private val calendarRepository: CalendarRepository,
@@ -69,6 +79,7 @@ class AccountListViewModel(
     val state = _state.asStateFlow()
 
     private var observationJob: Job? = null
+    private var syncResultJob: Job? = null
 
     /** guards the one-time, first-run auto-opening of the add-principal bottom sheet */
     private var initialPrincipalsHandled = false
@@ -130,7 +141,7 @@ class AccountListViewModel(
         when (action) {
             is AccountListAction.OnShowAboutBottomSheet -> { _state.update { it.copy(showAboutBottomSheet = action.show ?: !it.showAboutBottomSheet) } }
             is AccountListAction.OnShowAddPrincipalBottomSheet -> { _state.update { it.copy(showAddPrincipalBottomSheet = action.show ?: !it.showAddPrincipalBottomSheet, processingState = ProcessingState.Idle) } }
-            is AccountListAction.OnShowDeleteCalendarDialog -> { _state.update { it.copy(showDeleteCalendarDialog = action) } }
+            is AccountListAction.OnShowDeleteCalendarDialog -> { _state.update { it.copy(showDeleteCalendarDialog = action, processingState = ProcessingState.Idle) } }
             is AccountListAction.OnShowRemovePrincipalDialog -> { _state.update { it.copy(showRemovePrincipalDialog = action) } }
             is AccountListAction.OnShowCreateOrUpdateCalendarBottomSheet -> { _state.update { it.copy(showAddOrUpdateCalendarBottomSheet = action, processingState = ProcessingState.Idle) } }
             is AccountListAction.OnEditAccountFolders -> { _state.update { it.copy(editFoldersOfPrincipal = action.principal) } }
@@ -286,6 +297,7 @@ class AccountListViewModel(
                 // and calendars of a principal that couldn't be fully discovered are not removed locally.
                 val failedPrincipalUrls = mutableSetOf<Url>()
                 val calendarsToSync = mutableListOf<Calendar>()
+                val removedCalendarsNotOnServer = mutableListOf<Calendar>()
                 discoverPrincipalsResult.principals.forEach { principal ->
 
                     val discoveredHomeCollections = mutableListOf<HomeCollection>()
@@ -371,21 +383,26 @@ class AccountListViewModel(
                     removedCalendars.forEach { calendarRepository.deleteCalendar(it.id) }
                     if (removedCalendars.isNotEmpty())
                         alarmCoordinator.reconcile()
-                    // Todo: inform user that calendar was removed!
+                    removedCalendarsNotOnServer.addAll(removedCalendars)
 
-                    calendarsToSync.addAll(localCalendars)
+                    calendarsToSync.addAll(localCalendars - removedCalendars.toSet())
                 }
 
                 // Only report success (and close the bottom sheet) if every principal was discovered completely,
                 // otherwise keep the error state set above so the user can see what went wrong.
+                // Folders removed because they are gone on the server are worth more than the success message
+                val removedFoldersMessage = removedCalendarsNotOnServer
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { removedFoldersMessage(it) }
                 if(failedPrincipalUrls.isEmpty()) {
                     _state.update { it.copy(
                         showAddPrincipalBottomSheet = false,
                         processingState = ProcessingState.Success(getString(Res.string.account_added_updated)),
-                        snackbarText = getString(Res.string.account_added_updated)
+                        snackbarText = removedFoldersMessage ?: getString(Res.string.account_added_updated)
                     ) }
                     onSyncCalendars(calendarsToSync)
                 } else {
+                    removedFoldersMessage?.let { message -> _state.update { it.copy(snackbarText = message) } }
                     // still sync what could be discovered, but don't let the sync result overwrite the error state
                     calendarsToSync
                         .filter { it.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED }
@@ -432,7 +449,18 @@ class AccountListViewModel(
                             processingState = ProcessingState.Success(getString(Res.string.folder_successfully_added_updated)),
                         ) }
                     }
-                    UpsertCalendarResult.NotFound -> deleteCalendar(principal, calendar)  // TODO: Inform user that the calendar was deleted in the background
+                    UpsertCalendarResult.NotFound -> {
+                        // The folder is gone on the server, so there is nothing left to delete there - remove the local copy
+                        calendarRepository.deleteCalendar(calendar.id)
+                        alarmCoordinator.reconcile()
+                        val message = removedFoldersMessage(listOf(calendar))
+                        _state.update { it.copy(
+                            editFoldersOfPrincipal = null,
+                            snackbarText = message,
+                            showAddOrUpdateCalendarBottomSheet = null,
+                            processingState = ProcessingState.Success(message),
+                        ) }
+                    }
                     is UpsertCalendarResult.Failed -> _state.update { it.copy(processingState = ProcessingState.Error(message = upsertCalendarResult.message, detail = upsertCalendarResult.details)) }
                 }
 
@@ -444,29 +472,53 @@ class AccountListViewModel(
         }
     }
 
+    /** Tells the user which folders were removed from this device because they no longer exist on the server. */
+    private suspend fun removedFoldersMessage(removedCalendars: List<Calendar>): String {
+        val unnamedFolder = getString(Res.string.unnamed_folder)
+        val names = removedCalendars.joinToString(", ") { it.displayName?.takeIf { name -> name.isNotBlank() } ?: unnamedFolder }
+        return getPluralString(Res.plurals.folders_removed_not_on_server, removedCalendars.size, names, removedCalendars.size)
+    }
+
+    @OptIn(ExperimentalTime::class)
     private fun onSyncCalendars(calendars: List<Calendar>) {
 
-        val syncRelevantCalendars = calendars.filter { it.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED }
+        val calendarIds = calendars
+            .filter { it.calendarSyncStatus?.type != CalendarSyncStatusType.DISABLED }
+            .map { it.id }
+        if (calendarIds.isEmpty())
+            return
 
-        viewModelScope.launch {
+        val requestedAt = Clock.System.now()
+        platformSyncTrigger.requestImmediate(calendarIds)
 
-            platformSyncTrigger.requestImmediate(syncRelevantCalendars.map { it.id })
-
-            val calendarsRelevantForSyncCheck = _state.value.calendars.filter { calendar ->
-                syncRelevantCalendars.any { syncRelevantCalendar -> calendar.id == syncRelevantCalendar.id }
+        // requestImmediate only schedules the sync, so the calendars in the state still carry the
+        // status of the previous sync at this point. Wait until every calendar has written a final
+        // status after this request and report that. If it doesn't happen in time (no network,
+        // the sync was cancelled, ...) nothing is reported - the folder list shows each status anyway.
+        syncResultJob?.cancel()
+        syncResultJob = viewModelScope.launch {
+            val syncedCalendars = withTimeoutOrNull(SYNC_RESULT_TIMEOUT) {
+                state
+                    .map { currentState -> currentState.calendars.filter { it.id in calendarIds } }
+                    .first { relevantCalendars ->
+                        relevantCalendars.all { calendar ->
+                            val status = calendar.calendarSyncStatus
+                            status != null
+                                    && status.type != CalendarSyncStatusType.IN_PROGRESS
+                                    && status.icsDateTime.instant >= requestedAt
+                        }
+                    }
             }
+            if (syncedCalendars.isNullOrEmpty())
+                return@launch
 
-            // TODO: Double-Check if this actually works!
-            val newProcessingState = if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.SYNCED })
-                ProcessingState.Success(getString(Res.string.folders_synced))
-            else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_AUTHORIZED })
-                ProcessingState.Error(getString(Res.string.sync_status_not_authorized), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
-            else if(calendarsRelevantForSyncCheck.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_FOUND })
-                ProcessingState.Error(getString(Res.string.sync_status_not_found), _state.value.calendars.firstOrNull()?.calendarSyncStatus?.details)
-            else
-                ProcessingState.Error(getString(Res.string.some_folders_failed_to_sync))
-
-            _state.update { it.copy(processingState = newProcessingState) }
+            val message = when {
+                syncedCalendars.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.SYNCED } -> getString(Res.string.folders_synced)
+                syncedCalendars.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_AUTHORIZED } -> getString(Res.string.sync_status_not_authorized)
+                syncedCalendars.all { it.calendarSyncStatus?.type == CalendarSyncStatusType.NOT_FOUND } -> getString(Res.string.sync_status_not_found)
+                else -> getString(Res.string.some_folders_failed_to_sync)
+            }
+            _state.update { it.copy(snackbarText = message) }
         }
     }
 

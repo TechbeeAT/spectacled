@@ -56,7 +56,9 @@ per-variant entry (`ListScreenJournals/Notes/Tasks.kt`).
   `core/data/repository/`.
 - **Database:** SQLDelight (`shared/src/commonMain/sqldelight/…`). Schema changes need a
   new numbered migration (`15.sqm` next) alongside the `.sq` edit — never edit an
-  existing `.sqm`.
+  existing `.sqm`. Then regenerate the schema snapshot with
+  `./gradlew :shared:generateCommonMainSpectacledDatabaseSchema` (adds `sqldelight/databases/16.db`)
+  and commit it; `:shared:verifySqlDelightMigration` checks every snapshot migrates to the `.sq` schema.
 - **Strings:** source strings only in
   `shared/src/commonMain/composeResources/values/strings.xml`. Never hand-edit
   `values-<lang>/strings.xml` — Weblate owns those.
@@ -74,7 +76,7 @@ per-variant entry (`ListScreenJournals/Notes/Tasks.kt`).
 CI (`.github/workflows/unit-tests.yml`) runs exactly:
 
 ```bash
-./gradlew :shared:allTests \
+./gradlew :shared:allTests :shared:verifySqlDelightMigration \
   :androidJournalsApp:lintDebug :androidNotesApp:lintDebug :androidTasksApp:lintDebug
 ```
 
