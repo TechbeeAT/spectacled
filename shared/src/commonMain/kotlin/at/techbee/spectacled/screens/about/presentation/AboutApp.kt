@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -65,7 +66,8 @@ fun AboutApp(
 
             SplashScreen(
                 spectacledVariant = spectacledVariant,
-                modifier = Modifier.padding(top = 32.dp)
+                modifier = Modifier.padding(top = 32.dp),
+                keepVariantSeedColor = true
             )
 
             Text(
@@ -165,6 +167,7 @@ fun AboutApp(
 
                      */
                 },
+                colors = CardDefaults.elevatedCardColors().copy(containerColor = MaterialTheme.colorScheme.primaryFixedDim),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -220,6 +223,7 @@ fun AboutApp(
                         Napier.w(e.stackTraceToString())
                     }
                 },
+                colors = CardDefaults.elevatedCardColors().copy(containerColor = MaterialTheme.colorScheme.primaryFixedDim),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -244,6 +248,17 @@ fun AboutApp_Preview(
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             AboutApp(spectacledVariant = SpectacledVariant.JOURNALS)
+        }
+    }
+}
+
+@Preview(uiMode = 32)   // 32 = UI_MODE_NIGHT_YES
+@Composable
+fun AboutApp_DARK_Preview(
+) {
+    AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
+        Scaffold {
+            AboutApp(spectacledVariant = SpectacledVariant.NOTES)
         }
     }
 }

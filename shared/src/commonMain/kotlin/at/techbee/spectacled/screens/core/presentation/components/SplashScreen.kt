@@ -35,11 +35,12 @@ import spectacled.shared.generated.resources.no_matching_entries_found
 @Composable
 fun SplashScreen(
     spectacledVariant: SpectacledVariant,
+    modifier: Modifier = Modifier,
     showProgressIndicator: Boolean = false,
     size: Dp = 200.dp,
     reducedAlpha: Boolean = false,
     text: String? = null,
-    modifier: Modifier = Modifier
+    keepVariantSeedColor: Boolean = false
 ) {
 
     val alpha = if(reducedAlpha) 0.25f else 1f
@@ -66,7 +67,7 @@ fun SplashScreen(
                 modifier = Modifier
                     .size(size)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(if(keepVariantSeedColor) spectacledVariant.themeSeedColor else MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
 
@@ -102,7 +103,7 @@ fun SplashScreen_Preview() {
         SplashScreen(
             spectacledVariant = SpectacledVariant.JOURNALS,
             showProgressIndicator = true,
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         )
     }
 }
@@ -114,7 +115,8 @@ fun SplashScreen_no_progress_Preview() {
         SplashScreen(
             spectacledVariant = SpectacledVariant.NOTES,
             showProgressIndicator = false,
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            keepVariantSeedColor = true
         )
     }
 }
