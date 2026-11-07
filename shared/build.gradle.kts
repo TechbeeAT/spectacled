@@ -83,6 +83,7 @@ kotlin {
 
             implementation(libs.aboutlibraries.core)
             implementation(libs.aboutlibraries.compose.m3)
+            implementation(libs.multiplatform.markdown.renderer.m3) // or -m2
 
             implementation(libs.compose.pipette)
 

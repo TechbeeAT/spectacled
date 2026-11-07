@@ -16,6 +16,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -26,6 +30,7 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.about.domain.GitHubRelease
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.AppTheme
+import com.mikepenz.markdown.m3.Markdown
 import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -58,16 +63,23 @@ fun GitHubReleases(
             modifier = Modifier.padding(4.dp).fillMaxSize()
         ) {
 
-            itemsIndexed(releases) { index, release ->
+            itemsIndexed(releases.take(5)) { index, release ->
+
+                var isExpanded by remember { mutableStateOf(index == 0)}
+                
                 SpecialRoundedCard(
                     isFirst = index == 0,
                     isLast = index == releases.lastIndex,
                     onClick = {
+                        isExpanded = !isExpanded
+                        /*
                         try {
                             uriHandler.openUri(release.githubUrl)
                         } catch (e: Exception) {
                             Napier.w(e.stackTraceToString())
                         }
+
+                         */
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -79,9 +91,10 @@ fun GitHubReleases(
                             style = MaterialTheme.typography.titleSmall
                         )
                         release.releaseText?.let {
-                            Text(
-                                text = it,
-                            )
+                            if(isExpanded)
+                                Markdown(content = it)
+                            else
+                                Text(text = it, maxLines = 5)
                         }
                     }
                 }
