@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.about.domain.GitHubRelease
+import at.techbee.spectacled.screens.core.buildIsPrerelease
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.AppTheme
 import com.mikepenz.markdown.m3.Markdown
@@ -45,7 +46,8 @@ private const val GITHUB_RELEASES_URL = "https://github.com/TechbeeAT/spectacled
 
 @Composable
 fun GitHubReleases(
-    releases: List<GitHubRelease>
+    releases: List<GitHubRelease>,
+    buildIsPreRelese: Boolean = buildIsPrerelease()
 ) {
     val uriHandler = LocalUriHandler.current
 
@@ -64,7 +66,7 @@ fun GitHubReleases(
             modifier = Modifier.padding(4.dp).fillMaxSize()
         ) {
 
-            itemsIndexed(releases.take(5)) { index, release ->
+            itemsIndexed(releases.filter { if(!buildIsPreRelese) !it.prerelease else true }.take(5)) { index, release ->
 
                 var isExpanded by remember { mutableStateOf(index == 0)}
                 
@@ -144,30 +146,66 @@ fun GitHubReleases(
 @Composable
 private fun GitHubReleases_Preview() {
 
-    val releases = listOf(
+    val sampleReleaseNotes = "## Welcome to Spectacled\n" +
+            "\n" +
+            "Spectacled is a family of open, standards-based apps for journals, notes and tasks. Your entries are stored as iCalendar and synced over CalDAV with a server you choose, such as Nextcloud, Radicale or any other CalDAV server. There is no proprietary backend and no account to create: your data stays on your own server.\n" +
+            "\n" +
+            "### Three apps, one family\n" +
+            "\n" +
+            "- **Spectacled Journals**: dated journal entries\n" +
+            "- **Spectacled Notes**: free-form notes\n" +
+            "- **Spectacled Tasks**: to-dos with status, priority and due dates\n"
+
+    val releases = List(20) { index ->
         GitHubRelease(
-            releaseName = "Release 1",
-            releaseText = "Release 1 Text",
-            prerelease = false,
+            releaseName = "v1.0.$index",
+            releaseText = sampleReleaseNotes,
+            prerelease = index%3 > 0,
             githubUrl = "https://github.com"
-        ),
-        GitHubRelease(
-            releaseName = "Release 2",
-            releaseText = "Release 2 Text",
-            prerelease = false,
-            githubUrl = "https://github.com"
-        ),
-        GitHubRelease(
-            releaseName = "Release 3",
-            releaseText = "Release 3 Text",
-            prerelease = true,
-            githubUrl = "https://github.com"
-        ),
-    )
+        ) // every second and third is a prerelease
+    }
 
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
-            GitHubReleases(releases)
+            GitHubReleases(
+                releases = releases,
+                buildIsPreRelese = false
+            )
+        }
+    }
+}
+
+
+@Preview
+@Composable
+private fun GitHubReleases_with_Prereleases_Preview() {
+
+    val sampleReleaseNotes = "## Welcome to Spectacled\n" +
+            "\n" +
+            "Spectacled is a family of open, standards-based apps for journals, notes and tasks. Your entries are stored as iCalendar and synced over CalDAV with a server you choose, such as Nextcloud, Radicale or any other CalDAV server. There is no proprietary backend and no account to create: your data stays on your own server.\n" +
+            "\n" +
+            "### Three apps, one family\n" +
+            "\n" +
+            "- **Spectacled Journals**: dated journal entries\n" +
+            "- **Spectacled Notes**: free-form notes\n" +
+            "- **Spectacled Tasks**: to-dos with status, priority and due dates\n\n" +
+            "This is a beta release. Feedback is very welcome: open an [issue](https://github.com/TechbeeAT/spectacled/issues/new/choose) or write to [spectacled@techbee.at](mailto:spectacled@techbee.at).\n"
+
+    val releases = List(20) { index ->
+        GitHubRelease(
+            releaseName = "v1.0.$index",
+            releaseText = sampleReleaseNotes,
+            prerelease = index%3 > 0,
+            githubUrl = "https://github.com"
+        )  // every second and third is a prerelease
+    }
+
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            GitHubReleases(
+                releases = releases,
+                buildIsPreRelese = true
+            )
         }
     }
 }
