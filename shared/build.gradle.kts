@@ -158,9 +158,40 @@ kotlin {
     }
 }
 
+/*
+ * Release channel baked into the build, read at runtime via ReleaseChannel.current.
+ * The channel lives only in the release tag (see .github/workflows/upload-aab-to-google.yml):
+ *   v1.2.3-internal -> internal, v1.2.3-alpha -> alpha, v1.2.3-beta -> beta, v1.2.3 -> production.
+ * Resolution order: -PreleaseChannel=<channel>, then the tag GitHub Actions is building
+ * (GITHUB_REF_TYPE=tag, GITHUB_REF_NAME=v…), else "development" (local and branch builds).
+ */
+val releaseChannel: String = run {
+    val validChannels = setOf("internal", "alpha", "beta", "production", "development")
+    providers.gradleProperty("releaseChannel").orNull?.let { explicit ->
+        val channel = explicit.lowercase()
+        if (channel !in validChannels)
+            throw GradleException("Unknown releaseChannel '$explicit'. Use one of $validChannels.")
+        return@run channel
+    }
+    val refType = providers.environmentVariable("GITHUB_REF_TYPE").orNull
+    val refName = providers.environmentVariable("GITHUB_REF_NAME").orNull
+    if (refType != "tag" || refName == null || !refName.startsWith("v"))
+        return@run "development"
+    when {
+        refName.endsWith("-internal") -> "internal"
+        refName.endsWith("-alpha") -> "alpha"
+        refName.endsWith("-beta") -> "beta"
+        "-" in refName -> throw GradleException(
+            "Unrecognised suffix in tag '$refName'. Use -internal, -alpha, -beta, or no suffix for production."
+        )
+        else -> "production"
+    }
+}
+
 buildkonfig {
     packageName = "at.techbee.spectacled.shared"
     defaultConfigs {
+        buildConfigField(STRING, "APP_RELEASE_CHANNEL", releaseChannel)
         buildConfigField(STRING, "APP_VERSION_STRING", libs.versions.appVersionString.get())
         buildConfigField(FieldSpec.Type.INT, "APP_BUILD_NUMBER", libs.versions.appBuildNumber.get())
         buildConfigField(STRING, "APP_VERSION_CODENAME", libs.versions.appVersionCodename.get())
