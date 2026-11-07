@@ -152,7 +152,8 @@ compose.desktop {
             // directory. Deliberately separate from the Debian package name below, which
             // has to stay a lowercase identifier.
             packageName = "spectacled Journals"
-            packageVersion = libs.versions.appVersionString.get()
+            // jpackage accepts only numeric versions, so drop a "-beta"-style channel suffix.
+            packageVersion = libs.versions.appVersionString.get().substringBefore("-")
             description = "Write dated journal entries and sync them over CalDAV"
             vendor = "Techbee e.U."
             // Deliberately ASCII: jpackage runs as a separate process and decodes its
