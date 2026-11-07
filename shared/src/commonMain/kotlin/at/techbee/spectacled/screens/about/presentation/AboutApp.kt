@@ -39,9 +39,11 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_codename
+import spectacled.shared.generated.resources.about_follow_on_mastodon
 import spectacled.shared.generated.resources.about_nlnet_thanks
 import spectacled.shared.generated.resources.about_version
 import spectacled.shared.generated.resources.copyright_info
+import spectacled.shared.generated.resources.logo_mastodon
 import spectacled.shared.generated.resources.logo_nlnet
 import spectacled.shared.generated.resources.logo_techbee_xml
 import spectacled.shared.generated.resources.privacy_policy
@@ -147,6 +149,37 @@ fun AboutApp(
                     }
                 )
             }
+
+            TextButton(
+                content = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.logo_mastodon),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = stringResource(Res.string.about_follow_on_mastodon),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                },
+                onClick = {
+                    try {
+                        uriHandler.openUri("https://mastodon.social/@spectacled")
+                    } catch (e: Exception) {
+                        Napier.w(e.stackTraceToString())
+                    }
+                }
+            )
 
             Text(
                 text = stringResource(Res.string.copyright_info),
