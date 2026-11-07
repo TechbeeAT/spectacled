@@ -1,6 +1,6 @@
 ---
 name: release
-description: Prepare a Spectacled release for a version and channel the user names - set the version and build number, write release notes covering everything since the last production release, and open a release PR. Tagging stays manual after the merge.
+description: Prepare a Spectacled release for a version and channel the user names - set the version (with the channel suffix for test releases) and build number, write cumulative release notes since the last production release (or since the v1.0.81-beta baseline before the first one), and open a release PR. Tagging stays manual after the merge.
 argument-hint: <version> <internal|alpha|beta|production> [build-number]
 disable-model-invocation: true
 ---
@@ -37,33 +37,45 @@ Check these and stop on any failure:
    `v1.0.*` tags (on 1.0.x the patch number has been the build number).
 4. `release-notes/<tag>/` does not exist on `origin/main`.
 
-If the version is not higher than the current `appVersionString`, warn and ask once. Do
-not refuse: the user may have a reason.
+If the version is not higher than the numeric part of the current `appVersionString`
+(ignore any `-<channel>` suffix), warn and ask once. Do not refuse: the user may have a
+reason.
+
+The **app version string** is `<version>-<channel>` for a test release (e.g.
+`1.0.82-beta`) and plain `<version>` for production. Step 5 sets it.
 
 ## 2. Show the plan and wait for confirmation
 
 Print the following, then wait for an explicit yes:
 
 ```
-Version   1.0.77 (77)  ->  <version> (<build>)
+Version   1.0.81-beta (81)  ->  <app version string> (<build>)
 Channel   <channel>    Tag after merge: <tag>
-Notes     since <last production tag>  (N commits)  |  introduction (no production release yet)
+Notes     since <baseline tag>  (N commits)  [+ introduction, before the first production release]
 Branch    release/<tag>
 ```
 
-## 3. Find the changes since the last production release
+## 3. Find the changes since the baseline
 
-The notes always cover everything since the **last production release**, whatever the
-channel. A test release (internal, alpha, beta) therefore repeats what earlier test
-releases already listed, and its notes grow until the next production release. This
-keeps testers on Android and iOS reading the same cumulative list, and the production
-notes are simply the final version of it.
+The notes always cover everything since the **baseline**, whatever the channel. A test
+release (internal, alpha, beta) therefore repeats what earlier test releases already
+listed, and its notes grow until the next production release. This keeps testers on
+Android and iOS reading the same cumulative list, and the production notes are simply the
+final version of it.
 
 The last production tag is the newest `v*` tag without a `-` suffix:
 `git tag --merged origin/main --list 'v*' --sort=-creatordate | grep -E -e '^v[^-]*$' | head -n 1`.
 The GitHub release workflow's fallback uses the same rule.
 
-**If there is a production tag:** read `git log --format='%h %s%n%b' <tag>..origin/main`.
+**The baseline:**
+- **If there is a production tag**, the baseline is that tag. Notes are only the changes.
+- **If there is no production tag yet**, the baseline is `v1.0.81-beta`, the start of the
+  public beta. Notes are the introduction (below) **plus** the changes since
+  `v1.0.81-beta`, so that what changed based on beta feedback is visible. This applies to
+  every channel, including the first production release. If the release being prepared is
+  `1.0.81` itself or older, write the introduction only.
+
+**Changes:** read `git log --format='%h %s%n%b' <baseline>..origin/main`.
 PR numbers appear as `(#123)` in commit subjects. For a commit whose subject is unclear,
 read its PR: `gh pr view 123` if `gh` works, otherwise the GitHub MCP tools.
 Leave out commits that users never notice:
@@ -73,10 +85,10 @@ Leave out commits that users never notice:
 - pure refactors
 
 For a change that was reworked across several commits, describe only the end result.
+If nothing user-visible is left, say so in the plan.
 
-**If there is no production tag yet:** do not list changes. Write an introduction
-instead, on every channel, based on `README.md` ("Spectacled" heading, the app table, "Why"
-and "Features"):
+**Introduction** (only before the first production release), based on `README.md`
+("Spectacled" heading, the app table, "Why" and "Features"):
 - what Spectacled is
 - the three apps: Journals, Notes, Tasks
 - CalDAV against the user's own server, no account needed
@@ -106,8 +118,10 @@ list:
 ```
 
 Leave out empty sections. You may keep `(#123)` references at the end of bullets. Before
-the first production release, use the introduction instead of the sections, and leave out
-the changelog link.
+the first production release, start with the introduction, then add the sections with the
+changes since `v1.0.81-beta` (e.g. under `## Changes during the beta`), and use
+`v1.0.81-beta` as the start of the changelog link. If there are no changes yet, the
+introduction alone is fine and the link is left out.
 
 **`release-notes/<tag>/whatsnew/whatsnew-en-US`**: the store text, used on every channel
 in the same way for both platforms:
@@ -119,8 +133,9 @@ in the same way for both platforms:
 Plain text, no Markdown. Short `•` bullet lines are fine. It must be **at most 500
 characters** (the Google Play limit): check with `wc -m`, since the upload workflow fails
 above it. Because the notes are cumulative, this is a summary of the highlights since the
-last production release, not the full list: pick the changes users notice most, merge
-related ones into one line. If anything is left out of a beta or production text, end
+baseline, not the full list: pick the changes users notice most, merge related ones into
+one line. Before the first production release, shorten the introduction to a sentence or
+two so the beta changes still fit. If anything is left out of a beta or production text, end
 with "Full release notes on GitHub." Internal and alpha releases get no GitHub release,
 so leave that line out there.
 
@@ -134,13 +149,18 @@ Show both drafts to the user and apply their edits before continuing.
 
 Only these two files hold the version:
 
-- `gradle/libs.versions.toml`: `appVersionString = "<version>"` and
+- `gradle/libs.versions.toml`: `appVersionString = "<app version string>"` (with the
+  `-<channel>` suffix for internal, alpha and beta; without it for production) and
   `appBuildNumber = "<build>"`. Change `appVersionCodename` only if the user asks.
 - `iosApp/Version.xcconfig`: `MARKETING_VERSION=<version>` and
   `CURRENT_PROJECT_VERSION=<build>`. All three iOS apps include this file.
+  `MARKETING_VERSION` stays **numeric only**, without the channel: App Store Connect
+  rejects anything but `MAJOR.MINOR.PATCH`. The iOS apps still show the full version
+  string in the About screen, which reads it from `BuildKonfig`.
 
-Do not touch anything else. Android, desktop and `BuildKonfig` read the version from the
-toml file.
+Do not touch anything else. Android (`versionName`), the About screen (`BuildKonfig`) and
+desktop read the version from the toml file; the desktop builds strip the suffix
+themselves, because jpackage accepts only numeric versions.
 
 ## 6. Commit, push and open the PR
 
@@ -151,7 +171,7 @@ toml file.
 3. Push with `git push -u origin <branch>`.
 4. Open a PR against `main` titled `Release <tag>`. The body contains:
    - the version/build change and the channel
-   - which production tag the notes count from (or: introduction)
+   - which baseline tag the notes count from (and whether they include the introduction)
    - the store text, and the GitHub notes in a `<details>` block
    - the commands to run after merging:
 
