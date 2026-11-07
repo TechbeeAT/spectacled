@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -87,11 +87,24 @@ fun GitHubReleases(
                     Column(
                         modifier = Modifier.padding(8.dp)
                     ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Badge {
+                                Text(text = release.releaseName)
+                            }
+                            if(release.prerelease)
+                                Badge {
+                                    Text("Pre-Release")
+                                }
+                        }
+
+                        /*
                         Text(
                             text = release.releaseName,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
+
+                         */
                         release.releaseText?.let {
                             if(isExpanded)
                                 Markdown(content = it)
