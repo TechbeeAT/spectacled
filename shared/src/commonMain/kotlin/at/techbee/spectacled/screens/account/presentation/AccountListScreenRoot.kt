@@ -38,7 +38,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryList
-import at.techbee.spectacled.screens.about.presentation.AboutScreen
+import at.techbee.spectacled.screens.about.presentation.AboutScreenRoot
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.components.AddPrincipalBottomSheet
 import at.techbee.spectacled.screens.account.presentation.components.CalendarSyncInfoDialog
@@ -237,7 +237,7 @@ fun AccountListScreenRoot(
                 gesturesEnabled = false,
                 modifier = Modifier.fillMaxWidth()  // override padding
             ) {
-                AboutScreen(koinInject<AboutViewModel>())
+                AboutScreenRoot(koinInject<AboutViewModel>())
             }
         }
 
