@@ -39,8 +39,8 @@ import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
 import at.techbee.spectacled.screens.list.presentation.ListScreenRoot
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
-import io.github.aakira.napier.DebugAntilog
-import io.github.aakira.napier.Napier
+import at.techbee.spectacled.screens.core.AppLogging
+import at.techbee.spectacled.screens.core.platformIsDebugBuild
 import org.koin.compose.koinInject
 import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import org.koin.compose.viewmodel.koinViewModel
@@ -50,13 +50,8 @@ import org.koin.mp.KoinPlatform
 import kotlin.time.ExperimentalTime
 
 
-var isNapierInitialized = false
-
 fun doInitKoin(spectacledVariant: SpectacledVariant) {
-    if (!isNapierInitialized) {
-        Napier.base(DebugAntilog())
-        isNapierInitialized = true
-    }
+    AppLogging.init(isDebugBuild = platformIsDebugBuild())
 
     if (KoinPlatform.getKoinOrNull() == null) {
         startKoin {
