@@ -174,6 +174,12 @@ sqldelight {
         create("SpectacledDatabase") {
             packageName.set("at.techbee.spectacled.db")
             generateAsync.set(true)
+            // Schema snapshots (<version>.db) used to verify that the .sqm migrations turn every
+            // older database into exactly the schema of the .sq files. 1.db is the schema before
+            // the first migration; regenerate the latest snapshot with
+            // `./gradlew :shared:generateCommonMainSpectacledDatabaseSchema` after adding a migration.
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            verifyMigrations.set(true)
         }
     }
 }
