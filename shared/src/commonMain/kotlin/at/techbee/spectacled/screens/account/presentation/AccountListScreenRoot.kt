@@ -234,6 +234,7 @@ fun AccountListScreenRoot(
                         Text(stringResource(Res.string.close))
                     }
                 },
+                gesturesEnabled = false,
                 modifier = Modifier.fillMaxWidth()  // override padding
             ) {
                 AboutScreen(koinInject<AboutViewModel>())
