@@ -126,7 +126,6 @@ suspend fun syncCollectionMultiplatform(
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
-            print("Parsed response syncCollectionMultiplatform: $multistatusResponse")
 
             val hrefMap = mutableMapOf<Url, String?>()
             multistatusResponse.responses.forEach { response ->

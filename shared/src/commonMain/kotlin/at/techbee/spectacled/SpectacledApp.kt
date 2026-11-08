@@ -50,13 +50,21 @@ import org.koin.mp.KoinPlatform
 import kotlin.time.ExperimentalTime
 
 
-var isNapierInitialized = false
+private var isNapierInitialized = false
 
-fun doInitKoin(spectacledVariant: SpectacledVariant) {
+/**
+ * Installs the Napier antilog exactly once per process. Napier.base() *adds* an antilog on every
+ * call, so calling it from both the Android Application and doInitKoin printed every log line twice.
+ */
+fun initLogging() {
     if (!isNapierInitialized) {
         Napier.base(DebugAntilog())
         isNapierInitialized = true
     }
+}
+
+fun doInitKoin(spectacledVariant: SpectacledVariant) {
+    initLogging()
 
     if (KoinPlatform.getKoinOrNull() == null) {
         startKoin {
