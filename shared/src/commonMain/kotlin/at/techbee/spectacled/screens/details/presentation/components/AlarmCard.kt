@@ -127,7 +127,7 @@ fun AlarmCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                    if(getPlatform().platform != Platforms.ANDROID)
+                    if(getPlatform().platform != Platforms.ANDROID && getPlatform().platform != Platforms.IOS)
                         Text(
                             text = "Beta-Info: This feature is still under development. Actual functionality is not yet implemented.",
                             style = MaterialTheme.typography.labelSmall,
