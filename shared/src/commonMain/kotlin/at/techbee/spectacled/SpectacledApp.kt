@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
@@ -31,6 +30,7 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.account.presentation.AccountListScreenRoot
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.koin.sharedModule
@@ -42,12 +42,10 @@ import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import org.koin.compose.koinInject
-import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import org.koin.mp.KoinPlatform
-import kotlin.time.ExperimentalTime
 
 
 private var isNapierInitialized = false
@@ -76,7 +74,6 @@ fun doInitKoin(spectacledVariant: SpectacledVariant) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun SpectacledApp(
     spectacledVariant: SpectacledVariant,
@@ -310,7 +307,6 @@ private fun BoxWithConstraintsScope.rememberIsLandscape(): Boolean {
     return maxWidth > maxOf(tallestHeight, maxHeight) || maxWidth > 700.dp
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 @Preview
 private fun SpectacledApp_Preview() {
