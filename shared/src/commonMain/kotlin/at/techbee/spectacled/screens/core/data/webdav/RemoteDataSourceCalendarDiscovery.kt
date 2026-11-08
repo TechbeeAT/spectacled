@@ -340,7 +340,6 @@ suspend fun discoverCalendarsMultiplatform(
             val multistatusResponse = calDavXml.decodeFromReader(
                 WebDavMultiStatus.serializer(), xmlStreaming.newReader(response.bodyAsText())
             )
-            print("Parsed response: $multistatusResponse")
 
             val allResponseCodes = multistatusResponse.responses.flatMap { response -> response.propstat.map { it.status } }
             when {
