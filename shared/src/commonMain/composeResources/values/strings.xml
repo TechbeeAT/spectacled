@@ -435,6 +435,10 @@
     <string name="login_message_not_authorized">Not authorized. Please check your username and password.</string>
     <string name="server_not_found">Server not found.</string>
     <string name="some_folders_failed_to_sync">Some folders failed to sync. Please check the folders for details.</string>
+    <plurals name="folders_removed_not_on_server">
+        <item quantity="one">The folder "%1$s" no longer exists on the server and was removed from this device.</item>
+        <item quantity="other">%2$d folders no longer exist on the server and were removed from this device: %1$s</item>
+    </plurals>
     <string name="unknown_error">Unknown error</string>
     <string name="unknown_error_occurred">Unknown error occurred.</string>
 
