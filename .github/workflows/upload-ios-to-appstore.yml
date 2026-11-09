@@ -179,7 +179,7 @@ jobs:
           echo "version=$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
           echo "build=$(sed -n 's/^CURRENT_PROJECT_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         if: steps.notes.outputs.file != ''
         with:
           python-version: '3.12'
@@ -236,7 +236,7 @@ jobs:
           fi
           echo "version=$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         if: steps.notes.outputs.file != ''
         with:
           python-version: '3.12'
