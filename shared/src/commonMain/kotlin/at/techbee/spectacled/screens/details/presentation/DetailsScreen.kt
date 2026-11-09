@@ -293,7 +293,7 @@ fun DetailsScreen(
             Row(
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
             ) {
 
                 BasicTextField(
@@ -381,7 +381,7 @@ fun DetailsScreen(
                     showKeyboardOnFocus = true
                 ),
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .weight(1f)
                     .heightIn(min = 200.dp)
                     .focusRequester(descriptionFocusRequester)
                     .onFocusChanged {
