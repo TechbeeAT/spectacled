@@ -100,8 +100,9 @@ object IosNotifications : KoinComponent {
 
     /**
      * Shows the system prompt (only the first time - after a refusal iOS answers without asking)
-     * and reports the outcome on the main thread. Once allowed, alarms are scheduled right away:
-     * requests added while notifications were not allowed were never registered.
+     * and reports the outcome on the main thread. Once allowed, alarms are scheduled right away by
+     * [refreshAuthorizationStatus]: requests added while notifications were not allowed were never
+     * registered.
      */
     fun requestAuthorization(onResult: (PermissionStatus) -> Unit) {
         center.requestAuthorizationWithOptions(
@@ -110,8 +111,6 @@ object IosNotifications : KoinComponent {
             error?.let { Napier.w("Notification authorization failed: ${it.localizedDescription}") }
             refreshAuthorizationStatus { status ->
                 MainScope().launch { onResult(status) }
-                if (status == PermissionStatus.GRANTED)
-                    scope.launch { alarmCoordinator.reconcile() }
             }
         }
     }
