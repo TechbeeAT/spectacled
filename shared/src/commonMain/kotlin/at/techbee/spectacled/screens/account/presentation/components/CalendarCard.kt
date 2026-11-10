@@ -23,7 +23,6 @@ import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -71,7 +71,6 @@ import spectacled.shared.generated.resources.sync_disabled
 import spectacled.shared.generated.resources.sync_enabled
 import spectacled.shared.generated.resources.sync_problem
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarCard(
     principal: Principal,
@@ -151,19 +150,20 @@ fun CalendarCard(
                     ) {
                         Text(
                             text = calendar.displayLabel,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                            //fontWeight = FontWeight.Bold
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         if (calendar.calendarDescription?.isNotBlank() == true)
                             Text(
                                 text = calendar.calendarDescription,
                                 fontStyle = FontStyle.Italic,
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelSmall.copy(textDirection = TextDirection.Content),
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth()
                             )
                     }
 
@@ -407,4 +407,20 @@ private fun FolderCard_sync_in_progress_edit_Preview() {
     )
 }
 
-
+@Preview
+@Composable
+private fun FolderCard_RTL_Preview() {
+    CalendarCard(
+        principal = Principal.getPrincipalForPreview(),
+        homeCollection = HomeCollection.getHomeCollectionForPreview(),
+        calendar = Calendar.getCalendarForPreview().copy(
+            calDavPrivileges = listOf(CalDavPrivilege.WRITE), 
+            displayName = "ة يونيكود",
+            calendarDescription = "ة يونيكود"
+        ),
+        editEditFoldersModeEnabled = false,
+        isFirst = true,
+        isLast = true,
+        onAction = {}
+    )
+}

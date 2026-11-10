@@ -163,7 +163,6 @@ fun UpdatePrincipalPasswordBottomSheet(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun UpdatePrincipalPasswordBottomSheet_Preview_Idle() {
@@ -180,7 +179,6 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Idle() {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun UpdatePrincipalPasswordBottomSheet_Preview_Processing() {
@@ -197,7 +195,6 @@ private fun UpdatePrincipalPasswordBottomSheet_Preview_Processing() {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun UpdatePrincipalPasswordBottomSheet_Preview_Error() {

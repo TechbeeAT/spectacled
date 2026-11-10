@@ -173,7 +173,6 @@ fun TimePickerBottomSheet(
 
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 private fun TimePickerBottomSheet_Preview() {

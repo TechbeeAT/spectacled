@@ -7,15 +7,16 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.PinDrop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
@@ -30,7 +31,6 @@ import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.open_in_browser
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationCard(
     location: String,
@@ -62,6 +62,7 @@ fun LocationCard(
 
             Text(
                 text = location,
+                style = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
                 modifier = Modifier.weight(1f)
             )
 
@@ -108,11 +109,27 @@ private fun LocationCard_Preview() {
 private fun LocationCard_readonly_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         LocationCard(
-            location = "Am Stadtpark 123/4c, 1030 Wien",
+            location = "Am Stadtpark",
             allowEditing = false,
             onClick = {},
             modifier = Modifier.padding(8.dp)
         )
     }
 }
+
+@Preview
+@Composable
+private fun LocationCard_RTL_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        LocationCard(
+            location = "عندما",
+            allowEditing = false,
+            onClick = {},
+            modifier = Modifier.padding(8.dp)
+        )
+    }
+}
+
+
+
 

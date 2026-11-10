@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
@@ -292,7 +293,7 @@ fun DetailsScreen(
             Row(
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
             ) {
 
                 BasicTextField(
@@ -301,7 +302,7 @@ fun DetailsScreen(
                         summaryValue = it
                         onAction(DetailsAction.OnUpdateSummary(it.text))
                     },
-                    textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current),
+                    textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current, textDirection = TextDirection.Content),
                     enabled = state.allowEditing(),
                     onTextLayout = { summaryLayoutResult = it },
                     visualTransformation = MarkdownVisualTransformation(
@@ -353,7 +354,7 @@ fun DetailsScreen(
                     descriptionValue = it
                     onAction(DetailsAction.OnUpdateDescription(it.text))
                 },
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current, textDirection = TextDirection.Content),
                 enabled = state.allowEditing(),
                 onTextLayout = { descriptionLayoutResult = it },
                 visualTransformation = MarkdownVisualTransformation(
@@ -380,7 +381,7 @@ fun DetailsScreen(
                     showKeyboardOnFocus = true
                 ),
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .weight(1f)
                     .heightIn(min = 200.dp)
                     .focusRequester(descriptionFocusRequester)
                     .onFocusChanged {

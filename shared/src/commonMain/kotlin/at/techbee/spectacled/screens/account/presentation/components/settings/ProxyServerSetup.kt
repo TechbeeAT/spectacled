@@ -18,7 +18,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -75,7 +74,6 @@ import spectacled.shared.generated.resources.settings_proxy_setup_instructions
  * selected without the disclosure. Callers decide whether to show it at all (it is meaningless off
  * the web build) and supply their own heading.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProxyServerSetup(
     userAppPreferencesStore: UserAppPreferencesStore,
@@ -275,7 +273,6 @@ fun ProxyServerSetup(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProxyOptionCard(
     selected: Boolean,

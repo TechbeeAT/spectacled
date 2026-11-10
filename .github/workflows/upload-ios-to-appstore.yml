@@ -35,6 +35,9 @@ jobs:
   ios:
     name: Build & upload ${{ matrix.scheme }}
     runs-on: macos-latest
+    # A starved Gradle daemon can sit in GC for the full 6 h job limit instead of failing.
+    # Cold-cache builds take ~70 min (run 37), so leave headroom.
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -61,6 +64,15 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6.4.1
+
+      # The release framework link (:compose*App:linkReleaseFrameworkIosArm64) runs inside
+      # the Gradle daemon and ran out of the project's 4 GB heap. The user-home
+      # gradle.properties overrides the project one, so only CI gets more; macos-latest
+      # runners have ~7 GB of RAM.
+      - name: Raise Gradle heap for the Kotlin/Native link
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.jvmargs=-Xmx6g -XX:+UseParallelGC -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
 
       - name: Prepare App Store Connect API key
         run: |
@@ -179,7 +191,7 @@ jobs:
           echo "version=$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
           echo "build=$(sed -n 's/^CURRENT_PROJECT_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         if: steps.notes.outputs.file != ''
         with:
           python-version: '3.12'
@@ -236,7 +248,7 @@ jobs:
           fi
           echo "version=$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Version.xcconfig)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         if: steps.notes.outputs.file != ''
         with:
           python-version: '3.12'

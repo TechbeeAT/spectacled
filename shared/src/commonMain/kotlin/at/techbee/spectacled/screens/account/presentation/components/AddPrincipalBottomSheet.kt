@@ -875,7 +875,6 @@ private fun CalDavProviderChip(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun AddAccountScreen_Preview_Idle() {
@@ -893,7 +892,6 @@ private fun AddAccountScreen_Preview_Idle() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun AddAccountScreen_Preview_Processing() {
@@ -912,7 +910,6 @@ private fun AddAccountScreen_Preview_Processing() {
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun ChooseProviderScreen_Preview() {
@@ -924,7 +921,6 @@ private fun ChooseProviderScreen_Preview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun AddAccountScreen_Preview_Error() {

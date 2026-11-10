@@ -8,9 +8,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Clear
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -22,6 +23,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.screens.list.presentation.ListAction
@@ -31,7 +33,6 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_search
 import spectacled.shared.generated.resources.search
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListSearchBar(
     listFilterCriteria: ListFilterCriteria,
@@ -47,6 +48,7 @@ fun ListSearchBar(
         TextField(
             placeholder = { Text(stringResource(Res.string.search)) },
             value = listFilterCriteria.searchQuery ?: "",
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current, textDirection = TextDirection.Content),
             onValueChange = { onAction(ListAction.OnUpdateSearch(it)) },
             trailingIcon = {
                 AnimatedVisibility(listFilterCriteria.searchQuery?.isNotEmpty() == true) {
