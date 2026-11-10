@@ -23,7 +23,6 @@ import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,7 +71,6 @@ import spectacled.shared.generated.resources.sync_disabled
 import spectacled.shared.generated.resources.sync_enabled
 import spectacled.shared.generated.resources.sync_problem
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarCard(
     principal: Principal,

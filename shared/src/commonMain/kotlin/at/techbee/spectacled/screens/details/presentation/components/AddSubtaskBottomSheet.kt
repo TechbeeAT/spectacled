@@ -123,7 +123,6 @@ fun AddSubtaskBottomSheet(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun AddSubtaskBottomSheet_Preview() {

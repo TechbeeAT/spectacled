@@ -18,7 +18,6 @@ import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,7 +60,6 @@ import spectacled.shared.generated.resources.openai_info
 import spectacled.shared.generated.resources.show_hide_password
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsAiPage(
     userAppPreferencesStore: UserAppPreferencesStore,
@@ -284,7 +282,6 @@ fun SettingsAiPage(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun SettingsAiPage_Preview() {

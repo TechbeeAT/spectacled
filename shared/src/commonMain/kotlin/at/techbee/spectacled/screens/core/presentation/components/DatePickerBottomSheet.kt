@@ -64,7 +64,6 @@ fun DatePickerBottomSheet(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 private fun DatePickerBottomSheet_Preview() {
@@ -77,7 +76,6 @@ private fun DatePickerBottomSheet_Preview() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 private fun DatePickerBottomSheet_allow_no_date_Preview() {

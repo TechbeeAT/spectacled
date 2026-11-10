@@ -74,7 +74,6 @@ fun JournalStatusPickerBottomSheet(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 private fun JournalStatusPickerBottomSheet_Preview() {
@@ -89,7 +88,6 @@ private fun JournalStatusPickerBottomSheet_Preview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 private fun JournalStatusPickerBottomSheet_NO_STATUS_Preview() {

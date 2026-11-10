@@ -178,7 +178,6 @@ fun TaskStatusProgressPickerBottomSheet(
 
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 private fun TaskStatusProgressPickerBottomSheet_Preview() {
@@ -197,7 +196,6 @@ private fun TaskStatusProgressPickerBottomSheet_Preview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 private fun TaskStatusProgressPickerBottomSheet_inprocess_Preview() {

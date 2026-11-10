@@ -118,7 +118,6 @@ fun SettingsBottomSheet(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun SettingsBottomSheet_Preview() {

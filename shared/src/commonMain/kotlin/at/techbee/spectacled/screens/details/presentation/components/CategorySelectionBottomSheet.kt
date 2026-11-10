@@ -174,7 +174,6 @@ fun CategorySelectionBottomSheet(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun CategorySelectionBottomSheet_Preview() {
@@ -191,7 +190,6 @@ private fun CategorySelectionBottomSheet_Preview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun CategorySelectionBottomSheet_3Categories_Preview() {

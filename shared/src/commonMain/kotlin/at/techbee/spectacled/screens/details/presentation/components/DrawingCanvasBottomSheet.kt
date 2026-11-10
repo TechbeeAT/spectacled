@@ -80,7 +80,6 @@ fun DrawingCanvasBottomSheet(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun DrawingCanvasBottomSheet_Preview() {
