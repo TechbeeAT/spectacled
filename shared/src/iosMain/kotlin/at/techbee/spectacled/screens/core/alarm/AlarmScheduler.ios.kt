@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.core.alarm
 
 import io.github.aakira.napier.Napier
+import platform.Foundation.NSLock
 import platform.Foundation.NSUserDefaults
 import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest
@@ -29,15 +30,20 @@ private val FIRED_RECORD_RETENTION = AlarmCoordinator.MISSED_ALARM_GRACE_PERIOD 
  * Unlike Android, iOS delivers the notification itself, so the app never learns that an alarm went
  * off. The next reconcile would see it as missed and show it a second time. To prevent that, every
  * scheduled alarm is recorded with its trigger time, and [showNow] skips an alarm that the system
- * has already delivered at that time.
+ * has already delivered at that time. A request iOS rejects is taken off the record again, so its
+ * alarm is shown late instead of being written off.
  */
 actual class PlatformAlarmScheduler : AlarmScheduler {
 
     private val center get() = UNUserNotificationCenter.currentNotificationCenter()
     private val defaults get() = NSUserDefaults.standardUserDefaults
 
+    /** Guards the record: a rejected request takes itself off it from the center's callback queue. */
+    private val recordLock = NSLock()
+
     actual override fun replaceAll(alarms: List<ScheduledAlarm>) {
         val now = Clock.System.now()
+        recordLock.lock()
         val previous = readRecord()
         val newKeys = alarms.map { it.key.asString() }.toSet()
 
@@ -52,30 +58,40 @@ actual class PlatformAlarmScheduler : AlarmScheduler {
         val stale = if (authorized) previous.keys - newKeys else previous.keys
         if (stale.isNotEmpty())
             center.removePendingNotificationRequestsWithIdentifiers(stale.toList())
-        if (authorized) {
-            alarms.forEach { alarm ->
-                val seconds = (alarm.triggerAt - now).inWholeMilliseconds / 1000.0
-                add(alarm, UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(seconds.coerceAtLeast(1.0), repeats = false))
-            }
-        }
 
         // Keep the alarms that already went off, for showNow, and add the newly scheduled ones.
+        // Written before the requests are added, so a rejection can only ever find its entry there.
         val record = previous.filterValues { it <= now && it > now - FIRED_RECORD_RETENTION } +
                 (if (authorized) alarms.associate { it.key.asString() to it.triggerAt } else emptyMap())
         writeRecord(record)
+        recordLock.unlock()
+
+        if (authorized) {
+            alarms.forEach { alarm ->
+                val seconds = (alarm.triggerAt - now).inWholeMilliseconds / 1000.0
+                add(alarm, UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(seconds.coerceAtLeast(1.0), repeats = false)) {
+                    forget(alarm)
+                }
+            }
+        }
         Napier.d("UNUserNotificationCenter: ${if (authorized) alarms.size else 0} alarms scheduled, ${stale.size} removed")
     }
 
     actual override fun showNow(alarm: ScheduledAlarm): Boolean {
-        // Already delivered by the system at its time: nothing more to show.
-        val scheduledAt = readRecord()[alarm.key.asString()]
-        if (scheduledAt == alarm.triggerAt && scheduledAt <= Clock.System.now())
-            return true
-
+        // Checked first: while notifications are off, iOS doesn't show scheduled requests either,
+        // so an alarm whose time passed then is still due and shown once they are allowed again.
         if (!IosNotifications.isAuthorized()) {
             Napier.w("Notifications not allowed, alarm for entry ${alarm.icalEntryId} not shown")
             return false
         }
+
+        // Already delivered by the system at its time: nothing more to show.
+        recordLock.lock()
+        val scheduledAt = readRecord()[alarm.key.asString()]
+        recordLock.unlock()
+        if (scheduledAt == alarm.triggerAt && scheduledAt <= Clock.System.now())
+            return true
+
         add(alarm, trigger = null)   // no trigger: delivered right away
         return true
     }
@@ -84,7 +100,16 @@ actual class PlatformAlarmScheduler : AlarmScheduler {
         center.removeDeliveredNotificationsWithIdentifiers(listOf(key.asString()))
     }
 
-    private fun add(alarm: ScheduledAlarm, trigger: UNNotificationTrigger?) {
+    /** Takes a rejected request off the record, unless it was rescheduled for another time meanwhile. */
+    private fun forget(alarm: ScheduledAlarm) {
+        recordLock.lock()
+        val record = readRecord()
+        if (record[alarm.key.asString()] == alarm.triggerAt)
+            writeRecord(record - alarm.key.asString())
+        recordLock.unlock()
+    }
+
+    private fun add(alarm: ScheduledAlarm, trigger: UNNotificationTrigger?, onRejected: () -> Unit = {}) {
         // Title: the entry's summary, or "Alarm" without one. Body: the entry's description, if any.
         val content = UNMutableNotificationContent().apply {
             setTitle(alarm.entrySummary?.takeIf { it.isNotBlank() } ?: IosNotifications.defaultTitle)
@@ -100,7 +125,10 @@ actual class PlatformAlarmScheduler : AlarmScheduler {
         }
         val request = UNNotificationRequest.requestWithIdentifier(alarm.key.asString(), content, trigger)
         center.addNotificationRequest(request) { error ->
-            error?.let { Napier.w("Alarm for entry ${alarm.icalEntryId} not scheduled: ${it.localizedDescription}") }
+            if (error != null) {
+                Napier.w("Alarm for entry ${alarm.icalEntryId} not scheduled: ${error.localizedDescription}")
+                onRejected()
+            }
         }
     }
 
