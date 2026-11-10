@@ -36,7 +36,8 @@ jobs:
     name: Build & upload ${{ matrix.scheme }}
     runs-on: macos-latest
     # A starved Gradle daemon can sit in GC for the full 6 h job limit instead of failing.
-    timeout-minutes: 90
+    # Cold-cache builds take ~70 min (run 37), so leave headroom.
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
