@@ -41,14 +41,17 @@ actual class PlatformAlarmScheduler : AlarmScheduler {
         val previous = readRecord()
         val newKeys = alarms.map { it.key.asString() }.toSet()
 
-        // Only pending requests are removed; delivered notifications stay until dismissed.
-        val stale = previous.keys - newKeys
-        if (stale.isNotEmpty())
-            center.removePendingNotificationRequestsWithIdentifiers(stale.toList())
-
         // Requests added without permission are rejected by iOS, so nothing is recorded as
         // scheduled then. Once permission is given, IosNotifications reconciles again.
         val authorized = IosNotifications.isAuthorized()
+
+        // Only pending requests are removed; delivered notifications stay until dismissed.
+        // Without permission everything recorded goes: the record forgets those alarms below, so
+        // requests left behind could never be found again and would fire once notifications are
+        // allowed - even for entries deleted or completed meanwhile.
+        val stale = if (authorized) previous.keys - newKeys else previous.keys
+        if (stale.isNotEmpty())
+            center.removePendingNotificationRequestsWithIdentifiers(stale.toList())
         if (authorized) {
             alarms.forEach { alarm ->
                 val seconds = (alarm.triggerAt - now).inWholeMilliseconds / 1000.0
