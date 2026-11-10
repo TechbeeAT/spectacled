@@ -19,7 +19,7 @@ private const val DEFAULTS_KEY_SCHEDULED = "alarm_scheduler_scheduled"
  * How long a scheduled alarm stays on record after its time. It has to outlive the missed-alarm
  * pass of [AlarmCoordinator.reconcile], which looks back [AlarmCoordinator.MISSED_ALARM_GRACE_PERIOD].
  */
-private val FIRED_RECORD_RETENTION = 2.days
+private val FIRED_RECORD_RETENTION = AlarmCoordinator.MISSED_ALARM_GRACE_PERIOD + 1.days
 
 /**
  * Hands alarms to UNUserNotificationCenter, which shows them at their time without any app code
