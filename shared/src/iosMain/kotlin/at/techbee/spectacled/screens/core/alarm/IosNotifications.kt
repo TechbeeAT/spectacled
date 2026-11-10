@@ -12,6 +12,7 @@ import org.jetbrains.compose.resources.getString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSSystemClockDidChangeNotification
 import platform.Foundation.NSSystemTimeZoneDidChangeNotification
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
 import platform.UserNotifications.UNAuthorizationOptionAlert
@@ -71,6 +72,11 @@ object IosNotifications : KoinComponent {
         val notificationCenter = NSNotificationCenter.defaultCenter
         // Trigger times of all-day and floating dates follow the device zone.
         notificationCenter.addObserverForName(NSSystemTimeZoneDidChangeNotification, null, null) { _ ->
+            scope.launch { alarmCoordinator.onTimeOrTimeZoneChanged() }
+        }
+        // Time-interval triggers count elapsed seconds, so after the clock was set they'd fire at
+        // the wrong wall-clock time; rescheduling recomputes the intervals from the new time.
+        notificationCenter.addObserverForName(NSSystemClockDidChangeNotification, null, null) { _ ->
             scope.launch { alarmCoordinator.onTimeOrTimeZoneChanged() }
         }
         // The user may have changed the notification permission in the Settings app meanwhile.
