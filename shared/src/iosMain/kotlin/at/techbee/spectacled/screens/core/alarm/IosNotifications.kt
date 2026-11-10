@@ -48,6 +48,8 @@ object IosNotifications : KoinComponent {
 
     private val alarmCoordinator: AlarmCoordinator by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    /** For handing results to the UI and navigation, which expect the main thread. */
+    internal val mainScope = MainScope()
     private val center get() = UNUserNotificationCenter.currentNotificationCenter()
 
     /** Kept here: the notification center only holds its delegate weakly. */
@@ -110,7 +112,7 @@ object IosNotifications : KoinComponent {
         ) { _, error ->
             error?.let { Napier.w("Notification authorization failed: ${it.localizedDescription}") }
             refreshAuthorizationStatus { status ->
-                MainScope().launch { onResult(status) }
+                mainScope.launch { onResult(status) }
             }
         }
     }
@@ -150,7 +152,7 @@ private class NotificationDelegate : NSObject(), UNUserNotificationCenterDelegat
         val calendarId = (userInfo[USER_INFO_CALENDAR_ID] as? String)?.toLongOrNull()
         val entryId = (userInfo[USER_INFO_ENTRY_ID] as? String)?.toLongOrNull()
         if (entryId != null)
-            MainScope().launch { DeepLinkHandler.onDeepLinkReceived(calendarId, entryId, null) }
+            IosNotifications.mainScope.launch { DeepLinkHandler.onDeepLinkReceived(calendarId, entryId, null) }
         withCompletionHandler()
     }
 }
