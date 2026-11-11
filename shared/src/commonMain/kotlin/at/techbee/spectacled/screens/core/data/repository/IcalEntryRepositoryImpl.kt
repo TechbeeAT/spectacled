@@ -333,12 +333,16 @@ class IcalEntryRepositoryImpl(
 
     override suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm> = withContext(ioDispatcher) {
         val db = getDatabase()
+        val calendarWritable = mutableMapOf<Long, Boolean>()
         db.alarm_dtoQueries.getUpcomingAlarms(from.toEpochMilliseconds(), until.toEpochMilliseconds(), limit)
             .awaitAsList()
             .mapNotNull { alarmDto ->
                 // Recurring entries are read-only in this app, their alarms are only preserved.
                 val entry = db.icalentry_dtoQueries.getIcalEntryById(alarmDto.icalEntryId).awaitAsOneOrNull()?.toDomain()
                 if (entry == null || entry.isRecurring()) return@mapNotNull null
+                val entryEditable = calendarWritable.getOrPut(entry.calendarId) {
+                    db.calendar_dtoQueries.getCalendarById(entry.calendarId).awaitAsOneOrNull()?.toDomain()?.canWriteContent() == true
+                }
                 UpcomingAlarm(
                     alarmId = alarmDto.id,
                     icalEntryId = alarmDto.icalEntryId,
@@ -346,6 +350,7 @@ class IcalEntryRepositoryImpl(
                     entryUid = entry.uid,
                     entrySummary = entry.summary,
                     entryDescription = entry.description,
+                    entryEditable = entryEditable,
                     alarm = alarmDto.toDomain(),
                     // A snoozed alarm is due at its snooze time instead.
                     triggerAt = Instant.fromEpochMilliseconds(alarmDto.snoozedUntil ?: alarmDto.triggerAt ?: return@mapNotNull null)

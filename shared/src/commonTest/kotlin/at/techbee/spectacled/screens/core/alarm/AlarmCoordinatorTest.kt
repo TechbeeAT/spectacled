@@ -40,6 +40,7 @@ class AlarmCoordinatorTest {
         entryUid = "entry-$entryId",
         entrySummary = "Task $entryId",
         entryDescription = null,
+        entryEditable = true,
         alarm = Alarm(uid = uid, trigger = AlarmTrigger.Relative(IcsDuration()), description = "Reminder $alarmId"),
         triggerAt = triggerAt
     )

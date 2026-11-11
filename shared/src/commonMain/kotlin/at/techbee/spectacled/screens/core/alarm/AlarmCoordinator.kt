@@ -155,6 +155,7 @@ fun UpcomingAlarm.toScheduledAlarm() = ScheduledAlarm(
     entryUid = entryUid,
     entrySummary = entrySummary,
     entryDescription = entryDescription,
+    entryEditable = entryEditable,
     alarmDescription = alarm.description,
     triggerAt = triggerAt
 )
