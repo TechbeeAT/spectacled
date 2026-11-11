@@ -21,7 +21,7 @@ actual class PlatformAlarmScheduler : AlarmScheduler, KoinComponent {
     /** Loading the texts suspends, showing a notification doesn't - so they're loaded up front. */
     private var texts = AlarmNotificationTexts.FALLBACK
 
-    /** Shown notifications by request key, so [dismiss] can close them. */
+    /** Shown notifications by request key, so [dismiss] can close them; dropped once they close. */
     private val shown = mutableMapOf<String, JsAny>()
 
     private val timer = InAppAlarmTimer(scope) { alarm ->
@@ -36,14 +36,15 @@ actual class PlatformAlarmScheduler : AlarmScheduler, KoinComponent {
 
     actual override fun showNow(alarm: ScheduledAlarm): Boolean {
         val key = alarm.key.asString()
-        val notification = WebNotifications.show(
+        var notification: JsAny? = null
+        notification = WebNotifications.show(
             title = alarm.entrySummary?.takeIf { it.isNotBlank() } ?: texts.defaultTitle,
             text = alarm.entryDescription?.takeIf { it.isNotBlank() },
-            tag = key
-        ) {
-            shown.remove(key)
-            DeepLinkHandler.onDeepLinkReceived(alarm.calendarId, alarm.icalEntryId, null)
-        } ?: return false
+            tag = key,
+            onClick = { DeepLinkHandler.onDeepLinkReceived(alarm.calendarId, alarm.icalEntryId, null) },
+            // Only this one: a later notification for the same alarm replaces it and closes it.
+            onClose = { if (shown[key] === notification) shown.remove(key) }
+        ) ?: return false
         shown[key] = notification
         return true
     }
