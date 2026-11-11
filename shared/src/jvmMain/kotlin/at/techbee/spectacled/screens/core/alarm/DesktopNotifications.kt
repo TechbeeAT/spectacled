@@ -9,7 +9,6 @@ import java.awt.Window
 import java.awt.image.BufferedImage
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 
 /**
  * Shows a notification through what the desktop OS offers a JVM app:
@@ -84,6 +83,12 @@ internal object DesktopNotifications {
             Napier.w("$executable is not available, alarm notifications can't be shown on this desktop", e)
             return false
         }
-        return process.waitFor(5, TimeUnit.SECONDS) && process.exitValue() == 0
+        // Not waited for: showNow runs under AlarmCoordinator's lock, and a slow osascript would
+        // hold up every save and sync behind it. Started counts as shown; a failure is only logged.
+        process.onExit().thenAccept { exited ->
+            if (exited.exitValue() != 0)
+                Napier.w("$executable exited with ${exited.exitValue()}: ${exited.inputStream.bufferedReader().readText().take(500)}")
+        }
+        return true
     }
 }
