@@ -40,6 +40,7 @@ class AlarmCoordinatorTest {
         entryUid = "entry-$entryId",
         entrySummary = "Task $entryId",
         entryDescription = null,
+        entryEditable = true,
         alarm = Alarm(uid = uid, trigger = AlarmTrigger.Relative(IcsDuration()), description = "Reminder $alarmId"),
         triggerAt = triggerAt
     )
@@ -171,6 +172,36 @@ class AlarmCoordinatorTest {
     }
 
     @Test
+    fun snooze_dismissesTheNotificationAndSchedulesTheAlarmAgainLater() = runTest {
+        val fired = upcoming(50L, now - 1.minutes, entryId = 5L)
+        val repository = FakeIcalEntryRepository(alarms = listOf(fired))
+        val scheduler = FakeAlarmScheduler()
+        val coordinator = coordinator(repository, scheduler)
+        coordinator.onAlarmFired(5L, "alarm-50", now - 1.minutes)
+
+        coordinator.snooze(5L, "alarm-50")
+
+        assertEquals(listOf(ScheduledAlarmKey(5L, "alarm-50")), scheduler.dismissed)
+        assertEquals(now + AlarmCoordinator.SNOOZE_DURATION, repository.snoozed[50L])
+        val rescheduled = scheduler.replaceAllCalls.last().single()
+        assertEquals(50L, rescheduled.alarmId)
+        assertEquals(now + AlarmCoordinator.SNOOZE_DURATION, rescheduled.triggerAt, "due at the snooze time")
+        assertEquals(listOf(50L), scheduler.shown.map { it.alarmId }, "not shown again right away")
+    }
+
+    @Test
+    fun snooze_ofAnAlarmThatNoLongerExistsOnlyDismisses() = runTest {
+        val repository = FakeIcalEntryRepository()
+        val scheduler = FakeAlarmScheduler()
+
+        coordinator(repository, scheduler).snooze(5L, "gone")
+
+        assertEquals(listOf(ScheduledAlarmKey(5L, "gone")), scheduler.dismissed)
+        assertTrue(repository.snoozed.isEmpty())
+        assertEquals(listOf(emptyList<ScheduledAlarm>()), scheduler.replaceAllCalls, "still reconciled")
+    }
+
+    @Test
     fun schedulingKey_isTheUidOrStableForEqualBlocks() {
         val alarm = Alarm(uid = null, trigger = AlarmTrigger.Relative(IcsDuration(isNegative = true, minutes = 15)), description = "x")
 
@@ -180,7 +211,8 @@ class AlarmCoordinatorTest {
     }
 }
 
-private class FakeAlarmScheduler : AlarmScheduler {
+/** Shared with other tests of alarm handling, e.g. SetTaskDoneUseCaseTest. */
+internal class FakeAlarmScheduler : AlarmScheduler {
     val replaceAllCalls = mutableListOf<List<ScheduledAlarm>>()
     val shown = mutableListOf<ScheduledAlarm>()
     val dismissed = mutableListOf<ScheduledAlarmKey>()
@@ -195,31 +227,48 @@ private class FakeAlarmScheduler : AlarmScheduler {
     override fun dismiss(key: ScheduledAlarmKey) { dismissed += key }
 }
 
-private class FakeIcalEntryRepository(
+internal class FakeIcalEntryRepository(
     private val alarms: List<UpcomingAlarm> = emptyList(),
     private val entries: List<IcalEntry> = emptyList()
 ) : IcalEntryRepository {
 
     val notified = mutableMapOf<Long, Instant>()
+    val snoozed = mutableMapOf<Long, Instant>()
+
+    /** Like the real query: a snoozed alarm is due at its snooze time. */
+    private val dueAlarms get() = alarms.map { alarm -> snoozed[alarm.alarmId]?.let { alarm.copy(triggerAt = it) } ?: alarm }
 
     override suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm> =
-        alarms
+        dueAlarms
             .filter { it.alarmId !in notified && it.triggerAt >= from && it.triggerAt < until }
             .sortedBy { it.triggerAt }
             .take(limit.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
 
     override suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant) { notified[alarmId] = notifiedAt }
 
+    override suspend fun snoozeAlarm(icalEntryId: Long, alarmKey: String, until: Instant): Boolean {
+        val alarm = alarms.firstOrNull { it.icalEntryId == icalEntryId && it.alarm.schedulingKey() == alarmKey } ?: return false
+        snoozed[alarm.alarmId] = until
+        notified.remove(alarm.alarmId)
+        return true
+    }
+
     override suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant) {
-        alarms.filter { it.alarmId !in notified && it.triggerAt < before }.forEach { notified[it.alarmId] = notifiedAt }
+        dueAlarms.filter { it.alarmId !in notified && it.triggerAt < before }.forEach { notified[it.alarmId] = notifiedAt }
     }
 
     override suspend fun getIcalEntryById(id: Long): IcalEntry? = entries.find { it.id == id }
 
+    data class ProgressUpdate(val id: Long, val percentComplete: Long, val status: Status?, val syncState: SyncState)
+    val progressUpdates = mutableListOf<ProgressUpdate>()
+    override suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState) {
+        progressUpdates += ProgressUpdate(id, percentComplete, status, syncState)
+    }
+
     var recomputeCalls = 0
     override suspend fun recomputeAlarmTriggerTimes() { recomputeCalls++ }
 
-    // --- not exercised by the alarm coordinator ---
+    // --- not exercised by the alarm handling ---
     override fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>> = TODO()
     override fun getIcalEntryByUidFlow(calendarId: Long, uid: String): Flow<IcalEntry?> = TODO()
     override fun getAllColors(): Flow<List<Color>> = TODO()
@@ -237,7 +286,6 @@ private class FakeIcalEntryRepository(
     override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = TODO()
     override suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long) = TODO()
     override suspend fun copyIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long, sameCalendarSummarySuffix: String): Map<Long, Long> = TODO()
-    override suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState) = TODO()
     override suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>) = TODO()
     override suspend fun updateColor(id: Long, color: Color?, lastModified: IcsDateTime?, syncState: SyncState) = TODO()
     override suspend fun updateCategory(id: Long, categories: List<String>, lastModified: IcsDateTime?, syncState: SyncState) = TODO()

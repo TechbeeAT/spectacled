@@ -94,6 +94,9 @@ data class UpcomingAlarm(
     val entryUid: String,
     val entrySummary: String?,
     val entryDescription: String?,
+    /** The entry's calendar may be written to, so the notification can offer to mark it done. */
+    val entryEditable: Boolean,
     val alarm: Alarm,
+    /** When the alarm is due: its trigger time, or the time it was snoozed until. */
     val triggerAt: Instant
 )
