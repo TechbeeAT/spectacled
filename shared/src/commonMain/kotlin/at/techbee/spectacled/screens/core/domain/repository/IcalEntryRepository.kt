@@ -79,7 +79,9 @@ interface IcalEntryRepository {
 
     /**
      * Alarms that are due to be notified in [from] until [until] (exclusive), earliest first and
-     * at most [limit]. A snoozed alarm is due at its snooze time instead of its trigger time. Skips alarms already notified, actions that don't notify (EMAIL, ...), and
+     * at most [limit]. A snoozed alarm is due at its snooze time instead of its trigger time.
+     * Only alarms of tasks are returned - journals and notes may carry alarms from other clients,
+     * which are preserved but never notified. Skips alarms already notified, actions that don't notify (EMAIL, ...), and
      * entries that are deleted, done, cancelled or recurring.
      */
     suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm>

@@ -346,7 +346,6 @@ class IcalEntryRepositoryImpl(
                     entryUid = entry.uid,
                     entrySummary = entry.summary,
                     entryDescription = entry.description,
-                    entryIsTask = entry.isTask(),
                     alarm = alarmDto.toDomain(),
                     // A snoozed alarm is due at its snooze time instead.
                     triggerAt = Instant.fromEpochMilliseconds(alarmDto.snoozedUntil ?: alarmDto.triggerAt ?: return@mapNotNull null)

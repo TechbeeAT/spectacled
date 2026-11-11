@@ -30,8 +30,8 @@ private const val PREFS_KEY_SCHEDULED = "scheduled_keys"
 /**
  * Hands alarms to [AlarmManager], which wakes [AlarmReceiver] at the trigger time whether or not
  * the app is running. Notifications go through one high-importance channel; tapping one opens
- * the entry via the same launch intent the widget uses. Its buttons - "Mark done" for tasks and
- * "Snooze" - go to [AlarmReceiver] as well.
+ * the entry via the same launch intent the widget uses. Its buttons - "Mark done" and "Snooze" -
+ * go to [AlarmReceiver] as well (only tasks' alarms are scheduled, see getUpcomingAlarms).
  */
 actual class PlatformAlarmScheduler(private val context: Context) : AlarmScheduler {
 
@@ -99,11 +99,8 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             )
-            .apply {
-                if (alarm.entryIsTask)
-                    addAction(0, context.getString(R.string.alarm_notification_action_done), actionPendingIntent(alarm, AlarmReceiver.ACTION_MARK_DONE))
-                addAction(0, context.getString(R.string.alarm_notification_action_snooze), actionPendingIntent(alarm, AlarmReceiver.ACTION_SNOOZE))
-            }
+            .addAction(0, context.getString(R.string.alarm_notification_action_done), actionPendingIntent(alarm, AlarmReceiver.ACTION_MARK_DONE))
+            .addAction(0, context.getString(R.string.alarm_notification_action_snooze), actionPendingIntent(alarm, AlarmReceiver.ACTION_SNOOZE))
             .build()
 
         NotificationManagerCompat.from(context).notify(alarm.key.notificationId(), notification)

@@ -29,9 +29,10 @@ getAlarmsForEntries:
 SELECT * FROM AlarmDto WHERE icalEntryId IN ? ORDER BY id;
 
 -- Alarms that should be shown as a notification between fromMillis (incl.) and untilMillis (excl.), earliest first,
--- by the time they are due (the snooze time if snoozed). Entries that
--- are deleted, completed or cancelled are skipped here; whatever needs the domain model (e.g.
--- recurring entries) is filtered by the caller.
+-- by the time they are due (the snooze time if snoozed). Only tasks' alarms notify: RFC 5545
+-- allows no VALARM in a VJOURNAL, so alarms another client put on a journal or note are kept and
+-- synced but stay silent. Entries that are deleted, completed or cancelled are skipped here;
+-- whatever needs the domain model (e.g. recurring entries) is filtered by the caller.
 getUpcomingAlarms:
 SELECT * FROM AlarmDto
 WHERE COALESCE(snoozedUntil, triggerAt) >= :fromMillis
@@ -40,7 +41,8 @@ WHERE COALESCE(snoozedUntil, triggerAt) >= :fromMillis
   AND action IN ('DISPLAY', 'AUDIO')
   AND icalEntryId IN (
       SELECT id FROM IcalEntryDto
-      WHERE COALESCE(syncState, '') NOT IN ('LOCAL_DELETED', 'REMOTE_DELETED_LOCAL_TRASHBIN', 'CONFLICT_LOCAL_DELETED_SERVER_MODIFIED')
+      WHERE calendarComponent = 'VTODO'
+        AND COALESCE(syncState, '') NOT IN ('LOCAL_DELETED', 'REMOTE_DELETED_LOCAL_TRASHBIN', 'CONFLICT_LOCAL_DELETED_SERVER_MODIFIED')
         AND COALESCE(status, '') NOT IN ('COMPLETED', 'CANCELLED')
         AND COALESCE(percentComplete, 0) < 100
   )
