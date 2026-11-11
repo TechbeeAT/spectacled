@@ -168,7 +168,7 @@ object IosNotifications : KoinComponent {
                 try {
                     // Done removes the entry's notifications. If it can't be done (deleted
                     // meanwhile, read-only), at least take this one away - the button did nothing.
-                    if (!setTaskDone(entryId, done = true))
+                    if (!setTaskDone.updateProgress(entryId, done = true))
                         alarmScheduler.dismiss(ScheduledAlarmKey(entryId, alarmKey))
                 } finally {
                     onDone()
