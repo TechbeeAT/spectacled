@@ -20,7 +20,9 @@ CREATE TABLE AlarmDto (
 );
 
 CREATE INDEX idx_alarm_icalEntryId ON AlarmDto(icalEntryId);
-CREATE INDEX idx_alarm_triggerAt ON AlarmDto(triggerAt);
+-- The time an alarm is due, as getUpcomingAlarms and markAlarmsNotifiedBefore query it. Keep the
+-- expression identical in the queries, or SQLite can't use the index.
+CREATE INDEX idx_alarm_dueAt ON AlarmDto(COALESCE(snoozedUntil, triggerAt));
 
 getAlarmsForEntry:
 SELECT * FROM AlarmDto WHERE icalEntryId = ? ORDER BY id;

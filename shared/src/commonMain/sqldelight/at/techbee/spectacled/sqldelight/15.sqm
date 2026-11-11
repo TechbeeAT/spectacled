@@ -1,2 +1,6 @@
 -- Local-only snooze time of an alarm (epoch millis), see alarm_dto.sq.
 ALTER TABLE AlarmDto ADD COLUMN snoozedUntil INTEGER;
+
+-- Alarms are queried by the time they are due, which is the snooze time if snoozed.
+DROP INDEX idx_alarm_triggerAt;
+CREATE INDEX idx_alarm_dueAt ON AlarmDto(COALESCE(snoozedUntil, triggerAt));
