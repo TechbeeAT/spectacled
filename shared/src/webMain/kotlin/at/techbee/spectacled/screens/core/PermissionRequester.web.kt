@@ -24,7 +24,9 @@ actual fun rememberPermissionRequester(
                         WebNotifications.requestPermission { status -> currentOnResult(permission, status) }
                     else
                         currentOnResult(permission, WebNotifications.permissionStatus())
-                else -> currentOnResult(permission, PermissionStatus.NOT_APPLICABLE)
+
+                AppPermission.LOCAL_NETWORK, AppPermission.EXACT_ALARMS ->
+                    currentOnResult(permission, PermissionStatus.NOT_APPLICABLE)
             }
         }
     }
