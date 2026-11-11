@@ -95,24 +95,32 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
         val selectCalendarText: String,
         val noEntriesText: String,
         val subtaskText: String
-    )
+    ) {
+        companion object {
+            suspend fun load() = WidgetTexts(
+                newEntryText = getString(Res.string.widget_new_entry),
+                openCalendarText = getString(Res.string.widget_open_calendar),
+                configureText = getString(Res.string.widget_configure),
+                selectCalendarText = getString(Res.string.widget_select_calendar),
+                noEntriesText = getString(Res.string.widget_no_entries),
+                subtaskText = getString(Res.string.widget_subtask),
+            )
+        }
+    }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
 
-        val widgetTexts = WidgetTexts(
-            newEntryText = getString(Res.string.widget_new_entry),
-            openCalendarText = getString(Res.string.widget_open_calendar),
-            configureText = getString(Res.string.widget_configure),
-            selectCalendarText = getString(Res.string.widget_select_calendar),
-            noEntriesText = getString(Res.string.widget_no_entries),
-            subtaskText = getString(Res.string.widget_subtask),
-        )
+        val initialWidgetTexts = WidgetTexts.load()
 
         provideContent {
             val prefs = currentState<Preferences>()
             val calendarId = prefs[longPreferencesKey(CALENDAR_ID_KEY)]
             val listFilterCriteria = prefs.getListFilterCriteria()
 
+            val locale = LocalContext.current.resources.configuration.locales[0]
+            val widgetTexts by produceState(initialWidgetTexts, locale) {
+                value = WidgetTexts.load()             // runs again when the locale changes
+            }
 
             val calendar by produceState<Calendar?>(initialValue = null, key1 = calendarId) {
                 value = calendarId?.let { calendarRepository.getCalendarById(it) }
