@@ -88,7 +88,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
 
-    data class WidgetTexts(
+    private data class WidgetTexts(
         val newEntryText: String,
         val openCalendarText: String,
         val configureText: String,
@@ -139,7 +139,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     }
 
     @Composable
-    fun SpectacledWidgetContent(entries: Map<String?, List<IcalEntry>>, calendar: Calendar?, widgetTexts: WidgetTexts) {
+    private fun SpectacledWidgetContent(entries: Map<String?, List<IcalEntry>>, calendar: Calendar?, widgetTexts: WidgetTexts) {
 
         val context = LocalContext.current
 
@@ -185,9 +185,9 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                 val mainEntries = entries[null] ?: emptyList()    // no subtasks
 
                 if (calendar == null) {
-                    WidgetEmptyState(widgetTexts.selectCalendarText, true, widgetTexts)
+                    WidgetEmptyState(widgetTexts.selectCalendarText, true, widgetTexts.configureText)
                 } else if (mainEntries.isEmpty()) {
-                    WidgetEmptyState(widgetTexts.noEntriesText, false, widgetTexts)
+                    WidgetEmptyState(widgetTexts.noEntriesText, false, widgetTexts.configureText)
                 } else {
                     LazyColumn(
                         modifier = GlanceModifier
@@ -242,7 +242,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     }
 
     @Composable
-    private fun WidgetEmptyState(message: String, showConfigureButton: Boolean, widgetTexts: WidgetTexts) {
+    private fun WidgetEmptyState(message: String, showConfigureButton: Boolean, configureText: String) {
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -258,7 +258,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
             if(showConfigureButton) {
                 Button(
-                    text = widgetTexts.configureText,
+                    text = configureText,
                     modifier = GlanceModifier.padding(16.dp),
                     onClick = actionRunCallback<OpenConfigAction>()
                 )
