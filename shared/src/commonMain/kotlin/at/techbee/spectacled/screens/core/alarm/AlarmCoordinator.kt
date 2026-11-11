@@ -111,14 +111,16 @@ class AlarmCoordinator(
     /**
      * The user snoozed the notification of [alarmKey]: it is removed now and shown again after
      * [SNOOZE_DURATION]. The snooze is stored with the alarm, so it survives reconciles and reboots
-     * like any other alarm; editing the alarm's time drops it.
+     * like any other alarm; editing the alarm's time drops it. Runs under the same lock as
+     * [reconcile], so one already running can't show the alarm again and mark it notified in
+     * between, which would lose the snooze.
      */
     suspend fun snooze(icalEntryId: Long, alarmKey: String) {
-        withContext(dispatcher) {
+        withContext(dispatcher) { reconcileMutex.withLock {
             alarmScheduler.dismiss(ScheduledAlarmKey(icalEntryId, alarmKey))
             if (!icalEntryRepository.snoozeAlarm(icalEntryId, alarmKey, until = clock.now() + SNOOZE_DURATION))
                 Napier.d("Alarm $icalEntryId/$alarmKey to snooze no longer exists")
-        }
+        } }
         reconcile()
     }
 
