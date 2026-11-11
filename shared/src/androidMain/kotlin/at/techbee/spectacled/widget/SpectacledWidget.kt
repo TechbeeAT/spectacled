@@ -342,7 +342,7 @@ class ToggleTaskAction : ActionCallback, KoinComponent {
         val entryId = parameters[EntryIdKey] ?: return
         val isChecked = parameters[IsCheckedKey] ?: return
 
-        if (!setTaskDone(entryId, done = isChecked))
+        if (!setTaskDone.updateProgress(entryId, done = isChecked))
             return
 
         SpectacledWidget().update(context, glanceId)

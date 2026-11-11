@@ -48,7 +48,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
                     ACTION_MARK_DONE -> {
                         // Done dismisses the entry's notifications. If it can't be done (deleted
                         // meanwhile, read-only), at least take this one away - the button did nothing.
-                        if (setTaskDone(entryId, done = true))
+                        if (setTaskDone.updateProgress(entryId, done = true))
                             syncTrigger.triggerWidgetUpdate()
                         else
                             alarmScheduler.dismiss(ScheduledAlarmKey(entryId, alarmKey))

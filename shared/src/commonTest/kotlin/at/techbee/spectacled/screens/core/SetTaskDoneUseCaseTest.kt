@@ -51,7 +51,7 @@ class SetTaskDoneUseCaseTest {
     fun done_updatesTheTaskDismissesItsNotificationsAndSyncs() = runTest {
         val fixture = Fixture(listOf(task(5L)), listOf(writable))
 
-        assertTrue(fixture.useCase(5L, done = true))
+        assertTrue(fixture.useCase.updateProgress(5L, done = true))
 
         val update = fixture.repository.progressUpdates.single()
         assertEquals(5L, update.id)
@@ -66,7 +66,7 @@ class SetTaskDoneUseCaseTest {
     fun notDone_reopensTheTaskWithoutDismissing() = runTest {
         val fixture = Fixture(listOf(task(5L).copy(percentComplete = 100L, status = Status.COMPLETED)), listOf(writable))
 
-        assertTrue(fixture.useCase(5L, done = false))
+        assertTrue(fixture.useCase.updateProgress(5L, done = false))
 
         assertEquals(0L, fixture.repository.progressUpdates.single().percentComplete)
         assertTrue(fixture.scheduler.dismissed.isEmpty())
@@ -85,7 +85,7 @@ class SetTaskDoneUseCaseTest {
         val fixture = Fixture(entries, listOf(writable, readOnly))
 
         (entries.map { it.id } + 404L).forEach { id ->
-            assertFalse(fixture.useCase(id, done = true), "entry $id")
+            assertFalse(fixture.useCase.updateProgress(id, done = true), "entry $id")
         }
         assertTrue(fixture.repository.progressUpdates.isEmpty())
         assertTrue(fixture.scheduler.dismissed.isEmpty())

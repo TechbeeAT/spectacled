@@ -20,7 +20,7 @@ class SetTaskDoneUseCase(
      * Returns false if nothing was changed: the entry is gone, not a task, or read-only - recurring,
      * deleted, or in a calendar the user may not write to.
      */
-    suspend operator fun invoke(icalEntryId: Long, done: Boolean): Boolean {
+    suspend fun updateProgress(icalEntryId: Long, done: Boolean): Boolean {
         val icalEntry = icalEntryRepository.getIcalEntryById(icalEntryId) ?: return false
         // Deleted and recurring entries are read-only (this app has no recurrence support), so
         // ignore the request even if a stale widget or notification still offers it. Same for a
