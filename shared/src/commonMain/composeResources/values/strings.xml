@@ -168,6 +168,8 @@
     <string name="alarm">Alarm</string>
     <string name="alarm_notification_action_done">Mark done</string>
     <string name="alarm_notification_action_snooze">Snooze</string>
+    <string name="alarm_notification_channel_name">Alarms</string>
+    <string name="alarm_notification_channel_description">Reminders for tasks with an alarm</string>
     <string name="add_alarm">Add alarm</string>
     <string name="alarm_presets">Alarm presets</string>
     <string name="alarm_relative">Relative</string>

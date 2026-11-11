@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import platform.Foundation.NSNotificationCenter
@@ -36,10 +35,6 @@ import platform.UserNotifications.UNNotificationResponse
 import platform.UserNotifications.UNUserNotificationCenter
 import platform.UserNotifications.UNUserNotificationCenterDelegateProtocol
 import platform.darwin.NSObject
-import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.alarm
-import spectacled.shared.generated.resources.alarm_notification_action_done
-import spectacled.shared.generated.resources.alarm_notification_action_snooze
 
 /** Keys of the notification's userInfo, read back when the user taps it or one of its buttons. */
 internal const val USER_INFO_CALENDAR_ID = "calendarId"
@@ -80,16 +75,16 @@ object IosNotifications : KoinComponent {
     var authorizationStatus: UNAuthorizationStatus? = null
         private set
 
-    /** Fallback notification title for an entry without a summary, localized once at start. */
-    var defaultTitle: String = "Alarm"
+    /** The notification texts, localized once at start. */
+    var texts: AlarmNotificationTexts = AlarmNotificationTexts.FALLBACK
         private set
 
     fun install() {
         center.delegate = delegate
         refreshAuthorizationStatus()
         scope.launch {
-            defaultTitle = getString(Res.string.alarm)
-            registerCategories()
+            texts = AlarmNotificationTexts.load()   // falls back to English rather than failing
+            registerCategories(texts)
         }
 
         val notificationCenter = NSNotificationCenter.defaultCenter
@@ -140,15 +135,11 @@ object IosNotifications : KoinComponent {
 
     /**
      * The buttons run in the background (no option to bring the app to the foreground), like on
-     * Android. Their titles are localized, hence registered once the strings are loaded.
+     * Android. Their titles are localized, hence registered once the texts are loaded.
      */
-    private suspend fun registerCategories() {
-        val markDone = UNNotificationAction.actionWithIdentifier(
-            ACTION_MARK_DONE, getString(Res.string.alarm_notification_action_done), options = 0uL
-        )
-        val snooze = UNNotificationAction.actionWithIdentifier(
-            ACTION_SNOOZE, getString(Res.string.alarm_notification_action_snooze), options = 0uL
-        )
+    private fun registerCategories(texts: AlarmNotificationTexts) {
+        val markDone = UNNotificationAction.actionWithIdentifier(ACTION_MARK_DONE, texts.markDone, options = 0uL)
+        val snooze = UNNotificationAction.actionWithIdentifier(ACTION_SNOOZE, texts.snooze, options = 0uL)
         center.setNotificationCategories(
             setOf(
                 UNNotificationCategory.categoryWithIdentifier(CATEGORY_ALARM, listOf(markDone, snooze), emptyList<Any>(), options = 0uL),

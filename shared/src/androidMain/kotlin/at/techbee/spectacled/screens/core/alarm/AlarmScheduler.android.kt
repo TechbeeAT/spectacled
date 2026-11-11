@@ -19,6 +19,7 @@ import androidx.core.content.edit
 import at.techbee.spectacled.shared.R
 import at.techbee.spectacled.widget.SpectacledWidget
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.runBlocking
 import androidx.core.net.toUri
 
 private const val NOTIFICATION_CHANNEL_ALARMS = "alarms"
@@ -69,7 +70,10 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
             Napier.w("Notification permission missing, alarm for entry ${alarm.icalEntryId} not shown")
             return false
         }
-        ensureChannel()
+        // Read per notification: the shared resources follow the current locale, and the work
+        // already runs off the main thread (AlarmCoordinator's dispatcher).
+        val texts = runBlocking { AlarmNotificationTexts.load() }
+        ensureChannel(texts)
 
         val contentIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
             putExtra(SpectacledWidget.CALENDAR_ID_KEY, alarm.calendarId)
@@ -77,11 +81,9 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         } ?: Intent()
 
-        // The summary, or for an entry without one the first line of its description.
         // Title: the entry's summary, or "Alarm" without one. Text: the entry's description, if any;
         // the expanded notification shows it in full.
-        val title = alarm.entrySummary?.takeIf { it.isNotBlank() }
-            ?: context.getString(R.string.alarm_notification_default_title)
+        val title = alarm.entrySummary?.takeIf { it.isNotBlank() } ?: texts.defaultTitle
         val text = alarm.entryDescription?.takeIf { it.isNotBlank() }
 
         val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ALARMS)
@@ -102,9 +104,9 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
             )
             .apply {
                 if (alarm.entryEditable)
-                    addAction(0, context.getString(R.string.alarm_notification_action_done), actionPendingIntent(alarm, AlarmReceiver.ACTION_MARK_DONE))
+                    addAction(0, texts.markDone, actionPendingIntent(alarm, AlarmReceiver.ACTION_MARK_DONE))
             }
-            .addAction(0, context.getString(R.string.alarm_notification_action_snooze), actionPendingIntent(alarm, AlarmReceiver.ACTION_SNOOZE))
+            .addAction(0, texts.snooze, actionPendingIntent(alarm, AlarmReceiver.ACTION_SNOOZE))
             .build()
 
         NotificationManagerCompat.from(context).notify(alarm.key.notificationId(), notification)
@@ -119,12 +121,13 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
                 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    private fun ensureChannel() {
+    /** Creating it again updates its name and description, e.g. after the language was changed. */
+    private fun ensureChannel(texts: AlarmNotificationTexts) {
         val channel = NotificationChannel(
             NOTIFICATION_CHANNEL_ALARMS,
-            context.getString(R.string.alarm_notification_channel_name),
+            texts.channelName,
             NotificationManager.IMPORTANCE_HIGH
-        ).apply { description = context.getString(R.string.alarm_notification_channel_description) }
+        ).apply { description = texts.channelDescription }
         NotificationManagerCompat.from(context).createNotificationChannel(channel)
     }
 

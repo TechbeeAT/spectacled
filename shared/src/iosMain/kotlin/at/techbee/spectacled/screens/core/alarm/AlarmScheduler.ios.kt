@@ -87,7 +87,7 @@ actual class PlatformAlarmScheduler : AlarmScheduler {
     private fun add(alarm: ScheduledAlarm, trigger: UNNotificationTrigger?) {
         // Title: the entry's summary, or "Alarm" without one. Body: the entry's description, if any.
         val content = UNMutableNotificationContent().apply {
-            setTitle(alarm.entrySummary?.takeIf { it.isNotBlank() } ?: IosNotifications.defaultTitle)
+            setTitle(alarm.entrySummary?.takeIf { it.isNotBlank() } ?: IosNotifications.texts.defaultTitle)
             alarm.entryDescription?.takeIf { it.isNotBlank() }?.let { setBody(it) }
             setSound(UNNotificationSound.defaultSound)
             setThreadIdentifier(alarm.icalEntryId.toString())
