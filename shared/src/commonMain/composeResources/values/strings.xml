@@ -166,6 +166,8 @@
     <string name="location">Location</string>
     <string name="add_location">Add location</string>
     <string name="alarm">Alarm</string>
+    <string name="alarm_notification_action_done">Mark done</string>
+    <string name="alarm_notification_action_snooze">Snooze</string>
     <string name="add_alarm">Add alarm</string>
     <string name="alarm_presets">Alarm presets</string>
     <string name="alarm_relative">Relative</string>

@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.core.alarm
 
 import at.techbee.spectacled.DeepLinkHandler
 import at.techbee.spectacled.screens.core.PermissionStatus
+import at.techbee.spectacled.screens.core.SetTaskDoneUseCase
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +25,9 @@ import platform.UserNotifications.UNAuthorizationStatusEphemeral
 import platform.UserNotifications.UNAuthorizationStatusNotDetermined
 import platform.UserNotifications.UNAuthorizationStatusProvisional
 import platform.UserNotifications.UNNotification
+import platform.UserNotifications.UNNotificationAction
+import platform.UserNotifications.UNNotificationCategory
+import platform.UserNotifications.UNNotificationDefaultActionIdentifier
 import platform.UserNotifications.UNNotificationPresentationOptionBanner
 import platform.UserNotifications.UNNotificationPresentationOptionList
 import platform.UserNotifications.UNNotificationPresentationOptionSound
@@ -34,10 +38,22 @@ import platform.UserNotifications.UNUserNotificationCenterDelegateProtocol
 import platform.darwin.NSObject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.alarm
+import spectacled.shared.generated.resources.alarm_notification_action_done
+import spectacled.shared.generated.resources.alarm_notification_action_snooze
 
-/** Keys of the notification's userInfo, read back when the user taps it. */
+/** Keys of the notification's userInfo, read back when the user taps it or one of its buttons. */
 internal const val USER_INFO_CALENDAR_ID = "calendarId"
 internal const val USER_INFO_ENTRY_ID = "entryId"
+internal const val USER_INFO_ALARM_KEY = "alarmKey"
+
+/**
+ * Notification categories, which decide the buttons an alarm's notification shows: "Mark done"
+ * and "Snooze", or only "Snooze" for a task in a calendar that can't be written to.
+ */
+internal const val CATEGORY_ALARM = "alarm"
+internal const val CATEGORY_ALARM_READ_ONLY = "alarm_read_only"
+private const val ACTION_MARK_DONE = "markDone"
+private const val ACTION_SNOOZE = "snooze"
 
 /**
  * App-wide notification setup on iOS. [install] has to be called from the AppDelegate's
@@ -47,6 +63,8 @@ internal const val USER_INFO_ENTRY_ID = "entryId"
 object IosNotifications : KoinComponent {
 
     private val alarmCoordinator: AlarmCoordinator by inject()
+    private val alarmScheduler: AlarmScheduler by inject()
+    private val setTaskDone: SetTaskDoneUseCase by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     /** For handing results to the UI and navigation, which expect the main thread. */
     internal val mainScope = MainScope()
@@ -69,7 +87,10 @@ object IosNotifications : KoinComponent {
     fun install() {
         center.delegate = delegate
         refreshAuthorizationStatus()
-        scope.launch { defaultTitle = getString(Res.string.alarm) }
+        scope.launch {
+            defaultTitle = getString(Res.string.alarm)
+            registerCategories()
+        }
 
         val notificationCenter = NSNotificationCenter.defaultCenter
         // Trigger times of all-day and floating dates follow the device zone.
@@ -117,6 +138,58 @@ object IosNotifications : KoinComponent {
         }
     }
 
+    /**
+     * The buttons run in the background (no option to bring the app to the foreground), like on
+     * Android. Their titles are localized, hence registered once the strings are loaded.
+     */
+    private suspend fun registerCategories() {
+        val markDone = UNNotificationAction.actionWithIdentifier(
+            ACTION_MARK_DONE, getString(Res.string.alarm_notification_action_done), options = 0uL
+        )
+        val snooze = UNNotificationAction.actionWithIdentifier(
+            ACTION_SNOOZE, getString(Res.string.alarm_notification_action_snooze), options = 0uL
+        )
+        center.setNotificationCategories(
+            setOf(
+                UNNotificationCategory.categoryWithIdentifier(CATEGORY_ALARM, listOf(markDone, snooze), emptyList<Any>(), options = 0uL),
+                UNNotificationCategory.categoryWithIdentifier(CATEGORY_ALARM_READ_ONLY, listOf(snooze), emptyList<Any>(), options = 0uL)
+            )
+        )
+    }
+
+    /**
+     * The user tapped the notification ([UNNotificationDefaultActionIdentifier]) or one of its
+     * buttons. [onDone] has to be called once handled: iOS keeps the app running until then when it
+     * was woken in the background for a button.
+     */
+    internal fun onNotificationResponse(actionIdentifier: String, calendarId: Long?, entryId: Long, alarmKey: String?, onDone: () -> Unit) {
+        when {
+            actionIdentifier == ACTION_MARK_DONE && alarmKey != null -> scope.launch {
+                try {
+                    // Done removes the entry's notifications. If it can't be done (deleted
+                    // meanwhile, read-only), at least take this one away - the button did nothing.
+                    if (!setTaskDone(entryId, done = true))
+                        alarmScheduler.dismiss(ScheduledAlarmKey(entryId, alarmKey))
+                } finally {
+                    onDone()
+                }
+            }
+            actionIdentifier == ACTION_SNOOZE && alarmKey != null -> scope.launch {
+                try {
+                    alarmCoordinator.snooze(entryId, alarmKey)
+                } finally {
+                    onDone()
+                }
+            }
+            actionIdentifier == UNNotificationDefaultActionIdentifier -> {
+                // Opens the entry, through the same path as a deep link.
+                mainScope.launch { DeepLinkHandler.onDeepLinkReceived(calendarId, entryId, null) }
+                onDone()
+            }
+            else -> onDone()
+        }
+    }
+
     private fun refreshAuthorizationStatus(onDone: (PermissionStatus) -> Unit = {}) {
         center.getNotificationSettingsWithCompletionHandler { settings ->
             val wasAuthorized = isAuthorized()
@@ -142,7 +215,7 @@ private class NotificationDelegate : NSObject(), UNUserNotificationCenterDelegat
         )
     }
 
-    /** A tap on the notification opens its entry, through the same path as a deep link. */
+    /** A tap on the notification opens its entry; its buttons mark the task done or snooze it. */
     override fun userNotificationCenter(
         center: UNUserNotificationCenter,
         didReceiveNotificationResponse: UNNotificationResponse,
@@ -151,8 +224,13 @@ private class NotificationDelegate : NSObject(), UNUserNotificationCenterDelegat
         val userInfo = didReceiveNotificationResponse.notification.request.content.userInfo
         val calendarId = (userInfo[USER_INFO_CALENDAR_ID] as? String)?.toLongOrNull()
         val entryId = (userInfo[USER_INFO_ENTRY_ID] as? String)?.toLongOrNull()
-        if (entryId != null)
-            IosNotifications.mainScope.launch { DeepLinkHandler.onDeepLinkReceived(calendarId, entryId, null) }
-        withCompletionHandler()
+        val alarmKey = userInfo[USER_INFO_ALARM_KEY] as? String
+        if (entryId == null) {
+            withCompletionHandler()
+            return
+        }
+        IosNotifications.onNotificationResponse(
+            didReceiveNotificationResponse.actionIdentifier, calendarId, entryId, alarmKey, withCompletionHandler
+        )
     }
 }
