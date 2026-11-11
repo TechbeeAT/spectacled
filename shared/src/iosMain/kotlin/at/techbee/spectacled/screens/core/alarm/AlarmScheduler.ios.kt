@@ -87,14 +87,17 @@ actual class PlatformAlarmScheduler : AlarmScheduler {
     private fun add(alarm: ScheduledAlarm, trigger: UNNotificationTrigger?) {
         // Title: the entry's summary, or "Alarm" without one. Body: the entry's description, if any.
         val content = UNMutableNotificationContent().apply {
-            setTitle(alarm.entrySummary?.takeIf { it.isNotBlank() } ?: IosNotifications.defaultTitle)
+            setTitle(alarm.entrySummary?.takeIf { it.isNotBlank() } ?: IosNotifications.texts.defaultTitle)
             alarm.entryDescription?.takeIf { it.isNotBlank() }?.let { setBody(it) }
             setSound(UNNotificationSound.defaultSound)
             setThreadIdentifier(alarm.icalEntryId.toString())
+            // The buttons: "Mark done" only where the task can be changed, "Snooze" always.
+            setCategoryIdentifier(if (alarm.entryEditable) CATEGORY_ALARM else CATEGORY_ALARM_READ_ONLY)
             setUserInfo(
                 mapOf(
                     USER_INFO_CALENDAR_ID to alarm.calendarId.toString(),
-                    USER_INFO_ENTRY_ID to alarm.icalEntryId.toString()
+                    USER_INFO_ENTRY_ID to alarm.icalEntryId.toString(),
+                    USER_INFO_ALARM_KEY to alarm.key.alarmKey
                 )
             )
         }
