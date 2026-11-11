@@ -511,6 +511,13 @@
     <string name="widget_configuration">Widget configuration</string>
     <string name="widget_filter_criteria">Filter criteria</string>
 
+    <string name="widget_new_entry">New entry</string>
+    <string name="widget_open_calendar">Open calendar</string>
+    <string name="widget_configure">Configure</string>
+    <string name="widget_select_calendar">Please select a calendar in widget settings</string>
+    <string name="widget_no_entries">No entries found</string>
+    <string name="widget_subtask">Subtask</string>
+
     <!-- Label/value pair, e.g. "Created: 5 Jan 2026". Some locales space the colon differently. -->
     <string name="label_value">%1$s: %2$s</string>
 
