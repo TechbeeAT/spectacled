@@ -88,31 +88,39 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
 
-    data class WidgetTexts(
+    private data class WidgetTexts(
         val newEntryText: String,
         val openCalendarText: String,
         val configureText: String,
         val selectCalendarText: String,
         val noEntriesText: String,
         val subtaskText: String
-    )
+    ) {
+        companion object {
+            suspend fun load() = WidgetTexts(
+                newEntryText = getString(Res.string.widget_new_entry),
+                openCalendarText = getString(Res.string.widget_open_calendar),
+                configureText = getString(Res.string.widget_configure),
+                selectCalendarText = getString(Res.string.widget_select_calendar),
+                noEntriesText = getString(Res.string.widget_no_entries),
+                subtaskText = getString(Res.string.widget_subtask),
+            )
+        }
+    }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
 
-        val widgetTexts = WidgetTexts(
-            newEntryText = getString(Res.string.widget_new_entry),
-            openCalendarText = getString(Res.string.widget_open_calendar),
-            configureText = getString(Res.string.widget_configure),
-            selectCalendarText = getString(Res.string.widget_select_calendar),
-            noEntriesText = getString(Res.string.widget_no_entries),
-            subtaskText = getString(Res.string.widget_subtask),
-        )
+        val initialWidgetTexts = WidgetTexts.load()
 
         provideContent {
             val prefs = currentState<Preferences>()
             val calendarId = prefs[longPreferencesKey(CALENDAR_ID_KEY)]
             val listFilterCriteria = prefs.getListFilterCriteria()
 
+            val locale = LocalContext.current.resources.configuration.locales[0]
+            val widgetTexts by produceState(initialWidgetTexts, locale) {
+                value = WidgetTexts.load()             // runs again when the locale changes
+            }
 
             val calendar by produceState<Calendar?>(initialValue = null, key1 = calendarId) {
                 value = calendarId?.let { calendarRepository.getCalendarById(it) }
@@ -139,7 +147,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     }
 
     @Composable
-    fun SpectacledWidgetContent(entries: Map<String?, List<IcalEntry>>, calendar: Calendar?, widgetTexts: WidgetTexts) {
+    private fun SpectacledWidgetContent(entries: Map<String?, List<IcalEntry>>, calendar: Calendar?, widgetTexts: WidgetTexts) {
 
         val context = LocalContext.current
 
@@ -185,9 +193,9 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                 val mainEntries = entries[null] ?: emptyList()    // no subtasks
 
                 if (calendar == null) {
-                    WidgetEmptyState(widgetTexts.selectCalendarText, true, widgetTexts)
+                    WidgetEmptyState(widgetTexts.selectCalendarText, true, widgetTexts.configureText)
                 } else if (mainEntries.isEmpty()) {
-                    WidgetEmptyState(widgetTexts.noEntriesText, false, widgetTexts)
+                    WidgetEmptyState(widgetTexts.noEntriesText, false, widgetTexts.configureText)
                 } else {
                     LazyColumn(
                         modifier = GlanceModifier
@@ -242,7 +250,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     }
 
     @Composable
-    private fun WidgetEmptyState(message: String, showConfigureButton: Boolean, widgetTexts: WidgetTexts) {
+    private fun WidgetEmptyState(message: String, showConfigureButton: Boolean, configureText: String) {
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -258,7 +266,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
             if(showConfigureButton) {
                 Button(
-                    text = widgetTexts.configureText,
+                    text = configureText,
                     modifier = GlanceModifier.padding(16.dp),
                     onClick = actionRunCallback<OpenConfigAction>()
                 )
