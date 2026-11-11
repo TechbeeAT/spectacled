@@ -44,6 +44,7 @@ import spectacled.shared.generated.resources.alarm_fires_at
 import spectacled.shared.generated.resources.alarm_invalid_alarm_trigger_time
 import spectacled.shared.generated.resources.alarm_missing_reference_date
 import spectacled.shared.generated.resources.alarm_not_notifying
+import spectacled.shared.generated.resources.alarm_only_while_app_open
 import spectacled.shared.generated.resources.alarm_notifications_allow
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
@@ -127,12 +128,13 @@ fun AlarmCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                    if(getPlatform().platform != Platforms.ANDROID && getPlatform().platform != Platforms.IOS)
+                    // Desktop and web have no OS scheduler that wakes the app, see InAppAlarmTimer.
+                    if (alarm.isNotifying() && getPlatform().platform in listOf(Platforms.DESKTOP, Platforms.WASM))
                         Text(
-                            text = "Beta-Info: This feature is still under development. Actual functionality is not yet implemented.",
+                            text = stringResource(Res.string.alarm_only_while_app_open),
                             style = MaterialTheme.typography.labelSmall,
                             fontStyle = FontStyle.Italic,
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                 }
 
