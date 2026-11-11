@@ -26,7 +26,7 @@ internal object WebNotifications {
     fun requestPermission(onResult: (PermissionStatus) -> Unit) =
         requestNotificationPermission { onResult(permissionStatus()) }
 
-    /** Returns the shown notification, for [close], or null if notifications aren't allowed. */
+    /** Returns the shown notification, for [close], or null if it couldn't be shown (not allowed, not supported). */
     fun show(title: String, text: String?, tag: String, onClick: () -> Unit): JsAny? {
         if (permissionStatus() != PermissionStatus.GRANTED) return null
         // The tag makes a notification for the same alarm replace an earlier one.
@@ -42,12 +42,19 @@ private external fun notificationPermission(): String
 @JsFun("(onDone) => { Notification.requestPermission().then(() => onDone(), () => onDone()); }")
 private external fun requestNotificationPermission(onDone: () -> Unit)
 
+// The constructor throws where pages may only notify through a service worker (e.g. Chrome on
+// Android) even with the permission granted - reported as not shown instead.
 @JsFun("""(title, body, tag, onClick) => {
-    const notification = new Notification(title, { body: body, tag: tag });
-    notification.onclick = () => { window.focus(); notification.close(); onClick(); };
-    return notification;
+    try {
+        const notification = new Notification(title, { body: body, tag: tag });
+        notification.onclick = () => { window.focus(); notification.close(); onClick(); };
+        return notification;
+    } catch (e) {
+        console.warn("Alarm notification not shown", e);
+        return null;
+    }
 }""")
-private external fun showNotification(title: String, body: String, tag: String, onClick: () -> Unit): JsAny
+private external fun showNotification(title: String, body: String, tag: String, onClick: () -> Unit): JsAny?
 
 @JsFun("(notification) => notification.close()")
 private external fun closeNotification(notification: JsAny)
