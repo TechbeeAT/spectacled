@@ -210,7 +210,8 @@ class AlarmCoordinatorTest {
     }
 }
 
-private class FakeAlarmScheduler : AlarmScheduler {
+/** Shared with other tests of alarm handling, e.g. SetTaskDoneUseCaseTest. */
+internal class FakeAlarmScheduler : AlarmScheduler {
     val replaceAllCalls = mutableListOf<List<ScheduledAlarm>>()
     val shown = mutableListOf<ScheduledAlarm>()
     val dismissed = mutableListOf<ScheduledAlarmKey>()
@@ -225,7 +226,7 @@ private class FakeAlarmScheduler : AlarmScheduler {
     override fun dismiss(key: ScheduledAlarmKey) { dismissed += key }
 }
 
-private class FakeIcalEntryRepository(
+internal class FakeIcalEntryRepository(
     private val alarms: List<UpcomingAlarm> = emptyList(),
     private val entries: List<IcalEntry> = emptyList()
 ) : IcalEntryRepository {
@@ -257,10 +258,16 @@ private class FakeIcalEntryRepository(
 
     override suspend fun getIcalEntryById(id: Long): IcalEntry? = entries.find { it.id == id }
 
+    data class ProgressUpdate(val id: Long, val percentComplete: Long, val status: Status?, val syncState: SyncState)
+    val progressUpdates = mutableListOf<ProgressUpdate>()
+    override suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState) {
+        progressUpdates += ProgressUpdate(id, percentComplete, status, syncState)
+    }
+
     var recomputeCalls = 0
     override suspend fun recomputeAlarmTriggerTimes() { recomputeCalls++ }
 
-    // --- not exercised by the alarm coordinator ---
+    // --- not exercised by the alarm handling ---
     override fun getIcalEntriesByCalendarFlow(calendarId: Long): Flow<List<IcalEntry>> = TODO()
     override fun getIcalEntryByUidFlow(calendarId: Long, uid: String): Flow<IcalEntry?> = TODO()
     override fun getAllColors(): Flow<List<Color>> = TODO()
@@ -278,7 +285,6 @@ private class FakeIcalEntryRepository(
     override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = TODO()
     override suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long) = TODO()
     override suspend fun copyIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long, sameCalendarSummarySuffix: String): Map<Long, Long> = TODO()
-    override suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState) = TODO()
     override suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>) = TODO()
     override suspend fun updateColor(id: Long, color: Color?, lastModified: IcsDateTime?, syncState: SyncState) = TODO()
     override suspend fun updateCategory(id: Long, categories: List<String>, lastModified: IcsDateTime?, syncState: SyncState) = TODO()
