@@ -6,6 +6,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
+import at.techbee.spectacled.screens.core.alarm.schedulingKey
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -298,9 +299,9 @@ class IcalEntryRepositoryImpl(
     /**
      * Replaces the stored alarms of [icalEntry] and (re)computes their trigger time from its
      * current DTSTART/DUE. Alarms have no stable row identity (a UID is optional), so the rows are
-     * rewritten on every save. The local-only lastNotifiedAt is carried over to the alarm it
-     * belongs to (same UID, or the same block if it has none) - but only while its trigger time is
-     * unchanged, so an alarm moved to a new time notifies again.
+     * rewritten on every save. The local-only lastNotifiedAt and snoozedUntil are carried over to
+     * the alarm they belong to (same UID, or the same block if it has none) - but only while its
+     * trigger time is unchanged, so an alarm moved to a new time notifies again at that time.
      */
     private suspend fun saveAlarms(db: SpectacledDatabase, icalEntry: IcalEntry) {
         val existingAlarms = db.alarm_dtoQueries.getAlarmsForEntry(icalEntry.id).awaitAsList()
@@ -314,18 +315,17 @@ class IcalEntryRepositoryImpl(
                 val previous = existingAlarms.firstOrNull { existing ->
                     if (alarm.uid != null) existing.uid == alarm.uid else existing.icsBlock == icsBlock
                 }
-                val lastNotifiedAt = previous
-                    ?.takeIf { it.triggerAt == triggerAt?.toEpochMilliseconds() }
-                    ?.lastNotifiedAt
+                val unchanged = previous?.takeIf { it.triggerAt == triggerAt?.toEpochMilliseconds() }
 
-                val alarmDto = alarm.toDto(icalEntry.id, triggerAt, lastNotifiedAt)
+                val alarmDto = alarm.toDto(icalEntry.id, triggerAt, unchanged?.lastNotifiedAt, unchanged?.snoozedUntil)
                 db.alarm_dtoQueries.insertAlarm(
                     icalEntryId = alarmDto.icalEntryId,
                     uid = alarmDto.uid,
                     action = alarmDto.action,
                     icsBlock = alarmDto.icsBlock,
                     triggerAt = alarmDto.triggerAt,
-                    lastNotifiedAt = alarmDto.lastNotifiedAt
+                    lastNotifiedAt = alarmDto.lastNotifiedAt,
+                    snoozedUntil = alarmDto.snoozedUntil
                 )
             }
         }
@@ -346,8 +346,10 @@ class IcalEntryRepositoryImpl(
                     entryUid = entry.uid,
                     entrySummary = entry.summary,
                     entryDescription = entry.description,
+                    entryIsTask = entry.isTask(),
                     alarm = alarmDto.toDomain(),
-                    triggerAt = Instant.fromEpochMilliseconds(alarmDto.triggerAt ?: return@mapNotNull null)
+                    // A snoozed alarm is due at its snooze time instead.
+                    triggerAt = Instant.fromEpochMilliseconds(alarmDto.snoozedUntil ?: alarmDto.triggerAt ?: return@mapNotNull null)
                 )
             }
     }
@@ -356,6 +358,16 @@ class IcalEntryRepositoryImpl(
         withContext(ioDispatcher) {
             getDatabase().alarm_dtoQueries.updateLastNotifiedAt(lastNotifiedAt = notifiedAt.toEpochMilliseconds(), id = alarmId)
         }
+    }
+
+    override suspend fun snoozeAlarm(icalEntryId: Long, alarmKey: String, until: Instant): Boolean = withContext(ioDispatcher) {
+        val db = getDatabase()
+        val alarmId = db.alarm_dtoQueries.getAlarmsForEntry(icalEntryId).awaitAsList()
+            .firstOrNull { it.toDomain().schedulingKey() == alarmKey }
+            ?.id
+            ?: return@withContext false
+        db.alarm_dtoQueries.snoozeAlarm(snoozedUntil = until.toEpochMilliseconds(), id = alarmId)
+        true
     }
 
     override suspend fun recomputeAlarmTriggerTimes() = withContext(ioDispatcher) {
@@ -470,12 +482,12 @@ class IcalEntryRepositoryImpl(
         )
         // The copy is a new row, so saveAlarms found no previous alarms to carry the local
         // notification state over from - do it here, or an alarm that already fired would
-        // count as missed and fire again.
+        // count as missed and fire again, and a snoozed one would lose its snooze.
         val originalAlarms = db.alarm_dtoQueries.getAlarmsForEntry(entry.id).awaitAsList()
         db.alarm_dtoQueries.getAlarmsForEntry(copy.id).awaitAsList().forEach { copied ->
             originalAlarms
-                .firstOrNull { it.lastNotifiedAt != null && it.triggerAt == copied.triggerAt && (if (copied.uid != null) it.uid == copied.uid else it.icsBlock == copied.icsBlock) }
-                ?.let { db.alarm_dtoQueries.updateLastNotifiedAt(lastNotifiedAt = it.lastNotifiedAt, id = copied.id) }
+                .firstOrNull { (it.lastNotifiedAt != null || it.snoozedUntil != null) && it.triggerAt == copied.triggerAt && (if (copied.uid != null) it.uid == copied.uid else it.icsBlock == copied.icsBlock) }
+                ?.let { db.alarm_dtoQueries.updateLocalState(lastNotifiedAt = it.lastNotifiedAt, snoozedUntil = it.snoozedUntil, id = copied.id) }
         }
         return copy.id
     }

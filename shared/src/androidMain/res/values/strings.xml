@@ -15,4 +15,6 @@
     <string name="alarm_notification_channel_name">Alarms</string>
     <string name="alarm_notification_channel_description">Reminders for tasks with an alarm</string>
     <string name="alarm_notification_default_title">Alarm</string>
+    <string name="alarm_notification_action_done">Mark done</string>
+    <string name="alarm_notification_action_snooze">Snooze</string>
 </resources>

@@ -1,0 +1,2 @@
+-- Local-only snooze time of an alarm (epoch millis), see alarm_dto.sq.
+ALTER TABLE AlarmDto ADD COLUMN snoozedUntil INTEGER;

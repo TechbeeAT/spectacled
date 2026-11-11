@@ -30,7 +30,8 @@ private const val PREFS_KEY_SCHEDULED = "scheduled_keys"
 /**
  * Hands alarms to [AlarmManager], which wakes [AlarmReceiver] at the trigger time whether or not
  * the app is running. Notifications go through one high-importance channel; tapping one opens
- * the entry via the same launch intent the widget uses.
+ * the entry via the same launch intent the widget uses. Its buttons - "Mark done" for tasks and
+ * "Snooze" - go to [AlarmReceiver] as well.
  */
 actual class PlatformAlarmScheduler(private val context: Context) : AlarmScheduler {
 
@@ -98,6 +99,11 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             )
+            .apply {
+                if (alarm.entryIsTask)
+                    addAction(0, context.getString(R.string.alarm_notification_action_done), actionPendingIntent(alarm, AlarmReceiver.ACTION_MARK_DONE))
+                addAction(0, context.getString(R.string.alarm_notification_action_snooze), actionPendingIntent(alarm, AlarmReceiver.ACTION_SNOOZE))
+            }
             .build()
 
         NotificationManagerCompat.from(context).notify(alarm.key.notificationId(), notification)
@@ -119,6 +125,24 @@ actual class PlatformAlarmScheduler(private val context: Context) : AlarmSchedul
             NotificationManager.IMPORTANCE_HIGH
         ).apply { description = context.getString(R.string.alarm_notification_channel_description) }
         NotificationManagerCompat.from(context).createNotificationChannel(channel)
+    }
+
+    /** The receiver intent for one of the notification's buttons, [action] being AlarmReceiver's. */
+    private fun actionPendingIntent(alarm: ScheduledAlarm, action: String): PendingIntent {
+        val keyString = alarm.key.asString()
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            this.action = action
+            // Distinct per alarm and button, so the PendingIntents don't replace each other.
+            data = "spectacled-alarm://$keyString/$action".toUri()
+            putExtra(AlarmReceiver.EXTRA_ENTRY_ID, alarm.icalEntryId)
+            putExtra(AlarmReceiver.EXTRA_ALARM_KEY, alarm.key.alarmKey)
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            "$keyString/$action".hashCode(),
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
     }
 
     /**

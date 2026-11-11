@@ -29,7 +29,10 @@ data class ScheduledAlarm(
     val entryUid: String,
     val entrySummary: String?,
     val entryDescription: String?,
+    /** The entry is a task, so the notification can offer to mark it done. */
+    val entryIsTask: Boolean,
     val alarmDescription: String?,
+    /** When the alarm is due: its trigger time, or the time it was snoozed until. */
     val triggerAt: Instant
 )
 

@@ -514,6 +514,7 @@ private class FakeIcalEntryRepository(
     override suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment> = TODO()
     override suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm> = TODO()
     override suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant) = TODO()
+    override suspend fun snoozeAlarm(icalEntryId: Long, alarmKey: String, until: Instant): Boolean = TODO()
     override suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant) = TODO()
     override suspend fun recomputeAlarmTriggerTimes() = TODO()
 }

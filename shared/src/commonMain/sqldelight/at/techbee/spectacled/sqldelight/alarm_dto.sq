@@ -5,6 +5,9 @@
 --    (epoch millis) is computed from the entry's DTSTART/DUE when the entry is saved; NULL if
 --    the alarm can't fire.
 --  - lastNotifiedAt (epoch millis): when this device last showed a notification for it. Never synced.
+--  - snoozedUntil (epoch millis): set when the user snoozed the notification. Never synced. It
+--    replaces triggerAt as the time the alarm is due (COALESCE(snoozedUntil, triggerAt)), and
+--    snoozing clears lastNotifiedAt so the alarm is due again.
 CREATE TABLE AlarmDto (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     icalEntryId INTEGER NOT NULL REFERENCES IcalEntryDto(id) ON DELETE CASCADE,
@@ -12,7 +15,8 @@ CREATE TABLE AlarmDto (
     action TEXT,
     icsBlock TEXT NOT NULL,
     triggerAt INTEGER,
-    lastNotifiedAt INTEGER
+    lastNotifiedAt INTEGER,
+    snoozedUntil INTEGER
 );
 
 CREATE INDEX idx_alarm_icalEntryId ON AlarmDto(icalEntryId);
@@ -24,13 +28,14 @@ SELECT * FROM AlarmDto WHERE icalEntryId = ? ORDER BY id;
 getAlarmsForEntries:
 SELECT * FROM AlarmDto WHERE icalEntryId IN ? ORDER BY id;
 
--- Alarms that should be shown as a notification between fromMillis (incl.) and untilMillis (excl.), earliest first. Entries that
+-- Alarms that should be shown as a notification between fromMillis (incl.) and untilMillis (excl.), earliest first,
+-- by the time they are due (the snooze time if snoozed). Entries that
 -- are deleted, completed or cancelled are skipped here; whatever needs the domain model (e.g.
 -- recurring entries) is filtered by the caller.
 getUpcomingAlarms:
 SELECT * FROM AlarmDto
-WHERE triggerAt >= :fromMillis
-  AND triggerAt < :untilMillis
+WHERE COALESCE(snoozedUntil, triggerAt) >= :fromMillis
+  AND COALESCE(snoozedUntil, triggerAt) < :untilMillis
   AND lastNotifiedAt IS NULL
   AND action IN ('DISPLAY', 'AUDIO')
   AND icalEntryId IN (
@@ -39,7 +44,7 @@ WHERE triggerAt >= :fromMillis
         AND COALESCE(status, '') NOT IN ('COMPLETED', 'CANCELLED')
         AND COALESCE(percentComplete, 0) < 100
   )
-ORDER BY triggerAt
+ORDER BY COALESCE(snoozedUntil, triggerAt)
 LIMIT :maxCount;
 
 insertAlarm:
@@ -49,8 +54,9 @@ INSERT INTO AlarmDto (
     action,
     icsBlock,
     triggerAt,
-    lastNotifiedAt
-) VALUES (?, ?, ?, ?, ?, ?);
+    lastNotifiedAt,
+    snoozedUntil
+) VALUES (?, ?, ?, ?, ?, ?, ?);
 
 -- Alarms whose trigger time still matters: notified ones already went off.
 getUnnotifiedAlarms:
@@ -65,6 +71,14 @@ DELETE FROM AlarmDto WHERE icalEntryId = ?;
 updateLastNotifiedAt:
 UPDATE AlarmDto SET lastNotifiedAt = :lastNotifiedAt WHERE id = :id;
 
+-- Carries the local notification state over to a copy of the alarm (e.g. an entry moved to another calendar).
+updateLocalState:
+UPDATE AlarmDto SET lastNotifiedAt = :lastNotifiedAt, snoozedUntil = :snoozedUntil WHERE id = :id;
+
+-- The alarm is due again at snoozedUntil.
+snoozeAlarm:
+UPDATE AlarmDto SET snoozedUntil = :snoozedUntil, lastNotifiedAt = NULL WHERE id = :id;
+
 -- Alarms too old to still be shown are written off in one statement instead of one per row.
 markAlarmsNotifiedBefore:
-UPDATE AlarmDto SET lastNotifiedAt = :lastNotifiedAt WHERE triggerAt < :beforeMillis AND lastNotifiedAt IS NULL;
+UPDATE AlarmDto SET lastNotifiedAt = :lastNotifiedAt WHERE COALESCE(snoozedUntil, triggerAt) < :beforeMillis AND lastNotifiedAt IS NULL;

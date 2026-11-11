@@ -14,6 +14,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
@@ -55,6 +56,9 @@ class AlarmCoordinator(
          * time. Older ones are only marked, so a long-untouched task doesn't flood the user.
          */
         val MISSED_ALARM_GRACE_PERIOD: Duration = 1.days
+
+        /** How long the notification's snooze action puts an alarm off. */
+        val SNOOZE_DURATION: Duration = 10.minutes
     }
 
     private val reconcileMutex = Mutex()
@@ -104,6 +108,20 @@ class AlarmCoordinator(
         // Not shown: the next reconcile picks it up as missed, within the grace period.
     } }
 
+    /**
+     * The user snoozed the notification of [alarmKey]: it is removed now and shown again after
+     * [SNOOZE_DURATION]. The snooze is stored with the alarm, so it survives reconciles and reboots
+     * like any other alarm; editing the alarm's time drops it.
+     */
+    suspend fun snooze(icalEntryId: Long, alarmKey: String) {
+        withContext(dispatcher) {
+            alarmScheduler.dismiss(ScheduledAlarmKey(icalEntryId, alarmKey))
+            if (!icalEntryRepository.snoozeAlarm(icalEntryId, alarmKey, until = clock.now() + SNOOZE_DURATION))
+                Napier.d("Alarm $icalEntryId/$alarmKey to snooze no longer exists")
+        }
+        reconcile()
+    }
+
     /** The device's clock or time zone changed: stored trigger times may be off, recompute first. */
     suspend fun onTimeOrTimeZoneChanged() {
         icalEntryRepository.recomputeAlarmTriggerTimes()
@@ -135,6 +153,7 @@ fun UpcomingAlarm.toScheduledAlarm() = ScheduledAlarm(
     entryUid = entryUid,
     entrySummary = entrySummary,
     entryDescription = entryDescription,
+    entryIsTask = entryIsTask,
     alarmDescription = alarm.description,
     triggerAt = triggerAt
 )

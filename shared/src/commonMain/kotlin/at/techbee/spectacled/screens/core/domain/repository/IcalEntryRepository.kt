@@ -79,13 +79,19 @@ interface IcalEntryRepository {
 
     /**
      * Alarms that are due to be notified in [from] until [until] (exclusive), earliest first and
-     * at most [limit]. Skips alarms already notified, actions that don't notify (EMAIL, ...), and
+     * at most [limit]. A snoozed alarm is due at its snooze time instead of its trigger time. Skips alarms already notified, actions that don't notify (EMAIL, ...), and
      * entries that are deleted, done, cancelled or recurring.
      */
     suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm>
 
     /** Records that a notification was shown for the stored alarm [alarmId]. Local only, never synced. */
     suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant)
+
+    /**
+     * Makes the stored alarm [alarmKey] (see schedulingKey) of entry [icalEntryId] due again at
+     * [until]. Local only, never synced. Returns false if the entry has no such alarm (anymore).
+     */
+    suspend fun snoozeAlarm(icalEntryId: Long, alarmKey: String, until: Instant): Boolean
 
     /** Marks every alarm due before [before] that was never notified, in one statement. */
     suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant)

@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.core.koin
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
+import at.techbee.spectacled.screens.core.SetTaskDoneUseCase
 import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
@@ -40,6 +41,7 @@ val sharedModule = module {
     singleOf(::DefaultWebDavRemoteIcalEntryDataSource) { bind<WebDavRemoteIcalEntryDataSource>() }
 
     singleOf(::MoveIcalEntriesUseCase)
+    singleOf(::SetTaskDoneUseCase)
     // Not singleOf: Koin would try to resolve the defaulted Clock parameter too.
     single { AlarmCoordinator(get(), get()) }
 

@@ -57,8 +57,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.SyncTrigger
-import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
+import at.techbee.spectacled.screens.core.SetTaskDoneUseCase
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
@@ -338,35 +337,13 @@ class ToggleTaskAction : ActionCallback, KoinComponent {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-        val icalEntryRepository: IcalEntryRepository by inject()
-        val syncTrigger: SyncTrigger by inject()
-        val alarmCoordinator: AlarmCoordinator by inject()
+        val setTaskDone: SetTaskDoneUseCase by inject()
 
         val entryId = parameters[EntryIdKey] ?: return
         val isChecked = parameters[IsCheckedKey] ?: return
 
-        val icalEntry = icalEntryRepository.getIcalEntryById(entryId) ?: return
-        // Deleted and recurring entries are read-only (this app has no recurrence support), so
-        // ignore the toggle even if a stale widget still shows an enabled checkbox for one.
-        if (icalEntry.syncState.isDeletedState() || icalEntry.isRecurring())
+        if (!setTaskDone(entryId, done = isChecked))
             return
-
-        // Same update as toggling the checkbox in the list, so e.g. a conflict state is kept
-        // instead of being overwritten with LOCAL_MODIFIED.
-        val updatedEntry = icalEntry.withProgressUpdated(if (isChecked) 100L else 0L)
-
-        icalEntryRepository.updateProgress(
-            id = updatedEntry.id,
-            percentComplete = updatedEntry.percentComplete,
-            status = updatedEntry.status,
-            lastModified = updatedEntry.lastModified,
-            syncState = updatedEntry.syncState
-        )
-        if (updatedEntry.isDoneOrCancelled())
-            alarmCoordinator.onEntriesDoneOrDeleted(listOf(updatedEntry.id))
-        else
-            alarmCoordinator.reconcile()
-        syncTrigger.requestImmediate(listOf(updatedEntry.calendarId))
 
         SpectacledWidget().update(context, glanceId)
     }
