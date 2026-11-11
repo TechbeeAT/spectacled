@@ -13,7 +13,7 @@ import java.awt.image.BufferedImage
  * - macOS: `osascript display notification` (Notification Center). AWT's tray messages would add
  *   an icon to the menu bar just for this.
  * - Windows (and Linux desktops with a tray): a message of an AWT tray icon. Clicking it calls
- *   [show]'s onClick.
+ *   [show]'s onClick, as far as it can tell which message was clicked (see [onTrayMessageClick]).
  * - Linux without a tray: `notify-send`, if installed.
  * None of them can retract a notification or offer buttons.
  */
@@ -21,7 +21,14 @@ internal object DesktopNotifications {
 
     private val os = System.getProperty("os.name").orEmpty().lowercase()
     private var trayIcon: TrayIcon? = null
-    @Volatile private var onTrayMessageClick: () -> Unit = {}
+
+    /**
+     * A tray icon reports a click on any of its messages without saying which one, so the entry is
+     * only opened while a single message was shown since the last click. With more, the click only
+     * brings the app to the front rather than risk opening the wrong entry.
+     */
+    private var onTrayMessageClick: () -> Unit = {}
+    private var trayMessagesSinceClick = 0
 
     /** Returns false if no way to notify was found or it failed. */
     fun show(appName: String, title: String, text: String?, onClick: () -> Unit): Boolean = try {
@@ -35,7 +42,10 @@ internal object DesktopNotifications {
                 title, text.orEmpty()
             )
             SystemTray.isSupported() -> {
-                onTrayMessageClick = onClick
+                synchronized(this) {
+                    onTrayMessageClick = onClick
+                    trayMessagesSinceClick++
+                }
                 trayIcon(appName).displayMessage(title, text.orEmpty(), TrayIcon.MessageType.NONE)
                 true
             }
@@ -55,9 +65,16 @@ internal object DesktopNotifications {
     @Synchronized
     private fun trayIcon(appName: String): TrayIcon = trayIcon ?: TrayIcon(appIcon(), appName).also { icon ->
         icon.isImageAutoSize = true
-        icon.addActionListener { onTrayMessageClick() }
+        icon.addActionListener { onTrayClick() }
         SystemTray.getSystemTray().add(icon)
         trayIcon = icon
+    }
+
+    private fun onTrayClick() {
+        val (onClick, shownSinceClick) = synchronized(this) {
+            (onTrayMessageClick to trayMessagesSinceClick).also { trayMessagesSinceClick = 0 }
+        }
+        if (shownSinceClick == 1) onClick() else focusApp()
     }
 
     /** The window's icon, as set by the app's main(). */
