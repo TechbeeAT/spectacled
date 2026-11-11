@@ -7,8 +7,6 @@ import java.awt.SystemTray
 import java.awt.TrayIcon
 import java.awt.Window
 import java.awt.image.BufferedImage
-import java.io.IOException
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Shows a notification through what the desktop OS offers a JVM app:
@@ -24,12 +22,6 @@ internal object DesktopNotifications {
     private val os = System.getProperty("os.name").orEmpty().lowercase()
     private var trayIcon: TrayIcon? = null
     @Volatile private var onTrayMessageClick: () -> Unit = {}
-
-    /**
-     * Commands that couldn't be started (not installed). Not tried again in this run: every
-     * reconcile retries the missed alarms, which would otherwise start them and log each time.
-     */
-    private val missingCommands: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     /** Returns false if no way to notify was found or it failed. */
     fun show(appName: String, title: String, text: String?, onClick: () -> Unit): Boolean = try {
@@ -75,14 +67,7 @@ internal object DesktopNotifications {
 
     private fun run(vararg command: String): Boolean {
         val executable = command.first()
-        if (executable in missingCommands) return false
-        val process = try {
-            ProcessBuilder(*command).redirectErrorStream(true).start()
-        } catch (e: IOException) {
-            missingCommands += executable
-            Napier.w("$executable is not available, alarm notifications can't be shown on this desktop", e)
-            return false
-        }
+        val process = ProcessBuilder(*command).redirectErrorStream(true).start()
         // Not waited for: showNow runs under AlarmCoordinator's lock, and a slow osascript would
         // hold up every save and sync behind it. Started counts as shown; a failure is only logged.
         process.onExit().thenAccept { exited ->
