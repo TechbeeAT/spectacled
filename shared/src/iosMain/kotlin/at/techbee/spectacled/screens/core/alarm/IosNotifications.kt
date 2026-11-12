@@ -3,7 +3,6 @@ package at.techbee.spectacled.screens.core.alarm
 import at.techbee.spectacled.DeepLinkHandler
 import at.techbee.spectacled.screens.core.PermissionStatus
 import at.techbee.spectacled.screens.core.SetTaskDoneUseCase
-import at.techbee.spectacled.screens.core.alarm.IosNotifications.refreshAuthorizationStatus
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
