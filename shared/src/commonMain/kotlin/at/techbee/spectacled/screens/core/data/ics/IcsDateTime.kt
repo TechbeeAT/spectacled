@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.data.ics
 
+import kotlinx.datetime.FixedOffsetTimeZone
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -32,9 +33,17 @@ data class IcsDateTime(
         /**
          * The current moment bound to [timeZone] (serialized with `TZID=`), e.g. the DTSTART of a
          * new journal in the timezone of the device.
+         *
+         * If [timeZone] can't be written as a TZID (see [isUsableAsTzid]), the current wall-clock
+         * time in that zone is returned as a floating value instead, so the entry still shows the
+         * right local time and stays readable for other clients.
          */
-        fun nowInZone(timeZone: TimeZone = TimeZone.currentSystemDefault()) =
-            IcsDateTime(Clock.System.now(), false, timeZone)
+        fun nowInZone(
+            timeZone: TimeZone = TimeZone.currentSystemDefault(),
+            now: Instant = Clock.System.now()
+        ): IcsDateTime =
+            if (timeZone.isUsableAsTzid()) IcsDateTime(now, false, timeZone)
+            else nowFloating(timeZone, now)
 
         /**
          * The current wall-clock time in [deviceTimeZone] as a floating DATE-TIME (no timezone).
@@ -174,6 +183,16 @@ data class IcsDateTime(
         )
     }
 }
+
+/**
+ * Whether this zone can be written as a TZID that other CalDAV clients can resolve: UTC or a
+ * named (IANA) zone. A fixed offset like "GMT-08:00" (a device configured with a raw offset) and
+ * the "SYSTEM" placeholder (web, before the timezone database is loaded) can't.
+ */
+fun TimeZone.isUsableAsTzid(): Boolean =
+    this == TimeZone.UTC || (this !is FixedOffsetTimeZone && id != SYSTEM_TIME_ZONE_ID)
+
+private const val SYSTEM_TIME_ZONE_ID = "SYSTEM"
 
 object TimeZoneSerializer : KSerializer<TimeZone> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TimeZone", PrimitiveKind.STRING)

@@ -738,7 +738,7 @@ private fun ListScreen_with_dtstart_and_timezone_Preview() {
     DetailsScreen(
         state = DetailsState(
             icalEntry = IcalEntry.getSampleJournal().copy(
-                dtStart = IcsDateTime.nowFloating().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                dtStart = IcsDateTime.nowInZone(TimeZone.of("Europe/Vienna")),
                 status = Status.DRAFT
             ),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
@@ -755,7 +755,7 @@ private fun ListScreen_task_Preview() {
         state = DetailsState(
             icalEntry = IcalEntry.getSampleIcalEntry().copy(
                 calendarComponent = CalendarComponent.VTODO,
-                dtStart = IcsDateTime.nowFloating().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                dtStart = IcsDateTime.nowInZone(TimeZone.of("Europe/Vienna")),
                 status = Status.IN_PROCESS,
                 percentComplete = 50
             ),

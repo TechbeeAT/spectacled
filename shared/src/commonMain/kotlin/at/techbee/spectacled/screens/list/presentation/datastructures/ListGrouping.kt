@@ -159,12 +159,12 @@ enum class ListGrouping(
         fun getGrouping(
             baseGroups: Set<ListGrouping>,
             icsDateTime: IcsDateTime?,
-            deviceTimeZone: TimeZone = TimeZone.currentSystemDefault()
+            deviceTimeZone: TimeZone = TimeZone.currentSystemDefault(),
+            now: Instant = Clock.System.now()
         ): ListGrouping? {
             if (icsDateTime == null) return null
             // Compare actual points in time: floating and DATE values are resolved in the device
             // timezone, so "within 24 hours" means the same for them as for zoned values.
-            val now = Clock.System.now()
             val instant = icsDateTime.resolvedInstant(deviceTimeZone)
             return baseGroups.find { group ->
                 val lower = group.lowerThreshold?.let { now.plus(it) } ?: Instant.DISTANT_PAST
