@@ -10,10 +10,11 @@ import java.awt.image.BufferedImage
 
 /**
  * Shows a notification through what the desktop OS offers a JVM app:
- * - macOS: `osascript display notification` (Notification Center). AWT's tray messages would add
- *   an icon to the menu bar just for this.
- * - Windows (and Linux desktops with a tray): a message of an AWT tray icon. Clicking it calls
- *   [show]'s onClick, as far as it can tell which message was clicked (see [onTrayMessageClick]).
+ * - macOS, Windows and Linux desktops with a tray: a message of an AWT tray icon. On macOS it
+ *   appears in Notification Center under the app's name (`osascript` would post it as Script
+ *   Editor's, and a click would open Script Editor); the price is an icon in the menu bar while the
+ *   app runs. Clicking a message calls [show]'s onClick, as far as it can tell which message was
+ *   clicked (see [onTrayMessageClick]).
  * - Linux without a tray: `notify-send`, if installed.
  * None of them can retract a notification or offer buttons.
  */
@@ -33,14 +34,6 @@ internal object DesktopNotifications {
     /** Returns false if no way to notify was found or it failed. */
     fun show(appName: String, title: String, text: String?, onClick: () -> Unit): Boolean = try {
         when {
-            os.contains("mac") -> run(
-                // Arguments instead of string interpolation: nothing in the texts needs escaping.
-                "osascript",
-                "-e", "on run argv",
-                "-e", "display notification (item 2 of argv) with title (item 1 of argv)",
-                "-e", "end run",
-                title, text.orEmpty()
-            )
             SystemTray.isSupported() -> {
                 synchronized(this) {
                     onTrayMessageClick = onClick
@@ -85,7 +78,7 @@ internal object DesktopNotifications {
     private fun run(vararg command: String): Boolean {
         val executable = command.first()
         val process = ProcessBuilder(*command).redirectErrorStream(true).start()
-        // Not waited for: showNow runs under AlarmCoordinator's lock, and a slow osascript would
+        // Not waited for: showNow runs under AlarmCoordinator's lock, and a slow notify-send would
         // hold up every save and sync behind it. Started counts as shown; a failure is only logged.
         process.onExit().thenAccept { exited ->
             if (exited.exitValue() != 0)
