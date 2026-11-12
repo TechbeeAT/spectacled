@@ -4,7 +4,12 @@ import at.techbee.spectacled.shared.BuildKonfig
 import kotlinx.coroutines.CoroutineDispatcher
 
 
-enum class Platforms { ANDROID, IOS, DESKTOP, WASM }
+enum class Platforms(val isMobile: Boolean) {
+    ANDROID(true),
+    IOS(true),
+    DESKTOP(false),
+    WASM(false)
+}
 
 interface Platform {
     val platform: Platforms

@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.theme.AppTheme
 
@@ -36,7 +37,7 @@ fun BottomSheetWithMenu(
     menuActionLeft: @Composable () -> Unit = { },
     menuActionRight: @Composable () -> Unit = { },
     showLoadingIndicator: Boolean = false,
-    gesturesEnabled: Boolean = true,
+    gesturesEnabled: Boolean = getPlatform().platform.isMobile,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth().padding(16.dp),
     content: @Composable () -> Unit,
