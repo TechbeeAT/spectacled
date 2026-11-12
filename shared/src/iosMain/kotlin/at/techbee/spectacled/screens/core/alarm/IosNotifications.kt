@@ -3,6 +3,7 @@ package at.techbee.spectacled.screens.core.alarm
 import at.techbee.spectacled.DeepLinkHandler
 import at.techbee.spectacled.screens.core.PermissionStatus
 import at.techbee.spectacled.screens.core.SetTaskDoneUseCase
+import at.techbee.spectacled.screens.core.alarm.IosNotifications.refreshAuthorizationStatus
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -156,42 +157,47 @@ object IosNotifications : KoinComponent {
      * updates the app snapshot in it and terminates the app otherwise.
      */
     internal fun onNotificationResponse(actionIdentifier: String, calendarId: Long?, entryId: Long, alarmKey: String?, onDone: () -> Unit) {
-        when {
-            actionIdentifier == ACTION_MARK_DONE && alarmKey != null -> handleInBackground("Mark done", onDone) {
+        when (actionIdentifier) {
+            ACTION_MARK_DONE if alarmKey != null -> {
                 // Done removes the entry's notifications. If it can't be done (deleted
                 // meanwhile, read-only), at least take this one away - the button did nothing.
-                if (!setTaskDone.updateProgress(entryId, done = true))
-                    alarmScheduler.dismiss(ScheduledAlarmKey(entryId, alarmKey))
+                scope.launch {
+                    try {
+                        if (!setTaskDone.updateProgress(entryId, done = true))
+                            alarmScheduler.dismiss(ScheduledAlarmKey(entryId, alarmKey))
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        Napier.e("Notification action $actionIdentifier failed", e)
+                    } finally {
+                        mainScope.launch { onDone() }
+                    }
+                }
             }
-            actionIdentifier == ACTION_SNOOZE && alarmKey != null -> handleInBackground("Snooze", onDone) {
-                alarmCoordinator.snooze(entryId, alarmKey)
-            }
-            actionIdentifier == UNNotificationDefaultActionIdentifier -> {
+
+            ACTION_SNOOZE if alarmKey != null ->
+                scope.launch {
+                    try {
+                        alarmCoordinator.snooze(entryId, alarmKey)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        Napier.e("Notification action $actionIdentifier failed", e)
+                    } finally {
+                        mainScope.launch { onDone() }
+                    }
+                }
+
+            UNNotificationDefaultActionIdentifier -> {
                 // Opens the entry, through the same path as a deep link.
                 mainScope.launch { DeepLinkHandler.onDeepLinkReceived(calendarId, entryId, null) }
                 onDone()
             }
+
             else -> onDone()
         }
     }
 
-    /**
-     * Runs a button's [work] off the main thread, then calls [onDone] back on it. A failure is
-     * logged rather than thrown: uncaught in a coroutine, it would terminate the app.
-     */
-    private fun handleInBackground(action: String, onDone: () -> Unit, work: suspend () -> Unit) {
-        scope.launch {
-            try {
-                work()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Throwable) {
-                Napier.e("Notification action $action failed", e)
-            } finally {
-                mainScope.launch { onDone() }
-            }
-        }
-    }
 
     private fun refreshAuthorizationStatus(onDone: (PermissionStatus) -> Unit = {}) {
         center.getNotificationSettingsWithCompletionHandler { settings ->
