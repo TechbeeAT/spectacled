@@ -224,7 +224,7 @@ private fun DateTimeCard_no_date_Preview() {
 @Composable
 private fun DateTimeCard_date_only_Preview() {
     DateTimeCard(
-        icsDateTime = IcsDateTime.nowFloating().copy(isDateOnly = true),
+        icsDateTime = IcsDateTime.today(),
         enabled = true,
         allowNoDate = true,
         initializeWithDateOnly = false,
@@ -251,7 +251,7 @@ private fun DDateTimeCard_date_time_Preview() {
 @Composable
 private fun DateTimeCard_with_timezone_Preview() {
     DateTimeCard(
-        icsDateTime = IcsDateTime.nowFloating().copy(timeZone = TimeZone.of(TimeZone.availableZoneIds.first())),
+        icsDateTime = IcsDateTime.nowInZone(TimeZone.of(TimeZone.availableZoneIds.first())),
         enabled = true,
         allowNoDate = true,
         initializeWithDateOnly = false,

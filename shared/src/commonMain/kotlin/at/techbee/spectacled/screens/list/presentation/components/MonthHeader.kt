@@ -28,8 +28,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.no_date
-import kotlin.time.Clock
-import kotlin.time.Instant
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MonthHeader(
@@ -97,6 +96,6 @@ private fun MonthHeader_Preview() {
 @Preview
 private fun MonthHeader_withYear_Preview() {
     MonthHeader(
-        icsDateTime = IcsDateTime.nowFloating().copy(instant = Instant.fromEpochMilliseconds(Clock.System.now().toEpochMilliseconds().plus(31556952000))),
+        icsDateTime = IcsDateTime.nowFloating().let { it.copy(instant = it.instant.plus(31556952000.milliseconds)) },
     )
 }
