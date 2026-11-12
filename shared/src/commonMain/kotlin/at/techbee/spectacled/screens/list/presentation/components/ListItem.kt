@@ -53,6 +53,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.formatLocalized
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
@@ -112,7 +113,7 @@ fun ListItem(
 
             SwipeToDismissBox(
                 state = dismissState,
-                gesturesEnabled = allowEditing,
+                gesturesEnabled = allowEditing && getPlatform().platform.isMobile,
                 backgroundContent = {
                     // Background color or icon revealed during the swipe
                     if(!icalEntry.syncState.isDeletedState()) {
