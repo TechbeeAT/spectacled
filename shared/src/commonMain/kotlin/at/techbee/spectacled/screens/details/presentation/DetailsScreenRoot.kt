@@ -98,7 +98,6 @@ import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.redo
 import spectacled.shared.generated.resources.restore
 import spectacled.shared.generated.resources.undo
-import kotlin.time.ExperimentalTime
 
 
 /**
@@ -109,7 +108,7 @@ import kotlin.time.ExperimentalTime
  */
 private val MIN_CONTENT_HEIGHT_FOR_FAB_WHILE_EDITING = 480.dp
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreenRoot(
     detailsViewModel: DetailsViewModel,
@@ -416,7 +415,9 @@ fun DetailsScreenRoot(
                         onClick = {},
                         // Lift the FAB by the bottom safe-area inset so it clears the iOS home
                         // indicator (the content still fills to the edge, only the FAB is padded).
-                        modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
+                        modifier = Modifier
+                            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
+                            .padding(bottom = if(isEditorFocused) 24.dp else 0.dp)
                     ) {
 
                         Row(
