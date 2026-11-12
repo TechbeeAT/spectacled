@@ -229,7 +229,7 @@ fun DetailsScreen(
                             headerText = stringResource(Res.string.date_start),
                             selectableDates = if (state.icalEntry.due == null) DatePickerDefaults.AllDates else object : SelectableDates {
                                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                    return utcTimeMillis < state.icalEntry.due.toDatePickerMillis(TimeZone.currentSystemDefault())
+                                    return utcTimeMillis < state.icalEntry.due.toDatePickerMillis()
                                 }
                             }
                         )
@@ -245,7 +245,7 @@ fun DetailsScreen(
                             selectableDates = if (state.icalEntry.dtStart == null) DatePickerDefaults.AllDates else object :
                                 SelectableDates {
                                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                    return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis(TimeZone.currentSystemDefault())
+                                    return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis()
                                 }
                             }
                         )
@@ -722,7 +722,7 @@ private fun ListScreen_with_dtstart_Preview() {
     DetailsScreen(
         state = DetailsState(
             icalEntry = IcalEntry.getSampleIcalEntry().copy(
-                dtStart = IcsDateTime.now(),
+                dtStart = IcsDateTime.nowFloating(),
                 url = Url("https://spectacled.techbee.at"),
                 attachments = listOf(Attachment(fileName = "test.pdf", size = 128000))
             ),
@@ -738,7 +738,7 @@ private fun ListScreen_with_dtstart_and_timezone_Preview() {
     DetailsScreen(
         state = DetailsState(
             icalEntry = IcalEntry.getSampleJournal().copy(
-                dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                dtStart = IcsDateTime.nowFloating().copy(timeZone = TimeZone.of("Europe/Vienna")),
                 status = Status.DRAFT
             ),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
@@ -755,7 +755,7 @@ private fun ListScreen_task_Preview() {
         state = DetailsState(
             icalEntry = IcalEntry.getSampleIcalEntry().copy(
                 calendarComponent = CalendarComponent.VTODO,
-                dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                dtStart = IcsDateTime.nowFloating().copy(timeZone = TimeZone.of("Europe/Vienna")),
                 status = Status.IN_PROCESS,
                 percentComplete = 50
             ),

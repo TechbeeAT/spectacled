@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.tooling.preview.Preview
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
-import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.done
@@ -27,15 +26,14 @@ fun DatePickerBottomSheet(
     selectableDates: SelectableDates = DatePickerDefaults.AllDates
 ) {
 
-    val deviceTimeZone = TimeZone.currentSystemDefault()
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = icsDateTime.toDatePickerMillis(deviceTimeZone),
+        initialSelectedDateMillis = icsDateTime.toDatePickerMillis(),
         selectableDates = selectableDates
     )
 
     LaunchedEffect(datePickerState.selectedDateMillis) {
         datePickerState.selectedDateMillis?.let { millis ->
-            val updated = icsDateTime.updateWithDatePickerMillis(millis, deviceTimeZone)
+            val updated = icsDateTime.updateWithDatePickerMillis(millis)
             onDateSelected(updated)
         }
     }
@@ -69,7 +67,7 @@ fun DatePickerBottomSheet(
 private fun DatePickerBottomSheet_Preview() {
 
     DatePickerBottomSheet(
-        icsDateTime = IcsDateTime.now(),
+        icsDateTime = IcsDateTime.nowFloating(),
         allowNoDate = false,
         onDateSelected = {},
         onDismiss = {}
@@ -81,7 +79,7 @@ private fun DatePickerBottomSheet_Preview() {
 private fun DatePickerBottomSheet_allow_no_date_Preview() {
 
     DatePickerBottomSheet(
-        icsDateTime = IcsDateTime.now(),
+        icsDateTime = IcsDateTime.nowFloating(),
         allowNoDate = true,
         onDateSelected = {},
         onDismiss = {}

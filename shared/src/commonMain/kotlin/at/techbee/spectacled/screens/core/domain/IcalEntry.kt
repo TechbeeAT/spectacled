@@ -67,13 +67,13 @@ data class IcalEntry(
     val status: Status? = null,
     val percentComplete: Long = 0,
     val priority: Long? = null,
-    val dtstamp: IcsDateTime = IcsDateTime.now(),
+    val dtstamp: IcsDateTime = IcsDateTime.nowUtc(),
     val color: Color? = null,
     val sequence: Long? = null,
     val classification: Classification? = null,
     val categories: List<String> = emptyList(),
-    val created: IcsDateTime = IcsDateTime.now(),
-    val lastModified: IcsDateTime? = IcsDateTime.now(),
+    val created: IcsDateTime = IcsDateTime.nowUtc(),
+    val lastModified: IcsDateTime? = IcsDateTime.nowUtc(),
     val orderNo: Long? = null,
     val syncState: SyncState = SyncState.LOCAL_MODIFIED,
     val extraProperties: List<RawIcsProperty> = emptyList(),
@@ -113,7 +113,7 @@ data class IcalEntry(
             "freestar"
         )
 
-        fun newJournal() = IcalEntry(dtStart = IcsDateTime.now(), calendarComponent = CalendarComponent.VJOURNAL)
+        fun newJournal() = IcalEntry(dtStart = IcsDateTime.nowInZone(), calendarComponent = CalendarComponent.VJOURNAL)
         fun newNote() = IcalEntry(calendarComponent = CalendarComponent.VJOURNAL)
         fun newTask() = IcalEntry(calendarComponent = CalendarComponent.VTODO)
 
@@ -127,7 +127,7 @@ data class IcalEntry(
         fun getSampleJournal()= newJournal().copy(
             summary = sampleParagraphs[0].substring(0, 30),
             description = sampleParagraphs[0],
-            dtStart = IcsDateTime.now(),
+            dtStart = IcsDateTime.nowInZone(),
             categories = listOf("Category 1", "Category 2"),
             calendarComponent = CalendarComponent.VJOURNAL
         )
@@ -135,8 +135,8 @@ data class IcalEntry(
         fun getSampleTask()= newTask().copy(
             summary = sampleParagraphs[0].substring(0, 30),
             description = sampleParagraphs[0],
-            dtStart = IcsDateTime.now(),
-            due = IcsDateTime.now(),
+            dtStart = IcsDateTime.nowFloating(),
+            due = IcsDateTime.nowFloating(),
             categories = listOf("Category 1", "Category 2"),
             calendarComponent = CalendarComponent.VTODO
         )
@@ -174,7 +174,7 @@ data class IcalEntry(
                 100L -> Status.COMPLETED
                 else -> this.status
             },
-            lastModified = IcsDateTime.now(),
+            lastModified = IcsDateTime.nowUtc(),
             syncState = this.syncState.afterLocalEdit()
         )
     }

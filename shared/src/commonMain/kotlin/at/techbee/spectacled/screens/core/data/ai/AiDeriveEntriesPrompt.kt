@@ -88,7 +88,7 @@ fun buildDeriveEntriesPrompt(
         datetime). Use an empty array for "subtasks" when there are none.
         $categoryGuidance
 
-        Now is ${formatIcsDateTime(IcsDateTime.now())!!.first}
+        Now is ${formatIcsDateTime(IcsDateTime.nowFloating())!!.first}
 
         Raw text:
         $rawText

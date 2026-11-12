@@ -42,7 +42,7 @@ fun MonthHeader(
     val monthText =
         if(monthName == null)
             stringResource(Res.string.no_date)
-        else if(icsDateTime.toLocalDateTime().year != IcsDateTime.now().toLocalDateTime().year)
+        else if(icsDateTime.toLocalDateTime().year != IcsDateTime.nowFloating().toLocalDateTime().year)
             "$monthName ${icsDateTime.toLocalDateTime().year}"
         else
             monthName
@@ -88,7 +88,7 @@ fun MonthHeader(
 @Preview
 private fun MonthHeader_Preview() {
     MonthHeader(
-        icsDateTime = IcsDateTime.now()
+        icsDateTime = IcsDateTime.nowFloating()
     )
 }
 
@@ -97,6 +97,6 @@ private fun MonthHeader_Preview() {
 @Preview
 private fun MonthHeader_withYear_Preview() {
     MonthHeader(
-        icsDateTime = IcsDateTime.now().copy(instant = Instant.fromEpochMilliseconds(Clock.System.now().toEpochMilliseconds().plus(31556952000))),
+        icsDateTime = IcsDateTime.nowFloating().copy(instant = Instant.fromEpochMilliseconds(Clock.System.now().toEpochMilliseconds().plus(31556952000))),
     )
 }

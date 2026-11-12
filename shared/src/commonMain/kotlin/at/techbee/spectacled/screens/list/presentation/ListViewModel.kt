@@ -410,7 +410,7 @@ class ListViewModel(
                         icalEntryRepository.updateCategory(
                             id = icalEntry.id,
                             categories = newCategories,
-                            lastModified = IcsDateTime.now(),
+                            lastModified = IcsDateTime.nowUtc(),
                             syncState = icalEntry.syncState.afterLocalEdit()
                         )
                     }
@@ -509,7 +509,7 @@ class ListViewModel(
                     icalEntryRepository.updateColor(
                         id = icalEntry.id,
                         color = if(color == Color.Unspecified) null else color,
-                        lastModified = IcsDateTime.now(),
+                        lastModified = IcsDateTime.nowUtc(),
                         syncState = icalEntry.syncState.afterLocalEdit()
                     )
                 }

@@ -72,7 +72,7 @@ fun DateTimeCard(
             allowNoDate = allowNoDate,
             selectableDates = selectableDates,
             onDateSelected = {
-                if (it == null || selectableDates.isSelectableDate(it.instant.toEpochMilliseconds()))
+                if (it == null || selectableDates.isSelectableDate(it.toDatePickerMillis()))
                     onIcsDateTimeUpdated(it)
             },
             onDismiss = { showDatePickerBottomSheet = false }
@@ -224,7 +224,7 @@ private fun DateTimeCard_no_date_Preview() {
 @Composable
 private fun DateTimeCard_date_only_Preview() {
     DateTimeCard(
-        icsDateTime = IcsDateTime.now().copy(isDateOnly = true),
+        icsDateTime = IcsDateTime.nowFloating().copy(isDateOnly = true),
         enabled = true,
         allowNoDate = true,
         initializeWithDateOnly = false,
@@ -237,7 +237,7 @@ private fun DateTimeCard_date_only_Preview() {
 @Composable
 private fun DDateTimeCard_date_time_Preview() {
     DateTimeCard(
-        icsDateTime = IcsDateTime.now(),
+        icsDateTime = IcsDateTime.nowFloating(),
         enabled = true,
         allowNoDate = true,
         initializeWithDateOnly = false,
@@ -251,7 +251,7 @@ private fun DDateTimeCard_date_time_Preview() {
 @Composable
 private fun DateTimeCard_with_timezone_Preview() {
     DateTimeCard(
-        icsDateTime = IcsDateTime.now().copy(timeZone = TimeZone.of(TimeZone.availableZoneIds.first())),
+        icsDateTime = IcsDateTime.nowFloating().copy(timeZone = TimeZone.of(TimeZone.availableZoneIds.first())),
         enabled = true,
         allowNoDate = true,
         initializeWithDateOnly = false,

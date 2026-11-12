@@ -172,7 +172,7 @@ class DetailsViewModel(
             val newIcalEntry = IcalEntry(
                 calendarId = calendar?.id ?: 0L,   // if 0L user is forced to select a calendar
                 description = initialDescription,
-                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
+                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.nowInZone() else null,
                 calendarComponent = spectacledVariant.mainCalendarComponent,
                 // An entry that is already pre-filled (shared text, AI derived text) carries content
                 // the user wants to keep, everything else is only saved once the user edits it.
@@ -411,7 +411,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     summary = newSummary,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -428,7 +428,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     description = newDescription,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -462,7 +462,7 @@ class DetailsViewModel(
                         else
                             categories
                     },
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -491,7 +491,7 @@ class DetailsViewModel(
                             else -> it.icalEntry.percentComplete
                         }
                     } else 0,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -507,7 +507,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     priority = newPriority,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -524,7 +524,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     color = newColor,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -540,7 +540,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     url = newUrl,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -556,7 +556,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     alarms = it.icalEntry.alarms + alarm,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -572,7 +572,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     alarms = it.icalEntry.alarms - alarm,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -588,7 +588,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     location = newLocation,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -619,7 +619,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     dtStart = newDtStart,
                     due = newDue,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -647,7 +647,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     dtStart = newDtStart,
                     due = newDue,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -937,7 +937,7 @@ class DetailsViewModel(
                 it.copy(
                     icalEntry = it.icalEntry.copy(
                         attachments = it.icalEntry.attachments + newAttachment,
-                        lastModified = IcsDateTime.now(),
+                        lastModified = IcsDateTime.nowUtc(),
                         syncState = it.icalEntry.syncState.afterLocalEdit()
                     )
                 )
@@ -969,7 +969,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     attachments = it.icalEntry.attachments + newAttachment,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -1049,7 +1049,7 @@ class DetailsViewModel(
                     it.copy(
                         icalEntry = it.icalEntry.copy(
                             attachments = it.icalEntry.attachments.filter { a -> a.uid != attachmentUid },
-                            lastModified = IcsDateTime.now(),
+                            lastModified = IcsDateTime.nowUtc(),
                             syncState = it.icalEntry.syncState.afterLocalEdit()
                         )
                     )
@@ -1143,7 +1143,7 @@ class DetailsViewModel(
         if(state.value.changeBackstack.size <= 1)   // already at the oldest tracked checkpoint
             return
 
-        val restoreTimestamp = IcsDateTime.now()
+        val restoreTimestamp = IcsDateTime.nowUtc()
 
         _state.update {
             val newBackstack = it.changeBackstack.dropLast(1)   // drop the entry duplicating current state
@@ -1167,7 +1167,7 @@ class DetailsViewModel(
         if(!state.value.allowRedo())
             return
 
-        val restoreTimestamp = IcsDateTime.now()
+        val restoreTimestamp = IcsDateTime.nowUtc()
 
         _state.update {
             val target = it.redoStack.last().copy(

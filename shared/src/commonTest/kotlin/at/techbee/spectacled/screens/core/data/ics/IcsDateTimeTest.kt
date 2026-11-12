@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.data.ics
 
+import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -64,5 +65,86 @@ class IcsDateTimeTest {
 
         assertEquals(Instant.parse("2026-07-11T08:00:00Z"), rezoned.instant)
         assertEquals(vienna, rezoned.timeZone)
+    }
+
+    // --- Regressions for the GMT-8 timeshift: "now" / "today" must use the device timezone ---
+
+    private val losAngeles = TimeZone.of("America/Los_Angeles")
+
+    // Nov 12, 17:00 in Los Angeles (UTC-8) is already Nov 13, 01:00 UTC.
+    private val evenInLosAngeles = Instant.parse("2026-11-13T01:00:00Z")
+
+    @Test
+    fun nowFloating_keepsTheLocalWallClockOfTheDevice() {
+        val now = IcsDateTime.nowFloating(losAngeles, evenInLosAngeles)
+
+        assertFalse(now.isDateOnly)
+        assertNull(now.timeZone)
+        assertEquals(LocalDateTime(2026, 11, 12, 17, 0), now.toLocalDateTime())
+        assertEquals("20261112T170000", formatIcsDateTime(now)!!.first)
+    }
+
+    @Test
+    fun today_usesTheDateOfTheDevice() {
+        val today = IcsDateTime.today(losAngeles, evenInLosAngeles)
+
+        assertTrue(today.isDateOnly)
+        assertEquals(LocalDate(2026, 11, 12), today.toLocalDateTime().date)
+        assertEquals(LocalDateTime(2026, 11, 12, 0, 0), IcsDateTime.todayAtStartOfDay(losAngeles, evenInLosAngeles).toLocalDateTime())
+    }
+
+    @Test
+    fun nowUtc_isSerializedAsUtc() {
+        val (value, param) = formatIcsDateTime(IcsDateTime.nowUtc())!!
+        assertTrue(value.endsWith("Z"))
+        assertNull(param)
+    }
+
+    @Test
+    fun nowInZone_isTheCurrentMomentInThatZone() {
+        val now = IcsDateTime.nowInZone(losAngeles)
+        assertEquals(losAngeles, now.timeZone)
+        assertEquals("TZID=America/Los_Angeles", formatIcsDateTime(now)!!.second)
+    }
+
+    @Test
+    fun toDatePickerMillis_floatingKeepsItsWallClockDay() {
+        // Floating 03:00 on Nov 12 must stay Nov 12, it is not read in the device timezone.
+        val floating = IcsDateTime(LocalDateTime(2026, 11, 12, 3, 0).toInstant(TimeZone.UTC), isDateOnly = false)
+        assertEquals(LocalDate(2026, 11, 12).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds(), floating.toDatePickerMillis())
+    }
+
+    @Test
+    fun toDatePickerMillis_zonedUsesItsOwnZone() {
+        val zoned = IcsDateTime(evenInLosAngeles, isDateOnly = false, timeZone = losAngeles)
+        assertEquals(LocalDate(2026, 11, 12).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds(), zoned.toDatePickerMillis())
+    }
+
+    @Test
+    fun updateWithDatePickerMillis_keepsTimeAndZone() {
+        val selected = LocalDate(2026, 11, 20).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+
+        val zoned = IcsDateTime(evenInLosAngeles, isDateOnly = false, timeZone = losAngeles).updateWithDatePickerMillis(selected)
+        assertEquals(losAngeles, zoned.timeZone)
+        assertEquals(LocalDateTime(2026, 11, 20, 17, 0), zoned.toLocalDateTime())
+
+        val floating = IcsDateTime.nowFloating(losAngeles, evenInLosAngeles).updateWithDatePickerMillis(selected)
+        assertNull(floating.timeZone)
+        assertEquals(LocalDateTime(2026, 11, 20, 17, 0), floating.toLocalDateTime())
+
+        val dateOnly = IcsDateTime.today(losAngeles, evenInLosAngeles).updateWithDatePickerMillis(selected)
+        assertTrue(dateOnly.isDateOnly)
+        assertEquals(LocalDate(2026, 11, 20), dateOnly.toLocalDateTime().date)
+    }
+
+    @Test
+    fun datePickerRoundTrip_isStable() {
+        for (value in listOf(
+            IcsDateTime.nowFloating(losAngeles, evenInLosAngeles),
+            IcsDateTime(evenInLosAngeles, isDateOnly = false, timeZone = losAngeles),
+            IcsDateTime.today(losAngeles, evenInLosAngeles),
+        )) {
+            assertEquals(value, value.updateWithDatePickerMillis(value.toDatePickerMillis()))
+        }
     }
 }

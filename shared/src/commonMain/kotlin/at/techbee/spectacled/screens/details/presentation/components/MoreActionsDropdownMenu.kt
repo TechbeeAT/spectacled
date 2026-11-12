@@ -164,7 +164,7 @@ fun MoreActionsDropdownMenu(
                 text = stringResource(
                     Res.string.label_value,
                     stringResource(Res.string.created),
-                    icalEntry.created.formatLocalized(IcsDateTimeFormat.DATE_TIME)
+                    icalEntry.created.inDeviceZone().formatLocalized(IcsDateTimeFormat.DATE_TIME)
                 ),
                 style = MaterialTheme.typography.labelSmall,
                 color = LocalContentColor.current.copy(alpha = 0.5f)
@@ -173,7 +173,7 @@ fun MoreActionsDropdownMenu(
                 text = stringResource(
                     Res.string.label_value,
                     stringResource(Res.string.last_modified),
-                    (icalEntry.lastModified ?: icalEntry.created).formatLocalized(IcsDateTimeFormat.DATE_TIME)
+                    (icalEntry.lastModified ?: icalEntry.created).inDeviceZone().formatLocalized(IcsDateTimeFormat.DATE_TIME)
                 ),
                 style = MaterialTheme.typography.labelSmall,
                 color = LocalContentColor.current.copy(alpha = 0.5f)

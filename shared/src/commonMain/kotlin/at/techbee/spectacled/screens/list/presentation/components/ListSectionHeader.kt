@@ -103,7 +103,7 @@ fun ListSectionHeaderTodayCollapsedPreview() {
 fun ListSectionHeaderTomorrowExpandedPreview() {
     ListSectionHeader(
         appPreferencesTag = "date",
-        headerText = IcsDateTime.now().formatLocalized(IcsDateTimeFormat.DATE),
+        headerText = IcsDateTime.nowFloating().formatLocalized(IcsDateTimeFormat.DATE),
         isCollapsed = false,
         onToggleListGroupExpanded = {}
     )

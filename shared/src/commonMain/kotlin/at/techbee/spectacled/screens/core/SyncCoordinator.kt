@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -118,7 +119,7 @@ class SyncCoordinator(
             }
 
             // empty trashbin for items older than 30 days
-            val cutoffDate = IcsDateTime(Clock.System.now().minus(30.days), false)
+            val cutoffDate = IcsDateTime(Clock.System.now().minus(30.days), false, TimeZone.UTC)
             icalEntryRepository.deleteTrashed(cutoffDate)
         } finally {
             // The sync may have added, moved or removed alarms - also when it failed half way.
@@ -395,7 +396,7 @@ class SyncCoordinator(
                     icalEntryRepository.insertOrUpdateIcalEntry(
                         deletedIcalEntry.copy(
                             syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
-                            lastModified = IcsDateTime.now()
+                            lastModified = IcsDateTime.nowUtc()
                         )
                     )
 
@@ -405,7 +406,7 @@ class SyncCoordinator(
                     icalEntryRepository.insertOrUpdateIcalEntry(
                         deletedIcalEntry.copy(
                             syncState = SyncState.REMOTE_DELETED_LOCAL_TRASHBIN,
-                            lastModified = IcsDateTime.now()
+                            lastModified = IcsDateTime.nowUtc()
                         )
                     )
 
@@ -413,7 +414,7 @@ class SyncCoordinator(
                     icalEntryRepository.insertOrUpdateIcalEntry(
                         deletedIcalEntry.copy(
                             syncState = SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED,
-                            lastModified = IcsDateTime.now()
+                            lastModified = IcsDateTime.nowUtc()
                         )
                     )
 
@@ -423,7 +424,7 @@ class SyncCoordinator(
                             syncState = SyncState.LOCAL_MODIFIED,
                             href = null,
                             etag = null,
-                            lastModified = IcsDateTime.now()
+                            lastModified = IcsDateTime.nowUtc()
                         )
                     )  // treat like a new entry
 
