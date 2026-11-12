@@ -4,6 +4,7 @@ import at.techbee.spectacled.DeepLinkHandler
 import at.techbee.spectacled.screens.core.PermissionStatus
 import at.techbee.spectacled.screens.core.SetTaskDoneUseCase
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -174,11 +175,18 @@ object IosNotifications : KoinComponent {
         }
     }
 
-    /** Runs a button's [work] off the main thread, then calls [onDone] back on it. */
+    /**
+     * Runs a button's [work] off the main thread, then calls [onDone] back on it. A failure is
+     * logged rather than thrown: uncaught in a coroutine, it would terminate the app.
+     */
     private fun handleInBackground(action: String, onDone: () -> Unit, work: suspend () -> Unit) {
         scope.launch {
             try {
                 work()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Napier.e("Notification action $action failed", e)
             } finally {
                 mainScope.launch { onDone() }
             }
