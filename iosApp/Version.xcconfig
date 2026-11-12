@@ -1,5 +1,5 @@
 // Version shared by all three iOS apps, kept in step with appVersionString /
 // appBuildNumber in gradle/libs.versions.toml. Included from each
 // ios<Variant>App/Configuration/Config.xcconfig.
-CURRENT_PROJECT_VERSION=87
-MARKETING_VERSION=1.0.87
+CURRENT_PROJECT_VERSION=88
+MARKETING_VERSION=1.0.88
