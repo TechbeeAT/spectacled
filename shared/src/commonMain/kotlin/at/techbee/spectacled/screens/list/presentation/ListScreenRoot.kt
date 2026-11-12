@@ -56,6 +56,7 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
@@ -413,6 +414,7 @@ fun ListScreenRoot(
                     }
 
                     PullToRefreshBox(
+                        enabled = getPlatform().platform.isMobile,
                         isRefreshing = state.isRefreshing,
                         onRefresh = { listViewModel.onAction(ListAction.OnTriggerSync) },
                         state = pullToRefreshState,

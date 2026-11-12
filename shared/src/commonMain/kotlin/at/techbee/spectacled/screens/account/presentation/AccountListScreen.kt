@@ -26,6 +26,7 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.domain.HomeCollection
 import at.techbee.spectacled.screens.core.domain.Principal
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.SplashScreen
 import at.techbee.spectacled.theme.AppTheme
 import io.ktor.http.Url
@@ -49,6 +50,7 @@ fun AccountListScreen(
     PullToRefreshBox(
         isRefreshing = state.processingState == ProcessingState.Processing,
         onRefresh = { onAction(AccountListAction.OnRerunAccountDiscovery(state.principals))  },
+        enabled = getPlatform().platform.isMobile,
         modifier = modifier
     ) {
 
