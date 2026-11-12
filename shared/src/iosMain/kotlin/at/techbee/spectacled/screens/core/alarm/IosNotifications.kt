@@ -151,26 +151,19 @@ object IosNotifications : KoinComponent {
     /**
      * The user tapped the notification ([UNNotificationDefaultActionIdentifier]) or one of its
      * buttons. [onDone] has to be called once handled: iOS keeps the app running until then when it
-     * was woken in the background for a button.
+     * was woken in the background for a button. It must be called on the main thread - UIKit
+     * updates the app snapshot in it and terminates the app otherwise.
      */
     internal fun onNotificationResponse(actionIdentifier: String, calendarId: Long?, entryId: Long, alarmKey: String?, onDone: () -> Unit) {
         when {
-            actionIdentifier == ACTION_MARK_DONE && alarmKey != null -> scope.launch {
-                try {
-                    // Done removes the entry's notifications. If it can't be done (deleted
-                    // meanwhile, read-only), at least take this one away - the button did nothing.
-                    if (!setTaskDone.updateProgress(entryId, done = true))
-                        alarmScheduler.dismiss(ScheduledAlarmKey(entryId, alarmKey))
-                } finally {
-                    onDone()
-                }
+            actionIdentifier == ACTION_MARK_DONE && alarmKey != null -> handleInBackground("Mark done", onDone) {
+                // Done removes the entry's notifications. If it can't be done (deleted
+                // meanwhile, read-only), at least take this one away - the button did nothing.
+                if (!setTaskDone.updateProgress(entryId, done = true))
+                    alarmScheduler.dismiss(ScheduledAlarmKey(entryId, alarmKey))
             }
-            actionIdentifier == ACTION_SNOOZE && alarmKey != null -> scope.launch {
-                try {
-                    alarmCoordinator.snooze(entryId, alarmKey)
-                } finally {
-                    onDone()
-                }
+            actionIdentifier == ACTION_SNOOZE && alarmKey != null -> handleInBackground("Snooze", onDone) {
+                alarmCoordinator.snooze(entryId, alarmKey)
             }
             actionIdentifier == UNNotificationDefaultActionIdentifier -> {
                 // Opens the entry, through the same path as a deep link.
@@ -178,6 +171,17 @@ object IosNotifications : KoinComponent {
                 onDone()
             }
             else -> onDone()
+        }
+    }
+
+    /** Runs a button's [work] off the main thread, then calls [onDone] back on it. */
+    private fun handleInBackground(action: String, onDone: () -> Unit, work: suspend () -> Unit) {
+        scope.launch {
+            try {
+                work()
+            } finally {
+                mainScope.launch { onDone() }
+            }
         }
     }
 
