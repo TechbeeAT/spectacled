@@ -45,7 +45,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -98,6 +101,14 @@ import spectacled.shared.generated.resources.undo
 import kotlin.time.ExperimentalTime
 
 
+/**
+ * Below this content height (the space between the top bar and the keyboard/bottom edge), the FAB
+ * is hidden while a text field is being edited. 480dp is the Material compact/medium window-height
+ * breakpoint: a phone in portrait with the keyboard up (and any phone in landscape) falls below it,
+ * while a phone with the keyboard dismissed, tablets and desktop/web windows stay above it.
+ */
+private val MIN_CONTENT_HEIGHT_FOR_FAB_WHILE_EDITING = 480.dp
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun DetailsScreenRoot(
@@ -109,10 +120,18 @@ fun DetailsScreenRoot(
 ) {
     val detailsState by detailsViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val density = LocalDensity.current
 
-    // Hide the FAB while a text field is focused: with SwiftUI keyboard resizing (and no bottom
-    // inset on iOS) the FAB would otherwise sit right above the keyboard and cover the field.
+    // Hide the FAB while a text field is focused AND the space left for the content is short: with
+    // the keyboard up (SwiftUI resizing on iOS, imePadding elsewhere) the FAB would otherwise sit
+    // right above it and cover the field. Focus alone is not enough - the keyboard can be hidden
+    // while the editor keeps focus, and desktop/web have no soft keyboard at all - so we also look
+    // at the measured content height, which shrinks with the keyboard on every platform.
     var isEditorFocused by remember { mutableStateOf(false) }
+    var contentHeight by remember { mutableStateOf(Dp.Unspecified) }
+    val hideFab = isEditorFocused
+            && contentHeight != Dp.Unspecified
+            && contentHeight < MIN_CONTENT_HEIGHT_FOR_FAB_WHILE_EDITING
 
     val filePicker = rememberFilePicker { pickedFile ->
         pickedFile?.let {
@@ -392,7 +411,7 @@ fun DetailsScreenRoot(
                     }
                 }
 
-                AnimatedVisibility(detailsState.allowEditing() && !detailsState.isLoading && !isEditorFocused) {
+                AnimatedVisibility(detailsState.allowEditing() && !detailsState.isLoading && !hideFab) {
                     ExtendedFloatingActionButton(
                         onClick = {},
                         // Lift the FAB by the bottom safe-area inset so it clears the iOS home
@@ -510,7 +529,10 @@ fun DetailsScreenRoot(
                     .consumeWindowInsets(paddingValues)
                     .padding(horizontal = 8.dp)
                     .imeAwarePadding()
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    // Measured after the IME padding, so this is the height actually left for the
+                    // content. The FAB overlays the content, so hiding it does not feed back here.
+                    .onSizeChanged { contentHeight = with(density) { it.height.toDp() } },
                 contentAlignment = Alignment.BottomCenter
             ) {
                 DetailsScreen(
