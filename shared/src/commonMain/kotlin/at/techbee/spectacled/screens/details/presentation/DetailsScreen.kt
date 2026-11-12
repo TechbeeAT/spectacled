@@ -130,7 +130,7 @@ fun DetailsScreen(
     // hide deleted subtasks by default
     var showDeletedSubtasks by remember { mutableStateOf(false) }
 
-    // Report whether a text field is being edited so the caller can hide the FAB, which would
+    // Report whether a text field is being edited so the caller can hide the FAB (if space is short), which would
     // otherwise sit right above the keyboard and cover the field (SwiftUI resizes the view on iOS).
     val isEditorFocused = summaryIsFocused || descriptionIsFocused
     LaunchedEffect(isEditorFocused) { onEditorFocusChanged(isEditorFocused) }
