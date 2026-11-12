@@ -74,7 +74,6 @@ import at.techbee.spectacled.screens.list.presentation.components.ListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.MoveOrCopySelectedItemsDialog
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import kotlinx.coroutines.delay
-import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -102,7 +101,7 @@ fun ListScreenRoot(
 
     val selectableDates = remember(state.icalEntries) {
         val allowedMillis = state.icalEntries.mapNotNull {
-            it.dtStart?.toDatePickerMillis(TimeZone.currentSystemDefault())
+            it.dtStart?.toDatePickerMillis()
         }.toSet()
         object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
@@ -268,7 +267,7 @@ fun ListScreenRoot(
 
         if (state.showDateSelectorBottomSheet) {
             DatePickerBottomSheet(
-                icsDateTime = IcsDateTime.now(),
+                icsDateTime = IcsDateTime.nowFloating(),
                 allowNoDate = false,
                 selectableDates = selectableDates,
                 onDateSelected = { selectedDate -> listViewModel.onAction(ListAction.OnGoToSelectedDate(selectedDate)) },

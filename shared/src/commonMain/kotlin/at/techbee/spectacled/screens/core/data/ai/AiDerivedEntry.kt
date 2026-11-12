@@ -52,7 +52,7 @@ const val AI_BATCH_CATEGORY_PREFIX = "🤖 AI"
  * random suffix to keep two runs within the same minute distinct.
  */
 fun newAiBatchCategory(): String {
-    val timestamp = formatIcsDateTime(IcsDateTime.now())?.first ?: IcsDateTime.now().toString()
+    val timestamp = formatIcsDateTime(IcsDateTime.nowFloating())?.first ?: IcsDateTime.nowFloating().toString()
     val suffix = IcalEntry.getRandomUUID().take(4)
     return "$AI_BATCH_CATEGORY_PREFIX $timestamp #$suffix"
 }

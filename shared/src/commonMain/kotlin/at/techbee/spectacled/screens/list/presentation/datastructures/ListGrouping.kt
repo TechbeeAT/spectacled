@@ -15,6 +15,7 @@ import spectacled.shared.generated.resources.grouping_start_in_30_plus_days
 import spectacled.shared.generated.resources.grouping_start_in_past
 import spectacled.shared.generated.resources.grouping_start_within_x_days
 import spectacled.shared.generated.resources.grouping_start_within_x_hours
+import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -155,12 +156,20 @@ enum class ListGrouping(
          * bucket. A `null` result routes the entry to the list's dedicated "no criteria" section
          * instead of being forced into a catch-all bucket.
          */
-        fun getGrouping(baseGroups: Set<ListGrouping>, icsDateTime: IcsDateTime?): ListGrouping? {
+        fun getGrouping(
+            baseGroups: Set<ListGrouping>,
+            icsDateTime: IcsDateTime?,
+            deviceTimeZone: TimeZone = TimeZone.currentSystemDefault()
+        ): ListGrouping? {
             if (icsDateTime == null) return null
+            // Compare actual points in time: floating and DATE values are resolved in the device
+            // timezone, so "within 24 hours" means the same for them as for zoned values.
+            val now = Clock.System.now()
+            val instant = icsDateTime.resolvedInstant(deviceTimeZone)
             return baseGroups.find { group ->
-                val lowerIcsDateTime = IcsDateTime(group.lowerThreshold?.let { Clock.System.now().plus(it) } ?: Instant.DISTANT_PAST, false).toLocalDateTime()
-                val upperIcsDateTime = IcsDateTime(group.upperThreshold?.let { Clock.System.now().plus(it) } ?: Instant.DISTANT_FUTURE, false).toLocalDateTime()
-                icsDateTime.toLocalDateTime() in lowerIcsDateTime..upperIcsDateTime
+                val lower = group.lowerThreshold?.let { now.plus(it) } ?: Instant.DISTANT_PAST
+                val upper = group.upperThreshold?.let { now.plus(it) } ?: Instant.DISTANT_FUTURE
+                instant in lower..upper
             }
         }
     }

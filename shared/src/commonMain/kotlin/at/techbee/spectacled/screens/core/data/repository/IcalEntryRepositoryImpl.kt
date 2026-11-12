@@ -440,7 +440,7 @@ class IcalEntryRepositoryImpl(
         // copied parent; a link to a parent that wasn't copied only survives inside its own
         // collection, elsewhere it would dangle.
         val newUids = entriesToCopy.associate { it.uid to IcalEntry.getRandomUUID() }
-        val now = IcsDateTime.now()
+        val now = IcsDateTime.nowUtc()
         entriesToCopy.associate { entry ->
             // Only the entries the user picked are marked - copied subtasks hang below their
             // marked parent anyway.

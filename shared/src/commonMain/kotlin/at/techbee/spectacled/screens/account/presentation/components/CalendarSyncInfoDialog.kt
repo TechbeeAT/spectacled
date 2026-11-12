@@ -83,7 +83,7 @@ fun CalendarSyncInfoDialog(
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
 
-                Text(calendarSyncStatus.icsDateTime.formatLocalized(IcsDateTimeFormat.DATE_TIME))
+                Text(calendarSyncStatus.icsDateTime.inDeviceZone().formatLocalized(IcsDateTimeFormat.DATE_TIME))
 
                 val syncMessage = calendarSyncStatus.messageStringRes?.let { stringResource(it) }
                 syncMessage?.let {

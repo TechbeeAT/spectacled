@@ -179,7 +179,7 @@ private fun TimePickerBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             TimePickerBottomSheet(
-                icsDateTime = IcsDateTime.now(),
+                icsDateTime = IcsDateTime.nowFloating(),
                 onTimeUpdated = {},
                 onDismiss = {}
             )

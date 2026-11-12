@@ -40,5 +40,5 @@ fun DayBlock(
 @Composable
 @Preview
 private fun DayBlock_Preview() {
-    DayBlock(icsDateTime = IcsDateTime.now())
+    DayBlock(icsDateTime = IcsDateTime.nowFloating())
 }
