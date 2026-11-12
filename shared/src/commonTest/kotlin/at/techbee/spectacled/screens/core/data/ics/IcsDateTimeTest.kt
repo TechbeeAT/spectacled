@@ -1,9 +1,11 @@
 package at.techbee.spectacled.screens.core.data.ics
 
 import at.techbee.spectacled.screens.core.mapper.ics.formatIcsDateTime
+import kotlinx.datetime.FixedOffsetTimeZone
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.UtcOffset
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toInstant
 import kotlin.test.Test
@@ -146,5 +148,56 @@ class IcsDateTimeTest {
         )) {
             assertEquals(value, value.updateWithDatePickerMillis(value.toDatePickerMillis()))
         }
+    }
+
+    @Test
+    fun nowInZone_keepsANamedZone() {
+        val now = IcsDateTime.nowInZone(losAngeles, evenInLosAngeles)
+        assertEquals(evenInLosAngeles, now.instant)
+        assertEquals(losAngeles, now.timeZone)
+    }
+
+    @Test
+    fun nowInZone_keepsUtc() {
+        val now = IcsDateTime.nowInZone(TimeZone.UTC, evenInLosAngeles)
+        assertEquals(evenInLosAngeles, now.instant)
+        assertEquals(TimeZone.UTC, now.timeZone)
+    }
+
+    @Test
+    fun nowInZone_fixedOffsetFallsBackToFloatingWallClock() {
+        // A device configured with a raw offset ("GMT-08:00") has no TZID other clients can resolve.
+        val fixedOffset = FixedOffsetTimeZone(UtcOffset(hours = -8))
+        val now = IcsDateTime.nowInZone(fixedOffset, evenInLosAngeles)
+
+        assertNull(now.timeZone)
+        assertFalse(now.isDateOnly)
+        assertEquals(LocalDateTime(2026, 11, 12, 17, 0), now.toLocalDateTime())
+        assertNull(formatIcsDateTime(now)!!.second)
+    }
+
+    @Test
+    fun isUsableAsTzid_onlyForNamedZonesAndUtc() {
+        assertTrue(losAngeles.isUsableAsTzid())
+        assertTrue(vienna.isUsableAsTzid())
+        assertTrue(TimeZone.UTC.isUsableAsTzid())
+        assertFalse(FixedOffsetTimeZone(UtcOffset(hours = -8)).isUsableAsTzid())
+        assertFalse(TimeZone.of("GMT-08:00").isUsableAsTzid())
+    }
+
+    @Test
+    fun inDeviceZone_showsAUtcTimestampInTheDeviceZone() {
+        val utc = IcsDateTime(evenInLosAngeles, isDateOnly = false, timeZone = TimeZone.UTC)
+        val local = utc.inDeviceZone(losAngeles)
+
+        assertEquals(evenInLosAngeles, local.instant)
+        assertEquals(losAngeles, local.timeZone)
+        assertEquals(LocalDateTime(2026, 11, 12, 17, 0), local.toLocalDateTime())
+    }
+
+    @Test
+    fun inDeviceZone_takesAFloatingTimestampAsUtc() {
+        val floating = IcsDateTime(evenInLosAngeles, isDateOnly = false, timeZone = null)
+        assertEquals(LocalDateTime(2026, 11, 12, 17, 0), floating.inDeviceZone(losAngeles).toLocalDateTime())
     }
 }
