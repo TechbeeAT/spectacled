@@ -57,6 +57,13 @@ class AlarmCoordinator(
          */
         val MISSED_ALARM_GRACE_PERIOD: Duration = 1.days
 
+        /**
+         * A `LIMIT` that doesn't limit. Not Long.MAX_VALUE: the web driver binds every Long as a JS
+         * number (a double), and 2^63 as a double is out of SQLite's integer range, so the query
+         * fails with "datatype mismatch" - which broke the reconcile at app start in the browser.
+         */
+        private val NO_LIMIT: Long = Int.MAX_VALUE.toLong()
+
         /** How long the notification's snooze action puts an alarm off. */
         val SNOOZE_DURATION: Duration = 10.minutes
     }
@@ -70,7 +77,7 @@ class AlarmCoordinator(
         val missed = icalEntryRepository.getUpcomingAlarms(
             from = now - MISSED_ALARM_GRACE_PERIOD,
             until = now,
-            limit = Long.MAX_VALUE
+            limit = NO_LIMIT
         )
         missed.forEach { upcoming ->
             // Not shown (e.g. no permission yet): leave it, a later reconcile can still show it.
@@ -97,7 +104,7 @@ class AlarmCoordinator(
      */
     suspend fun onAlarmFired(icalEntryId: Long, alarmKey: String, triggerAt: Instant) = withContext(dispatcher) { reconcileMutex.withLock {
         val alarm = icalEntryRepository
-            .getUpcomingAlarms(from = triggerAt, until = triggerAt + 1.milliseconds, limit = Long.MAX_VALUE)
+            .getUpcomingAlarms(from = triggerAt, until = triggerAt + 1.milliseconds, limit = NO_LIMIT)
             .firstOrNull { it.icalEntryId == icalEntryId && it.alarm.schedulingKey() == alarmKey }
 
         if (alarm == null) {

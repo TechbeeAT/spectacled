@@ -41,6 +41,7 @@ import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.CancellationException
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.context.startKoin
@@ -242,7 +243,15 @@ fun SpectacledApp(
             syncTrigger.schedulePeriodic()
             syncTrigger.requestImmediate()
             // Pick up alarms that were missed while the app wasn't running and refresh the schedule.
-            alarmCoordinator.reconcile()
+            // An exception escaping a LaunchedEffect takes down the whole composition (in the browser
+            // the app just stops reacting), so a failing reconcile must not get past here.
+            try {
+                alarmCoordinator.reconcile()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Napier.e("Reconciling alarms at start failed", e)
+            }
         }
 
         LaunchedEffect(Unit) {
