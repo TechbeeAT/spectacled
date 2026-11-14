@@ -398,7 +398,7 @@
     <string name="anthropic_api_key_info">Used only for the "Create with AI" action, stored on this device only.</string>
     <string name="get_an_api_key">Get an API key</string>
     <string name="ai_provider">AI provider</string>
-    <string name="ai_provider_claude">Claude (Anthropic)</string>
+    <string name="ai_provider_claude" translatable="false">Claude (Anthropic)</string>
     <string name="ai_provider_openai">Open-source model (custom endpoint)</string>
     <string name="ai_provider_none">None</string>
     <string name="ai_provider_not_configured">Configure your AI provider in the settings to use this feature.</string>
