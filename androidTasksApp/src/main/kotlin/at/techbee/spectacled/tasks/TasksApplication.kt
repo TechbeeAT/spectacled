@@ -4,6 +4,7 @@ import android.app.Application
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.initLogging
 import at.techbee.spectacled.screens.core.koin.sharedModule
+import at.techbee.spectacled.theme.AppLanguage
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.GlobalContext.startKoin
@@ -23,5 +24,7 @@ class TasksApplication : Application() {
                 sharedModule
             )
         }
+
+        AppLanguage.init(this)
     }
 }

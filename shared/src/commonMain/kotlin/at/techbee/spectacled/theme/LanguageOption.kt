@@ -6,6 +6,8 @@ package at.techbee.spectacled.theme
  * [tag] is the BCP 47 language tag handed to the platform (null = follow the system).
  * [nativeName] is deliberately not a translatable resource: each language is shown in its own
  * language, so users who end up in a language they cannot read can still find their way back.
+ *
+ * When adding a language, also add it to shared/src/androidMain/res/xml/locales_config.xml.
  */
 enum class LanguageOption(
     val tag: String?,
