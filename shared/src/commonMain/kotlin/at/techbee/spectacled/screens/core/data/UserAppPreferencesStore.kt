@@ -99,7 +99,7 @@ interface UserAppPreferencesStore {
     fun getLanguageOptionAsFlow(): Flow<LanguageOption> = this.loadAsFlow(LANGUAGE_OPTION).map { LanguageOption.fromString(it) }
 
     var themeOption: ThemeOption
-        get() = this.load(THEME_OPTION)?.let { ThemeOption.entries.find { themeOption -> themeOption.name == it } } ?: ThemeOption.SYSTEM
+        get() = ThemeOption.fromString(this.load(THEME_OPTION))
         set(value) = this.save(THEME_OPTION, value.name)
     fun getThemeOptionAsFlow(): Flow<ThemeOption> = this.loadAsFlow(THEME_OPTION).map { ThemeOption.fromString(it) }
 
