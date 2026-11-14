@@ -1,12 +1,12 @@
 package at.techbee.spectacled.screens.core.data
 
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.account.presentation.components.settings.LanguageOption
 import at.techbee.spectacled.screens.core.data.ai.AiProvider
 import at.techbee.spectacled.screens.core.data.ai.ClaudeModel
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.theme.LanguageOption
 import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
@@ -94,9 +94,9 @@ interface UserAppPreferencesStore {
 
     /* SETTINGS */
     var languageOption: LanguageOption
-        get() = this.load(LANGUAGE_OPTION)?.let { LanguageOption.entries.find { languageOption -> languageOption.name == it } } ?: LanguageOption.SYSTEM
+        get() = LanguageOption.fromString(this.load(LANGUAGE_OPTION))
         set(value) = this.save(LANGUAGE_OPTION, value.name)
-    fun getLanguageOptionAsFlow(): Flow<LanguageOption> = this.loadAsFlow(LANGUAGE_OPTION).map { LanguageOption.entries.find { entry -> entry.name == it } ?: LanguageOption.SYSTEM }
+    fun getLanguageOptionAsFlow(): Flow<LanguageOption> = this.loadAsFlow(LANGUAGE_OPTION).map { LanguageOption.fromString(it) }
 
     var themeOption: ThemeOption
         get() = this.load(THEME_OPTION)?.let { ThemeOption.entries.find { themeOption -> themeOption.name == it } } ?: ThemeOption.SYSTEM

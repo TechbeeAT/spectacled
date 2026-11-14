@@ -318,8 +318,6 @@
     <string name="theme_font">Font</string>
     <string name="language">Language</string>
     <string name="language_system_default">Default (System)</string>
-    <string name="language_english">English</string>
-    <string name="language_german">German</string>
 
     <string name="status">Status</string>
     <string name="status_no_status">No status</string>

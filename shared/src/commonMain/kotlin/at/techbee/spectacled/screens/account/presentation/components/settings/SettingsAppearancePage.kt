@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
@@ -40,15 +39,13 @@ import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.theme.AppTheme
+import at.techbee.spectacled.theme.LanguageOption
 import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.language
-import spectacled.shared.generated.resources.language_english
-import spectacled.shared.generated.resources.language_german
 import spectacled.shared.generated.resources.language_system_default
 import spectacled.shared.generated.resources.settings
 import spectacled.shared.generated.resources.theme
@@ -56,12 +53,6 @@ import spectacled.shared.generated.resources.theme_amoled
 import spectacled.shared.generated.resources.theme_dynamic_colors
 import spectacled.shared.generated.resources.theme_font
 import spectacled.shared.generated.resources.theme_palette_style
-
-enum class LanguageOption(val locale: Locale?, val stringRes: StringResource) {
-    SYSTEM(null, Res.string.language_system_default),
-    ENGLISH(Locale("en"), Res.string.language_english),
-    GERMAN(Locale("de"), Res.string.language_german)
-}
 
 @Composable
 fun SettingsAppearancePage(
@@ -105,7 +96,7 @@ fun SettingsAppearancePage(
                         text = stringResource(Res.string.language),
                         style = MaterialTheme.typography.labelSmall
                     )
-                    Text(stringResource(languageOption.stringRes))
+                    Text(languageOption.nativeName ?: stringResource(Res.string.language_system_default))
                 }
 
                 DropdownMenu(
@@ -115,7 +106,7 @@ fun SettingsAppearancePage(
 
                     LanguageOption.entries.forEach { languageOption ->
                         DropdownMenuItem(
-                            text = { Text(stringResource(languageOption.stringRes)) },
+                            text = { Text(languageOption.nativeName ?: stringResource(Res.string.language_system_default)) },
                             onClick = {
                                 userAppPreferencesStore.languageOption = languageOption
                                 languageOptionDropdownExpanded = false
