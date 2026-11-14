@@ -13,10 +13,12 @@ import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.Colorize
 import androidx.compose.material.icons.outlined.FontDownload
 import androidx.compose.material.icons.outlined.FormatPaint
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.ModeNight
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -30,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
@@ -40,8 +43,13 @@ import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.language
+import spectacled.shared.generated.resources.language_english
+import spectacled.shared.generated.resources.language_german
+import spectacled.shared.generated.resources.language_system_default
 import spectacled.shared.generated.resources.settings
 import spectacled.shared.generated.resources.theme
 import spectacled.shared.generated.resources.theme_amoled
@@ -49,12 +57,20 @@ import spectacled.shared.generated.resources.theme_dynamic_colors
 import spectacled.shared.generated.resources.theme_font
 import spectacled.shared.generated.resources.theme_palette_style
 
+enum class LanguageOption(val locale: Locale?, val stringRes: StringResource) {
+    SYSTEM(null, Res.string.language_system_default),
+    ENGLISH(Locale("en"), Res.string.language_english),
+    GERMAN(Locale("de"), Res.string.language_german)
+}
 
 @Composable
 fun SettingsAppearancePage(
     userAppPreferencesStore: UserAppPreferencesStore,
     modifier: Modifier = Modifier
 ) {
+
+    var languageOptionDropdownExpanded by remember { mutableStateOf(false) }
+    val languageOption by userAppPreferencesStore.getLanguageOptionAsFlow().collectAsState(userAppPreferencesStore.languageOption)
 
     var themeOptionDropdownExpanded by remember { mutableStateOf(false) }
     val themeOption by userAppPreferencesStore.getThemeOptionAsFlow().collectAsState(userAppPreferencesStore.themeOption)
@@ -68,7 +84,6 @@ fun SettingsAppearancePage(
     var themeFontDropDownExpanded by remember { mutableStateOf(false) }
     val themeFont by userAppPreferencesStore.getThemeFontAsFlow().collectAsState(userAppPreferencesStore.themeFont)
 
-
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -80,6 +95,41 @@ fun SettingsAppearancePage(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(vertical = 8.dp)
         )
+
+        AssistChip(
+            onClick = { languageOptionDropdownExpanded = true },
+            label = {
+
+                Column(modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp)) {
+                    Text(
+                        text = stringResource(Res.string.language),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                    Text(stringResource(languageOption.stringRes))
+                }
+
+                DropdownMenu(
+                    expanded = languageOptionDropdownExpanded,
+                    onDismissRequest = { languageOptionDropdownExpanded = false },
+                ) {
+
+                    LanguageOption.entries.forEach { languageOption ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(languageOption.stringRes)) },
+                            onClick = {
+                                userAppPreferencesStore.languageOption = languageOption
+                                languageOptionDropdownExpanded = false
+                            },
+                        )
+                    }
+                }
+            },
+            leadingIcon = { Icon(Icons.Outlined.Language, null) },
+            trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
+            modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         AssistChip(
             onClick = { themeOptionDropdownExpanded = true },
@@ -192,6 +242,8 @@ fun SettingsAppearancePage(
                 modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
             )
         }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         AssistChip(
             onClick = { themeFontDropDownExpanded = true },
