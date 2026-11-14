@@ -66,7 +66,7 @@ enum class CalDavProvider(
     FASTMAIL(
         "Fastmail",
         Res.string.provider_fastmail_description,
-        "https://www.fastmail.com",
+        "https://join.fastmail.com/1c1d517f0414",
         listOf(
             Res.string.provider_flag_australia,
             Res.string.provider_tag_power_users,
