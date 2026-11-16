@@ -1,0 +1,20 @@
+{
+  "name": "spectacled Notes",
+  "short_name": "Notes",
+  "description": "Keep private, standards-based notes synced over CalDAV.",
+  "lang": "en",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#994c2c",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
