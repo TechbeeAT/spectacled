@@ -1,0 +1,1 @@
+First release on F-Droid. Thanks for trying spectacled — feedback is very welcome at https://github.com/TechbeeAT/spectacled/issues

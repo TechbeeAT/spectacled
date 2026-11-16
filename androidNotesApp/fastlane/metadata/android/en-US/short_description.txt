@@ -1,0 +1,1 @@
+Open-source notes synced over CalDAV with your own server
