@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.ArrowCircleRight
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -32,12 +33,14 @@ import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
@@ -538,9 +541,7 @@ fun AddAccountScreen(
                         textAlign = TextAlign.Center
                     )
                 }
-
             }
-
         }
 
         Column(
@@ -653,37 +654,6 @@ fun AddAccountScreen(
                                     }
                                 )
                             }
-
-                            /*
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(
-                                            text = "spectacled (internal testing)",
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = "https://baikal.techbee.at/html/dav.php/calendars",
-                                            overflow = TextOverflow.Ellipsis,
-                                            maxLines = 1,
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    username = "caldavnotes"
-                                    server = "https://baikal.techbee.at/html/dav.php/calendars/caldavnotes/"
-                                    serverDropdownMenuExpanded = false
-                                }
-                            )
-
-                             */
                         }
                     }
                 },
@@ -713,32 +683,54 @@ fun AddAccountScreen(
                 modifier = Modifier.width(400.dp).onFocusChanged { isUsernameTextFieldFocused = it.isFocused}
             )
 
-            OutlinedSecureTextField(
-                state = passwordState,
-                label = { Text(stringResource(Res.string.password)) },
-                textObfuscationMode = if (isPasswordVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
-                trailingIcon = {
-                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        Crossfade(isPasswordVisible) { visible ->
-                            if (visible) Icon(
-                                Icons.Outlined.Visibility,
-                                contentDescription = stringResource(Res.string.show_hide_password)
-                            ) else Icon(
-                                Icons.Outlined.VisibilityOff,
-                                contentDescription = stringResource(Res.string.show_hide_password)
-                            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                OutlinedSecureTextField(
+                    state = passwordState,
+                    label = { Text(stringResource(Res.string.password)) },
+                    textObfuscationMode = if (isPasswordVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
+                    trailingIcon = {
+                        IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                            Crossfade(isPasswordVisible) { visible ->
+                                if (visible) Icon(
+                                    Icons.Outlined.Visibility,
+                                    contentDescription = stringResource(Res.string.show_hide_password)
+                                ) else Icon(
+                                    Icons.Outlined.VisibilityOff,
+                                    contentDescription = stringResource(Res.string.show_hide_password)
+                                )
+                            }
                         }
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    keyboardType = KeyboardType.Password,
-                    autoCorrectEnabled = false,
-                    imeAction = ImeAction.Done
-                ),
-                onKeyboardAction = { onKeyboardDone() },
-                modifier = Modifier.width(400.dp)
-            )
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        keyboardType = KeyboardType.Password,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Done
+                    ),
+                    onKeyboardAction = { onKeyboardDone() },
+                    modifier = Modifier.width(340.dp)
+                )
+
+                IconButton(
+                    onClick = { onKeyboardDone() },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = ButtonDefaults.textButtonColors().contentColor, 
+                        disabledContentColor = ButtonDefaults.textButtonColors().disabledContentColor
+                    ),
+                    enabled = credentials != null && processingState !is ProcessingState.Processing,
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ArrowCircleRight,
+                        contentDescription = stringResource(Res.string.add_account),
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            }
         }
     }
 }
