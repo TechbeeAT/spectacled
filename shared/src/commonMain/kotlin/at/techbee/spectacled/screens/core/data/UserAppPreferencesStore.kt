@@ -27,6 +27,21 @@ const val LIST_FILTER_CRITERIA = "list_filter_criteria"
 
 const val SPLIT_FRACTION_ACCOUNTS_LIST = "split_fraction_accounts_list"
 const val SPLIT_FRACTION_LIST_DETAILS = "split_fraction_list_details"
+const val SPLIT_FRACTION_MIN = 0.15f
+const val SPLIT_FRACTION_MAX = 0.85f
+const val SPLIT_FRACTION_DEFAULT = 0.4f
+
+/** Returns the stored split fraction, falling back to the default and keeping it in the valid range. */
+private fun UserAppPreferencesStore.loadSplitFraction(key: String): Float =
+    load(key)?.toFloatOrNull()
+        ?.takeIf { it.isFinite() }
+        ?.coerceIn(SPLIT_FRACTION_MIN, SPLIT_FRACTION_MAX)
+        ?: SPLIT_FRACTION_DEFAULT
+
+private fun UserAppPreferencesStore.saveSplitFraction(key: String, value: Float) {
+    if (value.isFinite())
+        save(key, value.coerceIn(SPLIT_FRACTION_MIN, SPLIT_FRACTION_MAX).toString())
+}
 
 const val THEME_OPTION = "theme_option"
 const val THEME_DYNAMIC_COLORS_ENABLED = "theme_dynamic_colors_enabled"
@@ -68,12 +83,12 @@ interface UserAppPreferencesStore {
         }
 
     var splitFractionAccountsList: Float
-        get() = this.load(SPLIT_FRACTION_ACCOUNTS_LIST)?.toFloatOrNull()?: 0.4f
-        set(value) { this.save(SPLIT_FRACTION_ACCOUNTS_LIST, value.toString()) }
+        get() = loadSplitFraction(SPLIT_FRACTION_ACCOUNTS_LIST)
+        set(value) { saveSplitFraction(SPLIT_FRACTION_ACCOUNTS_LIST, value) }
 
     var splitFractionListDetails: Float
-        get() = this.load(SPLIT_FRACTION_LIST_DETAILS)?.toFloatOrNull()?: 0.4f
-        set(value) { this.save(SPLIT_FRACTION_LIST_DETAILS, value.toString()) }
+        get() = loadSplitFraction(SPLIT_FRACTION_LIST_DETAILS)
+        set(value) { saveSplitFraction(SPLIT_FRACTION_LIST_DETAILS, value) }
 
     var listSortedBy: ListSortedBy
         get() = this.load(LIST_SORTED_BY)?.let { savedSortedBy -> ListSortedBy.entries.find { savedSortedBy == it.name } } ?: variant.defaultListSortedBy

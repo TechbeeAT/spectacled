@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,6 +46,8 @@ import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.SPLIT_FRACTION_MAX
+import at.techbee.spectacled.screens.core.data.SPLIT_FRACTION_MIN
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.koin.sharedModule
 import at.techbee.spectacled.screens.details.presentation.DetailsScreenRoot
@@ -148,7 +151,7 @@ fun SpectacledApp(
                         // whenever the orientation or size changes.
                         BoxWithConstraints {
                             val isLandscape = rememberIsLandscape()
-                            var splitFraction by remember { mutableFloatStateOf(userAppPreferencesStore.splitFractionAccountsList) }
+                            val splitFraction = remember { mutableFloatStateOf(userAppPreferencesStore.splitFractionAccountsList) }
                             val density = LocalDensity.current
                             val maxWidthPx = with(density) { maxWidth.toPx() }
 
@@ -159,16 +162,13 @@ fun SpectacledApp(
                                         viewModel = accountListViewModel,
                                         onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
                                         removeSafeAreaPaddingValues = isLandscape,
-                                        modifier = Modifier.weight(splitFraction)
+                                        modifier = Modifier.weight(splitFraction.floatValue)
                                     )
 
                                     DraggableVerticalDivider(
                                         splitFraction = splitFraction,
-                                        onSplitFractionChange = {
-                                            splitFraction = it
-                                            userAppPreferencesStore.splitFractionAccountsList = splitFraction
-                                        },
-                                        maxWidthPx = maxWidthPx
+                                        maxWidthPx = maxWidthPx,
+                                        onDragStopped = { userAppPreferencesStore.splitFractionAccountsList = it }
                                     )
                                 }
 
@@ -180,7 +180,7 @@ fun SpectacledApp(
                                             onCloseApp()
                                     },
                                     removeSafeAreaPaddingValues = isLandscape,
-                                    modifier = Modifier.weight(if (isLandscape) 1f - splitFraction else 1.0f)
+                                    modifier = Modifier.weight(if (isLandscape) 1f - splitFraction.floatValue else 1.0f)
                                 )
                             }
 
@@ -207,7 +207,7 @@ fun SpectacledApp(
                         // whenever the orientation or size changes.
                         BoxWithConstraints {
                             val isLandscape = rememberIsLandscape()
-                            var splitFraction by remember { mutableFloatStateOf(userAppPreferencesStore.splitFractionListDetails) }
+                            val splitFraction = remember { mutableFloatStateOf(userAppPreferencesStore.splitFractionListDetails) }
                             val density = LocalDensity.current
                             val maxWidthPx = with(density) { maxWidth.toPx() }
 
@@ -236,18 +236,15 @@ fun SpectacledApp(
                                                 onCloseApp()
                                         },
                                         removeSafeAreaPaddingValues = isLandscape,
-                                        modifier = Modifier.weight(splitFraction)
+                                        modifier = Modifier.weight(splitFraction.floatValue)
                                     )
 
                                     val dividerColor = getColorSchemeForSeedColor(listViewModel.state.value.calendar.color).primary
 
                                     DraggableVerticalDivider(
                                         splitFraction = splitFraction,
-                                        onSplitFractionChange = {
-                                            splitFraction = it
-                                            userAppPreferencesStore.splitFractionListDetails = splitFraction
-                                        },
                                         maxWidthPx = maxWidthPx,
+                                        onDragStopped = { userAppPreferencesStore.splitFractionListDetails = it },
                                         color = dividerColor
                                     )
                                 }
@@ -266,7 +263,7 @@ fun SpectacledApp(
                                             onCloseApp()
                                     },
                                     removeSafeAreaPaddingValues = isLandscape,
-                                    modifier = Modifier.weight(if (isLandscape) 1f - splitFraction else 1.0f)
+                                    modifier = Modifier.weight(if (isLandscape) 1f - splitFraction.floatValue else 1.0f)
                                 )
                             }
                         }
@@ -354,12 +351,10 @@ private fun BoxWithConstraintsScope.rememberIsLandscape(): Boolean {
 
 @Composable
 private fun DraggableVerticalDivider(
-    splitFraction: Float,
-    onSplitFractionChange: (Float) -> Unit,
+    splitFraction: MutableFloatState,
     maxWidthPx: Float,
+    onDragStopped: (Float) -> Unit,
     modifier: Modifier = Modifier,
-    minFraction: Float = 0.15f,
-    maxFraction: Float = 0.85f,
     color: Color = DividerDefaults.color
 ) {
     Box(
@@ -370,12 +365,15 @@ private fun DraggableVerticalDivider(
             .draggable(
                 orientation = Orientation.Horizontal,
                 state = rememberDraggableState { delta ->
+                    // Read the state object itself (not a recomposition snapshot) so that several
+                    // deltas arriving within one frame accumulate instead of overwriting each other.
                     if (maxWidthPx > 0f) {
-                        onSplitFractionChange(
-                            (splitFraction + delta / maxWidthPx).coerceIn(minFraction, maxFraction)
-                        )
+                        splitFraction.floatValue = (splitFraction.floatValue + delta / maxWidthPx)
+                            .coerceIn(SPLIT_FRACTION_MIN, SPLIT_FRACTION_MAX)
                     }
-                }
+                },
+                // Persist once per gesture rather than on every delta.
+                onDragStopped = { onDragStopped(splitFraction.floatValue) }
             ),
         contentAlignment = Alignment.CenterEnd
     ) {
