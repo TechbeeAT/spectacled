@@ -25,6 +25,9 @@ const val LIST_COLLAPSED_GROUP_PINNED = "list_collapsed_group_pinned"
 const val LIST_COLLAPSED_GROUP_NO_CRITERIA = "list_collapsed_group_no_criteria"
 const val LIST_FILTER_CRITERIA = "list_filter_criteria"
 
+const val SPLIT_FRACTION_ACCOUNTS_LIST = "split_fraction_accounts_list"
+const val SPLIT_FRACTION_LIST_DETAILS = "split_fraction_list_details"
+
 const val THEME_OPTION = "theme_option"
 const val THEME_DYNAMIC_COLORS_ENABLED = "theme_dynamic_colors_enabled"
 const val THEME_PALETTE_STYLE = "theme_palette_style"
@@ -63,6 +66,14 @@ interface UserAppPreferencesStore {
             if (value == null) this.remove(LAST_USED_CALENDAR_ID)
             else this.save(LAST_USED_CALENDAR_ID, value.toString())
         }
+
+    var splitFractionAccountsList: Float
+        get() = this.load(SPLIT_FRACTION_ACCOUNTS_LIST)?.toFloatOrNull()?: 0.4f
+        set(value) { this.save(SPLIT_FRACTION_ACCOUNTS_LIST, value.toString()) }
+
+    var splitFractionListDetails: Float
+        get() = this.load(SPLIT_FRACTION_LIST_DETAILS)?.toFloatOrNull()?: 0.4f
+        set(value) { this.save(SPLIT_FRACTION_LIST_DETAILS, value.toString()) }
 
     var listSortedBy: ListSortedBy
         get() = this.load(LIST_SORTED_BY)?.let { savedSortedBy -> ListSortedBy.entries.find { savedSortedBy == it.name } } ?: variant.defaultListSortedBy
