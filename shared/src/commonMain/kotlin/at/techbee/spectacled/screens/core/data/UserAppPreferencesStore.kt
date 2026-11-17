@@ -6,6 +6,7 @@ import at.techbee.spectacled.screens.core.data.ai.ClaudeModel
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.theme.LanguageOption
 import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
@@ -25,6 +26,7 @@ const val LIST_COLLAPSED_GROUP_PINNED = "list_collapsed_group_pinned"
 const val LIST_COLLAPSED_GROUP_NO_CRITERIA = "list_collapsed_group_no_criteria"
 const val LIST_FILTER_CRITERIA = "list_filter_criteria"
 
+const val LANGUAGE_OPTION = "language_option"
 const val THEME_OPTION = "theme_option"
 const val THEME_DYNAMIC_COLORS_ENABLED = "theme_dynamic_colors_enabled"
 const val THEME_PALETTE_STYLE = "theme_palette_style"
@@ -91,8 +93,13 @@ interface UserAppPreferencesStore {
 
 
     /* SETTINGS */
+    var languageOption: LanguageOption
+        get() = LanguageOption.fromString(this.load(LANGUAGE_OPTION))
+        set(value) = this.save(LANGUAGE_OPTION, value.name)
+    fun getLanguageOptionAsFlow(): Flow<LanguageOption> = this.loadAsFlow(LANGUAGE_OPTION).map { LanguageOption.fromString(it) }
+
     var themeOption: ThemeOption
-        get() = this.load(THEME_OPTION)?.let { ThemeOption.entries.find { themeOption -> themeOption.name == it } } ?: ThemeOption.SYSTEM
+        get() = ThemeOption.fromString(this.load(THEME_OPTION))
         set(value) = this.save(THEME_OPTION, value.name)
     fun getThemeOptionAsFlow(): Flow<ThemeOption> = this.loadAsFlow(THEME_OPTION).map { ThemeOption.fromString(it) }
 
