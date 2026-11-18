@@ -158,18 +158,25 @@ fun SpectacledApp(
                             Row(modifier = Modifier.fillMaxSize()) {
 
                                 if (isLandscape) {
-                                    AccountListScreenRoot(
-                                        viewModel = accountListViewModel,
-                                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
-                                        removeSafeAreaPaddingValues = isLandscape,
-                                        modifier = Modifier.weight(splitFraction.floatValue)
-                                    )
 
-                                    DraggableVerticalDivider(
-                                        splitFraction = splitFraction,
-                                        maxWidthPx = maxWidthPx,
-                                        onDragStopped = { userAppPreferencesStore.splitFractionAccountsList = it }
-                                    )
+                                    Box(
+                                        contentAlignment = Alignment.TopEnd,
+                                        modifier = Modifier.weight(splitFraction.floatValue)
+                                    ) {
+                                        AccountListScreenRoot(
+                                            viewModel = accountListViewModel,
+                                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
+                                            removeSafeAreaPaddingValues = isLandscape,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+
+                                        DraggableVerticalDivider(
+                                            splitFraction = splitFraction,
+                                            maxWidthPx = maxWidthPx,
+                                            onDragStopped = { userAppPreferencesStore.splitFractionAccountsList = it }
+                                        )
+                                    }
+
                                 }
 
                                 ListScreenRoot(
@@ -226,27 +233,35 @@ fun SpectacledApp(
                                 // show list for landscape mode only and only when initialized
                                 if (isLandscape && listState.isInitialized && listState.calendar.id == detailsState.calendar?.id) {
 
-                                    ListScreenRoot(
-                                        listViewModel = listViewModel,
-                                        onNavigate = { route ->
-                                            try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { }
-                                        },
-                                        onNavigateUp = {
-                                            if (!navController.popBackStack())
-                                                onCloseApp()
-                                        },
-                                        removeSafeAreaPaddingValues = isLandscape,
+                                    Box(
+                                        contentAlignment = Alignment.TopEnd,
                                         modifier = Modifier.weight(splitFraction.floatValue)
-                                    )
+                                    ) {
+                                        ListScreenRoot(
+                                            listViewModel = listViewModel,
+                                            onNavigate = { route ->
+                                                try {
+                                                    navController.navigate(route) { launchSingleTop = true }
+                                                } catch (_: IllegalStateException) {
+                                                }
+                                            },
+                                            onNavigateUp = {
+                                                if (!navController.popBackStack())
+                                                    onCloseApp()
+                                            },
+                                            removeSafeAreaPaddingValues = isLandscape,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
 
-                                    val dividerColor = getColorSchemeForSeedColor(listViewModel.state.value.calendar.color).primary
+                                        val dividerColor = getColorSchemeForSeedColor(listViewModel.state.value.calendar.color).primary
 
-                                    DraggableVerticalDivider(
-                                        splitFraction = splitFraction,
-                                        maxWidthPx = maxWidthPx,
-                                        onDragStopped = { userAppPreferencesStore.splitFractionListDetails = it },
-                                        color = dividerColor
-                                    )
+                                        DraggableVerticalDivider(
+                                            splitFraction = splitFraction,
+                                            maxWidthPx = maxWidthPx,
+                                            onDragStopped = { userAppPreferencesStore.splitFractionListDetails = it },
+                                            color = dividerColor
+                                        )
+                                    }
                                 }
 
                                 DetailsScreenRoot(
@@ -360,7 +375,7 @@ private fun DraggableVerticalDivider(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .width(4.dp)
+            .width(8.dp)
             .pointerHoverIcon(PointerIcon.Hand)
             .draggable(
                 orientation = Orientation.Horizontal,
