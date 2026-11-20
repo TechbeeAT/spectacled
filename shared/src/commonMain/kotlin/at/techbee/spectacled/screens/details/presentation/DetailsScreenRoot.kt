@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -93,6 +94,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.category
+import spectacled.shared.generated.resources.close
 import spectacled.shared.generated.resources.done
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.redo
@@ -112,10 +114,11 @@ private val MIN_CONTENT_HEIGHT_FOR_FAB_WHILE_EDITING = 480.dp
 @Composable
 fun DetailsScreenRoot(
     detailsViewModel: DetailsViewModel,
+    isLandscape: Boolean,
     onNavigate: (Route) -> Unit,
     onNavigateUp: () -> Unit,
-    removeSafeAreaPaddingValues: Boolean = false,
-    modifier: Modifier = Modifier.fillMaxSize()
+    modifier: Modifier = Modifier,
+    removeSafeAreaPaddingValues: Boolean = false
 ) {
     val detailsState by detailsViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -364,6 +367,23 @@ fun DetailsScreenRoot(
             )
         }
 
+        if(!isLandscape && detailsState.showPreview) {
+            BottomSheetWithMenu(
+                onDismiss = { detailsViewModel.onAction(DetailsAction.OnTogglePreview(false)) },
+                menuActionRight = {
+                    TextButton(
+                        onClick = { detailsViewModel.onAction(DetailsAction.OnTogglePreview(false)) },
+                    ) { Text(stringResource(Res.string.close)) }
+                }
+            ) {
+                DetailsScreenPreview(
+                    state = detailsState,
+                    onAction = { detailsViewModel.onAction(it) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
         if (detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED
             || detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_DELETED_SERVER_MODIFIED
             || detailsState.icalEntry.syncState == SyncState.CONFLICT_LOCAL_MODIFIED_SERVER_DELETED
@@ -382,6 +402,7 @@ fun DetailsScreenRoot(
                     canWriteContent = detailsState.allowEditing(),
                     isLoading = detailsState.isLoading,
                     isPinned = detailsState.icalEntry.categories.any { it == IcalEntry.PINNED_CATEGORY },
+                    isPreviewVisible = detailsState.showPreview,
                     onAction = { action -> detailsViewModel.onAction(action) },
                     removeHorizontalWindowInsets = removeSafeAreaPaddingValues
                 )
@@ -536,16 +557,32 @@ fun DetailsScreenRoot(
                     .onSizeChanged { contentHeight = with(density) { it.height.toDp() } },
                 contentAlignment = Alignment.BottomCenter
             ) {
-                DetailsScreen(
-                    state = detailsState,
-                    onAction = { action -> detailsViewModel.onAction(action) },
-                    modifier = Modifier.fillMaxSize(),
-                    onEditorFocusChanged = { isEditorFocused = it },
-                    notificationsBlocked = notificationPermissionStatus == PermissionStatus.DENIED,
-                    onAllowNotifications = { permissionRequester.request(AppPermission.NOTIFICATIONS) },
-                    exactAlarmsBlocked = exactAlarmsStatus == PermissionStatus.DENIED,
-                    onAllowExactAlarms = { permissionRequester.request(AppPermission.EXACT_ALARMS) }
-                )
+
+                Row(modifier = Modifier.fillMaxSize()) {
+                    DetailsScreen(
+                        state = detailsState,
+                        onAction = { action -> detailsViewModel.onAction(action) },
+                        modifier = Modifier.fillMaxHeight().weight(1f),
+                        onEditorFocusChanged = { isEditorFocused = it },
+                        notificationsBlocked = notificationPermissionStatus == PermissionStatus.DENIED,
+                        onAllowNotifications = { permissionRequester.request(AppPermission.NOTIFICATIONS) },
+                        exactAlarmsBlocked = exactAlarmsStatus == PermissionStatus.DENIED,
+                        onAllowExactAlarms = { permissionRequester.request(AppPermission.EXACT_ALARMS) }
+                    )
+
+                    AnimatedVisibility(isLandscape && detailsState.showPreview, modifier = Modifier.weight(1f)) {
+                        Row(modifier = Modifier.fillMaxHeight().weight(0.5f)
+                        ) {
+                            VerticalDivider(modifier = Modifier.fillMaxHeight().padding(8.dp))
+                            DetailsScreenPreview(
+                                state = detailsState,
+                                onAction = { detailsViewModel.onAction(it) },
+                                modifier = Modifier.fillMaxSize().weight(0.5f)
+                            )
+                        }
+                    }
+                }
+
 
                 CustomBottomSnackbarHost(snackbarHostState = snackbarHostState)
             }
@@ -559,6 +596,7 @@ fun DetailsScreenRoot(
 private fun DetailsScreenRoot_Preview() {
     DetailsScreenRoot(
         detailsViewModel = koinViewModel<DetailsViewModel>(),
+        isLandscape = true,
         onNavigate = {},
         onNavigateUp = {}
     )

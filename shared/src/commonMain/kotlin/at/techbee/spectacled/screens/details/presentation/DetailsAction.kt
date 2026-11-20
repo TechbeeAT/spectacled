@@ -57,4 +57,5 @@ sealed interface DetailsAction {
 
     data class OnUpdateSnackbar(val message: String?): DetailsAction
     data class OnNavigateUp(val navigateUp: Boolean): DetailsAction
+    data class OnTogglePreview(val show: Boolean): DetailsAction
 }

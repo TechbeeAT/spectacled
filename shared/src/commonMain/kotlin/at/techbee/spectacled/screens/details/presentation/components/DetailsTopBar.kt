@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.EditOff
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -37,6 +39,7 @@ import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.ic_pin
 import spectacled.shared.generated.resources.ic_unpin
+import spectacled.shared.generated.resources.markdown_preview
 import spectacled.shared.generated.resources.pin
 import spectacled.shared.generated.resources.read_only
 import spectacled.shared.generated.resources.unpin
@@ -47,9 +50,10 @@ fun DetailsTopBar(
     canWriteContent: Boolean,
     isLoading: Boolean,
     isPinned: Boolean,
+    isPreviewVisible: Boolean,
+    modifier: Modifier = Modifier,
     spectacledVariant: SpectacledVariant = koinInject<SpectacledVariant>(),
-    removeHorizontalWindowInsets: Boolean = false,
-    modifier: Modifier = Modifier
+    removeHorizontalWindowInsets: Boolean = false
 ) {
 
     TopAppBar(
@@ -122,6 +126,16 @@ fun DetailsTopBar(
                     SpectacledVariant.TASKS -> {}
                 }
             }
+
+            TextButton(
+                onClick = { onAction(DetailsAction.OnTogglePreview(!isPreviewVisible)) }
+            ) {
+                Icon(
+                    imageVector = if(isPreviewVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = stringResource(Res.string.markdown_preview)
+                )
+            }
+
         },
         modifier = modifier,
         title = {},
@@ -139,6 +153,7 @@ private fun DetailsTopBar_Journals_Preview() {
             canWriteContent = true,
             isLoading = false,
             isPinned = false,
+            isPreviewVisible = false,
             onAction = {},
             spectacledVariant = SpectacledVariant.JOURNALS
         )
@@ -155,6 +170,7 @@ private fun DetailsTopBar_Notes_Preview() {
             canWriteContent = true,
             isLoading = false,
             isPinned = false,
+            isPreviewVisible = false,
             onAction = {},
             spectacledVariant = SpectacledVariant.NOTES
         )
@@ -170,6 +186,7 @@ private fun DetailsTopBar_readonly_Preview() {
             canWriteContent = false,
             isLoading = true,
             isPinned = true,
+            isPreviewVisible = false,
             onAction = {},
             spectacledVariant = SpectacledVariant.TASKS
         )
@@ -187,6 +204,7 @@ private fun DetailsTopBar_TASKS_with_color_Preview() {
                 canWriteContent = false,
                 isLoading = true,
                 isPinned = true,
+                isPreviewVisible = true,
                 onAction = {},
                 spectacledVariant = SpectacledVariant.TASKS
             )

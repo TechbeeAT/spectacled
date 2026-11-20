@@ -266,6 +266,7 @@ fun SpectacledApp(
 
                                 DetailsScreenRoot(
                                     detailsViewModel = detailsViewModel,
+                                    isLandscape = isLandscape,
                                     // No launchSingleTop here: opening a linked entry (subtask) from a detail
                                     // view should stack a new detail screen so Back returns to the parent,
                                     // rather than replacing it.
@@ -278,7 +279,7 @@ fun SpectacledApp(
                                             onCloseApp()
                                     },
                                     removeSafeAreaPaddingValues = isLandscape,
-                                    modifier = Modifier.weight(if (isLandscape) 1f - splitFraction.floatValue else 1.0f)
+                                    modifier = Modifier.fillMaxHeight().weight(if (isLandscape) 1f - splitFraction.floatValue else 1.0f)
                                 )
                             }
                         }

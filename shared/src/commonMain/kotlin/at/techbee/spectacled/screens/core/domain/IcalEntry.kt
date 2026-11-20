@@ -22,8 +22,6 @@ import spectacled.shared.generated.resources.status_draft
 import spectacled.shared.generated.resources.status_final
 import spectacled.shared.generated.resources.status_in_process
 import spectacled.shared.generated.resources.status_needs_action
-import kotlin.time.ExperimentalTime
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 
@@ -54,7 +52,6 @@ enum class SyncState {
 }
 
 
-@OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
 data class IcalEntry(
     val id: Long = 0L,
     val calendarId: Long = 0L,
@@ -142,6 +139,63 @@ data class IcalEntry(
         )
 
         fun getRandomUUID() = Uuid.random().toString()
+
+        val smapleMarkdownText = "# Main Document Title (H1)\n" +
+                "\n" +
+                "Welcome to a sample Markdown document. Use plain text symbols to format your writing cleanly for the web, documentation, or notes.\n" +
+                "\n" +
+                "## Text Formatting (H2)\n" +
+                "\n" +
+                "You can style text easily using asterisks, underscores, or tildes:\n" +
+                "* **Bold text** uses double asterisks or underscores.\n" +
+                "* *Italicized text* uses single asterisks or underscores.\n" +
+                "* ***Bold and italic text*** uses triple asterisks.\n" +
+                "* ~~Strikethrough text~~ uses double tildes.\n" +
+                "* Inline `code` uses single backticks.\n" +
+                "\n" +
+                "### Lists & Tasks (H3)\n" +
+                "\n" +
+                "**Unordered List:**\n" +
+                "* First item\n" +
+                "* Second item\n" +
+                "  * Nested sub-item (indented by two spaces)\n" +
+                "\n" +
+                "**Ordered List:**\n" +
+                "1. First step\n" +
+                "2. Second step\n" +
+                "3. Third step\n" +
+                "\n" +
+                "**Task List (GitHub Flavored Markdown):**\n" +
+                "- [x] Completed task\n" +
+                "- [ ] Pending task\n" +
+                "\n" +
+                "## Blockquotes & Dividers\n" +
+                "\n" +
+                "> \"Markdown is a lightweight markup language that you can use to add formatting elements to plaintext text documents.\"\n" +
+                "> — *The Markdown Guide*\n" +
+                "\n" +
+                "---\n" +
+                "\n" +
+                "## Links, Images & Tables\n" +
+                "\n" +
+                "Visit the [Markdown Guide](https://www.markdownguide.org/) for full syntax rules.\n" +
+                "\n" +
+                "![Sample Alt Text](https://placeholder.com \"Optional Image Title\")\n" +
+                "\n" +
+                "| Feature | Syntax | Compatibility |\n" +
+                "| :--- | :---: | ---: |\n" +
+                "| Headings | `# Title` | Universal |\n" +
+                "| Tables | `\\| Col \\|` | Extended |\n" +
+                "| Task Lists | `- [x]` | Extended |\n" +
+                "\n" +
+                "## Fenced Code Block\n" +
+                "\n" +
+                "```python\n" +
+                "def greet(name):\n" +
+                "    return f\"Hello, {name}!\"\n" +
+                "\n" +
+                "print(greet(\"World\"))\n" +
+                "```\n"
     }
 
     fun isNote() = calendarComponent == CalendarComponent.VJOURNAL && dtStart == null

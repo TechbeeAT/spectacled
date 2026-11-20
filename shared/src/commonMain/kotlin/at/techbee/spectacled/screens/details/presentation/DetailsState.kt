@@ -43,6 +43,7 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val snackbarText: String? = null,
     val navigateUp: Boolean = false,
     val navigateToIcalEntryId: Long? = null,
+    val showPreview: Boolean = false,
 
     val claudeUserApiKey: String? = null
 ) {
