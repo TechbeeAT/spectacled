@@ -14,6 +14,13 @@ enum class Platforms(val isMobile: Boolean) {
 interface Platform {
     val platform: Platforms
     val name: String
+
+    /**
+     * The origin (scheme, host and port) the web build is served from, e.g. `https://techbeeat.github.io`;
+     * `null` off the web. Decides which CORS-proxy options apply, see [at.techbee.spectacled.screens.core.data.WebProxyPolicy].
+     */
+    val webOrigin: String?
+        get() = null
 }
 
 expect fun getPlatform(): Platform

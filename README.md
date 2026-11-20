@@ -233,6 +233,28 @@ Requires a recent browser (Chrome 119+, Firefox 120+, Safari 18.2+).
 > the trust caveats. Users who can't do that can opt into the instance we host, but only after
 > confirming a dialog that explains what its operator can see.
 
+### 🗂️ Web app on your own webspace
+
+Every GitHub release also ships the web apps as static bundles:
+`spectacled-journals-web.zip`, `spectacled-notes-web.zip` and `spectacled-tasks-web.zip`
+(always the newest at `https://github.com/TechbeeAT/spectacled/releases/latest/download/spectacled-<app>-web.zip`).
+They are the same JavaScript build that runs on GitHub Pages, with relative paths only, so any
+web server that serves static files works — no server-side code, rewrites or special headers:
+
+1. Download the ZIP and unpack it. It contains a single folder, e.g. `spectacled-journals/`.
+2. Upload that folder to your webspace and open its `index.html` URL in the browser.
+3. In **Settings → Proxy server**, choose how the app reaches your CalDAV server:
+   - **No proxy (direct connection)** — works if the app is served from the **same origin**
+     (scheme, host and port) as your CalDAV server, e.g. the app at
+     `https://cloud.example.com/spectacled/` and CalDAV at `https://cloud.example.com/remote.php/dav`,
+     or if your CalDAV server sends CORS headers that allow the app's origin. A different subdomain
+     or port is a different origin and needs a proxy.
+   - **My own proxy server** — run the [proxy](server/README.md) and add your webspace's origin
+     to its `PROXY_ALLOWED_ORIGINS`.
+
+The proxy Techbee hosts only accepts the official GitHub Pages origin, so it isn't offered in a
+self-hosted copy.
+
 ### 🍎 iOS
 
 Requires macOS + Xcode 16+.

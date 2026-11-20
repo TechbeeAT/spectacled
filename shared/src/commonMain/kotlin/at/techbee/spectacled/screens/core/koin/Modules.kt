@@ -31,6 +31,8 @@ val sharedModule = module {
             engine = getPlatformEngine(),
             // No proxy until the user picks one: on the web that makes an unconfigured app fail
             // visibly at the browser instead of quietly aiming at a localhost that is not running.
+            // Off the official origin, no proxy is also a deliberate choice: a direct connection to a
+            // same-origin or CORS-enabled CalDAV server (see WebProxyPolicy).
             proxyUrlProvider = { preferences.userProxyServer }
         )
     }

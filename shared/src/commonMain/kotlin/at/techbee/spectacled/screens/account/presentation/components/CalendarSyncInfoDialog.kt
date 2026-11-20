@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,6 +34,7 @@ import at.techbee.spectacled.screens.core.formatLocalized
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.direct_connection_cors_hint
 import spectacled.shared.generated.resources.entry_copy
 import spectacled.shared.generated.resources.reload_folders
 import spectacled.shared.generated.resources.retry
@@ -46,7 +48,8 @@ fun CalendarSyncInfoDialog(
     onRetry: () -> Unit,
     onShowPrincipalUpdatePassword: () -> Unit,
     onReloadCalendars: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    showCorsHint: Boolean = false
 ) {
 
     var showMore by remember { mutableStateOf(false) }
@@ -90,6 +93,15 @@ fun CalendarSyncInfoDialog(
                     Text(
                         text = it,
                         textAlign = TextAlign.Center)
+                }
+
+                // A browser blocking a request for CORS surfaces as a plain network failure.
+                if(showCorsHint && calendarSyncStatus.error in listOf(CalendarSyncError.CONNECTION_ERROR, CalendarSyncError.UNKNOWN)) {
+                    Text(
+                        text = stringResource(Res.string.direct_connection_cors_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
                 }
 
                 if(calendarSyncStatus.type == CalendarSyncStatusType.NOT_AUTHORIZED) {
