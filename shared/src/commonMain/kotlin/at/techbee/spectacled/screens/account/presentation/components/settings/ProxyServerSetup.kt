@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Lan
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.ButtonDefaults
@@ -44,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.WebProxyPolicy
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -52,6 +55,9 @@ import spectacled.shared.generated.resources.settings_proxy_hosted_active_messag
 import spectacled.shared.generated.resources.settings_proxy_hosted_active_title
 import spectacled.shared.generated.resources.settings_proxy_hosted_review
 import spectacled.shared.generated.resources.settings_proxy_hosted_switch_to_own
+import spectacled.shared.generated.resources.settings_proxy_option_direct
+import spectacled.shared.generated.resources.settings_proxy_option_direct_badge
+import spectacled.shared.generated.resources.settings_proxy_option_direct_info
 import spectacled.shared.generated.resources.settings_proxy_option_hosted
 import spectacled.shared.generated.resources.settings_proxy_option_hosted_badge
 import spectacled.shared.generated.resources.settings_proxy_option_hosted_info
@@ -65,9 +71,14 @@ import spectacled.shared.generated.resources.settings_proxy_server_info
 import spectacled.shared.generated.resources.settings_proxy_setup_instructions
 
 
+/** The three ways the web build can reach CalDAV servers; which are offered depends on the origin. */
+private enum class ProxyChoice { OWN, HOSTED, DIRECT }
+
 /**
- * Picks the CORS proxy the web build routes CalDAV traffic through: the user's own instance, or the
- * one Techbee hosts - the latter only after [ProxyTrustDialog] has been confirmed.
+ * Picks the CORS proxy the web build routes CalDAV traffic through: the user's own instance, the
+ * one Techbee hosts - only after [ProxyTrustDialog] has been confirmed - or none at all. Which of
+ * these are offered depends on [webOrigin], see [WebProxyPolicy]: the hosted proxy only on the
+ * official origin, the direct connection only everywhere else.
  *
  * Shared by the settings sheet and the add-account flow so the consent gate has exactly one
  * implementation; a second copy of this UI would be a second chance to get the hosted proxy
@@ -77,17 +88,32 @@ import spectacled.shared.generated.resources.settings_proxy_setup_instructions
 @Composable
 fun ProxyServerSetup(
     userAppPreferencesStore: UserAppPreferencesStore,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    webOrigin: String? = getPlatform().webOrigin
 ) {
 
     val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
     val hostedProxyConsentUrl by userAppPreferencesStore.getHostedProxyConsentUrlAsFlow().collectAsState(userAppPreferencesStore.hostedProxyConsentUrl)
 
     val hostedProxyUrl = HttpClientFactory.HOSTED_FLYIO_PROXY_URL
-    val hostedProxySelected = userProxyServer?.trim() == hostedProxyUrl
+    val hostedProxyAvailable = WebProxyPolicy.isHostedProxyAvailable(webOrigin)
+    val directConnectionAvailable = WebProxyPolicy.isDirectConnectionAvailable(webOrigin)
 
-    // Kept around while the hosted proxy is selected so switching back restores what the user had typed.
+    // Kept around while another option is selected so switching back restores what the user had typed.
     var ownProxyServerDraft by remember { mutableStateOf(userProxyServer?.takeIf { it.trim() != hostedProxyUrl } ?: "") }
+    // The selected card is UI state, read from the stored value only once: off the official origin an
+    // empty value means "direct", so deriving it on every change would flip "My own proxy" back to
+    // "No proxy" the moment it is clicked, before a URL is typed.
+    var choice by remember {
+        mutableStateOf(
+            when {
+                hostedProxyAvailable && userProxyServer?.trim() == hostedProxyUrl -> ProxyChoice.HOSTED
+                directConnectionAvailable && userProxyServer.isNullOrBlank() -> ProxyChoice.DIRECT
+                else -> ProxyChoice.OWN
+            }
+        )
+    }
+    val hostedProxySelected = choice == ProxyChoice.HOSTED
     var trustDialogVisible by remember { mutableStateOf(false) }
     var proxyPresetsExpanded by remember { mutableStateOf(false) }
 
@@ -95,7 +121,13 @@ fun ProxyServerSetup(
 
 
     fun selectOwnProxy() {
+        choice = ProxyChoice.OWN
         userAppPreferencesStore.userProxyServer = ownProxyServerDraft.ifBlank { null }
+    }
+
+    fun selectHostedProxy() {
+        choice = ProxyChoice.HOSTED
+        userAppPreferencesStore.userProxyServer = hostedProxyUrl
     }
 
     Column(
@@ -122,7 +154,7 @@ fun ProxyServerSetup(
         }
 
         ProxyOptionCard(
-            selected = !hostedProxySelected,
+            selected = choice == ProxyChoice.OWN,
             icon = Icons.Outlined.Dns,
             title = stringResource(Res.string.settings_proxy_option_own),
             info = stringResource(Res.string.settings_proxy_option_own_info),
@@ -130,7 +162,7 @@ fun ProxyServerSetup(
             onClick = { selectOwnProxy() }
         )
 
-        AnimatedVisibility(!hostedProxySelected) {
+        AnimatedVisibility(choice == ProxyChoice.OWN) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth().padding(start = 16.dp)
@@ -189,22 +221,40 @@ fun ProxyServerSetup(
             }
         }
 
-        ProxyOptionCard(
-            selected = hostedProxySelected,
-            icon = Icons.Outlined.Cloud,
-            title = stringResource(Res.string.settings_proxy_option_hosted),
-            info = stringResource(Res.string.settings_proxy_option_hosted_info),
-            badge = stringResource(Res.string.settings_proxy_option_hosted_badge),
-            badgeColor = MaterialTheme.colorScheme.error,
-            supportingText = hostedProxyUrl,
-            onClick = {
-                // Consent is per URL: an instance the user never agreed to always asks first.
-                if (hostedProxyConsentUrl == hostedProxyUrl)
-                    userAppPreferencesStore.userProxyServer = hostedProxyUrl
-                else
-                    trustDialogVisible = true
-            }
-        )
+        if (directConnectionAvailable) {
+            ProxyOptionCard(
+                selected = choice == ProxyChoice.DIRECT,
+                icon = Icons.Outlined.Lan,
+                title = stringResource(Res.string.settings_proxy_option_direct),
+                info = stringResource(Res.string.settings_proxy_option_direct_info),
+                badge = stringResource(Res.string.settings_proxy_option_direct_badge),
+                onClick = {
+                    choice = ProxyChoice.DIRECT
+                    userAppPreferencesStore.userProxyServer = null
+                }
+            )
+        }
+
+        // Our proxy only accepts the official origin (PROXY_ALLOWED_ORIGINS in fly.toml), so on a
+        // self-hosted copy offering it would only lead to CORS failures.
+        if (hostedProxyAvailable) {
+            ProxyOptionCard(
+                selected = hostedProxySelected,
+                icon = Icons.Outlined.Cloud,
+                title = stringResource(Res.string.settings_proxy_option_hosted),
+                info = stringResource(Res.string.settings_proxy_option_hosted_info),
+                badge = stringResource(Res.string.settings_proxy_option_hosted_badge),
+                badgeColor = MaterialTheme.colorScheme.error,
+                supportingText = hostedProxyUrl,
+                onClick = {
+                    // Consent is per URL: an instance the user never agreed to always asks first.
+                    if (hostedProxyConsentUrl == hostedProxyUrl)
+                        selectHostedProxy()
+                    else
+                        trustDialogVisible = true
+                }
+            )
+        }
 
         // While the hosted proxy is in use the disclosure stays on screen - consent is given once,
         // but the user should never have to remember what they agreed to.
@@ -263,7 +313,7 @@ fun ProxyServerSetup(
             initiallyAccepted = hostedProxySelected,
             onConfirm = {
                 userAppPreferencesStore.hostedProxyConsentUrl = hostedProxyUrl
-                userAppPreferencesStore.userProxyServer = hostedProxyUrl
+                selectHostedProxy()
                 trustDialogVisible = false
             },
             onDismiss = { trustDialogVisible = false },
@@ -341,7 +391,21 @@ private fun ProxyServerSetup_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             ProxyServerSetup(
-                userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS)
+                userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
+                webOrigin = WebProxyPolicy.OFFICIAL_ORIGINS.first()
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun ProxyServerSetup_SelfHosted_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            ProxyServerSetup(
+                userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
+                webOrigin = "https://cloud.example.com"
             )
         }
     }
