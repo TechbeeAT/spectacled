@@ -275,7 +275,7 @@ fun SelectAccountOptionScreen(
     isFirstAccount: Boolean,
     userAppPreferencesStore: UserAppPreferencesStore,
     onPageChanged: (AddPrincipalBottomSheetPage) -> Unit,
-    modifier: Modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState()),
+    modifier: Modifier = Modifier,
     spectacledVariant: SpectacledVariant = koinInject()
 ) {
 
