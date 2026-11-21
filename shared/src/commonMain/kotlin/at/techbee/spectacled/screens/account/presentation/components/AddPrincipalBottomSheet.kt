@@ -84,6 +84,7 @@ import at.techbee.spectacled.screens.core.PermissionStatus
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.WebProxyPolicy
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.isPrivateNetworkHost
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
@@ -106,12 +107,14 @@ import spectacled.shared.generated.resources.add_account_option2_text
 import spectacled.shared.generated.resources.add_account_option_x
 import spectacled.shared.generated.resources.add_account_provider_tasks_only_warning
 import spectacled.shared.generated.resources.add_account_proxy_change
+import spectacled.shared.generated.resources.add_account_proxy_direct
 import spectacled.shared.generated.resources.add_account_proxy_ready
 import spectacled.shared.generated.resources.add_account_proxy_required_info
 import spectacled.shared.generated.resources.add_account_proxy_required_title
 import spectacled.shared.generated.resources.add_account_spectacled_is_provider_independent
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.direct_connection_cors_hint
 import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.local_network_permission_granted
 import spectacled.shared.generated.resources.local_network_permission_manage
@@ -145,6 +148,10 @@ fun AddPrincipalBottomSheet(
     var showInsecureConnectionAlert by rememberSaveable { mutableStateOf(false) }
     // Credentials should be remember (not saveable) as KTOR Url cannot be stored saveable and the saving would crash in the background
     var credentials by remember { mutableStateOf<Credentials?>(null) }
+    val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
+    // A failed login without a proxy on the web is most likely the browser blocking it for CORS.
+    val showCorsHint = getPlatform().platform == Platforms.WASM &&
+            WebProxyPolicy.isDirectConnection(getPlatform().webOrigin, userProxyServer)
 
     LaunchedEffect(selectedPage) {
         if (selectedPage == AddPrincipalBottomSheetPage.SELECTION)
@@ -240,6 +247,7 @@ fun AddPrincipalBottomSheet(
                 if (selectedPage == AddPrincipalBottomSheetPage.USE_EXISTING) {
                     AddAccountScreen(
                         processingState = processingState,
+                        showCorsHint = showCorsHint,
                         onKeyboardDone = {
                             if(credentials?.server?.toString()?.startsWith("http://") == true)
                                 showInsecureConnectionAlert = true
@@ -271,11 +279,14 @@ fun SelectAccountOptionScreen(
     spectacledVariant: SpectacledVariant = koinInject()
 ) {
 
-    // Only the web build talks to CalDAV through a proxy, and until one is picked it can reach no
-    // server at all - so on the web the options stay closed until that choice is made.
+    // Only the web build talks to CalDAV through a proxy, and until that is set up it can reach no
+    // server at all - so on the web the options stay closed until that choice is made. Off the
+    // official origin an empty setting is a valid choice (direct connection), see WebProxyPolicy.
     val proxyRequired = getPlatform().platform == Platforms.WASM || LocalInspectionMode.current
+    val webOrigin = getPlatform().webOrigin
     val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
-    val proxyConfigured = !userProxyServer.isNullOrBlank()
+    val proxyConfigured = WebProxyPolicy.isConfigured(webOrigin, userProxyServer)
+    val directConnection = WebProxyPolicy.isDirectConnection(webOrigin, userProxyServer)
     var proxySetupExpanded by rememberSaveable { mutableStateOf(false) }
 
     Column(
@@ -333,7 +344,9 @@ fun SelectAccountOptionScreen(
                 ) {
                     Icon(Icons.Outlined.Check, null, tint = MaterialTheme.colorScheme.primary)
                     Text(
-                        text = stringResource(Res.string.add_account_proxy_ready, userProxyServer.orEmpty()),
+                        text =
+                            if (directConnection) stringResource(Res.string.add_account_proxy_direct)
+                            else stringResource(Res.string.add_account_proxy_ready, userProxyServer.orEmpty()),
                         style = MaterialTheme.typography.bodySmall,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1,
@@ -453,6 +466,7 @@ fun AddAccountScreen(
     onCredentialsUpdated: (Credentials?) -> Unit,
     onKeyboardDone: () -> Unit,
     modifier: Modifier = Modifier,
+    showCorsHint: Boolean = false,
     permissionChecker: PermissionChecker = koinInject()
 ) {
 
@@ -539,6 +553,16 @@ fun AddAccountScreen(
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.labelSmall,
                         textAlign = TextAlign.Center
+                    )
+                }
+                // Only where no answer came back: a server that answered (wrong password, not
+                // found) was clearly reachable, so CORS cannot be the cause.
+                if (showCorsHint && error?.requestFailed == true) {
+                    Text(
+                        text = stringResource(Res.string.direct_connection_cors_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }
@@ -920,6 +944,28 @@ private fun AddAccountScreen_Preview_Error() {
         Scaffold {
             AddAccountScreen(
                 processingState = ProcessingState.Error("This is an error"),
+                onCredentialsUpdated = {},
+                //onAction = {}
+                onKeyboardDone = {},
+                permissionChecker = object : PermissionChecker {
+                    override fun status(permission: AppPermission) = PermissionStatus.NOT_APPLICABLE
+                    override fun openAppSettings() {}
+                }
+            )
+        }
+
+    }
+}
+
+
+@Preview
+@Composable
+private fun AddAccountScreen_Preview_CORS_hint() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        Scaffold {
+            AddAccountScreen(
+                processingState = ProcessingState.Error("This is an error", requestFailed = true),
+                showCorsHint = true,
                 onCredentialsUpdated = {},
                 //onAction = {}
                 onKeyboardDone = {},

@@ -412,7 +412,7 @@ class AccountListViewModel(
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(
-                    processingState = ProcessingState.Error(message = e.message ?: getString(Res.string.unknown_error)),
+                    processingState = ProcessingState.Error(message = e.message ?: getString(Res.string.unknown_error), requestFailed = true),
                     snackbarText = e.message
                 ) }
             }
