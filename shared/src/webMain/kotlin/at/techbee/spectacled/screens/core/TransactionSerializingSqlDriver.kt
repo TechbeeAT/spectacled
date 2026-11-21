@@ -1,22 +1,18 @@
 package at.techbee.spectacled.screens.core
 
-import app.cash.sqldelight.Query
 import app.cash.sqldelight.Transacter
 import app.cash.sqldelight.db.QueryResult
-import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
-import app.cash.sqldelight.db.SqlPreparedStatement
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
- * Wraps the web's `WebWorkerDriver` so that only one coroutine at a time can use the database while
- * a transaction is open.
+ * Wraps the web's `WebWorkerDriver` so that transactions of different coroutines run one after the
+ * other instead of overlapping.
  *
  * `WebWorkerDriver` keeps a single, driver-wide "current transaction". On the web every statement
  * suspends until the worker answers, so two coroutines can have a transaction open at the same
@@ -24,25 +20,44 @@ import kotlinx.coroutines.withContext
  * first, and once they end in the wrong order `currentTransaction()` keeps returning a transaction
  * that has already ended. From then on SQLDelight queues every table notification on that dead
  * transaction instead of firing it, so no `asFlow()` query re-emits until the page is reloaded (a
- * sync never visibly finished). Besides, all statements share the worker's single connection, so
- * another coroutine's writes land in the open SQL transaction and are lost if it rolls back.
+ * sync never visibly finished).
  *
- * This driver therefore runs transactions itself (BEGIN/END/ROLLBACK through [delegate]'s
- * `execute`, its own transaction handling is never used) and holds [lock] from the outermost BEGIN
- * until its END or ROLLBACK. Statements and nested transactions of the coroutine that opened the
- * transaction - or of a child coroutine of it, e.g. `withContext` inside the transaction body -
- * pass straight through; every other coroutine waits until the transaction has ended.
+ * Only the transaction handling is replaced, everything else goes straight to [delegate]: a
+ * transaction holds [lock] from its BEGIN until its END or ROLLBACK, so the next one has to wait.
+ * A transaction started inside another one by the same coroutine (or a child coroutine of it) is
+ * nested as usual.
+ *
+ * Single statements outside a transaction are not held back. As all statements share the worker's
+ * one connection, such a write of another coroutine can still end up in an open transaction and is
+ * then undone with it, should that transaction roll back.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
-class TransactionSerializingSqlDriver(private val delegate: SqlDriver) : SqlDriver {
+class TransactionSerializingSqlDriver(private val delegate: SqlDriver) : SqlDriver by delegate {
 
     private val lock = Mutex()
     private var transaction: SerializedTransaction? = null
     private var transactionOwner: Job? = null
 
-    /** every query key a listener was ever registered for, see [SerializedTransaction.endTransaction] */
-    private val knownQueryKeys = mutableSetOf<String>()
+    override fun currentTransaction(): Transacter.Transaction? = transaction
 
+    override fun newTransaction(): QueryResult<Transacter.Transaction> = QueryResult.AsyncValue {
+        if (isTransactionOwner())
+            return@AsyncValue SerializedTransaction(enclosingTransaction = transaction).also { transaction = it }
+
+        lock.lock()
+        try {
+            // NonCancellable (also below): once the statement was posted the worker executes it,
+            // so the result has to be awaited, or lock and SQL transaction would get out of step
+            withContext(NonCancellable) { delegate.execute(null, "BEGIN TRANSACTION;", 0).await() }
+        } catch (e: Throwable) {
+            lock.unlock()
+            throw e
+        }
+        transactionOwner = currentCoroutineContext()[Job]
+        SerializedTransaction(enclosingTransaction = null).also { transaction = it }
+    }
+
+    /** true if the calling coroutine, or one of its parents, opened the current transaction */
+    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun isTransactionOwner(): Boolean {
         val owner = transactionOwner ?: return false
         var job = currentCoroutineContext()[Job]
@@ -54,61 +69,6 @@ class TransactionSerializingSqlDriver(private val delegate: SqlDriver) : SqlDriv
         return false
     }
 
-    private suspend fun <T> serialized(block: suspend () -> T): T =
-        if (isTransactionOwner()) block() else lock.withLock { block() }
-
-    override fun <R> executeQuery(
-        identifier: Int?,
-        sql: String,
-        mapper: (SqlCursor) -> QueryResult<R>,
-        parameters: Int,
-        binders: (SqlPreparedStatement.() -> Unit)?,
-    ): QueryResult<R> = QueryResult.AsyncValue {
-        serialized { delegate.executeQuery(identifier, sql, mapper, parameters, binders).await() }
-    }
-
-    override fun execute(
-        identifier: Int?,
-        sql: String,
-        parameters: Int,
-        binders: (SqlPreparedStatement.() -> Unit)?,
-    ): QueryResult<Long> = QueryResult.AsyncValue {
-        serialized { delegate.execute(identifier, sql, parameters, binders).await() }
-    }
-
-    override fun newTransaction(): QueryResult<Transacter.Transaction> = QueryResult.AsyncValue {
-        if (isTransactionOwner())
-            return@AsyncValue SerializedTransaction(enclosingTransaction = transaction).also { transaction = it }
-
-        val job = checkNotNull(currentCoroutineContext()[Job]) {
-            "Database transactions must be started from a coroutine with a Job"
-        }
-        lock.lock()
-        try {
-            withContext(NonCancellable) { delegate.execute(null, "BEGIN TRANSACTION;", 0).await() }
-        } catch (e: Throwable) {
-            lock.unlock()
-            throw e
-        }
-        transactionOwner = job
-        SerializedTransaction(enclosingTransaction = null).also { transaction = it }
-    }
-
-    override fun currentTransaction(): Transacter.Transaction? = transaction
-
-    override fun addListener(vararg queryKeys: String, listener: Query.Listener) {
-        knownQueryKeys.addAll(queryKeys)
-        delegate.addListener(*queryKeys, listener = listener)
-    }
-
-    override fun removeListener(vararg queryKeys: String, listener: Query.Listener) =
-        delegate.removeListener(*queryKeys, listener = listener)
-
-    override fun notifyListeners(vararg queryKeys: String) =
-        delegate.notifyListeners(*queryKeys)
-
-    override fun close() = delegate.close()
-
     private inner class SerializedTransaction(
         override val enclosingTransaction: SerializedTransaction?,
     ) : Transacter.Transaction() {
@@ -119,33 +79,15 @@ class TransactionSerializingSqlDriver(private val delegate: SqlDriver) : SqlDriv
                 return@AsyncValue
             }
 
-            // NonCancellable: the Transacter ends a transaction in a finally block, also when the
-            // coroutine was cancelled. END/ROLLBACK must still reach the worker, otherwise the SQL
-            // transaction stays open after the lock is released.
             try {
                 withContext(NonCancellable) {
-                    if (successful) {
-                        try {
-                            delegate.execute(null, "END TRANSACTION;", 0).await()
-                        } catch (e: Throwable) {
-                            runCatching { delegate.execute(null, "ROLLBACK TRANSACTION;", 0).await() }
-                            throw e
-                        }
-                    } else {
-                        delegate.execute(null, "ROLLBACK TRANSACTION;", 0).await()
-                    }
+                    delegate.execute(null, if (successful) "END TRANSACTION;" else "ROLLBACK TRANSACTION;", 0).await()
                 }
             } finally {
                 transaction = null
                 transactionOwner = null
                 lock.unlock()
             }
-
-            // SQLDelight drops the pending notifications of a rolled back transaction. A write of
-            // another coroutine can resume right after a transaction began and queue its
-            // notification on it, so notify everything rather than lose that one.
-            if (!successful)
-                delegate.notifyListeners(*knownQueryKeys.toTypedArray())
         }
     }
 }

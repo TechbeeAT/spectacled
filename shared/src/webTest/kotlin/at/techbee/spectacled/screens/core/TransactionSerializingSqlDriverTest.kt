@@ -18,7 +18,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /**
  * Behaves like WebWorkerDriver towards its caller: every statement suspends until the "worker"
@@ -113,34 +112,15 @@ class TransactionSerializingSqlDriverTest {
     }
 
     @Test
-    fun concurrentTransactionsAndStatements_doNotInterleave() = runTest {
+    fun concurrentTransactions_runOneAfterTheOther() = runTest {
         listOf(
             launch { queries.transaction { repeat(3) { queries.insert("T", "a$it") } } },
             launch { queries.transaction { repeat(3) { queries.insert("T", "b$it") } } },
-            launch { repeat(3) { queries.insert("T", "c$it") } },
         ).forEach { it.join() }
 
-        // every BEGIN..END block must contain the statements of exactly one transaction
-        var openTransaction: MutableList<String>? = null
-        fakeDriver.log.forEach { sql ->
-            when (sql) {
-                "BEGIN TRANSACTION;" -> {
-                    assertNull(openTransaction, "nested BEGIN in ${fakeDriver.log}")
-                    openTransaction = mutableListOf()
-                }
-                "END TRANSACTION;" -> {
-                    val statements = openTransaction!!
-                    assertEquals(3, statements.size, "${fakeDriver.log}")
-                    assertEquals(1, statements.map { it.removePrefix("INSERT T ").first() }.distinct().size, "${fakeDriver.log}")
-                    assertTrue(statements.none { it.startsWith("INSERT T c") }, "${fakeDriver.log}")
-                    openTransaction = null
-                }
-                else -> openTransaction?.add(sql)
-            }
-        }
-        assertNull(openTransaction)
-        assertEquals(2, fakeDriver.log.count { it == "BEGIN TRANSACTION;" })
-        assertEquals(9, fakeDriver.log.count { it.startsWith("INSERT") })
+        fun transactionOf(name: String) =
+            listOf("BEGIN TRANSACTION;") + (0..2).map { "INSERT T $name$it" } + "END TRANSACTION;"
+        assertEquals(transactionOf("a") + transactionOf("b"), fakeDriver.log)
     }
 
     @Test
@@ -163,7 +143,7 @@ class TransactionSerializingSqlDriverTest {
     }
 
     @Test
-    fun failedTransaction_rollsBackReleasesTheLockAndNotifies() = runTest {
+    fun failedTransaction_rollsBackAndReleasesTheLock() = runTest {
         val listener = CountingListener()
         driver.addListener("T", listener = listener)
 
@@ -175,10 +155,10 @@ class TransactionSerializingSqlDriverTest {
         }
         assertEquals("ROLLBACK TRANSACTION;", fakeDriver.log.last())
         assertNull(driver.currentTransaction())
-        assertEquals(1, listener.count)
+        assertEquals(0, listener.count)
 
         queries.transaction { queries.insert("T", "y") }
         assertEquals("END TRANSACTION;", fakeDriver.log.last())
-        assertEquals(2, listener.count)
+        assertEquals(1, listener.count)
     }
 }
