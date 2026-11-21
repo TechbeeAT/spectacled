@@ -232,6 +232,10 @@ Requires a recent browser (Chrome 119+, Firefox 120+, Safari 18.2+).
 > credentials in transit) — see [`server/README.md`](server/README.md) for Docker/Fly.io setup and
 > the trust caveats. Users who can't do that can opt into the instance we host, but only after
 > confirming a dialog that explains what its operator can see.
+>
+> **Local development:** run `./gradlew :server:run` and choose **My own proxy server → Local
+> development server** in the settings. `localhost` isn't the official origin, so the hosted proxy
+> isn't offered there and an empty setting means a direct connection.
 
 ### 🗂️ Web app on your own webspace
 

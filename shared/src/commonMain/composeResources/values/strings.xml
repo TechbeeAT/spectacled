@@ -490,6 +490,7 @@
     <string name="settings_proxy_option_direct">No proxy (direct connection)</string>
     <string name="settings_proxy_option_direct_info">Only works if this web app is served from the same origin (scheme, host and port) as your CalDAV server - e.g. https://cloud.example.com/spectacled/ with CalDAV at https://cloud.example.com/remote.php/dav - or if your CalDAV server sends CORS headers that allow this origin.</string>
     <string name="settings_proxy_option_direct_badge">Advanced</string>
+    <string name="settings_proxy_own_empty_connects_directly">No proxy entered yet - until you add one, the app connects directly.</string>
     <string name="settings_proxy_presets">Proxy presets</string>
     <string name="settings_proxy_preset_local_development">Local development server</string>
     <string name="settings_proxy_setup_instructions">Proxy setup info</string>

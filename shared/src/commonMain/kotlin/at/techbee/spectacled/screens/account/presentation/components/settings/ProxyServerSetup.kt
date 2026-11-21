@@ -64,6 +64,7 @@ import spectacled.shared.generated.resources.settings_proxy_option_hosted_info
 import spectacled.shared.generated.resources.settings_proxy_option_own
 import spectacled.shared.generated.resources.settings_proxy_option_own_info
 import spectacled.shared.generated.resources.settings_proxy_option_own_recommended
+import spectacled.shared.generated.resources.settings_proxy_own_empty_connects_directly
 import spectacled.shared.generated.resources.settings_proxy_preset_local_development
 import spectacled.shared.generated.resources.settings_proxy_presets
 import spectacled.shared.generated.resources.settings_proxy_server
@@ -186,6 +187,11 @@ fun ProxyServerSetup(
                                 text = stringResource(Res.string.insecure_connection_warning),
                                 color = MaterialTheme.colorScheme.error
                             )
+                        }
+                        // Off the official origin an empty field is saved as "no proxy", i.e. a direct
+                        // connection - say so rather than let the selected card suggest a proxy is used.
+                        AnimatedVisibility(directConnectionAvailable && ownProxyServerDraft.isBlank()) {
+                            Text(stringResource(Res.string.settings_proxy_own_empty_connects_directly))
                         }
                     },
                     label = { Text(stringResource(Res.string.settings_proxy_server)) },

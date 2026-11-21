@@ -1,7 +1,9 @@
 package at.techbee.spectacled.screens.core.data
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class WebProxyPolicyTest {
@@ -51,6 +53,20 @@ class WebProxyPolicyTest {
         assertTrue(WebProxyPolicy.isConfigured(official, "https://proxy.example.com"))
         assertTrue(WebProxyPolicy.isConfigured(selfHosted, "https://proxy.example.com"))
         assertFalse(WebProxyPolicy.isDirectConnection(selfHosted, "https://proxy.example.com"))
+    }
+
+    @Test
+    fun effectiveProxyUrl_dropsHostedProxyWhereItIsNotAccepted() {
+        assertEquals(hosted, WebProxyPolicy.effectiveProxyUrl(official, hosted))
+        assertNull(WebProxyPolicy.effectiveProxyUrl(selfHosted, hosted))
+    }
+
+    @Test
+    fun effectiveProxyUrl_keepsOwnProxyAndTreatsBlankAsNone() {
+        assertEquals("https://proxy.example.com", WebProxyPolicy.effectiveProxyUrl(selfHosted, " https://proxy.example.com "))
+        assertEquals("https://proxy.example.com", WebProxyPolicy.effectiveProxyUrl(official, "https://proxy.example.com"))
+        assertNull(WebProxyPolicy.effectiveProxyUrl(selfHosted, "  "))
+        assertNull(WebProxyPolicy.effectiveProxyUrl(official, null))
     }
 
     @Test

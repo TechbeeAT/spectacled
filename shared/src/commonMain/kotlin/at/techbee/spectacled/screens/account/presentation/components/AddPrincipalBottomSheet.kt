@@ -555,7 +555,9 @@ fun AddAccountScreen(
                         textAlign = TextAlign.Center
                     )
                 }
-                if (showCorsHint) {
+                // Only where no answer came back: a server that answered (wrong password, not
+                // found) was clearly reachable, so CORS cannot be the cause.
+                if (showCorsHint && error?.requestFailed == true) {
                     Text(
                         text = stringResource(Res.string.direct_connection_cors_hint),
                         style = MaterialTheme.typography.bodySmall,
@@ -962,7 +964,7 @@ private fun AddAccountScreen_Preview_CORS_hint() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
         Scaffold {
             AddAccountScreen(
-                processingState = ProcessingState.Error("This is an error"),
+                processingState = ProcessingState.Error("This is an error", requestFailed = true),
                 showCorsHint = true,
                 onCredentialsUpdated = {},
                 //onAction = {}

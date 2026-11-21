@@ -36,6 +36,16 @@ object WebProxyPolicy {
         isDirectConnectionAvailable(origin) && userProxyServer.isNullOrBlank()
 
     /**
+     * The proxy requests are actually sent through. A saved hosted-proxy choice is dropped where that
+     * proxy does not accept the origin (e.g. after [OFFICIAL_ORIGINS] changed): every request through
+     * it would fail with CORS, and [isConfigured] already reports the setting as not set up.
+     */
+    fun effectiveProxyUrl(origin: String?, userProxyServer: String?): String? {
+        val proxy = userProxyServer?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        return if (proxy == HttpClientFactory.HOSTED_FLYIO_PROXY_URL && !isHostedProxyAvailable(origin)) null else proxy
+    }
+
+    /**
      * Whether the current setting is a usable choice on [origin]. A hosted-proxy choice on an origin
      * that proxy does not accept counts as not set up rather than failing on every request.
      */

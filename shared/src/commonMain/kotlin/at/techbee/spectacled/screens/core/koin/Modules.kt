@@ -4,9 +4,11 @@ import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.SetTaskDoneUseCase
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.WebProxyPolicy
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.repository.CalendarRepositoryImpl
 import at.techbee.spectacled.screens.core.data.repository.IcalEntryRepositoryImpl
@@ -33,7 +35,7 @@ val sharedModule = module {
             // visibly at the browser instead of quietly aiming at a localhost that is not running.
             // Off the official origin, no proxy is also a deliberate choice: a direct connection to a
             // same-origin or CORS-enabled CalDAV server (see WebProxyPolicy).
-            proxyUrlProvider = { preferences.userProxyServer }
+            proxyUrlProvider = { WebProxyPolicy.effectiveProxyUrl(getPlatform().webOrigin, preferences.userProxyServer) }
         )
     }
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
