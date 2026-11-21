@@ -130,7 +130,8 @@ fun SpectacledApp(
                     composable<Route.AccountsList> {
                         AccountListScreenRoot(
                             viewModel = accountListViewModel,
-                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } }
+                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 

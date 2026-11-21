@@ -130,6 +130,11 @@ fun ProxyServerSetup(
         userAppPreferencesStore.userProxyServer = hostedProxyUrl
     }
 
+    fun selectDirectProxy() {
+        choice = ProxyChoice.DIRECT
+        userAppPreferencesStore.userProxyServer = null
+    }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -228,10 +233,7 @@ fun ProxyServerSetup(
                 title = stringResource(Res.string.settings_proxy_option_direct),
                 info = stringResource(Res.string.settings_proxy_option_direct_info),
                 badge = stringResource(Res.string.settings_proxy_option_direct_badge),
-                onClick = {
-                    choice = ProxyChoice.DIRECT
-                    userAppPreferencesStore.userProxyServer = null
-                }
+                onClick = { selectDirectProxy() }
             )
         }
 
@@ -331,9 +333,9 @@ private fun ProxyOptionCard(
     info: String,
     badge: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     badgeColor: Color = MaterialTheme.colorScheme.primary,
-    supportingText: String? = null,
-    modifier: Modifier = Modifier
+    supportingText: String? = null
 ) {
     OutlinedCard(
         onClick = onClick,

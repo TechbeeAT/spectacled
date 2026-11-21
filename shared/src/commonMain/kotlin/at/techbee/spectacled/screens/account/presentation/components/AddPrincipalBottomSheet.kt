@@ -955,6 +955,28 @@ private fun AddAccountScreen_Preview_Error() {
     }
 }
 
+
+@Preview
+@Composable
+private fun AddAccountScreen_Preview_CORS_hint() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        Scaffold {
+            AddAccountScreen(
+                processingState = ProcessingState.Error("This is an error"),
+                showCorsHint = true,
+                onCredentialsUpdated = {},
+                //onAction = {}
+                onKeyboardDone = {},
+                permissionChecker = object : PermissionChecker {
+                    override fun status(permission: AppPermission) = PermissionStatus.NOT_APPLICABLE
+                    override fun openAppSettings() {}
+                }
+            )
+        }
+
+    }
+}
+
 @Preview
 @Composable
 private fun CalDavProviderChip_Preview() {

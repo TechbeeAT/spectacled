@@ -11,6 +11,7 @@ import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,11 +27,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
 import at.techbee.spectacled.screens.core.domain.CalendarSyncError
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.formatLocalized
+import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.cancel
@@ -158,50 +161,85 @@ fun CalendarSyncInfoDialog(
 @Preview
 @Composable
 private fun CalendarSyncStatus_Preview_FAILED() {
-    CalendarSyncInfoDialog(
-        calendarSyncStatus = CalendarSyncStatus(
-            type = CalendarSyncStatusType.FAILED,
-            error = CalendarSyncError.CONNECTION_ERROR,
-            details = "Details message"
-        ),
-        onRetry = { },
-        onShowPrincipalUpdatePassword = { },
-        onReloadCalendars = { },
-        onDismiss = { }
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CalendarSyncInfoDialog(
+                calendarSyncStatus = CalendarSyncStatus(
+                    type = CalendarSyncStatusType.FAILED,
+                    error = CalendarSyncError.CONNECTION_ERROR,
+                    details = "Details message"
+                ),
+                onRetry = { },
+                onShowPrincipalUpdatePassword = { },
+                onReloadCalendars = { },
+                onDismiss = { }
+            )
+        }
+    }
+
 }
 
 @Preview
 @Composable
 private fun CalendarSyncStatus_Preview_NOT_AUTHORIZED() {
-    CalendarSyncInfoDialog(
-        calendarSyncStatus = CalendarSyncStatus(
-            type = CalendarSyncStatusType.NOT_AUTHORIZED,
-            //error = CalendarSyncError.CONNECTION_ERROR,
-            //details = "Details message"
-        ),
-        onRetry = { },
-        onShowPrincipalUpdatePassword = { },
-        onReloadCalendars = { },
-        onDismiss = { }
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CalendarSyncInfoDialog(
+                calendarSyncStatus = CalendarSyncStatus(
+                    type = CalendarSyncStatusType.NOT_AUTHORIZED,
+                    //error = CalendarSyncError.CONNECTION_ERROR,
+                    //details = "Details message"
+                ),
+                onRetry = { },
+                onShowPrincipalUpdatePassword = { },
+                onReloadCalendars = { },
+                onDismiss = { }
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun CalendarSyncStatus_Preview_NOT_FOUND() {
-    CalendarSyncInfoDialog(
-        calendarSyncStatus = CalendarSyncStatus(
-            type = CalendarSyncStatusType.NOT_FOUND,
-            //error = CalendarSyncError.CONNECTION_ERROR,
-            //details = "Details message"
-        ),
-        onRetry = { },
-        onShowPrincipalUpdatePassword = { },
-        onReloadCalendars = { },
-        onDismiss = { }
-    )
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CalendarSyncInfoDialog(
+                calendarSyncStatus = CalendarSyncStatus(
+                    type = CalendarSyncStatusType.NOT_FOUND,
+                    //error = CalendarSyncError.CONNECTION_ERROR,
+                    //details = "Details message"
+                ),
+                onRetry = { },
+                onShowPrincipalUpdatePassword = { },
+                onReloadCalendars = { },
+                onDismiss = { }
+            )
+        }
+    }
 }
+
+@Preview
+@Composable
+private fun CalendarSyncStatus_Preview_CORS() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CalendarSyncInfoDialog(
+                calendarSyncStatus = CalendarSyncStatus(
+                    type = CalendarSyncStatusType.FAILED,
+                    error = CalendarSyncError.CONNECTION_ERROR,
+                    //details = "Details message"
+                ),
+                showCorsHint = true,
+                onRetry = { },
+                onShowPrincipalUpdatePassword = { },
+                onReloadCalendars = { },
+                onDismiss = { }
+            )
+        }
+    }
+}
+
 
 
 

@@ -67,8 +67,8 @@ import spectacled.shared.generated.resources.close
 fun AccountListScreenRoot(
     viewModel: AccountListViewModel,
     onNavigate: (Route) -> Unit,
-    removeSafeAreaPaddingValues: Boolean = false,
-    modifier: Modifier = Modifier.fillMaxSize()
+    modifier: Modifier = Modifier,
+    removeSafeAreaPaddingValues: Boolean = false
 ) {
 
     val state by viewModel.state.collectAsState()
