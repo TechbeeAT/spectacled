@@ -119,8 +119,9 @@ interface UserAppPreferencesStore {
 
 
     /* SETTINGS */
-    /** False where the platform cannot switch the app language (Android below 13). */
-    val languageSelectionSupported: Boolean get() = true
+    /** False where the platform cannot switch the app language (Android below 13).
+     * False currently for other platforms than Android as the implementation is only done on Android */
+    val languageSelectionSupported: Boolean get() = false
     var languageOption: LanguageOption
         get() = LanguageOption.fromString(this.load(LANGUAGE_OPTION))
         set(value) = this.save(LANGUAGE_OPTION, value.name)
