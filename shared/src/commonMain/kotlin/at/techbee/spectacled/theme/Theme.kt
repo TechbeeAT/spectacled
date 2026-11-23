@@ -60,9 +60,12 @@ fun AppTheme(
 
         // Strings already on screen are not re-read when the language changes, so the content is rebuilt.
         // Not on Android: there the change arrives as a configuration change and the UI updates in place.
-        val languageOption by userAppPreferencesStore.getLanguageOptionAsFlow().collectAsState(userAppPreferencesStore.languageOption)
+        val rebuildKey = if (getPlatform().platform == Platforms.ANDROID) null else {
+            val languageOption by userAppPreferencesStore.getLanguageOptionAsFlow().collectAsState(userAppPreferencesStore.languageOption)
+            languageOption
+        }
 
-        key(languageOption.takeIf { getPlatform().platform != Platforms.ANDROID }) {
+        key(rebuildKey) {
             MaterialTheme(
                 colorScheme = currentColorScheme,
                 typography = currentFont.getTypography(),
