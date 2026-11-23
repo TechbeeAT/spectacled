@@ -6,6 +6,7 @@ import at.techbee.spectacled.screens.core.data.ai.ClaudeModel
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
+import at.techbee.spectacled.theme.LanguageOption
 import at.techbee.spectacled.theme.ThemeFont
 import at.techbee.spectacled.theme.ThemeOption
 import com.materialkolor.PaletteStyle
@@ -31,18 +32,7 @@ const val SPLIT_FRACTION_MIN = 0.15f
 const val SPLIT_FRACTION_MAX = 0.85f
 const val SPLIT_FRACTION_DEFAULT = 0.4f
 
-/** Returns the stored split fraction, falling back to the default and keeping it in the valid range. */
-private fun UserAppPreferencesStore.loadSplitFraction(key: String): Float =
-    load(key)?.toFloatOrNull()
-        ?.takeIf { it.isFinite() }
-        ?.coerceIn(SPLIT_FRACTION_MIN, SPLIT_FRACTION_MAX)
-        ?: SPLIT_FRACTION_DEFAULT
-
-private fun UserAppPreferencesStore.saveSplitFraction(key: String, value: Float) {
-    if (value.isFinite())
-        save(key, value.coerceIn(SPLIT_FRACTION_MIN, SPLIT_FRACTION_MAX).toString())
-}
-
+const val LANGUAGE_OPTION = "language_option"
 const val THEME_OPTION = "theme_option"
 const val THEME_DYNAMIC_COLORS_ENABLED = "theme_dynamic_colors_enabled"
 const val THEME_PALETTE_STYLE = "theme_palette_style"
@@ -61,6 +51,18 @@ const val OPENAI_API_KEY = "openai_api_key"
 
 /** Set once the notification permission was asked for on its own, see DetailsScreenRoot. */
 const val NOTIFICATION_PERMISSION_REQUESTED = "notification_permission_requested"
+
+/** Returns the stored split fraction, falling back to the default and keeping it in the valid range. */
+private fun UserAppPreferencesStore.loadSplitFraction(key: String): Float =
+    load(key)?.toFloatOrNull()
+        ?.takeIf { it.isFinite() }
+        ?.coerceIn(SPLIT_FRACTION_MIN, SPLIT_FRACTION_MAX)
+        ?: SPLIT_FRACTION_DEFAULT
+
+private fun UserAppPreferencesStore.saveSplitFraction(key: String, value: Float) {
+    if (value.isFinite())
+        save(key, value.coerceIn(SPLIT_FRACTION_MIN, SPLIT_FRACTION_MAX).toString())
+}
 
 interface UserAppPreferencesStore {
 
@@ -117,8 +119,16 @@ interface UserAppPreferencesStore {
 
 
     /* SETTINGS */
+    /** False where the platform cannot switch the app language (Android below 13).
+     * False currently for other platforms than Android as the implementation is only done on Android */
+    val languageSelectionSupported: Boolean get() = false
+    var languageOption: LanguageOption
+        get() = LanguageOption.fromString(this.load(LANGUAGE_OPTION))
+        set(value) = this.save(LANGUAGE_OPTION, value.name)
+    fun getLanguageOptionAsFlow(): Flow<LanguageOption> = this.loadAsFlow(LANGUAGE_OPTION).map { LanguageOption.fromString(it) }
+
     var themeOption: ThemeOption
-        get() = this.load(THEME_OPTION)?.let { ThemeOption.entries.find { themeOption -> themeOption.name == it } } ?: ThemeOption.SYSTEM
+        get() = ThemeOption.fromString(this.load(THEME_OPTION))
         set(value) = this.save(THEME_OPTION, value.name)
     fun getThemeOptionAsFlow(): Flow<ThemeOption> = this.loadAsFlow(THEME_OPTION).map { ThemeOption.fromString(it) }
 

@@ -316,6 +316,10 @@
     <string name="theme_amoled">Amoled (true dark)</string>
     <string name="theme_palette_style">Palette style</string>
     <string name="theme_font">Font</string>
+    <string name="language">Language</string>
+    <string name="language_system_default">Default (System)</string>
+    <string name="language_native_english" translatable="false">English</string>
+    <string name="language_native_german" translatable="false">Deutsch</string>
 
     <string name="status">Status</string>
     <string name="status_no_status">No status</string>
