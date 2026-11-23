@@ -9,7 +9,9 @@ import at.techbee.spectacled.theme.LanguageOption
 import eu.anifantakis.lib.ksafe.KSafe
 import eu.anifantakis.lib.ksafe.KSafeWriteMode
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 
 
 actual class PlatformUserAppPreferencesStore(
@@ -24,6 +26,9 @@ actual class PlatformUserAppPreferencesStore(
     // language to the whole process and can also be changed in the system settings.
     private val localeManager =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) appContext.getSystemService(LocaleManager::class.java) else null
+
+    // Bumped by the setter, so that a selection is emitted even if it causes no configuration change
+    private val languageChanged = MutableStateFlow(0)
 
     override val languageSelectionSupported: Boolean get() = localeManager != null
 
@@ -40,10 +45,11 @@ actual class PlatformUserAppPreferencesStore(
             // An empty list means "follow the system"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
                 localeManager?.applicationLocales = LocaleList.forLanguageTags(value.tag.orEmpty())
+            languageChanged.update { it + 1 }
         }
 
-    // Cold flow, so that every collection reads the current system value
-    override fun getLanguageOptionAsFlow(): Flow<LanguageOption> = flow { emit(languageOption) }
+    // Every collection and every selection reads the current system value
+    override fun getLanguageOptionAsFlow(): Flow<LanguageOption> = languageChanged.map { languageOption }
 
     actual override fun save(key: String, value: String) = ksafe.putDirect(key, value, KSafeWriteMode.Plain)
     actual override fun saveEncrypted(key: String, value: String) = ksafe.putDirect(key, value, KSafeWriteMode.Encrypted())
