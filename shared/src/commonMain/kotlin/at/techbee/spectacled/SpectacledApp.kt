@@ -109,12 +109,14 @@ fun SpectacledApp(
     val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
 
 
+    // Created outside of AppTheme: AppTheme rebuilds its content when the language changes,
+    // the navigation state must survive that.
+    //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
+    val navController = rememberNavController()
+
     AppTheme(
         spectacledVariant = spectacledVariant
     ) {
-
-        //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
-        val navController = rememberNavController()
 
         Surface(
             modifier = Modifier.fillMaxSize(),

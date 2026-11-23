@@ -5,9 +5,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.platform.LocalInspectionMode
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.getPlatform
 import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
@@ -55,11 +58,18 @@ fun AppTheme(
 
         val currentFont by userAppPreferencesStore.getThemeFontAsFlow().collectAsState(userAppPreferencesStore.themeFont)
 
-        MaterialTheme(
-            colorScheme = currentColorScheme,
-            typography = currentFont.getTypography(),
-            content = content
-        )
+        // Strings already on screen are not re-read when the language changes, so the content is
+        // rebuilt. Not on Android: there the change arrives as a configuration change and the
+        // UI updates in place.
+        val languageOption by userAppPreferencesStore.getLanguageOptionAsFlow().collectAsState(userAppPreferencesStore.languageOption)
+
+        key(languageOption.takeIf { getPlatform().platform != Platforms.ANDROID }) {
+            MaterialTheme(
+                colorScheme = currentColorScheme,
+                typography = currentFont.getTypography(),
+                content = content
+            )
+        }
     }
 }
 
