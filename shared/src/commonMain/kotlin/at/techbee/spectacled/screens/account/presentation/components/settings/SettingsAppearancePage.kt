@@ -104,11 +104,11 @@ fun SettingsAppearancePage(
                         onDismissRequest = { languageOptionDropdownExpanded = false },
                     ) {
 
-                        LanguageOption.entries.forEach { languageOption ->
+                        LanguageOption.entries.forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(stringResource(languageOption.nativeName)) },
+                                text = { Text(stringResource(option.nativeName)) },
                                 onClick = {
-                                    userAppPreferencesStore.languageOption = languageOption
+                                    userAppPreferencesStore.languageOption = option
                                     languageOptionDropdownExpanded = false
                                 },
                             )
