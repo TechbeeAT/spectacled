@@ -87,40 +87,42 @@ fun SettingsAppearancePage(
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
-        AssistChip(
-            onClick = { languageOptionDropdownExpanded = true },
-            label = {
+        if (userAppPreferencesStore.languageSelectionSupported) {
+            AssistChip(
+                onClick = { languageOptionDropdownExpanded = true },
+                label = {
 
-                Column(modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp)) {
-                    Text(
-                        text = stringResource(Res.string.language),
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                    Text(languageOption.nativeName ?: stringResource(Res.string.language_system_default))
-                }
-
-                DropdownMenu(
-                    expanded = languageOptionDropdownExpanded,
-                    onDismissRequest = { languageOptionDropdownExpanded = false },
-                ) {
-
-                    LanguageOption.entries.forEach { languageOption ->
-                        DropdownMenuItem(
-                            text = { Text(languageOption.nativeName ?: stringResource(Res.string.language_system_default)) },
-                            onClick = {
-                                userAppPreferencesStore.languageOption = languageOption
-                                languageOptionDropdownExpanded = false
-                            },
+                    Column(modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp)) {
+                        Text(
+                            text = stringResource(Res.string.language),
+                            style = MaterialTheme.typography.labelSmall
                         )
+                        Text(languageOption.nativeName ?: stringResource(Res.string.language_system_default))
                     }
-                }
-            },
-            leadingIcon = { Icon(Icons.Outlined.Language, null) },
-            trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
-            modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
-        )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    DropdownMenu(
+                        expanded = languageOptionDropdownExpanded,
+                        onDismissRequest = { languageOptionDropdownExpanded = false },
+                    ) {
+
+                        LanguageOption.entries.forEach { languageOption ->
+                            DropdownMenuItem(
+                                text = { Text(languageOption.nativeName ?: stringResource(Res.string.language_system_default)) },
+                                onClick = {
+                                    userAppPreferencesStore.languageOption = languageOption
+                                    languageOptionDropdownExpanded = false
+                                },
+                            )
+                        }
+                    }
+                },
+                leadingIcon = { Icon(Icons.Outlined.Language, null) },
+                trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null) },
+                modifier = Modifier.widthIn(min = 350.dp).fillMaxWidth()
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        }
 
         AssistChip(
             onClick = { themeOptionDropdownExpanded = true },

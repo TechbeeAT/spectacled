@@ -55,15 +55,11 @@ fun AppTheme(
 
         val currentFont by userAppPreferencesStore.getThemeFontAsFlow().collectAsState(userAppPreferencesStore.themeFont)
 
-        val languageOption by userAppPreferencesStore.getLanguageOptionAsFlow().collectAsState(userAppPreferencesStore.languageOption)
-
-        ProvideAppLanguage(languageOption) {
-            MaterialTheme(
-                colorScheme = currentColorScheme,
-                typography = currentFont.getTypography(),
-                content = content
-            )
-        }
+        MaterialTheme(
+            colorScheme = currentColorScheme,
+            typography = currentFont.getTypography(),
+            content = content
+        )
     }
 }
 
