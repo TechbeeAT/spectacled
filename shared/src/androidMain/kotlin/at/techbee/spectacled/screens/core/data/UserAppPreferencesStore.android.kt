@@ -29,12 +29,17 @@ actual class PlatformUserAppPreferencesStore(
 
     override var languageOption: LanguageOption
         get() {
-            val language = localeManager?.applicationLocales?.get(0)?.language
-            return LanguageOption.entries.find { it.tag == language } ?: LanguageOption.SYSTEM
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                localeManager?.applicationLocales?.get(0)?.language?.let { language ->
+                    return LanguageOption.entries.find { it.tag == language } ?: LanguageOption.SYSTEM
+                }
+
+            return LanguageOption.SYSTEM
         }
         set(value) {
             // An empty list means "follow the system"
-            localeManager?.applicationLocales = LocaleList.forLanguageTags(value.tag.orEmpty())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                localeManager?.applicationLocales = LocaleList.forLanguageTags(value.tag.orEmpty())
         }
 
     // Cold flow, so that every collection reads the current system value
