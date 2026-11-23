@@ -35,8 +35,11 @@ actual class PlatformUserAppPreferencesStore(
     override var languageOption: LanguageOption
         get() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                localeManager?.applicationLocales?.get(0)?.language?.let { language ->
-                    return LanguageOption.entries.find { it.tag == language } ?: LanguageOption.SYSTEM
+                localeManager?.applicationLocales?.get(0)?.let { locale ->
+                    // Full tag first (e.g. pt-BR), then the language only (e.g. de for de-AT)
+                    return LanguageOption.entries.find { it.tag == locale.toLanguageTag() }
+                        ?: LanguageOption.entries.find { it.tag == locale.language }
+                        ?: LanguageOption.SYSTEM
                 }
 
             return LanguageOption.SYSTEM
