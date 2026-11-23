@@ -1,5 +1,11 @@
 package at.techbee.spectacled.theme
 
+import org.jetbrains.compose.resources.StringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.language_native_english
+import spectacled.shared.generated.resources.language_native_german
+import spectacled.shared.generated.resources.language_system_default
+
 /**
  * The app language chosen by the user.
  *
@@ -11,11 +17,11 @@ package at.techbee.spectacled.theme
  */
 enum class LanguageOption(
     val tag: String?,
-    val nativeName: String?
+    val nativeName: StringResource
 ) {
-    SYSTEM(null, null),
-    ENGLISH("en", "English"),
-    GERMAN("de", "Deutsch");
+    SYSTEM(null, Res.string.language_system_default),
+    ENGLISH("en", Res.string.language_native_english),
+    GERMAN("de", Res.string.language_native_german);
 
     companion object {
         fun fromString(value: String?) = entries.find { it.name == value } ?: SYSTEM

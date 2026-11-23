@@ -46,7 +46,6 @@ import com.materialkolor.PaletteStyle
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.language
-import spectacled.shared.generated.resources.language_system_default
 import spectacled.shared.generated.resources.settings
 import spectacled.shared.generated.resources.theme
 import spectacled.shared.generated.resources.theme_amoled
@@ -97,7 +96,7 @@ fun SettingsAppearancePage(
                             text = stringResource(Res.string.language),
                             style = MaterialTheme.typography.labelSmall
                         )
-                        Text(languageOption.nativeName ?: stringResource(Res.string.language_system_default))
+                        Text(stringResource(languageOption.nativeName))
                     }
 
                     DropdownMenu(
@@ -107,7 +106,7 @@ fun SettingsAppearancePage(
 
                         LanguageOption.entries.forEach { languageOption ->
                             DropdownMenuItem(
-                                text = { Text(languageOption.nativeName ?: stringResource(Res.string.language_system_default)) },
+                                text = { Text(stringResource(languageOption.nativeName)) },
                                 onClick = {
                                     userAppPreferencesStore.languageOption = languageOption
                                     languageOptionDropdownExpanded = false
