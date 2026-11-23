@@ -58,9 +58,8 @@ fun AppTheme(
 
         val currentFont by userAppPreferencesStore.getThemeFontAsFlow().collectAsState(userAppPreferencesStore.themeFont)
 
-        // Strings already on screen are not re-read when the language changes, so the content is
-        // rebuilt. Not on Android: there the change arrives as a configuration change and the
-        // UI updates in place.
+        // Strings already on screen are not re-read when the language changes, so the content is rebuilt.
+        // Not on Android: there the change arrives as a configuration change and the UI updates in place.
         val languageOption by userAppPreferencesStore.getLanguageOptionAsFlow().collectAsState(userAppPreferencesStore.languageOption)
 
         key(languageOption.takeIf { getPlatform().platform != Platforms.ANDROID }) {
