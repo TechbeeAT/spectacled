@@ -404,7 +404,7 @@
     <string name="ai_provider">AI provider</string>
     <string name="ai_provider_claude" translatable="false">Claude (Anthropic)</string>
     <string name="ai_provider_openai">Open-source model (custom endpoint)</string>
-    <string name="ai_provider_none">None</string>
+    <string name="ai_provider_disabled">Disabled</string>
     <string name="ai_provider_not_configured">Configure your AI provider in the settings to use this feature.</string>
     <string name="ai_model">Model</string>
     <string name="openai_base_url">Server URL</string>
@@ -491,6 +491,10 @@
     <string name="settings_proxy_option_hosted_info">No setup needed, but your CalDAV user name and password pass through a server we operate.</string>
     <string name="settings_proxy_option_hosted_badge">Sees your credentials</string>
     <string name="settings_proxy_option_own_recommended">Recommended</string>
+    <string name="settings_proxy_option_direct">No proxy (direct connection)</string>
+    <string name="settings_proxy_option_direct_info">Only works if this web app is served from the same origin (scheme, host and port) as your CalDAV server - e.g. https://cloud.example.com/spectacled/ with CalDAV at https://cloud.example.com/remote.php/dav - or if your CalDAV server sends CORS headers that allow this origin.</string>
+    <string name="settings_proxy_option_direct_badge">Advanced</string>
+    <string name="settings_proxy_own_empty_connects_directly">No proxy entered yet - until you add one, the app connects directly.</string>
     <string name="settings_proxy_presets">Proxy presets</string>
     <string name="settings_proxy_preset_local_development">Local development server</string>
     <string name="settings_proxy_setup_instructions">Proxy setup info</string>
@@ -502,6 +506,8 @@
     <string name="add_account_proxy_required_title">First: choose a proxy server</string>
     <string name="add_account_proxy_required_info">The web version reaches CalDAV servers through a proxy. Pick one here before connecting an account - without it, the app cannot reach any server.</string>
     <string name="add_account_proxy_ready">Proxy: %1$s</string>
+    <string name="add_account_proxy_direct">Direct connection, no proxy</string>
+    <string name="direct_connection_cors_hint">No proxy is set up, so the browser contacts the server directly. Unless this web app is on the same origin as your CalDAV server, or the server sends CORS headers allowing it, the browser blocks the request. Set up a proxy in the settings or adjust your server's CORS configuration.</string>
     <string name="add_account_proxy_change">Change</string>
 
     <string name="proxy_trust_title">Use the proxy we host?</string>

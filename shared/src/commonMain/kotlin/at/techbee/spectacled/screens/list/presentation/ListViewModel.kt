@@ -325,7 +325,7 @@ class ListViewModel(
                 OpenAiCompatibleDataSource(client, baseUrl, model, userAppPreferencesStore.openAiApiKey)
             }
 
-            AiProvider.NONE -> object: AiDeriveEntriesDataSource {
+            AiProvider.DISABLED -> object: AiDeriveEntriesDataSource {
                 override suspend fun deriveEntries(
                     rawText: String,
                     variant: SpectacledVariant,

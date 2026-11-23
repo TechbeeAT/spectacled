@@ -26,6 +26,8 @@ primary_region = 'fra'
   # Leave OFF in production — this is the SSRF guard (default "false" blocks targets that
   # resolve to loopback/link-local/private/metadata addresses). Only set "true" for local testing.
   # PROXY_ALLOW_PRIVATE_TARGETS = "false"
+  # Techbee's instance: keep in sync with WebProxyPolicy.OFFICIAL_ORIGINS in the app, which only
+  # offers the hosted proxy on these origins.
   PROXY_ALLOWED_ORIGINS = 'https://techbeeat.github.io'
   # REQUIRED for a public instance: the web origin(s) allowed to use this proxy.
   PROXY_REQUIRE_HTTPS_TARGET = 'true'

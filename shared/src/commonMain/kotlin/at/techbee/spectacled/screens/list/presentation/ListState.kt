@@ -85,7 +85,7 @@ data class ListState(
     val showUpdateCategoryOfSelectedBottomSheet: Boolean = false,
     val showDateSelectorBottomSheet: Boolean = false,
 
-    val aiProvider: AiProvider = AiProvider.NONE,
+    val aiProvider: AiProvider = AiProvider.DISABLED,
     val claudeApiKeyPresent: Boolean = false,
     val openAiBaseUrlPresent: Boolean = false,
     val showDeriveEntriesBottomSheet: Boolean = false,

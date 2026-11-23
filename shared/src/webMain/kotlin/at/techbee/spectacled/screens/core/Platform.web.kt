@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core
 
+import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -7,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 class WasmPlatform: Platform {
     override val platform: Platforms = Platforms.WASM
     override val name: String = "Web with Kotlin/Wasm"
+    override val webOrigin: String
+        get() = window.location.origin
 }
 
 actual fun getPlatform(): Platform = WasmPlatform()

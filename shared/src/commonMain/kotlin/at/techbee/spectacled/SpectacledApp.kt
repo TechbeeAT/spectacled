@@ -3,22 +3,36 @@ package at.techbee.spectacled
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -32,6 +46,8 @@ import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.SPLIT_FRACTION_MAX
+import at.techbee.spectacled.screens.core.data.SPLIT_FRACTION_MIN
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.koin.sharedModule
 import at.techbee.spectacled.screens.details.presentation.DetailsScreenRoot
@@ -39,6 +55,7 @@ import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
 import at.techbee.spectacled.screens.list.presentation.ListScreenRoot
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CancellationException
@@ -113,7 +130,8 @@ fun SpectacledApp(
                     composable<Route.AccountsList> {
                         AccountListScreenRoot(
                             viewModel = accountListViewModel,
-                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } }
+                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 
@@ -134,20 +152,33 @@ fun SpectacledApp(
                         // whenever the orientation or size changes.
                         BoxWithConstraints {
                             val isLandscape = rememberIsLandscape()
+                            val splitFraction = remember { mutableFloatStateOf(userAppPreferencesStore.splitFractionAccountsList) }
+                            val density = LocalDensity.current
+                            val maxWidthPx = with(density) { maxWidth.toPx() }
 
                             Row(modifier = Modifier.fillMaxSize()) {
 
-                                if(isLandscape) {
-                                    AccountListScreenRoot(
-                                        viewModel = accountListViewModel,
-                                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
-                                        removeSafeAreaPaddingValues = isLandscape,
-                                        modifier = Modifier.weight(0.4f)
-                                    )
+                                if (isLandscape) {
 
-                                    VerticalDivider()
+                                    Box(
+                                        contentAlignment = Alignment.TopEnd,
+                                        modifier = Modifier.weight(splitFraction.floatValue)
+                                    ) {
+                                        AccountListScreenRoot(
+                                            viewModel = accountListViewModel,
+                                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
+                                            removeSafeAreaPaddingValues = isLandscape,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+
+                                        DraggableVerticalDivider(
+                                            splitFraction = splitFraction,
+                                            maxWidthPx = maxWidthPx,
+                                            onDragStopped = { userAppPreferencesStore.splitFractionAccountsList = it }
+                                        )
+                                    }
+
                                 }
-
 
                                 ListScreenRoot(
                                     listViewModel = listViewModel,
@@ -157,7 +188,7 @@ fun SpectacledApp(
                                             onCloseApp()
                                     },
                                     removeSafeAreaPaddingValues = isLandscape,
-                                    modifier = Modifier.weight(if(isLandscape) 0.6f else 1.0f)
+                                    modifier = Modifier.weight(if (isLandscape) 1f - splitFraction.floatValue else 1.0f)
                                 )
                             }
 
@@ -184,6 +215,9 @@ fun SpectacledApp(
                         // whenever the orientation or size changes.
                         BoxWithConstraints {
                             val isLandscape = rememberIsLandscape()
+                            val splitFraction = remember { mutableFloatStateOf(userAppPreferencesStore.splitFractionListDetails) }
+                            val density = LocalDensity.current
+                            val maxWidthPx = with(density) { maxWidth.toPx() }
 
                             Row(modifier = Modifier.fillMaxSize()) {
 
@@ -200,20 +234,35 @@ fun SpectacledApp(
                                 // show list for landscape mode only and only when initialized
                                 if (isLandscape && listState.isInitialized && listState.calendar.id == detailsState.calendar?.id) {
 
-                                    ListScreenRoot(
-                                        listViewModel = listViewModel,
-                                        onNavigate = { route ->
-                                            try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { }
-                                        },
-                                        onNavigateUp = {
-                                            if (!navController.popBackStack())
-                                                onCloseApp()
-                                        },
-                                        removeSafeAreaPaddingValues = isLandscape,
-                                        modifier = Modifier.weight(0.4f)
-                                    )
+                                    Box(
+                                        contentAlignment = Alignment.TopEnd,
+                                        modifier = Modifier.weight(splitFraction.floatValue)
+                                    ) {
+                                        ListScreenRoot(
+                                            listViewModel = listViewModel,
+                                            onNavigate = { route ->
+                                                try {
+                                                    navController.navigate(route) { launchSingleTop = true }
+                                                } catch (_: IllegalStateException) {
+                                                }
+                                            },
+                                            onNavigateUp = {
+                                                if (!navController.popBackStack())
+                                                    onCloseApp()
+                                            },
+                                            removeSafeAreaPaddingValues = isLandscape,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
 
-                                    VerticalDivider()
+                                        val dividerColor = getColorSchemeForSeedColor(listViewModel.state.value.calendar.color).primary
+
+                                        DraggableVerticalDivider(
+                                            splitFraction = splitFraction,
+                                            maxWidthPx = maxWidthPx,
+                                            onDragStopped = { userAppPreferencesStore.splitFractionListDetails = it },
+                                            color = dividerColor
+                                        )
+                                    }
                                 }
 
                                 DetailsScreenRoot(
@@ -230,7 +279,7 @@ fun SpectacledApp(
                                             onCloseApp()
                                     },
                                     removeSafeAreaPaddingValues = isLandscape,
-                                    modifier = Modifier.weight(if (isLandscape) 0.6f else 1.0f)
+                                    modifier = Modifier.weight(if (isLandscape) 1f - splitFraction.floatValue else 1.0f)
                                 )
                             }
                         }
@@ -314,6 +363,38 @@ private fun BoxWithConstraintsScope.rememberIsLandscape(): Boolean {
     SideEffect { if (maxHeight > tallestHeight) tallestHeight = maxHeight }
     // large tablets have enough space to always show landscape layout
     return maxWidth > maxOf(tallestHeight, maxHeight) || maxWidth > 700.dp
+}
+
+@Composable
+private fun DraggableVerticalDivider(
+    splitFraction: MutableFloatState,
+    maxWidthPx: Float,
+    onDragStopped: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = DividerDefaults.color
+) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .width(8.dp)
+            .pointerHoverIcon(PointerIcon.Hand)
+            .draggable(
+                orientation = Orientation.Horizontal,
+                state = rememberDraggableState { delta ->
+                    // Read the state object itself (not a recomposition snapshot) so that several
+                    // deltas arriving within one frame accumulate instead of overwriting each other.
+                    if (maxWidthPx > 0f) {
+                        splitFraction.floatValue = (splitFraction.floatValue + delta / maxWidthPx)
+                            .coerceIn(SPLIT_FRACTION_MIN, SPLIT_FRACTION_MAX)
+                    }
+                },
+                // Persist once per gesture rather than on every delta.
+                onDragStopped = { onDragStopped(splitFraction.floatValue) }
+            ),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        VerticalDivider(thickness = 2.dp, color = color)
+    }
 }
 
 @Composable
