@@ -10,7 +10,7 @@ import spectacled.shared.generated.resources.language_system_default
  * The app language chosen by the user.
  *
  * [tag] is the BCP 47 language tag handed to the platform (null = follow the system).
- * [nativeName] is deliberately not a translatable resource: each language is shown in its own
+ * [nativeName] is a string resource marked translatable="false": each language is shown in its own
  * language, so users who end up in a language they cannot read can still find their way back.
  *
  * When adding a language, also add it to shared/src/androidMain/res/xml/locales_config.xml.
