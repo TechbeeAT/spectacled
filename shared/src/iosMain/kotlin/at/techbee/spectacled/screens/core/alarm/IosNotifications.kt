@@ -76,14 +76,17 @@ object IosNotifications : KoinComponent {
     var authorizationStatus: UNAuthorizationStatus? = null
         private set
 
-    /** The notification texts, localized at start and again when the app language changes. */
+    /** The notification texts, localized once at start. */
     var texts: AlarmNotificationTexts = AlarmNotificationTexts.FALLBACK
         private set
 
     fun install() {
         center.delegate = delegate
         refreshAuthorizationStatus()
-        reloadTexts()
+        scope.launch {
+            texts = AlarmNotificationTexts.load()   // falls back to English rather than failing
+            registerCategories(texts)
+        }
 
         val notificationCenter = NSNotificationCenter.defaultCenter
         // Trigger times of all-day and floating dates follow the device zone.
@@ -128,14 +131,6 @@ object IosNotifications : KoinComponent {
             refreshAuthorizationStatus { status ->
                 mainScope.launch { onResult(status) }
             }
-        }
-    }
-
-    /** Loads the notification texts in the current app language and registers the buttons with them. */
-    fun reloadTexts() {
-        scope.launch {
-            texts = AlarmNotificationTexts.load()   // falls back to English rather than failing
-            registerCategories(texts)
         }
     }
 

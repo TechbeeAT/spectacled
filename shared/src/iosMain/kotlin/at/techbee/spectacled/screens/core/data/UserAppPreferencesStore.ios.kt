@@ -1,7 +1,6 @@
 package at.techbee.spectacled.screens.core.data
 
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.alarm.IosNotifications
 import at.techbee.spectacled.theme.LanguageOption
 import eu.anifantakis.lib.ksafe.KSafe
 import eu.anifantakis.lib.ksafe.KSafeWriteMode
@@ -47,7 +46,6 @@ actual class PlatformUserAppPreferencesStore(
             else
                 userDefaults.setObject(listOf(value.tag), APPLE_LANGUAGES)
             languageChanged.update { it + 1 }
-            IosNotifications.reloadTexts()   // otherwise reminders keep the old language until the next start
         }
 
     override fun getLanguageOptionAsFlow(): Flow<LanguageOption> = languageChanged.map { languageOption }
