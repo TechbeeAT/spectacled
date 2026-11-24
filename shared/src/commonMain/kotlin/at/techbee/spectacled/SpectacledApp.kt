@@ -109,12 +109,14 @@ fun SpectacledApp(
     val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
 
 
+    // Created outside of AppTheme: AppTheme rebuilds its content when the language changes,
+    // the navigation state must survive that.
+    //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
+    val navController = rememberNavController()
+
     AppTheme(
         spectacledVariant = spectacledVariant
     ) {
-
-        //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
-        val navController = rememberNavController()
 
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -287,61 +289,63 @@ fun SpectacledApp(
                 }
             }
         }
+    }
 
-        LaunchedEffect(Unit) {
-            syncTrigger.schedulePeriodic()
-            syncTrigger.requestImmediate()
-            // Pick up alarms that were missed while the app wasn't running and refresh the schedule.
-            // An exception escaping a LaunchedEffect takes down the whole composition (in the browser
-            // the app just stops reacting), so a failing reconcile must not get past here.
-            try {
-                alarmCoordinator.reconcile()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Napier.e("Reconciling alarms at start failed", e)
+    // Start-up logic, outside of AppTheme so that it does not run again when AppTheme rebuilds
+    // its content after a language change.
+    LaunchedEffect(Unit) {
+        syncTrigger.schedulePeriodic()
+        syncTrigger.requestImmediate()
+        // Pick up alarms that were missed while the app wasn't running and refresh the schedule.
+        // An exception escaping a LaunchedEffect takes down the whole composition (in the browser
+        // the app just stops reacting), so a failing reconcile must not get past here.
+        try {
+            alarmCoordinator.reconcile()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Napier.e("Reconciling alarms at start failed", e)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        //Only move to last used calendar if NO deep link was ever seen
+        if (DeepLinkHandler.deepLinkData.isEmpty()) {
+            userAppPreferencesStore.lastUsedCalendarId?.let { calendarId ->
+                // Only navigate if the calendar still exists. It may have been deleted
+                // (account removed/unsubscribed, or dropped by a sync) since it was last
+                // used, in which case we must not open the list view of a phantom calendar.
+                if (calendarRepository.getCalendarById(calendarId) != null)
+                    navController.navigate(Route.IcalEntryList(calendarId))
+                else
+                    userAppPreferencesStore.lastUsedCalendarId = null
             }
         }
+    }
 
-        LaunchedEffect(Unit) {
-            //Only move to last used calendar if NO deep link was ever seen
-            if (DeepLinkHandler.deepLinkData.isEmpty()) {
-                userAppPreferencesStore.lastUsedCalendarId?.let { calendarId ->
-                    // Only navigate if the calendar still exists. It may have been deleted
-                    // (account removed/unsubscribed, or dropped by a sync) since it was last
-                    // used, in which case we must not open the list view of a phantom calendar.
-                    if (calendarRepository.getCalendarById(calendarId) != null)
-                        navController.navigate(Route.IcalEntryList(calendarId))
-                    else
-                        userAppPreferencesStore.lastUsedCalendarId = null
+    LaunchedEffect(DeepLinkHandler.deepLinkData) {
+        val deepLinkData = DeepLinkHandler.deepLinkData
+
+        // Handle reactive navigation for already open app (or late-arriving deep links on iOS)
+        val newRoute = if (!deepLinkData.isEmpty()) {
+            if (deepLinkData.initialIcalEntryId != null) {
+                if (deepLinkData.initialIcalEntryId == 0L) {
+                    Route.IcalEntryDetails(
+                        icalEntryId = 0L,
+                        newIcalEntryCalendarId = deepLinkData.initialCalendarId ?: 0L,
+                        newIcalEntryInitialDescription = deepLinkData.initialIcalEntryDescription
+                    )
+                } else {
+                    Route.IcalEntryDetails(deepLinkData.initialIcalEntryId)
                 }
-            }
-        }
-
-        LaunchedEffect(DeepLinkHandler.deepLinkData) {
-            val deepLinkData = DeepLinkHandler.deepLinkData
-
-            // Handle reactive navigation for already open app (or late-arriving deep links on iOS)
-            val newRoute = if (!deepLinkData.isEmpty()) {
-                if (deepLinkData.initialIcalEntryId != null) {
-                    if (deepLinkData.initialIcalEntryId == 0L) {
-                        Route.IcalEntryDetails(
-                            icalEntryId = 0L,
-                            newIcalEntryCalendarId = deepLinkData.initialCalendarId ?: 0L,
-                            newIcalEntryInitialDescription = deepLinkData.initialIcalEntryDescription
-                        )
-                    } else {
-                        Route.IcalEntryDetails(deepLinkData.initialIcalEntryId)
-                    }
-                } else if (deepLinkData.initialCalendarId != null) {
-                    Route.IcalEntryList(deepLinkData.initialCalendarId)
-                } else null
+            } else if (deepLinkData.initialCalendarId != null) {
+                Route.IcalEntryList(deepLinkData.initialCalendarId)
             } else null
+        } else null
 
-            newRoute?.let {
-                navController.navigate(it)
-                DeepLinkHandler.consume()
-            }
+        newRoute?.let {
+            navController.navigate(it)
+            DeepLinkHandler.consume()
         }
     }
 }
