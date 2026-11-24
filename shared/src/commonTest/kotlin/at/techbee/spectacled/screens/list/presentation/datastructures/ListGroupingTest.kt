@@ -76,6 +76,13 @@ class ListGroupingTest {
     }
 
     @Test
+    fun dateOnlyStart_today_hasStarted() {
+        // Unlike due dates, a DATE start keeps start-of-day: Nov 12 00:00 local is already past.
+        val today = IcsDateTime(LocalDate(2026, 11, 12).atStartOfDayIn(TimeZone.UTC), isDateOnly = true)
+        assertEquals(ListGrouping.START_IN_PAST, grouping(ListGrouping.startGroups, today))
+    }
+
+    @Test
     fun dateOnlyDue_yesterday_isOverdue() {
         val yesterday = IcsDateTime(LocalDate(2026, 11, 11).atStartOfDayIn(TimeZone.UTC), isDateOnly = true)
         assertEquals(ListGrouping.DUE_OVERDUE, grouping(ListGrouping.dueGroups, yesterday))
