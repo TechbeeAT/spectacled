@@ -23,8 +23,6 @@ actual class PlatformUserAppPreferencesStore(
         applyLocale(languageOption)   // the stored choice, at start
     }
 
-    override val languageSelectionSupported: Boolean get() = true
-
     override var languageOption: LanguageOption
         get() = super.languageOption
         set(value) {

@@ -26,8 +26,6 @@ actual class PlatformUserAppPreferencesStore(
     // Bumped by the setter: on iOS nothing else tells the UI that the language has changed
     private val languageChanged = MutableStateFlow(0)
 
-    override val languageSelectionSupported: Boolean get() = true
-
     override var languageOption: LanguageOption
         get() {
             // Only the app's own domain: standardUserDefaults would fall back to the system-wide list

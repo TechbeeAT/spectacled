@@ -47,7 +47,7 @@ actual class PlatformUserAppPreferencesStore(
     actual override fun remove(key: String) = ksafe.deleteDirect(key)
 
     // The browser has no per-site language setting, so the stored preference is the source of truth.
-    override val languageSelectionSupported: Boolean get() = true
+
 
     override var languageOption: LanguageOption
         get() = super.languageOption
