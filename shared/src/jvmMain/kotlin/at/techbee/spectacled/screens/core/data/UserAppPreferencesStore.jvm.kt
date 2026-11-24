@@ -30,8 +30,18 @@ actual class PlatformUserAppPreferencesStore(
             super.languageOption = value
         }
 
-    private fun applyLocale(option: LanguageOption) =
-        Locale.setDefault(option.tag?.let { Locale.forLanguageTag(it) } ?: systemLocale)
+    private fun applyLocale(option: LanguageOption) {
+        val locale = option.tag?.let { tag ->
+            val chosen = Locale.forLanguageTag(tag)
+            // Keep the region of the system, so that dates and times stay in the user's format
+            // (English on an Austrian system: en-AT, not the US formats of a bare "en")
+            if (chosen.country.isEmpty())
+                Locale.Builder().setLocale(chosen).setRegion(systemLocale.country).build()
+            else
+                chosen
+        } ?: systemLocale
+        Locale.setDefault(locale)
+    }
 
     actual override fun save(key: String, value: String) = ksafe.putDirect(key, value, KSafeWriteMode.Plain)
     actual override fun saveEncrypted(key: String, value: String) = ksafe.putDirect(key, value, KSafeWriteMode.Encrypted())
