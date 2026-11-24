@@ -119,8 +119,7 @@ interface UserAppPreferencesStore {
 
 
     /* SETTINGS */
-    /** False where the platform cannot switch the app language (Android below 13).
-     * Currently implemented on Android, iOS and Desktop, false on Web. */
+    /** False where the platform cannot switch the app language (Android below 13). */
     val languageSelectionSupported: Boolean get() = false
     var languageOption: LanguageOption
         get() = LanguageOption.fromString(this.load(LANGUAGE_OPTION))
