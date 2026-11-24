@@ -61,6 +61,13 @@ fun ListScreenNotes(
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
+    LaunchedEffect(state.scrollToTop) {
+        if(state.scrollToTop) {
+            lazyStaggeredGridState.animateScrollToItem(0)
+            onAction(ListAction.OnScrollToTop(false))
+        }
+    }
+
     @Composable
     fun LazyStaggeredGridItemScope.getNoteListItem(
         icalEntry: IcalEntry,

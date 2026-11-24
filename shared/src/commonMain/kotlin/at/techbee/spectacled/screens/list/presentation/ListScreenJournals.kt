@@ -142,6 +142,13 @@ fun ListScreenJournals(
         }
     }
 
+    LaunchedEffect(state.scrollToTop) {
+        if(state.scrollToTop) {
+            lazyListState.animateScrollToItem(0)
+            onAction(ListAction.OnScrollToTop(false))
+        }
+    }
+
 
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(0.dp),

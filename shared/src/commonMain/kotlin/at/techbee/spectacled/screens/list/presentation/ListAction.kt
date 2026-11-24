@@ -46,4 +46,7 @@ sealed interface ListAction {
     data class OnToggleListGroupExpanded(val listGroup: String): ListAction
     data class OnTogglePinEntry(val pin: Boolean): ListAction
     data class OnDraggingIcalEntry(val icalEntryId: Long?): ListAction
+
+    data class OnScrollToTop(val scroll: Boolean): ListAction
+
 }

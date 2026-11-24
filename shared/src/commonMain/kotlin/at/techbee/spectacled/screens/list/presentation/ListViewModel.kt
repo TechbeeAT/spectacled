@@ -34,8 +34,6 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.recurring_entry_read_only_snackbar
-import kotlin.time.ExperimentalTime
-import kotlin.uuid.ExperimentalUuidApi
 
 class ListViewModel(
     private val calendarRepository: CalendarRepository,
@@ -202,7 +200,6 @@ class ListViewModel(
     }
 
 
-    @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     fun onAction(action: ListAction) {
         when(action) {
             is ListAction.OnListFilterCriteriaChanged -> {
@@ -216,7 +213,7 @@ class ListViewModel(
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             is ListAction.OnIcalEntryClicked -> {  _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is ListAction.OnSortedByChanged -> {
-                updateList(action.listSortedBy, action.listSortedByAscending, _state.value.listFilterCriteria)
+                updateList(action.listSortedBy, action.listSortedByAscending, _state.value.listFilterCriteria, true)
                 userAppPreferencesStore.listSortedBy = action.listSortedBy
                 userAppPreferencesStore.listSortedByAscending = action.listSortedByAscending
             }
@@ -280,6 +277,7 @@ class ListViewModel(
             is ListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
             is ListAction.OnGoToSelectedDate -> { onGoToDate(action.selectedDate) }
             is ListAction.OnToggleProgress -> { onUpdateProgress(action.icalEntryId) }
+            is ListAction.OnScrollToTop -> { _state.update { it.copy(scrollToTop = action.scroll) }}
         }
     }
 
@@ -420,13 +418,19 @@ class ListViewModel(
     }
 
 
-    private fun updateList(listSortedBy: ListSortedBy, listSortedByAscending: Boolean, listFilterCriteria: ListFilterCriteria) {
+    private fun updateList(
+        listSortedBy: ListSortedBy,
+        listSortedByAscending: Boolean,
+        listFilterCriteria: ListFilterCriteria,
+        scrollToTop: Boolean = false
+    ) {
 
         _state.update { it.copy(
             listSortedBy = listSortedBy,
             listSortedByAscending = listSortedByAscending,
             listFilterCriteria = listFilterCriteria,
-            isRefreshing = false
+            isRefreshing = false,
+            scrollToTop = scrollToTop
         ).recompute() }
         refreshDragAndDropList()
     }

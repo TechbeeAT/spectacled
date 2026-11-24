@@ -93,6 +93,7 @@ data class ListState(
 
     val draggingIcalEntryId: Long? = null,
     val scrollToDate: IcsDateTime? = null,
+    val scrollToTop: Boolean = false,
 
     val listCollapsedGroups: Set<String> = emptySet(),
     val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES,  // must be overwritten immediately on load
