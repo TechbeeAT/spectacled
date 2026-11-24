@@ -65,7 +65,27 @@ class ListGroupingTest {
     fun dateOnlyValues_startAtLocalMidnight() {
         // Nov 13 starts at 00:00 local = 7 hours from now. Read as UTC midnight it would be 1 hour ago.
         val tomorrow = IcsDateTime(LocalDate(2026, 11, 13).atStartOfDayIn(TimeZone.UTC), isDateOnly = true)
-        assertEquals(ListGrouping.DUE_WITHIN_24_HOURS, grouping(ListGrouping.dueGroups, tomorrow))
+        assertEquals(ListGrouping.START_WITHIN_24_HOURS, grouping(ListGrouping.startGroups, tomorrow))
+    }
+
+    @Test
+    fun dateOnlyDue_today_isNotOverdue() {
+        // Due Nov 12 without a time means due by the end of Nov 12 local, 7 hours from now.
+        val today = IcsDateTime(LocalDate(2026, 11, 12).atStartOfDayIn(TimeZone.UTC), isDateOnly = true)
+        assertEquals(ListGrouping.DUE_WITHIN_24_HOURS, grouping(ListGrouping.dueGroups, today))
+    }
+
+    @Test
+    fun dateOnlyStart_today_hasStarted() {
+        // Unlike due dates, a DATE start keeps start-of-day: Nov 12 00:00 local is already past.
+        val today = IcsDateTime(LocalDate(2026, 11, 12).atStartOfDayIn(TimeZone.UTC), isDateOnly = true)
+        assertEquals(ListGrouping.START_IN_PAST, grouping(ListGrouping.startGroups, today))
+    }
+
+    @Test
+    fun dateOnlyDue_yesterday_isOverdue() {
+        val yesterday = IcsDateTime(LocalDate(2026, 11, 11).atStartOfDayIn(TimeZone.UTC), isDateOnly = true)
+        assertEquals(ListGrouping.DUE_OVERDUE, grouping(ListGrouping.dueGroups, yesterday))
     }
 
     @Test

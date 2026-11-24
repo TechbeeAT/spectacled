@@ -11,6 +11,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.datetime.TimeZone
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 
 class ListStateSectionsTest {
 
@@ -115,5 +118,26 @@ class ListStateSectionsTest {
         ).recompute()
 
         assertEquals(listOf(ordered.uid, unordered.uid), state.displayedEntries.map { it.uid })
+    }
+
+    /** Due dates sort like the other date fields: "ascending" puts the latest due date first, and
+     *  descending the soonest. All three are 30+ days out so they share one group and keep sort order. */
+    @Test
+    fun dueSortOrderFollowsAscendingFlag() {
+        val now = Clock.System.now()
+        fun dueIn(days: Int) = IcalEntry.newTask().copy(due = IcsDateTime(now.plus(days.days), false, TimeZone.UTC))
+        val soon = dueIn(40)
+        val mid = dueIn(50)
+        val late = dueIn(60)
+
+        fun order(ascending: Boolean) = ListState(
+            icalEntries = listOf(mid, soon, late),
+            spectacledVariant = SpectacledVariant.TASKS,
+            listSortedBy = ListSortedBy.DUE,
+            listSortedByAscending = ascending
+        ).recompute().displayedEntries.map { it.uid }
+
+        assertEquals(listOf(late.uid, mid.uid, soon.uid), order(ascending = true))
+        assertEquals(listOf(soon.uid, mid.uid, late.uid), order(ascending = false))
     }
 }
