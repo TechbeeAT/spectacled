@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.Flow
  * The string resources and the date formatting both ask the browser (navigator.languages /
  * navigator.language), and the browser offers no way to set that per page, so the two getters are
  * replaced once and consult the override first.
+ * A tag without a region gets the region of the real browser language (en on a de-AT browser:
+ * en-AT), so that dates and times stay in the user's format.
  */
 @OptIn(ExperimentalWasmJsInterop::class)
 @JsFun(
@@ -27,9 +29,17 @@ import kotlinx.coroutines.flow.Flow
             Object.defineProperty(proto, 'languages', Object.assign({}, languages, {
                 get: function () { return g.__spectacledLanguage ? [g.__spectacledLanguage] : languages.get.call(this); }
             }));
+            g.__spectacledBrowserLanguage = function () { return language.get.call(navigator); };
             g.__spectacledLanguagePatched = true;
         }
-        g.__spectacledLanguage = tag;
+        let override = tag;
+        if (tag && tag.indexOf('-') < 0) {
+            try {
+                const region = new Intl.Locale(g.__spectacledBrowserLanguage()).region;
+                if (region) override = tag + '-' + region;
+            } catch (e) { }
+        }
+        g.__spectacledLanguage = override;
     }"""
 )
 private external fun overrideBrowserLanguage(tag: String?)
