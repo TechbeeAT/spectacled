@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import java.util.Locale
 
 
 actual class PlatformUserAppPreferencesStore(
@@ -45,9 +46,21 @@ actual class PlatformUserAppPreferencesStore(
             return LanguageOption.SYSTEM
         }
         set(value) {
-            // An empty list means "follow the system"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                localeManager?.applicationLocales = LocaleList.forLanguageTags(value.tag.orEmpty())
+                localeManager?.let { localeManager ->
+                    val locales = value.tag?.let { tag ->
+                        val chosen = Locale.forLanguageTag(tag)
+                        // Keep the region of the system, so that dates and times stay in the user's
+                        // format (English on an Austrian device: en-AT, not the US formats of a bare "en")
+                        val systemRegion = localeManager.systemLocales.get(0)?.country.orEmpty()
+                        if (chosen.country.isEmpty() && systemRegion.isNotEmpty())
+                            LocaleList(Locale.Builder().setLocale(chosen).setRegion(systemRegion).build())
+                        else
+                            LocaleList(chosen)
+                    } ?: LocaleList.getEmptyLocaleList()   // an empty list means "follow the system"
+
+                    localeManager.applicationLocales = locales
+                }
             languageChanged.update { it + 1 }
         }
 
