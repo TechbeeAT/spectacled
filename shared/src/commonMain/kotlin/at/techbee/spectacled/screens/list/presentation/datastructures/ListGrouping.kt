@@ -15,7 +15,10 @@ import spectacled.shared.generated.resources.grouping_start_in_30_plus_days
 import spectacled.shared.generated.resources.grouping_start_in_past
 import spectacled.shared.generated.resources.grouping_start_within_x_days
 import spectacled.shared.generated.resources.grouping_start_within_x_hours
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -165,7 +168,12 @@ enum class ListGrouping(
             if (icsDateTime == null) return null
             // Compare actual points in time: floating and DATE values are resolved in the device
             // timezone, so "within 24 hours" means the same for them as for zoned values.
-            val instant = icsDateTime.resolvedInstant(deviceTimeZone)
+            val instant = if (icsDateTime.isDateOnly && baseGroups == dueGroups) {
+                // A DATE due means "due by the end of that day", so it is only overdue from the next day on.
+                icsDateTime.toLocalDateTime().date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(deviceTimeZone)
+            } else {
+                icsDateTime.resolvedInstant(deviceTimeZone)
+            }
             return baseGroups.find { group ->
                 val lower = group.lowerThreshold?.let { now.plus(it) } ?: Instant.DISTANT_PAST
                 val upper = group.upperThreshold?.let { now.plus(it) } ?: Instant.DISTANT_FUTURE
