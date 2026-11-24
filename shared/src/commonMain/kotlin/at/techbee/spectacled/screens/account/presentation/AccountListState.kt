@@ -27,5 +27,9 @@ sealed interface ProcessingState {
     object Idle: ProcessingState
     object Processing: ProcessingState
     data class Success(val message: String): ProcessingState
-    data class Error(val message: String, val detail: String? = null): ProcessingState
+    /**
+     * [requestFailed] marks a failure where no usable answer came back at all (an exception, not an
+     * HTTP status) - on the web that is also how a request the browser blocked for CORS shows up.
+     */
+    data class Error(val message: String, val detail: String? = null, val requestFailed: Boolean = false): ProcessingState
 }

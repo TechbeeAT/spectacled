@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ai.AI_BATCH_CATEGORY_PREFIX
@@ -44,6 +45,7 @@ class ListViewModel(
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
     private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
     private val client: HttpClient,
+    private val alarmCoordinator: AlarmCoordinator,
     val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -72,7 +74,7 @@ class ListViewModel(
             listSortedByAscending = userAppPreferencesStore.listSortedByAscending,
             listLayout = userAppPreferencesStore.listLayout,
             listCollapsedGroups = userAppPreferencesStore.listCollapsedGroups,
-            listFilterCriteria = userAppPreferencesStore.listFilterCriteria.get(calendarId)?: ListFilterCriteria(),
+            listFilterCriteria = userAppPreferencesStore.listFilterCriteria[calendarId] ?: ListFilterCriteria(),
             spectacledVariant = spectacledVariant
         ).recompute() }
         refreshDragAndDropList()   // drop whatever the previously opened calendar left behind
@@ -240,16 +242,12 @@ class ListViewModel(
             is ListAction.OnToggleMultiselectItem -> toggleMultiselectItem(action.icalEntryId)
             ListAction.OnClearMultiselectItems -> { _state.update { it.copy(multiselectItems = null) } }
             is ListAction.OnShowDeleteSelectedItemsDialog -> { _state.update { it.copy(showDeleteSelectedItemsDialog = action.showDialog) }}
-            is ListAction.OnSwipeToDelete -> {
-                // Select (never toggle) the swiped entry so it is part of the dialog and the swiped box resets on dismiss
-                _state.update { it.copy(
-                    multiselectItems = (it.multiselectItems ?: emptyList()).let { items -> if(action.icalEntryId in items) items else items + action.icalEntryId },
-                    showDeleteSelectedItemsDialog = true
-                ) }
-            }
             ListAction.OnDeleteSelectedItems -> onDeleteSelectedItems()
-            is ListAction.OnShowMoveSelectedItemsDialog -> { _state.update { it.copy(showMoveSelectedItemsDialog = action.showDialog) }}
+            is ListAction.OnShowSwipeToDeleteDialog -> { _state.update { it.copy(showSwipeToDeleteDialog = action.icalEntryId) } }
+            is ListAction.OnDeleteEntry -> onDeleteEntry(action.icalEntryId)
+            is ListAction.OnShowMoveOrCopySelectedItemsDialog -> { _state.update { it.copy(showMoveOrCopySelectedItemsDialog = action.mode) }}
             is ListAction.OnMoveSelectedItems -> onMoveSelectedItems(action.targetCalendarId)
+            is ListAction.OnCopySelectedItems -> onCopySelectedItems(action.targetCalendarId)
             is ListAction.OnUpdateOrderNo -> onUpdateOrderNo(action.fromIndex, action.toIndex)
             ListAction.OnPersistOrderNo -> onPersistOrderNo()
             is ListAction.OnToggleListGroupExpanded -> onToggleListGroupExpanded(action.listGroup)
@@ -327,7 +325,7 @@ class ListViewModel(
                 OpenAiCompatibleDataSource(client, baseUrl, model, userAppPreferencesStore.openAiApiKey)
             }
 
-            AiProvider.NONE -> object: AiDeriveEntriesDataSource {
+            AiProvider.DISABLED -> object: AiDeriveEntriesDataSource {
                 override suspend fun deriveEntries(
                     rawText: String,
                     variant: SpectacledVariant,
@@ -366,6 +364,7 @@ class ListViewModel(
                         it.toIcalEntries(calendarId, batchCategory, spectacledVariant, includeSubtasks = createSubtasks)
                     }
                     toInsert.forEach { icalEntryRepository.insertOrUpdateIcalEntry(it) }
+                    alarmCoordinator.reconcile()
 
                     if(toInsert.isNotEmpty()) {
                         syncTrigger.requestImmediate(listOf(calendarId))
@@ -411,7 +410,7 @@ class ListViewModel(
                         icalEntryRepository.updateCategory(
                             id = icalEntry.id,
                             categories = newCategories,
-                            lastModified = IcsDateTime.now(),
+                            lastModified = IcsDateTime.nowUtc(),
                             syncState = icalEntry.syncState.afterLocalEdit()
                         )
                     }
@@ -439,10 +438,28 @@ class ListViewModel(
 
         viewModelScope.launch {
             // Recurring entries are read-only, so exclude them even if a selection somehow contains one.
-            _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(withoutRecurringEntries(it)) }
+            _state.value.multiselectItems?.let { selected ->
+                val ids = withoutRecurringEntries(selected)
+                icalEntryRepository.markAsDeleted(ids)
+                alarmCoordinator.onEntriesDoneOrDeleted(ids)
+            }
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
             _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false) }
+        }
+    }
+
+    private fun onDeleteEntry(icalEntryId: Long) {
+        // Close the dialog first so it can neither stay open on missing write access nor hang on a failing delete
+        _state.update { it.copy(showSwipeToDeleteDialog = null) }
+        if(!state.value.calendar.canWriteContent())
+            return
+
+        viewModelScope.launch {
+            icalEntryRepository.markAsDeleted(listOf(icalEntryId))
+            alarmCoordinator.onEntriesDoneOrDeleted(listOf(icalEntryId))
+            syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
+            syncTrigger.triggerWidgetUpdate()
         }
     }
 
@@ -458,7 +475,21 @@ class ListViewModel(
         // Off the Main dispatcher: the use case may download attachments before the local move.
         viewModelScope.launch(ioDispatcher) {
             moveIcalEntriesUseCase.move(ids, targetCalendarId)
-            _state.update { it.copy(multiselectItems = null, showMoveSelectedItemsDialog = false) }
+            _state.update { it.copy(multiselectItems = null, showMoveOrCopySelectedItemsDialog = null) }
+        }
+    }
+
+    private fun onCopySelectedItems(targetCalendarId: Long) {
+
+        // No write access needed on the source: copying out of a read-only collection is allowed,
+        // the dialog only offers writable targets.
+        // Recurring entries are read-only, so exclude them like for a move.
+        val ids = _state.value.multiselectItems?.let { withoutRecurringEntries(it) } ?: return
+
+        // Off the Main dispatcher: the use case may download attachments before the local copy.
+        viewModelScope.launch(ioDispatcher) {
+            moveIcalEntriesUseCase.copy(ids, targetCalendarId)
+            _state.update { it.copy(multiselectItems = null, showMoveOrCopySelectedItemsDialog = null) }
         }
     }
 
@@ -478,7 +509,7 @@ class ListViewModel(
                     icalEntryRepository.updateColor(
                         id = icalEntry.id,
                         color = if(color == Color.Unspecified) null else color,
-                        lastModified = IcsDateTime.now(),
+                        lastModified = IcsDateTime.nowUtc(),
                         syncState = icalEntry.syncState.afterLocalEdit()
                     )
                 }
@@ -511,6 +542,10 @@ class ListViewModel(
                 lastModified = updatedEntry.lastModified,
                 syncState = updatedEntry.syncState
             )
+            if (updatedEntry.isDoneOrCancelled())
+                alarmCoordinator.onEntriesDoneOrDeleted(listOf(updatedEntry.id))
+            else
+                alarmCoordinator.reconcile()
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
         }

@@ -28,8 +28,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.no_date
-import kotlin.time.Clock
-import kotlin.time.Instant
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MonthHeader(
@@ -42,7 +41,7 @@ fun MonthHeader(
     val monthText =
         if(monthName == null)
             stringResource(Res.string.no_date)
-        else if(icsDateTime.toLocalDateTime().year != IcsDateTime.now().toLocalDateTime().year)
+        else if(icsDateTime.toLocalDateTime().year != IcsDateTime.nowFloating().toLocalDateTime().year)
             "$monthName ${icsDateTime.toLocalDateTime().year}"
         else
             monthName
@@ -88,7 +87,7 @@ fun MonthHeader(
 @Preview
 private fun MonthHeader_Preview() {
     MonthHeader(
-        icsDateTime = IcsDateTime.now()
+        icsDateTime = IcsDateTime.nowFloating()
     )
 }
 
@@ -97,6 +96,6 @@ private fun MonthHeader_Preview() {
 @Preview
 private fun MonthHeader_withYear_Preview() {
     MonthHeader(
-        icsDateTime = IcsDateTime.now().copy(instant = Instant.fromEpochMilliseconds(Clock.System.now().toEpochMilliseconds().plus(31556952000))),
+        icsDateTime = IcsDateTime.nowFloating().let { it.copy(instant = it.instant.plus(31556952000.milliseconds)) },
     )
 }

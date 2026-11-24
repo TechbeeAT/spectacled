@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.Attachment
 import androidx.compose.material.icons.outlined.DatasetLinked
 import androidx.compose.material.icons.outlined.Gesture
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -38,13 +39,14 @@ import spectacled.shared.generated.resources.attachment_by_url
 import spectacled.shared.generated.resources.attachment_file
 import spectacled.shared.generated.resources.attachment_from_gallery
 import spectacled.shared.generated.resources.attachment_photo
+import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.drawing
 import spectacled.shared.generated.resources.file_attachment
 import spectacled.shared.generated.resources.image_attachment
 import spectacled.shared.generated.resources.location
 import spectacled.shared.generated.resources.other_attachment
 import spectacled.shared.generated.resources.subtask
-import spectacled.shared.generated.resources.subtasks_not_supported_in_collection
+import spectacled.shared.generated.resources.subtasks_not_supported_in_folder
 import spectacled.shared.generated.resources.url
 
 @OptIn(ExperimentalGridApi::class)
@@ -150,6 +152,15 @@ fun AddMoreDropdownMenuDetails(
         ) {
 
             SquareDropdownMenuItem(
+                text = stringResource(Res.string.color),
+                icon = Icons.Outlined.Palette,
+                onClick = {
+                    onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COLOR_SELECTOR))
+                    onDismiss()
+                },
+            )
+
+            SquareDropdownMenuItem(
                 text = stringResource(Res.string.url),
                 icon = Icons.Outlined.AddLink,
                 enabled = !hasUrl,
@@ -193,7 +204,7 @@ fun AddMoreDropdownMenuDetails(
 
         if (!calendarSupportsTasks)
             Text(
-                text = stringResource(Res.string.subtasks_not_supported_in_collection),
+                text = stringResource(Res.string.subtasks_not_supported_in_folder),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(8.dp)

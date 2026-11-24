@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core
 
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
@@ -8,7 +9,7 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -42,13 +43,14 @@ object IOSSyncEntryPoint : KoinComponent {
     private val calendarRepository: CalendarRepository by inject()
     private val icalEntryRepository: IcalEntryRepository by inject()
     private val fileManager: PlatformFileManager by inject()
+    private val alarmCoordinator: AlarmCoordinator by inject()
     private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun runBackgroundSync(onFinished: () -> Unit) {
         bgScope.launch {
             try {
                 Napier.d("BG Sync coroutine started")
-                SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
+                SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client, alarmCoordinator)
                 Napier.d("BG Sync coroutine finished")
             } finally {
                 onFinished()
@@ -60,7 +62,7 @@ object IOSSyncEntryPoint : KoinComponent {
         bgScope.launch {
             try {
                 Napier.d("BG Sync for specific calendars coroutine started")
-                SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
+                SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, fileManager, credentialStore, client, alarmCoordinator)
                 Napier.d("BG Sync for specific calendars coroutine finished")
             } finally {
                 onFinished()
@@ -69,6 +71,7 @@ object IOSSyncEntryPoint : KoinComponent {
     }
 
     fun cancelBackgroundSync() {
-        bgScope.cancel()
+        // Only cancel the running syncs - cancelling bgScope itself would make every later launch a silent no-op
+        bgScope.coroutineContext.cancelChildren()
     }
 }

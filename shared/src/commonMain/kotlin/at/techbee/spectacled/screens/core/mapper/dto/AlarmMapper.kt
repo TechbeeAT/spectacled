@@ -15,9 +15,9 @@ fun AlarmDto.toDomain(): Alarm =
 
 /**
  * [triggerAt] is the alarm's fire time for its entry (see [Alarm.triggerTime]), [lastNotifiedAt]
- * the local-only notification state carried over from the previous row, if any.
+ * and [snoozedUntil] the local-only notification state carried over from the previous row, if any.
  */
-fun Alarm.toDto(icalEntryId: Long, triggerAt: Instant?, lastNotifiedAt: Long? = null): AlarmDto =
+fun Alarm.toDto(icalEntryId: Long, triggerAt: Instant?, lastNotifiedAt: Long? = null, snoozedUntil: Long? = null): AlarmDto =
     AlarmDto(
         id = 0L,
         icalEntryId = icalEntryId,
@@ -25,7 +25,8 @@ fun Alarm.toDto(icalEntryId: Long, triggerAt: Instant?, lastNotifiedAt: Long? = 
         action = action,
         icsBlock = toIcsBlock(),
         triggerAt = triggerAt?.toEpochMilliseconds(),
-        lastNotifiedAt = lastNotifiedAt
+        lastNotifiedAt = lastNotifiedAt,
+        snoozedUntil = snoozedUntil
     )
 
 fun Alarm.toIcsBlock(): String = serializeAlarm(this).joinToString(ICS_BLOCK_LINE_SEPARATOR)

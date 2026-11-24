@@ -57,7 +57,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.screens.core.SyncTrigger
+import at.techbee.spectacled.screens.core.SetTaskDoneUseCase
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
@@ -69,8 +69,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.widget_configure
+import spectacled.shared.generated.resources.widget_new_entry
+import spectacled.shared.generated.resources.widget_no_entries
+import spectacled.shared.generated.resources.widget_open_calendar
+import spectacled.shared.generated.resources.widget_select_calendar
+import spectacled.shared.generated.resources.widget_subtask
 
 class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
@@ -80,14 +88,39 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
 
+    private data class WidgetTexts(
+        val newEntryText: String,
+        val openCalendarText: String,
+        val configureText: String,
+        val selectCalendarText: String,
+        val noEntriesText: String,
+        val subtaskText: String
+    ) {
+        companion object {
+            suspend fun load() = WidgetTexts(
+                newEntryText = getString(Res.string.widget_new_entry),
+                openCalendarText = getString(Res.string.widget_open_calendar),
+                configureText = getString(Res.string.widget_configure),
+                selectCalendarText = getString(Res.string.widget_select_calendar),
+                noEntriesText = getString(Res.string.widget_no_entries),
+                subtaskText = getString(Res.string.widget_subtask),
+            )
+        }
+    }
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
 
+        val initialWidgetTexts = WidgetTexts.load()
 
         provideContent {
             val prefs = currentState<Preferences>()
             val calendarId = prefs[longPreferencesKey(CALENDAR_ID_KEY)]
             val listFilterCriteria = prefs.getListFilterCriteria()
 
+            val locale = LocalContext.current.resources.configuration.locales[0]
+            val widgetTexts by produceState(initialWidgetTexts, locale) {
+                value = WidgetTexts.load()             // runs again when the locale changes
+            }
 
             val calendar by produceState<Calendar?>(initialValue = null, key1 = calendarId) {
                 value = calendarId?.let { calendarRepository.getCalendarById(it) }
@@ -108,13 +141,13 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
             }.collectAsState(emptyMap())
 
             GlanceTheme {
-                SpectacledWidgetContent(entries, calendar)
+                SpectacledWidgetContent(entries, calendar, widgetTexts)
             }
         }
     }
 
     @Composable
-    fun SpectacledWidgetContent(entries: Map<String?, List<IcalEntry>>, calendar: Calendar?) {
+    private fun SpectacledWidgetContent(entries: Map<String?, List<IcalEntry>>, calendar: Calendar?, widgetTexts: WidgetTexts) {
 
         val context = LocalContext.current
 
@@ -128,7 +161,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                         if (calendar != null) {
                             SquareIconButton(
                                 imageProvider = ImageProvider(R.drawable.ic_add),
-                                contentDescription = context.getString(R.string.widget_new_entry),
+                                contentDescription = widgetTexts.newEntryText,
                                 onClick = actionStartActivity(
                                     getLaunchIntent(context, calendar.id, 0L)
                                 ),
@@ -138,7 +171,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
                             SquareIconButton(
                                 imageProvider = ImageProvider(R.drawable.ic_open_in_new),
-                                contentDescription = context.getString(R.string.widget_open_calendar),
+                                contentDescription = widgetTexts.openCalendarText,
                                 onClick = actionStartActivity(
                                     getLaunchIntent(context, calendar.id)
                                 ),
@@ -160,9 +193,9 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                 val mainEntries = entries[null] ?: emptyList()    // no subtasks
 
                 if (calendar == null) {
-                    WidgetEmptyState(context.getString(R.string.widget_select_calendar), true)
+                    WidgetEmptyState(widgetTexts.selectCalendarText, true, widgetTexts.configureText)
                 } else if (mainEntries.isEmpty()) {
-                    WidgetEmptyState(context.getString(R.string.widget_no_entries), false)
+                    WidgetEmptyState(widgetTexts.noEntriesText, false, widgetTexts.configureText)
                 } else {
                     LazyColumn(
                         modifier = GlanceModifier
@@ -176,6 +209,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                                 IcalEntryItem(
                                     entry = entry,
                                     allowEditing = calendar.canWriteContent() && !entry.syncState.isDeletedState() && !entry.isRecurring(),
+                                    widgetTexts = widgetTexts,
                                     modifier = GlanceModifier.clickable(
                                         onClick = actionStartActivity(
                                             getLaunchIntent(context, entry.calendarId, entry.id)
@@ -187,6 +221,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
                                     IcalEntryItem(
                                         entry = subEntry,
                                         showSubtaskIcon = true,
+                                        widgetTexts = widgetTexts,
                                         allowEditing = calendar.canWriteContent() && !subEntry.syncState.isDeletedState() && !subEntry.isRecurring(),
                                         modifier = GlanceModifier
                                             .clickable(
@@ -215,7 +250,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     }
 
     @Composable
-    private fun WidgetEmptyState(message: String, showConfigureButton: Boolean) {
+    private fun WidgetEmptyState(message: String, showConfigureButton: Boolean, configureText: String) {
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -231,7 +266,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
 
             if(showConfigureButton) {
                 Button(
-                    text = LocalContext.current.getString(R.string.widget_configure),
+                    text = configureText,
                     modifier = GlanceModifier.padding(16.dp),
                     onClick = actionRunCallback<OpenConfigAction>()
                 )
@@ -243,6 +278,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
     private fun IcalEntryItem(
         entry: IcalEntry,
         allowEditing: Boolean,
+        widgetTexts: WidgetTexts,
         showSubtaskIcon: Boolean = false,
         modifier: GlanceModifier = GlanceModifier
     ) {
@@ -258,7 +294,7 @@ class SpectacledWidget : GlanceAppWidget(), KoinComponent {
             if(showSubtaskIcon)
                 Image(
                     provider = ImageProvider(R.drawable.ic_sub),
-                    contentDescription = LocalContext.current.getString(R.string.widget_subtask),
+                    contentDescription = widgetTexts.subtaskText,
                     modifier = GlanceModifier.size(16.dp).padding(end = 4.dp),
                     contentScale = ContentScale.FillBounds,
                     colorFilter = ColorFilter.tint(GlanceTheme.colors.onBackground)
@@ -337,30 +373,13 @@ class ToggleTaskAction : ActionCallback, KoinComponent {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-        val icalEntryRepository: IcalEntryRepository by inject()
-        val syncTrigger: SyncTrigger by inject()
+        val setTaskDone: SetTaskDoneUseCase by inject()
 
         val entryId = parameters[EntryIdKey] ?: return
         val isChecked = parameters[IsCheckedKey] ?: return
 
-        val icalEntry = icalEntryRepository.getIcalEntryById(entryId) ?: return
-        // Deleted and recurring entries are read-only (this app has no recurrence support), so
-        // ignore the toggle even if a stale widget still shows an enabled checkbox for one.
-        if (icalEntry.syncState.isDeletedState() || icalEntry.isRecurring())
+        if (!setTaskDone.updateProgress(entryId, done = isChecked))
             return
-
-        // Same update as toggling the checkbox in the list, so e.g. a conflict state is kept
-        // instead of being overwritten with LOCAL_MODIFIED.
-        val updatedEntry = icalEntry.withProgressUpdated(if (isChecked) 100L else 0L)
-
-        icalEntryRepository.updateProgress(
-            id = updatedEntry.id,
-            percentComplete = updatedEntry.percentComplete,
-            status = updatedEntry.status,
-            lastModified = updatedEntry.lastModified,
-            syncState = updatedEntry.syncState
-        )
-        syncTrigger.requestImmediate(listOf(updatedEntry.calendarId))
 
         SpectacledWidget().update(context, glanceId)
     }

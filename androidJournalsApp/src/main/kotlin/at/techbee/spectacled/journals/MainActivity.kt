@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
             val data = intent.data
             val isAddDeepLink = data?.host == DeepLinkData.DEEPLINK_ADD_HOST || data?.path?.endsWith("/add") == true
             if (isAddDeepLink) {
-                description = data?.getQueryParameter(DeepLinkData.DEEPLINK_DESCRIPTION_PARAM)
+                description = data.getQueryParameter(DeepLinkData.DEEPLINK_DESCRIPTION_PARAM)
                 if (icalEntryId == null) {
                     icalEntryId = 0L
                 }

@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -51,6 +52,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.formatLocalized
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.theme.AppTheme
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
@@ -61,7 +63,6 @@ import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.sync_conflict_detected
-import kotlin.time.ExperimentalTime
 
 @Composable
 fun TaskListItem(
@@ -98,7 +99,7 @@ fun TaskListItem(
 
         SwipeToDismissBox(
             state = dismissState,
-            gesturesEnabled = allowEditing,
+            gesturesEnabled = allowEditing && getPlatform().platform.isMobile,
             backgroundContent = {
                 // Background color or icon revealed during the swipe
                 if(!icalEntry.syncState.isDeletedState()) {
@@ -157,7 +158,7 @@ fun TaskListItem(
                             if (icalEntry.summary?.isBlank() == false)
                                 Text(
                                     text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                                     textDecoration = if (icalEntry.status == Status.CANCELLED) TextDecoration.LineThrough else null,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
@@ -168,6 +169,7 @@ fun TaskListItem(
                             if (icalEntry.description?.isBlank() == false)
                                 Text(
                                     text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
+                                    style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                                     textDecoration = if (icalEntry.status == Status.CANCELLED) TextDecoration.LineThrough else null,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
@@ -240,7 +242,6 @@ fun TaskListItem(
 }
 
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun TaskListItem_first_Preview() {
@@ -259,7 +260,6 @@ private fun TaskListItem_first_Preview() {
 }
 
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun TaskListItem_colored_Preview() {
@@ -281,7 +281,6 @@ private fun TaskListItem_colored_Preview() {
 }
 
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun TaskListItem_drag_Preview() {
@@ -306,7 +305,6 @@ private fun TaskListItem_drag_Preview() {
     }
 }
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun TaskListItem_drag_short_Preview() {

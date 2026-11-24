@@ -19,17 +19,17 @@ import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.done
-import spectacled.shared.generated.resources.select_calendar
+import spectacled.shared.generated.resources.select_folder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarSelectorBottomSheet(
-    sheetState: SheetState,
+    sheetState: SheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
     principals: List<Principal>,
     homeCollections: List<HomeCollection>,
     calendars: List<Calendar>,
     selectedCalendarId: Long?,
-    headlineText: String = stringResource(Res.string.select_calendar),
+    headlineText: String = stringResource(Res.string.select_folder),
     onCalendarIdSelected: (Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -67,7 +67,6 @@ private fun CalendarSelectorBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             CalendarSelectorBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                 calendars = listOf(Calendar.getCalendarForPreview()),
                 homeCollections = listOf(HomeCollection.getHomeCollectionForPreview()),
                 principals = listOf(Principal.getPrincipalForPreview()),

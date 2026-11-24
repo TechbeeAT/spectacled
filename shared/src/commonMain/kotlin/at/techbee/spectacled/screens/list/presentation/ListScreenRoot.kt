@@ -28,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,7 +35,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -58,10 +56,12 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
@@ -71,10 +71,9 @@ import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesB
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterElement
 import at.techbee.spectacled.screens.list.presentation.components.ListSearchBar
 import at.techbee.spectacled.screens.list.presentation.components.ListTopBar
-import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
+import at.techbee.spectacled.screens.list.presentation.components.MoveOrCopySelectedItemsDialog
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import kotlinx.coroutines.delay
-import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -102,7 +101,7 @@ fun ListScreenRoot(
 
     val selectableDates = remember(state.icalEntries) {
         val allowedMillis = state.icalEntries.mapNotNull {
-            it.dtStart?.toDatePickerMillis(TimeZone.currentSystemDefault())
+            it.dtStart?.toDatePickerMillis()
         }.toSet()
         object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
@@ -176,15 +175,34 @@ fun ListScreenRoot(
                 )
         }
 
-        if (state.showMoveSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
-            MoveSelectedItemsDialog(
+        if(state.showSwipeToDeleteDialog != null) {
+            state.icalEntries.find { it.id == state.showSwipeToDeleteDialog }?.let { icalEntry ->
+                DeleteIcalEntryDialog(
+                    icalEntry = icalEntry,
+                    onConfirm = { listViewModel.onAction(ListAction.OnDeleteEntry(icalEntry.id)) },
+                    onDismiss = { listViewModel.onAction(ListAction.OnShowSwipeToDeleteDialog(null)) }
+                )
+            }
+        }
+
+        val moveOrCopyMode = state.showMoveOrCopySelectedItemsDialog
+        if (moveOrCopyMode != null && state.multiselectItems?.isNotEmpty() == true) {
+            MoveOrCopySelectedItemsDialog(
                 itemCount = state.multiselectItems?.size ?: 0,
+                mode = moveOrCopyMode,
                 sourceCalendarId = state.calendar.id,
                 principals = state.allPrincipals,
                 homeCollections = state.allHomeCollections,
                 calendars = state.allCalendars.filter { it.canWriteContent() },
-                onConfirm = { targetCalendarId -> listViewModel.onAction(ListAction.OnMoveSelectedItems(targetCalendarId)) },
-                onDismiss = { listViewModel.onAction(ListAction.OnShowMoveSelectedItemsDialog(false)) }
+                onConfirm = { targetCalendarId ->
+                    listViewModel.onAction(
+                        when(moveOrCopyMode) {
+                            MoveOrCopyMode.COPY -> ListAction.OnCopySelectedItems(targetCalendarId)
+                            MoveOrCopyMode.MOVE -> ListAction.OnMoveSelectedItems(targetCalendarId)
+                        }
+                    )
+                },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(null)) }
             )
         }
 
@@ -249,8 +267,7 @@ fun ListScreenRoot(
 
         if (state.showDateSelectorBottomSheet) {
             DatePickerBottomSheet(
-                icsDateTime = IcsDateTime.now(),
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
+                icsDateTime = IcsDateTime.nowFloating(),
                 allowNoDate = false,
                 selectableDates = selectableDates,
                 onDateSelected = { selectedDate -> listViewModel.onAction(ListAction.OnGoToSelectedDate(selectedDate)) },
@@ -396,6 +413,7 @@ fun ListScreenRoot(
                     }
 
                     PullToRefreshBox(
+                        enabled = getPlatform().platform.isMobile,
                         isRefreshing = state.isRefreshing,
                         onRefresh = { listViewModel.onAction(ListAction.OnTriggerSync) },
                         state = pullToRefreshState,

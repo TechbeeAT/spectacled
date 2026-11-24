@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
@@ -84,6 +85,7 @@ import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformat
 import at.techbee.spectacled.screens.core.presentation.applyMarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
 import at.techbee.spectacled.screens.details.presentation.components.AlarmCard
+import at.techbee.spectacled.screens.details.presentation.components.AlarmPermissionHint
 import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
 import at.techbee.spectacled.screens.details.presentation.components.FormattingBar
@@ -96,6 +98,8 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableColumn
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.alarm_exact_alarms_blocked
+import spectacled.shared.generated.resources.alarm_notifications_blocked
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
@@ -112,7 +116,11 @@ fun DetailsScreen(
     state: DetailsState,
     onAction: (DetailsAction) -> Unit,
     modifier: Modifier = Modifier,
-    onEditorFocusChanged: (Boolean) -> Unit = {}
+    onEditorFocusChanged: (Boolean) -> Unit = {},
+    notificationsBlocked: Boolean = false,
+    onAllowNotifications: () -> Unit = {},
+    exactAlarmsBlocked: Boolean = false,
+    onAllowExactAlarms: () -> Unit = {}
 ) {
     // Deliberately not rememberSaveable: focus itself is not restored after process death, so a
     // saved `true` would show the formatting bar and hide the FAB with no keyboard up.
@@ -122,7 +130,7 @@ fun DetailsScreen(
     // hide deleted subtasks by default
     var showDeletedSubtasks by remember { mutableStateOf(false) }
 
-    // Report whether a text field is being edited so the caller can hide the FAB, which would
+    // Report whether a text field is being edited so the caller can hide the FAB (if space is short), which would
     // otherwise sit right above the keyboard and cover the field (SwiftUI resizes the view on iOS).
     val isEditorFocused = summaryIsFocused || descriptionIsFocused
     LaunchedEffect(isEditorFocused) { onEditorFocusChanged(isEditorFocused) }
@@ -221,7 +229,7 @@ fun DetailsScreen(
                             headerText = stringResource(Res.string.date_start),
                             selectableDates = if (state.icalEntry.due == null) DatePickerDefaults.AllDates else object : SelectableDates {
                                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                    return utcTimeMillis < state.icalEntry.due.toDatePickerMillis(TimeZone.currentSystemDefault())
+                                    return utcTimeMillis < state.icalEntry.due.toDatePickerMillis()
                                 }
                             }
                         )
@@ -237,7 +245,7 @@ fun DetailsScreen(
                             selectableDates = if (state.icalEntry.dtStart == null) DatePickerDefaults.AllDates else object :
                                 SelectableDates {
                                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                    return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis(TimeZone.currentSystemDefault())
+                                    return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis()
                                 }
                             }
                         )
@@ -285,7 +293,7 @@ fun DetailsScreen(
             Row(
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
             ) {
 
                 BasicTextField(
@@ -294,7 +302,7 @@ fun DetailsScreen(
                         summaryValue = it
                         onAction(DetailsAction.OnUpdateSummary(it.text))
                     },
-                    textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current),
+                    textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current, textDirection = TextDirection.Content),
                     enabled = state.allowEditing(),
                     onTextLayout = { summaryLayoutResult = it },
                     visualTransformation = MarkdownVisualTransformation(
@@ -346,7 +354,7 @@ fun DetailsScreen(
                     descriptionValue = it
                     onAction(DetailsAction.OnUpdateDescription(it.text))
                 },
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current, textDirection = TextDirection.Content),
                 enabled = state.allowEditing(),
                 onTextLayout = { descriptionLayoutResult = it },
                 visualTransformation = MarkdownVisualTransformation(
@@ -373,7 +381,7 @@ fun DetailsScreen(
                     showKeyboardOnFocus = true
                 ),
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .weight(1f)
                     .heightIn(min = 200.dp)
                     .focusRequester(descriptionFocusRequester)
                     .onFocusChanged {
@@ -412,6 +420,21 @@ fun DetailsScreen(
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                 ) {
+                    // Without notifications nothing shows at all, so that one comes first; the
+                    // exact alarm hint only matters once notifications are allowed.
+                    if (state.icalEntry.alarms.any { it.isNotifying() }) {
+                        when {
+                            notificationsBlocked -> AlarmPermissionHint(
+                                text = stringResource(Res.string.alarm_notifications_blocked),
+                                onAllow = onAllowNotifications
+                            )
+                            exactAlarmsBlocked -> AlarmPermissionHint(
+                                text = stringResource(Res.string.alarm_exact_alarms_blocked),
+                                onAllow = onAllowExactAlarms
+                            )
+                        }
+                    }
+
                     state.icalEntry.alarms.forEach { alarm ->
                         AlarmCard(
                             alarm = alarm,
@@ -574,7 +597,9 @@ fun DetailsScreen(
                     keyboardController?.hide()
                 },
                 onUndo = { onAction(DetailsAction.OnUndo) },
-                allowUndo = state.changeBackstack.size > 1
+                allowUndo = state.changeBackstack.size > 1,
+                onRedo = { onAction(DetailsAction.OnRedo) },
+                allowRedo = state.allowRedo()
             )
         }
     }
@@ -697,7 +722,7 @@ private fun ListScreen_with_dtstart_Preview() {
     DetailsScreen(
         state = DetailsState(
             icalEntry = IcalEntry.getSampleIcalEntry().copy(
-                dtStart = IcsDateTime.now(),
+                dtStart = IcsDateTime.nowFloating(),
                 url = Url("https://spectacled.techbee.at"),
                 attachments = listOf(Attachment(fileName = "test.pdf", size = 128000))
             ),
@@ -713,7 +738,7 @@ private fun ListScreen_with_dtstart_and_timezone_Preview() {
     DetailsScreen(
         state = DetailsState(
             icalEntry = IcalEntry.getSampleJournal().copy(
-                dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                dtStart = IcsDateTime.nowInZone(TimeZone.of("Europe/Vienna")),
                 status = Status.DRAFT
             ),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
@@ -730,7 +755,7 @@ private fun ListScreen_task_Preview() {
         state = DetailsState(
             icalEntry = IcalEntry.getSampleIcalEntry().copy(
                 calendarComponent = CalendarComponent.VTODO,
-                dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                dtStart = IcsDateTime.nowInZone(TimeZone.of("Europe/Vienna")),
                 status = Status.IN_PROCESS,
                 percentComplete = 50
             ),

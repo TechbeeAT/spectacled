@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core
 
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
@@ -7,6 +8,7 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -21,19 +23,22 @@ actual class PlatformSyncTrigger : SyncTrigger, KoinComponent {
     private val calendarRepository: CalendarRepository by inject()
     private val icalEntryRepository: IcalEntryRepository by inject()
     private val fileManager: PlatformFileManager by inject()
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val alarmCoordinator: AlarmCoordinator by inject()
+    // SupervisorJob: a sync that fails with an uncaught Throwable must not cancel the scope,
+    // otherwise every later launch (manual or periodic sync) would silently be a no-op.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
 
 
     actual override fun requestImmediate() {
         scope.launch {
-            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
+            SyncCoordinator.syncAllPrincipals(calendarRepository, icalEntryRepository, fileManager, credentialStore, client, alarmCoordinator)
         }
     }
 
     actual override fun requestImmediate(calendarIds: List<Long>) {
         scope.launch {
-            SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, fileManager, credentialStore, client)
+            SyncCoordinator.syncSpecificCalendars(calendarIds, calendarRepository, icalEntryRepository, fileManager, credentialStore, client, alarmCoordinator)
         }
     }
 

@@ -23,11 +23,11 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.Principal
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.calendar_could_not_be_deleted
 import spectacled.shared.generated.resources.cancel
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.delete_folder_warning
 import spectacled.shared.generated.resources.delete_folder_x
+import spectacled.shared.generated.resources.folder_could_not_be_deleted
 import spectacled.shared.generated.resources.warning_operation_cannot_be_undone
 
 @Composable
@@ -78,7 +78,7 @@ fun DeleteCalendarDialog(
                 val errorState = processingState as? ProcessingState.Error
                 AnimatedVisibility(errorState != null) {
                     Text(
-                        text = stringResource(Res.string.calendar_could_not_be_deleted, errorState?.message ?: ""),
+                        text = stringResource(Res.string.folder_could_not_be_deleted, errorState?.message ?: ""),
                         color = MaterialTheme.colorScheme.error,
                         fontStyle = FontStyle.Italic,
                         modifier = Modifier.padding(vertical = 8.dp)

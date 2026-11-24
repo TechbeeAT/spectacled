@@ -32,7 +32,7 @@ import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.selected_calendar
+import spectacled.shared.generated.resources.selected_folder
 
 @Composable
 fun CalendarSelector(
@@ -51,7 +51,7 @@ fun CalendarSelector(
         label = {
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
-                    text = stringResource(Res.string.selected_calendar),
+                    text = stringResource(Res.string.selected_folder),
                     style = MaterialTheme.typography.labelSmall
                 )
                 calendars.find { calendar -> calendar.id == selectedCalendarId }?.let {

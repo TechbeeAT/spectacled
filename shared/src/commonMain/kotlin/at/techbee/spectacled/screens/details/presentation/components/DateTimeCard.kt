@@ -16,15 +16,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,7 +47,6 @@ import spectacled.shared.generated.resources.date
 import spectacled.shared.generated.resources.time
 import kotlin.time.Instant
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateTimeCard(
     icsDateTime: IcsDateTime?,
@@ -73,11 +69,10 @@ fun DateTimeCard(
     if (showDatePickerBottomSheet) {
         DatePickerBottomSheet(
             icsDateTime = icsDateTime ?: if (initializeWithDateOnly) IcsDateTime.today() else IcsDateTime.todayAtStartOfDay(),
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
             allowNoDate = allowNoDate,
             selectableDates = selectableDates,
             onDateSelected = {
-                if (it == null || selectableDates.isSelectableDate(it.instant.toEpochMilliseconds()))
+                if (it == null || selectableDates.isSelectableDate(it.toDatePickerMillis()))
                     onIcsDateTimeUpdated(it)
             },
             onDismiss = { showDatePickerBottomSheet = false }
@@ -87,7 +82,6 @@ fun DateTimeCard(
     if (showTimePickerBottomSheet && icsDateTime != null) {
         TimePickerBottomSheet(
             icsDateTime = icsDateTime,
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
             suggestedTimezones = suggestedTimezones,
             onTimeUpdated = { onIcsDateTimeUpdated(it) },
             onDismiss = { showTimePickerBottomSheet = false }
@@ -230,7 +224,7 @@ private fun DateTimeCard_no_date_Preview() {
 @Composable
 private fun DateTimeCard_date_only_Preview() {
     DateTimeCard(
-        icsDateTime = IcsDateTime.now().copy(isDateOnly = true),
+        icsDateTime = IcsDateTime.today(),
         enabled = true,
         allowNoDate = true,
         initializeWithDateOnly = false,
@@ -243,7 +237,7 @@ private fun DateTimeCard_date_only_Preview() {
 @Composable
 private fun DDateTimeCard_date_time_Preview() {
     DateTimeCard(
-        icsDateTime = IcsDateTime.now(),
+        icsDateTime = IcsDateTime.nowFloating(),
         enabled = true,
         allowNoDate = true,
         initializeWithDateOnly = false,
@@ -257,7 +251,7 @@ private fun DDateTimeCard_date_time_Preview() {
 @Composable
 private fun DateTimeCard_with_timezone_Preview() {
     DateTimeCard(
-        icsDateTime = IcsDateTime.now().copy(timeZone = TimeZone.of(TimeZone.availableZoneIds.first())),
+        icsDateTime = IcsDateTime.nowInZone(TimeZone.of(TimeZone.availableZoneIds.first())),
         enabled = true,
         allowNoDate = true,
         initializeWithDateOnly = false,

@@ -1,5 +1,9 @@
 package at.techbee.spectacled.screens.core
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -45,9 +49,26 @@ actual fun rememberPermissionRequester(
         requested = null
     }
 
+    // Exact alarms aren't granted in a dialog but on a settings page; whatever the user did there
+    // is read back when they return.
+    val exactAlarmsSettingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        currentOnResult(AppPermission.EXACT_ALARMS, context.exactAlarmsStatus())
+    }
+
     return remember(context) {
         object : PermissionRequester {
             override fun request(permission: AppPermission) {
+                if (permission == AppPermission.EXACT_ALARMS) {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
+                        currentOnResult(permission, PermissionStatus.NOT_APPLICABLE)
+                    else
+                        exactAlarmsSettingsLauncher.launch(
+                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.fromParts("package", context.packageName, null))
+                        )
+                    return
+                }
                 val manifestPermission = permission.manifestPermission()
                 if (manifestPermission == null) {
                     currentOnResult(permission, PermissionStatus.NOT_APPLICABLE)

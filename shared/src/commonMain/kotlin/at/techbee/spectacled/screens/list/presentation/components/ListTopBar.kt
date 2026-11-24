@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
@@ -31,7 +32,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +59,7 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.list.presentation.ListAction
 import at.techbee.spectacled.screens.list.presentation.ListState
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
@@ -72,6 +73,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_selection
+import spectacled.shared.generated.resources.copy
 import spectacled.shared.generated.resources.date_selector
 import spectacled.shared.generated.resources.delete_selected
 import spectacled.shared.generated.resources.filter
@@ -95,7 +97,6 @@ import spectacled.shared.generated.resources.update_category
 import spectacled.shared.generated.resources.update_color
 import spectacled.shared.generated.resources.x_selected
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListTopBar(
     state: ListState,
@@ -312,7 +313,7 @@ fun ListTopBar(
                                                 if (state.listSortedBy.name == sortedByOption.name && state.listSortedBy != ListSortedBy.DRAGANDDROP)
                                                     onAction(ListAction.OnSortedByChanged(sortedByOption, !state.listSortedByAscending))
                                                 else
-                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, sortedByOption.defaultAsc))
+                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, true))
                                             },
                                             leadingIcon = {
                                                 Icon(painterResource(sortedByOption.displayIcon), null)
@@ -414,7 +415,7 @@ fun ListTopBar(
                                 Text(text = stringResource(Res.string.move))
                             },
                             enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
-                            onClick = { onAction(ListAction.OnShowMoveSelectedItemsDialog(true)) },
+                            onClick = { onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(MoveOrCopyMode.MOVE)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Outlined.DriveFileMove,
@@ -425,8 +426,26 @@ fun ListTopBar(
 
                         DropdownMenuItem(
                             text = {
+                                Text(text = stringResource(Res.string.copy))
+                            },
+                            // no write access needed: copying out of a read-only collection is allowed
+                            enabled = state.multiselectItems?.isNotEmpty() == true,
+                            onClick = { onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(MoveOrCopyMode.COPY)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.FileCopy,
+                                    contentDescription = stringResource(Res.string.copy)
+                                )
+                            }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(8.dp))
+
+                        DropdownMenuItem(
+                            text = {
                                 Text(
-                                    text = stringResource(Res.string.delete_selected)
+                                    text = stringResource(Res.string.delete_selected),
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             },
                             enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
@@ -434,7 +453,8 @@ fun ListTopBar(
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.DeleteOutline,
-                                    contentDescription = stringResource(Res.string.delete_selected)
+                                    contentDescription = stringResource(Res.string.delete_selected),
+                                    tint = MaterialTheme.colorScheme.error
                                 )
                             }
                         )

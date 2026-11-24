@@ -92,9 +92,9 @@ fun ListScreenNotes(
                         onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                 },
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-                onSwipeToDelete = { onAction(ListAction.OnSwipeToDelete(icalEntry.id)) },
+                onSwipeToDelete = { onAction(ListAction.OnShowSwipeToDeleteDialog(icalEntry.id)) },
                 dragHandle = dragHandle,
-                deletePending = state.showDeleteSelectedItemsDialog && state.multiselectItems?.contains(icalEntry.id) == true,
+                deletePending = state.showSwipeToDeleteDialog == icalEntry.id,
                 allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState() && !icalEntry.isRecurring(),
                 modifier = Modifier
                     .widthIn(max = 700.dp)
@@ -109,7 +109,7 @@ fun ListScreenNotes(
                     icalEntry = subtask,
                     isSelected = state.multiselectItems?.contains(subtask.id) == true || isDragging,
                     allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState() && !subtask.isRecurring(),
-                    deletePending = state.showDeleteSelectedItemsDialog && state.multiselectItems?.contains(subtask.id) == true,
+                    deletePending = state.showSwipeToDeleteDialog == subtask.id,
                     onClick = {
                         if (state.multiselectItems == null)
                             onAction(ListAction.OnIcalEntryClicked(subtask.id))
@@ -118,7 +118,7 @@ fun ListScreenNotes(
                     },
                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                     onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
-                    onSwipeToDelete = { onAction(ListAction.OnSwipeToDelete(subtask.id)) },
+                    onSwipeToDelete = { onAction(ListAction.OnShowSwipeToDeleteDialog(subtask.id)) },
                     modifier = Modifier.padding(start = 48.dp).then(modifier)
                 )
             }

@@ -14,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.IcsDateTimeFormat
+import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.IcsDuration
 import at.techbee.spectacled.screens.core.domain.Alarm
@@ -30,6 +32,7 @@ import at.techbee.spectacled.screens.core.domain.AlarmTrigger
 import at.techbee.spectacled.screens.core.domain.AlarmTriggerRelation
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.formatLocalized
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.details.presentation.DetailsAction
 import at.techbee.spectacled.theme.AppTheme
 import kotlinx.datetime.TimeZone
@@ -41,6 +44,8 @@ import spectacled.shared.generated.resources.alarm_fires_at
 import spectacled.shared.generated.resources.alarm_invalid_alarm_trigger_time
 import spectacled.shared.generated.resources.alarm_missing_reference_date
 import spectacled.shared.generated.resources.alarm_not_notifying
+import spectacled.shared.generated.resources.alarm_only_while_app_open
+import spectacled.shared.generated.resources.alarm_notifications_allow
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.delete
@@ -123,12 +128,14 @@ fun AlarmCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                    Text(
-                        text = "Beta-Info: This feature is still under development. Actual functionality is not yet implemented.",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontStyle = FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    // Desktop and web have no OS scheduler that wakes the app, see InAppAlarmTimer.
+                    if (alarm.isNotifying() && getPlatform().platform in listOf(Platforms.DESKTOP, Platforms.WASM))
+                        Text(
+                            text = stringResource(Res.string.alarm_only_while_app_open),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                 }
 
 
@@ -142,6 +149,29 @@ fun AlarmCard(
                     }
                 }
             }
+        }
+    }
+}
+
+/** A missing permission that keeps alarms from working as expected, with a button to grant it. */
+@Composable
+fun AlarmPermissionHint(
+    text: String,
+    onAllow: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.weight(1f)
+        )
+        TextButton(onClick = onAllow) {
+            Text(stringResource(Res.string.alarm_notifications_allow))
         }
     }
 }

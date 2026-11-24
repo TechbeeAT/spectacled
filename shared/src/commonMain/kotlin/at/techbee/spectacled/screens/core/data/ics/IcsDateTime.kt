@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.core.data.ics
 
+import kotlinx.datetime.FixedOffsetTimeZone
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -23,63 +24,91 @@ data class IcsDateTime(
     val timeZone: TimeZone? = null,
 ) {
     companion object {
-        fun now() = IcsDateTime(Clock.System.now(), false)
+        /**
+         * The current moment in UTC (serialized with a trailing `Z`). RFC 5545 requires UTC for
+         * DTSTAMP, CREATED and LAST-MODIFIED, so use this for those and other technical timestamps.
+         */
+        fun nowUtc() = IcsDateTime(Clock.System.now(), false, TimeZone.UTC)
 
-        fun today(): IcsDateTime {
-            val todayInstant = Clock.System.now().toLocalDateTime(TimeZone.UTC).date.atStartOfDayIn(TimeZone.UTC)
+        /**
+         * The current moment bound to [timeZone] (serialized with `TZID=`), e.g. the DTSTART of a
+         * new journal in the timezone of the device.
+         *
+         * If [timeZone] can't be written as a TZID (see [isUsableAsTzid]), the current wall-clock
+         * time in that zone is returned as a floating value instead, so the entry still shows the
+         * right local time and stays readable for other clients.
+         */
+        fun nowInZone(
+            timeZone: TimeZone = TimeZone.currentSystemDefault(),
+            now: Instant = Clock.System.now()
+        ): IcsDateTime =
+            if (timeZone.isUsableAsTzid()) IcsDateTime(now, false, timeZone)
+            else nowFloating(timeZone, now)
+
+        /**
+         * The current wall-clock time in [deviceTimeZone] as a floating DATE-TIME (no timezone).
+         * Floating values store their wall-clock time as UTC, so the local time is re-anchored
+         * to UTC here instead of using the raw instant.
+         */
+        fun nowFloating(
+            deviceTimeZone: TimeZone = TimeZone.currentSystemDefault(),
+            now: Instant = Clock.System.now()
+        ) = IcsDateTime(
+            now.toLocalDateTime(deviceTimeZone).toInstant(TimeZone.UTC),
+            false,
+            null
+        )
+
+        /** Today's date in [deviceTimeZone] as a DATE value. */
+        fun today(
+            deviceTimeZone: TimeZone = TimeZone.currentSystemDefault(),
+            now: Instant = Clock.System.now()
+        ): IcsDateTime {
+            val todayInstant = now.toLocalDateTime(deviceTimeZone).date.atStartOfDayIn(TimeZone.UTC)
             return IcsDateTime(todayInstant, true)
         }
 
-        fun todayAtStartOfDay(): IcsDateTime {
-            val todayInstant = Clock.System.now().toLocalDateTime(TimeZone.UTC).date.atStartOfDayIn(TimeZone.UTC)
-            return IcsDateTime(todayInstant, false)
-        }
-
+        /** Midnight of today's date in [deviceTimeZone] as a floating DATE-TIME. */
+        fun todayAtStartOfDay(
+            deviceTimeZone: TimeZone = TimeZone.currentSystemDefault(),
+            now: Instant = Clock.System.now()
+        ): IcsDateTime = today(deviceTimeZone, now).copy(isDateOnly = false)
     }
 
-    fun toDatePickerMillis(deviceTimeZone: TimeZone): Long {
-
-        val zone = if(isDateOnly) TimeZone.UTC else timeZone ?: deviceTimeZone
-
-        val localDate = instant
-            .toLocalDateTime(zone)
+    /**
+     * Midnight UTC of the calendar day of this value, as expected by the Material DatePicker.
+     * The day is read in [effectiveZone], i.e. a floating value keeps its wall-clock day.
+     */
+    fun toDatePickerMillis(): Long =
+        instant
+            .toLocalDateTime(effectiveZone())
             .date
-
-        // DatePicker expects midnight UTC of that calendar day
-        return localDate
             .atStartOfDayIn(TimeZone.UTC)
             .toEpochMilliseconds()
-    }
 
-    fun updateWithDatePickerMillis(
-        selectedMillis: Long,
-        deviceTimeZone: TimeZone
-    ): IcsDateTime {
+    /**
+     * Moves this value to the day selected in the DatePicker ([selectedMillis] is midnight UTC
+     * of that day), keeping the time of day and the timezone (or floating-ness) unchanged.
+     */
+    fun updateWithDatePickerMillis(selectedMillis: Long): IcsDateTime {
 
         val selectedDate = Instant
             .fromEpochMilliseconds(selectedMillis)
             .toLocalDateTime(TimeZone.UTC)
             .date
 
-        return this.copy(
-            instant = if(isDateOnly) {
-                selectedDate.atStartOfDayIn(TimeZone.UTC)
-            } else {
-                val originalLocal = instant.toLocalDateTime(timeZone ?: deviceTimeZone)  // selected timezone or time in timezone of the user
-
-                val newLocal = LocalDateTime(
-                    year = selectedDate.year,
-                    month = selectedDate.month,
-                    day = selectedDate.day,
-                    hour = originalLocal.hour,
-                    minute = originalLocal.minute,
-                    second = originalLocal.second,
-                    nanosecond = originalLocal.nanosecond
-                )
-
-                newLocal.toInstant(timeZone ?: deviceTimeZone)
-            }
+        val originalLocal = toLocalDateTime()
+        val newLocal = LocalDateTime(
+            year = selectedDate.year,
+            month = selectedDate.month,
+            day = selectedDate.day,
+            hour = originalLocal.hour,
+            minute = originalLocal.minute,
+            second = originalLocal.second,
+            nanosecond = originalLocal.nanosecond
         )
+
+        return this.copy(instant = newLocal.toInstant(effectiveZone()))
     }
 
     /**
@@ -110,6 +139,14 @@ data class IcsDateTime(
             instant.toLocalDateTime(TimeZone.UTC).toInstant(deviceTimeZone)
         else
             instant
+
+    /**
+     * This value as a point in time shown in [deviceTimeZone], for technical timestamps
+     * (CREATED, LAST-MODIFIED, sync time) that are stored in UTC. A floating timestamp is taken as
+     * UTC, like the parser does. Not meant for DATE values.
+     */
+    fun inDeviceZone(deviceTimeZone: TimeZone = TimeZone.currentSystemDefault()): IcsDateTime =
+        IcsDateTime(instant, false, deviceTimeZone)
 
     /**
      * Returns a new [IcsDateTime] instance with the specified [newZone], preserving the local time
@@ -146,6 +183,16 @@ data class IcsDateTime(
         )
     }
 }
+
+/**
+ * Whether this zone can be written as a TZID that other CalDAV clients can resolve: UTC or a
+ * named (IANA) zone. A fixed offset like "GMT-08:00" (a device configured with a raw offset) and
+ * the "SYSTEM" placeholder (web, before the timezone database is loaded) can't.
+ */
+fun TimeZone.isUsableAsTzid(): Boolean =
+    this == TimeZone.UTC || (this !is FixedOffsetTimeZone && id != SYSTEM_TIME_ZONE_ID)
+
+private const val SYSTEM_TIME_ZONE_ID = "SYSTEM"
 
 object TimeZoneSerializer : KSerializer<TimeZone> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TimeZone", PrimitiveKind.STRING)

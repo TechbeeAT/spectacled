@@ -22,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.ArrowDropUp
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -80,7 +79,6 @@ enum class DrawingTool {
     Pen, Marker, Eraser
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DrawingCanvas(
     paths: List<PathData>,

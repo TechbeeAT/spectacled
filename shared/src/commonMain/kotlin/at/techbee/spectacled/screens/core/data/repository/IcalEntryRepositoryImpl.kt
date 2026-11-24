@@ -6,6 +6,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
+import at.techbee.spectacled.screens.core.alarm.schedulingKey
 import at.techbee.spectacled.db.SpectacledDatabase
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
@@ -298,9 +299,9 @@ class IcalEntryRepositoryImpl(
     /**
      * Replaces the stored alarms of [icalEntry] and (re)computes their trigger time from its
      * current DTSTART/DUE. Alarms have no stable row identity (a UID is optional), so the rows are
-     * rewritten on every save. The local-only lastNotifiedAt is carried over to the alarm it
-     * belongs to (same UID, or the same block if it has none) - but only while its trigger time is
-     * unchanged, so an alarm moved to a new time notifies again.
+     * rewritten on every save. The local-only lastNotifiedAt and snoozedUntil are carried over to
+     * the alarm they belong to (same UID, or the same block if it has none) - but only while its
+     * trigger time is unchanged, so an alarm moved to a new time notifies again at that time.
      */
     private suspend fun saveAlarms(db: SpectacledDatabase, icalEntry: IcalEntry) {
         val existingAlarms = db.alarm_dtoQueries.getAlarmsForEntry(icalEntry.id).awaitAsList()
@@ -314,18 +315,17 @@ class IcalEntryRepositoryImpl(
                 val previous = existingAlarms.firstOrNull { existing ->
                     if (alarm.uid != null) existing.uid == alarm.uid else existing.icsBlock == icsBlock
                 }
-                val lastNotifiedAt = previous
-                    ?.takeIf { it.triggerAt == triggerAt?.toEpochMilliseconds() }
-                    ?.lastNotifiedAt
+                val unchanged = previous?.takeIf { it.triggerAt == triggerAt?.toEpochMilliseconds() }
 
-                val alarmDto = alarm.toDto(icalEntry.id, triggerAt, lastNotifiedAt)
+                val alarmDto = alarm.toDto(icalEntry.id, triggerAt, unchanged?.lastNotifiedAt, unchanged?.snoozedUntil)
                 db.alarm_dtoQueries.insertAlarm(
                     icalEntryId = alarmDto.icalEntryId,
                     uid = alarmDto.uid,
                     action = alarmDto.action,
                     icsBlock = alarmDto.icsBlock,
                     triggerAt = alarmDto.triggerAt,
-                    lastNotifiedAt = alarmDto.lastNotifiedAt
+                    lastNotifiedAt = alarmDto.lastNotifiedAt,
+                    snoozedUntil = alarmDto.snoozedUntil
                 )
             }
         }
@@ -333,17 +333,27 @@ class IcalEntryRepositoryImpl(
 
     override suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm> = withContext(ioDispatcher) {
         val db = getDatabase()
+        val calendarWritable = mutableMapOf<Long, Boolean>()
         db.alarm_dtoQueries.getUpcomingAlarms(from.toEpochMilliseconds(), until.toEpochMilliseconds(), limit)
             .awaitAsList()
             .mapNotNull { alarmDto ->
                 // Recurring entries are read-only in this app, their alarms are only preserved.
                 val entry = db.icalentry_dtoQueries.getIcalEntryById(alarmDto.icalEntryId).awaitAsOneOrNull()?.toDomain()
                 if (entry == null || entry.isRecurring()) return@mapNotNull null
+                val entryEditable = calendarWritable.getOrPut(entry.calendarId) {
+                    db.calendar_dtoQueries.getCalendarById(entry.calendarId).awaitAsOneOrNull()?.toDomain()?.canWriteContent() == true
+                }
                 UpcomingAlarm(
                     alarmId = alarmDto.id,
                     icalEntryId = alarmDto.icalEntryId,
+                    calendarId = entry.calendarId,
+                    entryUid = entry.uid,
+                    entrySummary = entry.summary,
+                    entryDescription = entry.description,
+                    entryEditable = entryEditable,
                     alarm = alarmDto.toDomain(),
-                    triggerAt = Instant.fromEpochMilliseconds(alarmDto.triggerAt ?: return@mapNotNull null)
+                    // A snoozed alarm is due at its snooze time instead.
+                    triggerAt = Instant.fromEpochMilliseconds(alarmDto.snoozedUntil ?: alarmDto.triggerAt ?: return@mapNotNull null)
                 )
             }
     }
@@ -351,6 +361,47 @@ class IcalEntryRepositoryImpl(
     override suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant) {
         withContext(ioDispatcher) {
             getDatabase().alarm_dtoQueries.updateLastNotifiedAt(lastNotifiedAt = notifiedAt.toEpochMilliseconds(), id = alarmId)
+        }
+    }
+
+    override suspend fun snoozeAlarm(icalEntryId: Long, alarmKey: String, until: Instant): Boolean = withContext(ioDispatcher) {
+        val db = getDatabase()
+        val alarmId = db.alarm_dtoQueries.getAlarmsForEntry(icalEntryId).awaitAsList()
+            .firstOrNull { it.toDomain().schedulingKey() == alarmKey }
+            ?.id
+            ?: return@withContext false
+        db.alarm_dtoQueries.snoozeAlarm(snoozedUntil = until.toEpochMilliseconds(), id = alarmId)
+        true
+    }
+
+    override suspend fun recomputeAlarmTriggerTimes() = withContext(ioDispatcher) {
+        val db = getDatabase()
+        // Not getOrPut: it treats a cached null (entry gone) as missing and would query it again.
+        val entries = mutableMapOf<Long, IcalEntry?>()
+        val changedTriggerTimes = db.alarm_dtoQueries.getUnnotifiedAlarms().awaitAsList().mapNotNull { alarmDto ->
+            if (alarmDto.icalEntryId !in entries)
+                entries[alarmDto.icalEntryId] = db.icalentry_dtoQueries.getIcalEntryById(alarmDto.icalEntryId).awaitAsOneOrNull()?.toDomain()
+            val entry = entries[alarmDto.icalEntryId] ?: return@mapNotNull null
+            val triggerAt = alarmDto.toDomain().triggerTime(entry)?.toEpochMilliseconds()
+            if (triggerAt != alarmDto.triggerAt) alarmDto.id to triggerAt else null
+        }
+        updateAlarmTriggerTimes(db, changedTriggerTimes)
+    }
+
+    /** Writes the given (alarm row id, trigger time) pairs in one transaction. */
+    private suspend fun updateAlarmTriggerTimes(db: SpectacledDatabase, triggerTimes: List<Pair<Long, Long?>>) {
+        if (triggerTimes.isEmpty()) return
+        db.transaction {
+            triggerTimes.forEach { (id, triggerAt) -> db.alarm_dtoQueries.updateTriggerAt(triggerAt = triggerAt, id = id) }
+        }
+    }
+
+    override suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant) {
+        withContext(ioDispatcher) {
+            getDatabase().alarm_dtoQueries.markAlarmsNotifiedBefore(
+                lastNotifiedAt = notifiedAt.toEpochMilliseconds(),
+                beforeMillis = before.toEpochMilliseconds()
+            )
         }
     }
 
@@ -365,24 +416,84 @@ class IcalEntryRepositoryImpl(
         // Re-read fresh so any attachments downloaded just before the move are picked up.
         val entriesToMove = getIcalEntriesWithSubtasks(icalEntryIds)
 
-        // 1. Re-create each entry in the target calendar. Same uid keeps its identity; clearing
-        //    href/etag makes the sync engine PUT it as a new resource into the target collection.
+        // 1. Re-create each entry in the target calendar. Same uid keeps its identity.
         entriesToMove.forEach { entry ->
-            insertOrUpdateIcalEntry(
-                entry.copy(
-                    id = 0L,
-                    calendarId = targetCalendarId,
-                    href = null,
-                    etag = null,
-                    syncState = SyncState.LOCAL_MODIFIED,
-                    attachments = entry.attachments.map { it.remappedForMove() }
-                )
-            )
+            recreateInCalendar(entry, targetCalendarId, uid = entry.uid, parentUid = entry.parentUid)
         }
 
         // 2. Mark the originals deleted. The sync engine DELETEs them from the source collection;
         //    we only mark locally and let it reconcile the ordering with the server.
         markAsDeleted(entriesToMove.map { it.id })
+    }
+
+    override suspend fun copyIcalEntriesToCalendar(
+        icalEntryIds: List<Long>,
+        targetCalendarId: Long,
+        sameCalendarSummarySuffix: String
+    ): Map<Long, Long> = withContext(ioDispatcher) {
+
+        // Re-read fresh so any attachments downloaded just before the copy are picked up.
+        val entriesToCopy = getIcalEntriesWithSubtasks(icalEntryIds)
+
+        // A copy is a new entry, so it needs a new uid - even in another collection, two entries
+        // sharing a uid would be treated as the same one. Copied subtasks are re-linked to their
+        // copied parent; a link to a parent that wasn't copied only survives inside its own
+        // collection, elsewhere it would dangle.
+        val newUids = entriesToCopy.associate { it.uid to IcalEntry.getRandomUUID() }
+        val now = IcsDateTime.nowUtc()
+        entriesToCopy.associate { entry ->
+            // Only the entries the user picked are marked - copied subtasks hang below their
+            // marked parent anyway.
+            val summary = if (entry.id in icalEntryIds && entry.calendarId == targetCalendarId)
+                (entry.summary ?: "") + sameCalendarSummarySuffix
+            else
+                entry.summary
+            entry.id to recreateInCalendar(
+                // Attachment uids are unique too - reusing them would re-assign the original's
+                // attachment rows to the copy.
+                entry = entry.copy(
+                    summary = summary,
+                    created = now,
+                    dtstamp = now,
+                    lastModified = now,
+                    sequence = null,
+                    attachments = entry.attachments.map { it.copy(uid = IcalEntry.getRandomUUID()) }
+                ),
+                targetCalendarId = targetCalendarId,
+                uid = newUids.getValue(entry.uid),
+                parentUid = entry.parentUid?.let { parentUid ->
+                    newUids[parentUid] ?: parentUid.takeIf { entry.calendarId == targetCalendarId }
+                }
+            )
+        }
+    }
+
+    // Writes [entry] as a new row in [targetCalendarId] under [uid]. Clearing href/etag makes the
+    // sync engine PUT it as a new resource into the target collection.
+    private suspend fun recreateInCalendar(entry: IcalEntry, targetCalendarId: Long, uid: String, parentUid: String?): Long {
+        val db = getDatabase()
+        val copy = insertOrUpdateIcalEntry(
+            entry.copy(
+                id = 0L,
+                calendarId = targetCalendarId,
+                uid = uid,
+                parentUid = parentUid,
+                href = null,
+                etag = null,
+                syncState = SyncState.LOCAL_MODIFIED,
+                attachments = entry.attachments.map { it.remappedForMove() }
+            )
+        )
+        // The copy is a new row, so saveAlarms found no previous alarms to carry the local
+        // notification state over from - do it here, or an alarm that already fired would
+        // count as missed and fire again, and a snoozed one would lose its snooze.
+        val originalAlarms = db.alarm_dtoQueries.getAlarmsForEntry(entry.id).awaitAsList()
+        db.alarm_dtoQueries.getAlarmsForEntry(copy.id).awaitAsList().forEach { copied ->
+            originalAlarms
+                .firstOrNull { (it.lastNotifiedAt != null || it.snoozedUntil != null) && it.triggerAt == copied.triggerAt && (if (copied.uid != null) it.uid == copied.uid else it.icsBlock == copied.icsBlock) }
+                ?.let { db.alarm_dtoQueries.updateLocalState(lastNotifiedAt = it.lastNotifiedAt, snoozedUntil = it.snoozedUntil, id = copied.id) }
+        }
+        return copy.id
     }
 
     override suspend fun getIcalEntriesWithSubtasks(icalEntryIds: List<Long>): List<IcalEntry> = withContext(ioDispatcher) {
@@ -404,7 +515,11 @@ class IcalEntryRepositoryImpl(
 
         val db = getDatabase()
         db.icalentry_dtoQueries.getSubtasksByParentUid(entry.calendarId, entry.uid).awaitAsList().forEach { childDto ->
-            collectWithSubtasks(db.loadIcalEntry(childDto), acc)
+            val child = db.loadIcalEntry(childDto)
+            // A deleted subtask that isn't synced yet is still in the db - it must not be
+            // re-created as a live entry in a copy or move. Left behind, sync deletes it as usual.
+            if (!child.syncState.isDeletedState())
+                collectWithSubtasks(child, acc)
         }
     }
 

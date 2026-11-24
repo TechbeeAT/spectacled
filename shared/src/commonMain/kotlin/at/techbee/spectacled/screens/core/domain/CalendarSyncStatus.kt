@@ -21,7 +21,7 @@ data class CalendarSyncStatus(
     val error: CalendarSyncError? = null,
     /** Untranslated technical detail (HTTP status, stack trace) shown behind "Show more". */
     val details: String? = null,
-    val icsDateTime: IcsDateTime = IcsDateTime.now()
+    val icsDateTime: IcsDateTime = IcsDateTime.nowUtc()
 ) {
 
     /**

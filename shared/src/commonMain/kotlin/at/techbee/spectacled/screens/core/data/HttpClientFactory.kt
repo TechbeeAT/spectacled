@@ -63,10 +63,15 @@ object HttpClientFactory {
                         Napier.d(tag = "HttpClient", message = message)
                     }
                 }
-                level = LogLevel.HEADERS  // replace with LogLevel.ALL for detailed debug logs
+                // INFO = method, URL and status per call. HEADERS printed ~20 lines per response
+                // (and a sync issues one request per entry); raise it locally when debugging.
+                level = LogLevel.INFO
                 sanitizeHeader { header ->
-                    // sanitizing x-api-key is specifically for Anthropic
-                    header == HttpHeaders.Authorization || header.equals("x-api-key", ignoreCase = true)
+                    // sanitizing x-api-key is specifically for Anthropic; cookies carry server session secrets
+                    header.equals(HttpHeaders.Authorization, ignoreCase = true) ||
+                        header.equals("x-api-key", ignoreCase = true) ||
+                        header.equals(HttpHeaders.Cookie, ignoreCase = true) ||
+                        header.equals(HttpHeaders.SetCookie, ignoreCase = true)
                 }
             }
 

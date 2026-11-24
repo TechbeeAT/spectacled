@@ -15,6 +15,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
     ) -> Bool {
         SpectacledAppKt.doInitKoin(spectacledVariant: .journals)
+        // Must be set before didFinishLaunching returns, or a tap that launched the app is lost
+        IosNotifications.shared.install()
         log.info("App did finish launching")
 
         // Registration must happen before didFinishLaunchingWithOptions returns

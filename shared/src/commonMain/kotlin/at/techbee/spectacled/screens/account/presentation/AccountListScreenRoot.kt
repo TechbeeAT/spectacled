@@ -21,11 +21,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,7 +38,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryList
-import at.techbee.spectacled.screens.about.presentation.AboutScreen
+import at.techbee.spectacled.screens.about.presentation.AboutScreenRoot
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.components.AddPrincipalBottomSheet
 import at.techbee.spectacled.screens.account.presentation.components.CalendarSyncInfoDialog
@@ -50,6 +48,9 @@ import at.techbee.spectacled.screens.account.presentation.components.PrincipalLi
 import at.techbee.spectacled.screens.account.presentation.components.RemovePrincipalDialog
 import at.techbee.spectacled.screens.account.presentation.components.UpdatePrincipalPasswordBottomSheet
 import at.techbee.spectacled.screens.account.presentation.components.settings.SettingsBottomSheet
+import at.techbee.spectacled.screens.core.Platforms
+import at.techbee.spectacled.screens.core.data.WebProxyPolicy
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
@@ -66,8 +67,8 @@ import spectacled.shared.generated.resources.close
 fun AccountListScreenRoot(
     viewModel: AccountListViewModel,
     onNavigate: (Route) -> Unit,
-    removeSafeAreaPaddingValues: Boolean = false,
-    modifier: Modifier = Modifier.fillMaxSize()
+    modifier: Modifier = Modifier,
+    removeSafeAreaPaddingValues: Boolean = false
 ) {
 
     val state by viewModel.state.collectAsState()
@@ -119,6 +120,9 @@ fun AccountListScreenRoot(
         if(it.calendar.calendarSyncStatus?.type?.isErrorType() != true)
             return@let
 
+        val userProxyServer by viewModel.userAppPreferencesStore.getUserProxyServerAsFlow()
+            .collectAsState(viewModel.userAppPreferencesStore.userProxyServer)
+
         CalendarSyncInfoDialog(
             calendarSyncStatus = it.calendar.calendarSyncStatus,
             onRetry = {
@@ -132,7 +136,9 @@ fun AccountListScreenRoot(
             },
             onDismiss = {
                 viewModel.onAction(AccountListAction.OnDismissSyncInfoDialog)
-            }
+            },
+            showCorsHint = getPlatform().platform == Platforms.WASM &&
+                    WebProxyPolicy.isDirectConnection(getPlatform().webOrigin, userProxyServer)
         )
     }
 
@@ -208,7 +214,6 @@ fun AccountListScreenRoot(
         // visibility would pop all of them open on the very first frame.
         if (state.showAddPrincipalBottomSheet) {
             AddPrincipalBottomSheet(
-                sheetState = rememberExpandedSheetState(),
                 processingState = state.processingState,
                 isFirstAccount = state.principals.isEmpty(),
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
@@ -219,7 +224,6 @@ fun AccountListScreenRoot(
 
         state.showUpdatePrincipalPasswordBottomSheet?.principal?.let { principal ->
             UpdatePrincipalPasswordBottomSheet(
-                sheetState = rememberExpandedSheetState(),
                 processingState = state.processingState,
                 principal = principal,
                 onAction = { action -> viewModel.onAction(action) },
@@ -230,7 +234,6 @@ fun AccountListScreenRoot(
 
         if (state.showAboutBottomSheet) {
             BottomSheetWithMenu(
-                sheetState = rememberExpandedSheetState(),
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowAboutBottomSheet(false)) },
                 menuActionRight = {
                     TextButton(
@@ -239,15 +242,15 @@ fun AccountListScreenRoot(
                         Text(stringResource(Res.string.close))
                     }
                 },
+                gesturesEnabled = false,
                 modifier = Modifier.fillMaxWidth()  // override padding
             ) {
-                AboutScreen(koinInject<AboutViewModel>())
+                AboutScreenRoot(koinInject<AboutViewModel>())
             }
         }
 
         if (state.showSettingsBottomSheet) {
             SettingsBottomSheet(
-                sheetState = rememberExpandedSheetState(),
                 userAppPreferencesStore = viewModel.userAppPreferencesStore,
                 onDismiss = { viewModel.onAction(AccountListAction.OnShowSettingsBottomSheet(false)) }
             )
@@ -255,7 +258,6 @@ fun AccountListScreenRoot(
 
         state.showAddOrUpdateCalendarBottomSheet?.let {
             CreateOrUpdateCalendarBottomSheet(
-                sheetState = rememberExpandedSheetState(),
                 principal = it.principal,
                 homeCollection = it.homeCollection,
                 calendar = it.calendar,
@@ -271,18 +273,3 @@ fun AccountListScreenRoot(
         }
     }
 }
-
-
-/**
- * A sheet state that starts out expanded, so the sheet is fully shown as soon as it enters
- * composition, and that skips the partially expanded detent.
- *
- * Created per sheet inside the block that shows it: a sheet state hoisted across open/close cycles
- * would keep the [SheetValue.Hidden] left behind by a swipe-dismissal and reopen the sheet invisibly.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun rememberExpandedSheetState() = rememberBottomSheetState(
-    initialValue = SheetValue.Expanded,
-    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-)

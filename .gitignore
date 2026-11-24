@@ -21,3 +21,7 @@ node_modules/
 # Runtime env files (never commit real secrets; .env.example is the template)
 .env
 .env.local
+
+# Python bytecode (e.g. from .github/scripts)
+__pycache__/
+*.pyc

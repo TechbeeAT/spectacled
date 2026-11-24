@@ -105,6 +105,16 @@ request after idle. A `shared-cpu-1x` / 512 MB machine is enough for this JVM ap
 Other container hosts (Render, Koyeb, Railway, …) work the same way — point them at
 `server/Dockerfile`, set `PROXY_ALLOWED_ORIGINS`, and let the platform provide `PORT`.
 
+## Using it with a self-hosted web app
+
+If you host the web app yourself (the `spectacled-<app>-web.zip` bundles from the GitHub releases),
+add that origin — scheme, host and port, no path — to `PROXY_ALLOWED_ORIGINS`, e.g.
+`PROXY_ALLOWED_ORIGINS=https://www.example.com`. Several origins are comma-separated.
+
+You may not need the proxy at all: if the web app is served from the same origin as your CalDAV
+server, or your CalDAV server sends CORS headers for the web app's origin, choose
+**No proxy (direct connection)** in the app's settings instead.
+
 ## Tests
 
 ```bash

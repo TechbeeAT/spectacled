@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -52,6 +53,7 @@ import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.formatLocalized
+import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.components.SpecialRoundedCard
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
@@ -61,7 +63,6 @@ import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.delete
 import spectacled.shared.generated.resources.sync_conflict_detected
 import spectacled.shared.generated.resources.time
-import kotlin.time.ExperimentalTime
 
 @Composable
 fun ListItem(
@@ -112,7 +113,7 @@ fun ListItem(
 
             SwipeToDismissBox(
                 state = dismissState,
-                gesturesEnabled = allowEditing,
+                gesturesEnabled = allowEditing && getPlatform().platform.isMobile,
                 backgroundContent = {
                     // Background color or icon revealed during the swipe
                     if(!icalEntry.syncState.isDeletedState()) {
@@ -173,7 +174,7 @@ fun ListItem(
                                     if (icalEntry.summary?.isBlank() == false)
                                         Text(
                                             text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.summary),
-                                            style = MaterialTheme.typography.titleMedium,
+                                            style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                                             textDecoration = if (icalEntry.status == Status.CANCELLED) TextDecoration.LineThrough else null,
                                             maxLines = 3,
                                             overflow = TextOverflow.Ellipsis,
@@ -184,6 +185,7 @@ fun ListItem(
                                     if (icalEntry.description?.isBlank() == false)
                                         Text(
                                             text = MarkdownVisualTransformation(LocalContentColor.current).formatAnnotatedString(icalEntry.description),
+                                            style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                                             textDecoration = if (icalEntry.status == Status.CANCELLED) TextDecoration.LineThrough else null,
                                             maxLines = 5,
                                             overflow = TextOverflow.Ellipsis,
@@ -251,7 +253,6 @@ fun ListItem(
 }
 
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun ListItem_first_Preview() {
@@ -268,7 +269,6 @@ private fun ListItem_first_Preview() {
     )
 }
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun ListItem_last_Preview_with_color() {
@@ -286,7 +286,6 @@ private fun ListItem_last_Preview_with_color() {
 }
 
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun ListItem_first_and_last_Preview_with_color() {
@@ -303,7 +302,6 @@ private fun ListItem_first_and_last_Preview_with_color() {
     )
 }
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun ListItem_middle_Preview_with_color() {
@@ -320,7 +318,6 @@ private fun ListItem_middle_Preview_with_color() {
     )
 }
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun ListItem_middle_Preview_no_summary_and_description() {
@@ -344,7 +341,6 @@ private fun ListItem_middle_Preview_no_summary_and_description() {
     )
 }
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun ListItem_withTime_Preview() {
@@ -362,7 +358,6 @@ private fun ListItem_withTime_Preview() {
     )
 }
 
-@OptIn(ExperimentalTime::class)
 @Preview
 @Composable
 private fun ListItem_Task_with_dtstart_Preview() {
@@ -380,7 +375,28 @@ private fun ListItem_Task_with_dtstart_Preview() {
     )
 }
 
-
+@Preview
+@Composable
+private fun ListItem_RTL_Mix_Preview() {
+    ListItem(
+        icalEntry = IcalEntry.getSampleIcalEntry().copy(
+            summary = "This is latin\n" +
+                    "عندما يريد العالم أن يتكلّم ، فهو يتحدّث بلغة يونيكود\n" +
+                    "and latin again\n",
+            description = "This is latin\n" +
+                    "عندما يريد العالم أن يتكلّم ، فهو يتحدّث بلغة يونيكود\n" +
+                    "and latin again\n",
+        ),
+        isFirst = false,
+        isLast = false,
+        isSelected = false,
+        onClick = {},
+        onLongClick = {},
+        onSwipeToDelete = {},
+        deletePending = false,
+        allowEditing = true
+    )
+}
 
 
 

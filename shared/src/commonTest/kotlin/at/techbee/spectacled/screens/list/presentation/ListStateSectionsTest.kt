@@ -51,7 +51,7 @@ class ListStateSectionsTest {
      *  of bucketing it under "now" (the previous `?: IcsDateTime.now()` behaviour). */
     @Test
     fun taskWithoutDueDateGoesToNoCriteria() {
-        val taskWithDue = IcalEntry.newTask().copy(due = IcsDateTime.now())
+        val taskWithDue = IcalEntry.newTask().copy(due = IcsDateTime.nowFloating())
         val taskNoDue = IcalEntry.newTask().copy(due = null)
 
         val state = ListState(

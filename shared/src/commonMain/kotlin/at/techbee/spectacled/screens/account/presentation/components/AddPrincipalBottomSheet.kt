@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.ArrowCircleRight
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -32,21 +33,20 @@ import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -84,6 +84,7 @@ import at.techbee.spectacled.screens.core.PermissionStatus
 import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.Credentials
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.WebProxyPolicy
 import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.isPrivateNetworkHost
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
@@ -106,12 +107,14 @@ import spectacled.shared.generated.resources.add_account_option2_text
 import spectacled.shared.generated.resources.add_account_option_x
 import spectacled.shared.generated.resources.add_account_provider_tasks_only_warning
 import spectacled.shared.generated.resources.add_account_proxy_change
+import spectacled.shared.generated.resources.add_account_proxy_direct
 import spectacled.shared.generated.resources.add_account_proxy_ready
 import spectacled.shared.generated.resources.add_account_proxy_required_info
 import spectacled.shared.generated.resources.add_account_proxy_required_title
 import spectacled.shared.generated.resources.add_account_spectacled_is_provider_independent
 import spectacled.shared.generated.resources.back
 import spectacled.shared.generated.resources.cancel
+import spectacled.shared.generated.resources.direct_connection_cors_hint
 import spectacled.shared.generated.resources.insecure_connection_warning
 import spectacled.shared.generated.resources.local_network_permission_granted
 import spectacled.shared.generated.resources.local_network_permission_manage
@@ -131,7 +134,6 @@ enum class AddPrincipalBottomSheetPage { SELECTION, USE_EXISTING, SELECT_FROM_LI
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPrincipalBottomSheet(
-    sheetState: SheetState,
     processingState: ProcessingState,
     isFirstAccount: Boolean,
     userAppPreferencesStore: UserAppPreferencesStore,
@@ -144,7 +146,12 @@ fun AddPrincipalBottomSheet(
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val scope = rememberCoroutineScope()
     var showInsecureConnectionAlert by rememberSaveable { mutableStateOf(false) }
-    var credentials by rememberSaveable { mutableStateOf<Credentials?>(null) }
+    // Credentials should be remember (not saveable) as KTOR Url cannot be stored saveable and the saving would crash in the background
+    var credentials by remember { mutableStateOf<Credentials?>(null) }
+    val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
+    // A failed login without a proxy on the web is most likely the browser blocking it for CORS.
+    val showCorsHint = getPlatform().platform == Platforms.WASM &&
+            WebProxyPolicy.isDirectConnection(getPlatform().webOrigin, userProxyServer)
 
     LaunchedEffect(selectedPage) {
         if (selectedPage == AddPrincipalBottomSheetPage.SELECTION)
@@ -166,7 +173,6 @@ fun AddPrincipalBottomSheet(
 
     BottomSheetWithMenu(
         onDismiss = { onDismiss() },
-        sheetState = sheetState,
         showLoadingIndicator = processingState is ProcessingState.Processing,
         gesturesEnabled = false,
         menuActionLeft = {
@@ -241,6 +247,7 @@ fun AddPrincipalBottomSheet(
                 if (selectedPage == AddPrincipalBottomSheetPage.USE_EXISTING) {
                     AddAccountScreen(
                         processingState = processingState,
+                        showCorsHint = showCorsHint,
                         onKeyboardDone = {
                             if(credentials?.server?.toString()?.startsWith("http://") == true)
                                 showInsecureConnectionAlert = true
@@ -268,15 +275,18 @@ fun SelectAccountOptionScreen(
     isFirstAccount: Boolean,
     userAppPreferencesStore: UserAppPreferencesStore,
     onPageChanged: (AddPrincipalBottomSheetPage) -> Unit,
-    modifier: Modifier = Modifier.padding(8.dp).fillMaxSize().verticalScroll(rememberScrollState()),
+    modifier: Modifier = Modifier,
     spectacledVariant: SpectacledVariant = koinInject()
 ) {
 
-    // Only the web build talks to CalDAV through a proxy, and until one is picked it can reach no
-    // server at all - so on the web the options stay closed until that choice is made.
+    // Only the web build talks to CalDAV through a proxy, and until that is set up it can reach no
+    // server at all - so on the web the options stay closed until that choice is made. Off the
+    // official origin an empty setting is a valid choice (direct connection), see WebProxyPolicy.
     val proxyRequired = getPlatform().platform == Platforms.WASM || LocalInspectionMode.current
+    val webOrigin = getPlatform().webOrigin
     val userProxyServer by userAppPreferencesStore.getUserProxyServerAsFlow().collectAsState(userAppPreferencesStore.userProxyServer)
-    val proxyConfigured = !userProxyServer.isNullOrBlank()
+    val proxyConfigured = WebProxyPolicy.isConfigured(webOrigin, userProxyServer)
+    val directConnection = WebProxyPolicy.isDirectConnection(webOrigin, userProxyServer)
     var proxySetupExpanded by rememberSaveable { mutableStateOf(false) }
 
     Column(
@@ -334,7 +344,9 @@ fun SelectAccountOptionScreen(
                 ) {
                     Icon(Icons.Outlined.Check, null, tint = MaterialTheme.colorScheme.primary)
                     Text(
-                        text = stringResource(Res.string.add_account_proxy_ready, userProxyServer.orEmpty()),
+                        text =
+                            if (directConnection) stringResource(Res.string.add_account_proxy_direct)
+                            else stringResource(Res.string.add_account_proxy_ready, userProxyServer.orEmpty()),
                         style = MaterialTheme.typography.bodySmall,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1,
@@ -454,6 +466,7 @@ fun AddAccountScreen(
     onCredentialsUpdated: (Credentials?) -> Unit,
     onKeyboardDone: () -> Unit,
     modifier: Modifier = Modifier,
+    showCorsHint: Boolean = false,
     permissionChecker: PermissionChecker = koinInject()
 ) {
 
@@ -542,9 +555,17 @@ fun AddAccountScreen(
                         textAlign = TextAlign.Center
                     )
                 }
-
+                // Only where no answer came back: a server that answered (wrong password, not
+                // found) was clearly reachable, so CORS cannot be the cause.
+                if (showCorsHint && error?.requestFailed == true) {
+                    Text(
+                        text = stringResource(Res.string.direct_connection_cors_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
-
         }
 
         Column(
@@ -657,37 +678,6 @@ fun AddAccountScreen(
                                     }
                                 )
                             }
-
-                            /*
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(
-                                            text = "spectacled (internal testing)",
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = "https://baikal.techbee.at/html/dav.php/calendars",
-                                            overflow = TextOverflow.Ellipsis,
-                                            maxLines = 1,
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    username = "caldavnotes"
-                                    server = "https://baikal.techbee.at/html/dav.php/calendars/caldavnotes/"
-                                    serverDropdownMenuExpanded = false
-                                }
-                            )
-
-                             */
                         }
                     }
                 },
@@ -717,32 +707,54 @@ fun AddAccountScreen(
                 modifier = Modifier.width(400.dp).onFocusChanged { isUsernameTextFieldFocused = it.isFocused}
             )
 
-            OutlinedSecureTextField(
-                state = passwordState,
-                label = { Text(stringResource(Res.string.password)) },
-                textObfuscationMode = if (isPasswordVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
-                trailingIcon = {
-                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        Crossfade(isPasswordVisible) { visible ->
-                            if (visible) Icon(
-                                Icons.Outlined.Visibility,
-                                contentDescription = stringResource(Res.string.show_hide_password)
-                            ) else Icon(
-                                Icons.Outlined.VisibilityOff,
-                                contentDescription = stringResource(Res.string.show_hide_password)
-                            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                OutlinedSecureTextField(
+                    state = passwordState,
+                    label = { Text(stringResource(Res.string.password)) },
+                    textObfuscationMode = if (isPasswordVisible) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
+                    trailingIcon = {
+                        IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                            Crossfade(isPasswordVisible) { visible ->
+                                if (visible) Icon(
+                                    Icons.Outlined.Visibility,
+                                    contentDescription = stringResource(Res.string.show_hide_password)
+                                ) else Icon(
+                                    Icons.Outlined.VisibilityOff,
+                                    contentDescription = stringResource(Res.string.show_hide_password)
+                                )
+                            }
                         }
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    keyboardType = KeyboardType.Password,
-                    autoCorrectEnabled = false,
-                    imeAction = ImeAction.Done
-                ),
-                onKeyboardAction = { onKeyboardDone() },
-                modifier = Modifier.width(400.dp)
-            )
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        keyboardType = KeyboardType.Password,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Done
+                    ),
+                    onKeyboardAction = { onKeyboardDone() },
+                    modifier = Modifier.width(340.dp)
+                )
+
+                IconButton(
+                    onClick = { onKeyboardDone() },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = ButtonDefaults.textButtonColors().contentColor, 
+                        disabledContentColor = ButtonDefaults.textButtonColors().disabledContentColor
+                    ),
+                    enabled = credentials != null && processingState !is ProcessingState.Processing,
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ArrowCircleRight,
+                        contentDescription = stringResource(Res.string.add_account),
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -879,14 +891,12 @@ private fun CalDavProviderChip(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun AddAccountScreen_Preview_Idle() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             AddPrincipalBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                 processingState = ProcessingState.Idle,
                 isFirstAccount = true,
                 userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.JOURNALS),
@@ -898,14 +908,12 @@ private fun AddAccountScreen_Preview_Idle() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun AddAccountScreen_Preview_Processing() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
         Scaffold {
             AddPrincipalBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
                 processingState = ProcessingState.Processing,
                 isFirstAccount = false,
                 userAppPreferencesStore = UserAppPreferencesStore.getEmptyPreferenceStoreForPreview(SpectacledVariant.NOTES),
@@ -918,7 +926,6 @@ private fun AddAccountScreen_Preview_Processing() {
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun ChooseProviderScreen_Preview() {
@@ -930,7 +937,6 @@ private fun ChooseProviderScreen_Preview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun AddAccountScreen_Preview_Error() {
@@ -938,6 +944,28 @@ private fun AddAccountScreen_Preview_Error() {
         Scaffold {
             AddAccountScreen(
                 processingState = ProcessingState.Error("This is an error"),
+                onCredentialsUpdated = {},
+                //onAction = {}
+                onKeyboardDone = {},
+                permissionChecker = object : PermissionChecker {
+                    override fun status(permission: AppPermission) = PermissionStatus.NOT_APPLICABLE
+                    override fun openAppSettings() {}
+                }
+            )
+        }
+
+    }
+}
+
+
+@Preview
+@Composable
+private fun AddAccountScreen_Preview_CORS_hint() {
+    AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
+        Scaffold {
+            AddAccountScreen(
+                processingState = ProcessingState.Error("This is an error", requestFailed = true),
+                showCorsHint = true,
                 onCredentialsUpdated = {},
                 //onAction = {}
                 onKeyboardDone = {},

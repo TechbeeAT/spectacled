@@ -3,7 +3,6 @@ package at.techbee.spectacled.screens.account.presentation.components
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -22,7 +21,6 @@ import spectacled.shared.generated.resources.about
 import spectacled.shared.generated.resources.accounts
 import spectacled.shared.generated.resources.settings
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrincipalListTopBar(
     removeHorizontalWindowInsets: Boolean = false,

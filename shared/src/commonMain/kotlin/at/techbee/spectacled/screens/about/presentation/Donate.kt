@@ -30,16 +30,14 @@ import at.techbee.spectacled.theme.AppTheme
 import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.about_donate
 import spectacled.shared.generated.resources.about_more_donation_options
-import spectacled.shared.generated.resources.about_sponsor
 import spectacled.shared.generated.resources.about_sponsor_info
 import spectacled.shared.generated.resources.paypal
 import spectacled.shared.generated.resources.thank_you
 
 @Composable
-fun SponsorApp(
-    spectacledVariant: SpectacledVariant
-) {
+fun Donate() {
 
     val uriHandler = LocalUriHandler.current
 
@@ -52,7 +50,7 @@ fun SponsorApp(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = stringResource(Res.string.about_sponsor),
+            text = stringResource(Res.string.about_donate),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp, start = 8.dp, end = 8.dp)
@@ -115,11 +113,11 @@ fun SponsorApp(
 
 @Preview
 @Composable
-fun SponsorApp_Preview(
+fun Donate_Preview(
 ) {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
-            SponsorApp(spectacledVariant = SpectacledVariant.JOURNALS)
+            Donate()
         }
     }
 }

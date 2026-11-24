@@ -17,6 +17,7 @@ import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.webdav.WebDavRemoteIcalEntryDataSource
 import at.techbee.spectacled.screens.core.domain.Alarm
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.AttachmentSyncState
 import at.techbee.spectacled.screens.core.domain.IcalEntry
@@ -78,6 +79,7 @@ class DetailsViewModel(
     private val shareManager: PlatformShareManager,
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
     private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
+    private val alarmCoordinator: AlarmCoordinator,
     private val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -97,7 +99,7 @@ class DetailsViewModel(
                         && entry.calendarId != 0L
                         && entry.syncState != SyncState.SYNCED
                         && entry.syncState != SyncState.LOCAL_NEW) {   // untouched new entry: don't create a row for it at all
-                        // onUndo() bumps lastModified to restore a prior checkpoint even though its
+                        // onUndo()/onRedo() bump lastModified to restore a prior checkpoint even though its
                         // content already matches that checkpoint - that save must still go through
                         // so the restore is actually persisted (saveIcalEntry() itself already skips
                         // re-recording it on the backstack, via undoRestoreMarker).
@@ -145,6 +147,8 @@ class DetailsViewModel(
                 originalIcalEntry = icalEntry,
                 changeBackstack = listOf(icalEntry),
                 undoRestoreMarker = null,
+                redoStack = emptyList(),
+                redoAnchor = null,
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
@@ -168,7 +172,7 @@ class DetailsViewModel(
             val newIcalEntry = IcalEntry(
                 calendarId = calendar?.id ?: 0L,   // if 0L user is forced to select a calendar
                 description = initialDescription,
-                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.now() else null,
+                dtStart = if (spectacledVariant == SpectacledVariant.JOURNALS) IcsDateTime.nowInZone() else null,
                 calendarComponent = spectacledVariant.mainCalendarComponent,
                 // An entry that is already pre-filled (shared text, AI derived text) carries content
                 // the user wants to keep, everything else is only saved once the user edits it.
@@ -180,6 +184,8 @@ class DetailsViewModel(
                 originalIcalEntry = newIcalEntry,
                 changeBackstack = listOf(newIcalEntry),
                 undoRestoreMarker = null,
+                redoStack = emptyList(),
+                redoAnchor = null,
                 calendar = calendar,
                 isLoading = false,
                 isInitialized = true,
@@ -231,6 +237,8 @@ class DetailsViewModel(
                 originalIcalEntry = copiedIcalEntry,
                 changeBackstack = listOf(copiedIcalEntry),
                 undoRestoreMarker = null,
+                redoStack = emptyList(),
+                redoAnchor = null,
                 isLoading = false,
                 isInitialized = true,
                 navigateUp = false
@@ -332,7 +340,7 @@ class DetailsViewModel(
             is DetailsAction.OnShowSheetOrDialog -> { _state.update { it.copy(showSheetOrDialog = action.sheetOrDialog) }}
             is DetailsAction.OnShowDrawingCanvasBottomSheet -> { _state.update { it.copy(showDrawingCanvasBottomSheet = action) } }
             is DetailsAction.OnLaunchPicker -> { _state.update { it.copy(launchPickerAction = action.pickerAction) } }
-            DetailsAction.OnCreateCopy -> { loadCopy(_state.value.icalEntry.id) }
+            is DetailsAction.OnCreateCopy -> { onCreateCopy(action.targetCalendarId) }
             is DetailsAction.OnSyncConflictUpdateUserDecision -> {
                 when(action.syncState) {
                     SyncState.USER_DECIDED_SERVER_WINS -> saveAndAwaitSync(action.syncState)
@@ -375,6 +383,7 @@ class DetailsViewModel(
             }
             is DetailsAction.OnUpdateDrawing -> { onUpdateDrawing(action.replaceAttachmentUid, action.paths, action.width, action.height) }
             is DetailsAction.OnUndo -> { onUndo() }
+            is DetailsAction.OnRedo -> { onRedo() }
         }
     }
 
@@ -402,7 +411,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     summary = newSummary,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -419,7 +428,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     description = newDescription,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -453,7 +462,7 @@ class DetailsViewModel(
                         else
                             categories
                     },
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -482,7 +491,7 @@ class DetailsViewModel(
                             else -> it.icalEntry.percentComplete
                         }
                     } else 0,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -498,7 +507,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     priority = newPriority,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -515,7 +524,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     color = newColor,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -531,7 +540,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     url = newUrl,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -547,7 +556,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     alarms = it.icalEntry.alarms + alarm,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -563,7 +572,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     alarms = it.icalEntry.alarms - alarm,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -579,7 +588,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     location = newLocation,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -610,7 +619,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     dtStart = newDtStart,
                     due = newDue,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -638,7 +647,7 @@ class DetailsViewModel(
                 icalEntry = it.icalEntry.copy(
                     dtStart = newDtStart,
                     due = newDue,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -690,21 +699,28 @@ class DetailsViewModel(
         val entryToSave = _state.value.icalEntry.copy(syncState = syncState)
 
         _state.update {
-            // A save caused by onUndo() restoring a prior checkpoint must not be recorded as a
-            // new one - it would silently reinflate the very stack onUndo() just popped.
+            // A save caused by onUndo()/onRedo() restoring a checkpoint must not be recorded as a
+            // new one - both already brought the backstack into the right shape themselves.
             val isUndoRestoreSave = it.undoRestoreMarker != null && it.undoRestoreMarker == entryToSave.lastModified
             it.copy(
                 icalEntry = entryToSave,
                 changeBackstack = if(isUndoRestoreSave) it.changeBackstack else it.changeBackstack.plus(entryToSave),
                 undoRestoreMarker = if(isUndoRestoreSave) null else it.undoRestoreMarker,
+                // A genuinely new change branches off the undo history, so what was undone is gone for good.
+                redoStack = if(isUndoRestoreSave) it.redoStack else emptyList(),
+                redoAnchor = if(isUndoRestoreSave) it.redoAnchor else null,
                 showSheetOrDialog = if(navigateUp) null else _state.value.showSheetOrDialog,
                 navigateUp = navigateUp
             )
         }
 
-        viewModelScope.launch { 
+        viewModelScope.launch {
             icalEntryRepository.insertOrUpdateIcalEntry(entryToSave)
             platformSyncTrigger.triggerWidgetUpdate()
+            if (entryToSave.isDoneOrCancelled() || entryToSave.syncState.isDeletedState())
+                alarmCoordinator.onEntriesDoneOrDeleted(listOf(entryToSave.id))
+            else
+                alarmCoordinator.reconcile()
         }
         Napier.d("Entry saved")
     }
@@ -736,6 +752,7 @@ class DetailsViewModel(
                 val credentials = credentialStore.load(principalUrl) ?: throw Exception(getString(Res.string.credentials_not_found))
 
                 SyncCoordinator(calendarRepository, icalEntryRepository, fileManager, client, credentials).syncCalendarWithSyncLock(calendar)
+                alarmCoordinator.reconcile()
                 val processedIcalEntry = icalEntryRepository.getIcalEntryByUid(icalEntry.calendarId, icalEntry.uid) ?: throw Exception(
                     getString(Res.string.unexpected_error_occurred)
                 )
@@ -809,6 +826,7 @@ class DetailsViewModel(
             if(getPlatform().platform == Platforms.WASM)
                 syncAndAwaitResult(savedSubtask)
             platformSyncTrigger.triggerWidgetUpdate()
+            alarmCoordinator.reconcile()
         }
         Napier.d("Entry saved")
     }
@@ -823,6 +841,7 @@ class DetailsViewModel(
 
         viewModelScope.launch {
             icalEntryRepository.markAsDeleted(listOf(subtaskIcalEntryId))
+            alarmCoordinator.onEntriesDoneOrDeleted(listOf(subtaskIcalEntryId))
         }
     }
 
@@ -855,6 +874,10 @@ class DetailsViewModel(
                 lastModified = updatedSubtask.lastModified,
                 syncState = updatedSubtask.syncState
             )
+            if (updatedSubtask.isDoneOrCancelled())
+                alarmCoordinator.onEntriesDoneOrDeleted(listOf(updatedSubtask.id))
+            else
+                alarmCoordinator.reconcile()
         }
     }
 
@@ -914,7 +937,7 @@ class DetailsViewModel(
                 it.copy(
                     icalEntry = it.icalEntry.copy(
                         attachments = it.icalEntry.attachments + newAttachment,
-                        lastModified = IcsDateTime.now(),
+                        lastModified = IcsDateTime.nowUtc(),
                         syncState = it.icalEntry.syncState.afterLocalEdit()
                     )
                 )
@@ -946,7 +969,7 @@ class DetailsViewModel(
             it.copy(
                 icalEntry = it.icalEntry.copy(
                     attachments = it.icalEntry.attachments + newAttachment,
-                    lastModified = IcsDateTime.now(),
+                    lastModified = IcsDateTime.nowUtc(),
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 )
             )
@@ -1026,7 +1049,7 @@ class DetailsViewModel(
                     it.copy(
                         icalEntry = it.icalEntry.copy(
                             attachments = it.icalEntry.attachments.filter { a -> a.uid != attachmentUid },
-                            lastModified = IcsDateTime.now(),
+                            lastModified = IcsDateTime.nowUtc(),
                             syncState = it.icalEntry.syncState.afterLocalEdit()
                         )
                     )
@@ -1077,6 +1100,41 @@ class DetailsViewModel(
         }
     }
 
+    // Same as copying from the list: the copy (with its attachments, alarms and subtasks) is
+    // persisted right away and then opened in place of the original.
+    private fun onCreateCopy(targetCalendarId: Long) {
+
+        val currentState = _state.value
+
+        // A brand-new entry has no row yet, so there is nothing to copy (the menu item is disabled
+        // for it). Recurring entries are excluded like in the list.
+        if(currentState.icalEntry.id == 0L || currentState.icalEntry.isRecurring()) {
+            _state.update { it.copy(showSheetOrDialog = null) }
+            return
+        }
+
+        _state.update { it.copy(showSheetOrDialog = null, isLoading = true) }
+
+        // Attachment download + DB work + sync trigger - keep it off the Main dispatcher.
+        viewModelScope.launch(ioDispatcher) {
+            // The copy is made from the database, so flush edits the debounced auto-save may not
+            // have written yet - only if there are any. Compared against the stored row rather
+            // than the undo checkpoint, which is recorded before its save completes.
+            val storedEntry = icalEntryRepository.getIcalEntryById(currentState.icalEntry.id)
+            if(currentState.allowEditing() && (storedEntry == null || !currentState.icalEntry.hasSameContentAs(storedEntry))) {
+                icalEntryRepository.insertOrUpdateIcalEntry(currentState.icalEntry)
+                platformSyncTrigger.requestImmediate(listOf(currentState.icalEntry.calendarId))
+            }
+
+            val copyId = moveIcalEntriesUseCase.copy(listOf(currentState.icalEntry.id), targetCalendarId)[currentState.icalEntry.id]
+            if(copyId == null) {
+                _state.update { it.copy(isLoading = false, snackbarText = getString(Res.string.unexpected_error_occurred)) }
+                return@launch
+            }
+            load(copyId)
+        }
+    }
+
     @OptIn(ExperimentalTime::class)
     private fun onUndo() {
 
@@ -1085,7 +1143,7 @@ class DetailsViewModel(
         if(state.value.changeBackstack.size <= 1)   // already at the oldest tracked checkpoint
             return
 
-        val restoreTimestamp = IcsDateTime.now()
+        val restoreTimestamp = IcsDateTime.nowUtc()
 
         _state.update {
             val newBackstack = it.changeBackstack.dropLast(1)   // drop the entry duplicating current state
@@ -1096,7 +1154,32 @@ class DetailsViewModel(
                     syncState = it.icalEntry.syncState.afterLocalEdit()
                 ),
                 changeBackstack = newBackstack,
-                undoRestoreMarker = restoreTimestamp
+                undoRestoreMarker = restoreTimestamp,
+                redoStack = it.redoStack.plus(it.icalEntry),     // the current state (incl. not yet saved edits) can be redone
+                redoAnchor = restoreTimestamp
+            )
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    private fun onRedo() {
+
+        if(!state.value.allowRedo())
+            return
+
+        val restoreTimestamp = IcsDateTime.nowUtc()
+
+        _state.update {
+            val target = it.redoStack.last().copy(
+                lastModified = restoreTimestamp,
+                syncState = it.icalEntry.syncState.afterLocalEdit()
+            )
+            it.copy(
+                icalEntry = target,
+                changeBackstack = it.changeBackstack.plus(target),   // becomes the newest checkpoint again, so it can be undone once more
+                undoRestoreMarker = restoreTimestamp,
+                redoStack = it.redoStack.dropLast(1),
+                redoAnchor = restoreTimestamp
             )
         }
     }

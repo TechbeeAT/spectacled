@@ -38,7 +38,9 @@ actual class DatabaseDriverFactory {
         return mutex.withLock {
             database ?: run {
                 Napier.d("Creating WebWorker Driver")
-                val d = WebWorkerDriver(jsWorker())
+                // WebWorkerDriver alone corrupts its transaction state when coroutines overlap
+                // their transactions, see TransactionSerializingSqlDriver
+                val d = TransactionSerializingSqlDriver(WebWorkerDriver(jsWorker()))
 
                 // spectacledSqlWorker.js now restores the database from IndexedDB on startup
                 // (see DAT-6), so this can no longer unconditionally call schema.create() -
