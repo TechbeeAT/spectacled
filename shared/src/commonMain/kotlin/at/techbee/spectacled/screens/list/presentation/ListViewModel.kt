@@ -430,7 +430,7 @@ class ListViewModel(
             listSortedByAscending = listSortedByAscending,
             listFilterCriteria = listFilterCriteria,
             isRefreshing = false,
-            scrollToTop = scrollToTop
+            scrollToTop = scrollToTop || it.scrollToTop  // don't cancel a scroll still pending
         ).recompute() }
         refreshDragAndDropList()
     }

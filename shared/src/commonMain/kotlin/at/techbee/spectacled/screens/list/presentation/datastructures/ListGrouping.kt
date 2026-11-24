@@ -168,8 +168,9 @@ enum class ListGrouping(
             if (icsDateTime == null) return null
             // Compare actual points in time: floating and DATE values are resolved in the device
             // timezone, so "within 24 hours" means the same for them as for zoned values.
-            val instant = if (icsDateTime.isDateOnly && (baseGroups == dueGroups || baseGroups == startGroups)) {
-                // A DATE due means "due/start by the end of that day", so it is only overdue/date from the next day on.
+            val instant = if (icsDateTime.isDateOnly && baseGroups == dueGroups) {
+                // A DATE due means "due by the end of that day", so it is only overdue from the next day on.
+                // A DATE start keeps start-of-day: a task that starts today has started.
                 icsDateTime.toLocalDateTime().date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(deviceTimeZone)
             } else {
                 icsDateTime.resolvedInstant(deviceTimeZone)

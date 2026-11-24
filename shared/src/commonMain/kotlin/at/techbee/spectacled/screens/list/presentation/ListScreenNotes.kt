@@ -63,8 +63,13 @@ fun ListScreenNotes(
 
     LaunchedEffect(state.scrollToTop) {
         if(state.scrollToTop) {
-            lazyStaggeredGridState.animateScrollToItem(0)
-            onAction(ListAction.OnScrollToTop(false))
+            // Reset in finally: a user gesture cancels the animation, and a flag left at true
+            // would keep the next scroll request from restarting this effect.
+            try {
+                lazyStaggeredGridState.animateScrollToItem(0)
+            } finally {
+                onAction(ListAction.OnScrollToTop(false))
+            }
         }
     }
 
