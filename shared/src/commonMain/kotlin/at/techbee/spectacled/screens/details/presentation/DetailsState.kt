@@ -1,6 +1,7 @@
 package at.techbee.spectacled.screens.details.presentation
 
 import androidx.compose.ui.graphics.Color
+import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.HomeCollection
@@ -15,6 +16,11 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
     val calendar: Calendar? = null,
     val subtasks: List<IcalEntry> = emptyList(),
 
+    val changeBackstack: List<IcalEntry> = emptyList(),
+    val undoRestoreMarker: IcsDateTime? = null,   // lastModified stamp of an in-flight undo/redo-restore save, so saveIcalEntry() can recognize and skip it
+    val redoStack: List<IcalEntry> = emptyList(), // states taken back by onUndo(), most recent last
+    val redoAnchor: IcsDateTime? = null,          // lastModified of the state produced by the latest undo/redo - any edit after it invalidates the redo stack
+
     val allColors: List<Color> = emptyList(),
     val allCategories: List<String> = emptyList(),
     val latestUsedTimezones: List<TimeZone> = emptyList(),
@@ -25,6 +31,8 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
 
     val showSheetOrDialog: DetailsSheetOrDialog? = null,
     val showDrawingCanvasBottomSheet: DetailsAction.OnShowDrawingCanvasBottomSheet = DetailsAction.OnShowDrawingCanvasBottomSheet(false, null, null),
+    val deleteAttachmentUid: String? = null,      // uid of the attachment the delete confirmation dialog asks about
+    val deleteSubtaskId: Long? = null,            // uid of the subtask the delete confirmation dialog asks about
 
     val launchPickerAction: AttachmentPickerAction? = null,      // One-shot signal to the screen to launch a platform picker.
 
@@ -45,12 +53,18 @@ data class DetailsState @OptIn(ExperimentalTime::class) constructor(
             && !icalEntry.syncState.isDeletedState()
             && !icalEntry.isRecurring()
 
+    // Redo is only possible as long as the entry was not edited since the last undo/redo.
+    fun allowRedo() = allowEditing()
+            && redoStack.isNotEmpty()
+            && redoAnchor != null
+            && icalEntry.lastModified == redoAnchor
+
     fun allowRestore() = calendar?.canWriteContent() == true && icalEntry.syncState.isDeletedState()
 
 }
 
 enum class DetailsSheetOrDialog {
-    DELETE, MOVE, MORE, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, ADD_ATTACHMENT_URL
+    DELETE, MOVE, COPY, COLOR_SELECTOR, CATEGORY_SELECTOR, JOURNAL_STATUS_PICKER, TASK_STATUS_PICKER, ADD_SUBTASKS, EDIT_URL, EDIT_LOCATION, ADD_ATTACHMENT_URL, ADD_ALARM
 }
 
 // Action to perform right after the details screen opens

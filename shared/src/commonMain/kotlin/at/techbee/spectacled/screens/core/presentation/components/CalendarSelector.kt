@@ -32,9 +32,7 @@ import at.techbee.spectacled.screens.core.domain.Principal
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.no_account_name
-import spectacled.shared.generated.resources.selected_calendar
-import spectacled.shared.generated.resources.unnamed_calendar
+import spectacled.shared.generated.resources.selected_folder
 
 @Composable
 fun CalendarSelector(
@@ -53,7 +51,7 @@ fun CalendarSelector(
         label = {
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
-                    text = stringResource(Res.string.selected_calendar),
+                    text = stringResource(Res.string.selected_folder),
                     style = MaterialTheme.typography.labelSmall
                 )
                 calendars.find { calendar -> calendar.id == selectedCalendarId }?.let {
@@ -74,7 +72,7 @@ fun CalendarSelector(
                 }
                 calendarsGroups.keys.forEach { principal ->
 
-                    if (calendarsGroups[principal]?.isEmpty() == true)
+                    if (calendarsGroups[principal]?.isEmpty() == true || principal == null)
                         return@forEach
 
                     DropdownMenuItem(
@@ -86,7 +84,7 @@ fun CalendarSelector(
                             ) {
                                 HorizontalDivider(modifier = Modifier.weight(0.5f))
                                 Text(
-                                    text = principal?.displayName ?: stringResource(Res.string.no_account_name),
+                                    text = principal.displayName ?: principal.principalUrl.host,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontStyle = FontStyle.Italic,
                                     maxLines = 1,
@@ -106,7 +104,7 @@ fun CalendarSelector(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = calendar.displayName ?: calendar.calendarDescription ?: stringResource(Res.string.unnamed_calendar),
+                                    text = calendar.displayLabel,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )

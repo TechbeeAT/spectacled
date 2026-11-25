@@ -55,8 +55,6 @@ SET
     ctag = :ctag,
     supportedComponents = :supportedComponents,
     calDavPrivileges = :calDavPrivileges,
-    calendarSyncStatus = :calendarSyncStatus,
-    syncToken = :syncToken,
     attachmentCollectionUrl = :attachmentCollectionUrl
 WHERE
     url = :url

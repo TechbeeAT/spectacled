@@ -139,6 +139,8 @@ class CalendarRepositoryImpl(
         db.calendar_dtoQueries.transaction {
 
             // first update, if the entry doesn't exist, this is ignored
+            // calendarSyncStatus and syncToken are local sync state, they are only set on insert and never
+            // overwritten by (re-)discovered server data
             db.calendar_dtoQueries.updateCalendar(
                 homeCollectionUrl = homeCollectionUrl.toString(),
                 url = calendarDto.url,
@@ -148,8 +150,6 @@ class CalendarRepositoryImpl(
                 ctag = calendarDto.ctag,
                 supportedComponents = calendarDto.supportedComponents,
                 calDavPrivileges = calendarDto.calDavPrivileges,
-                calendarSyncStatus = calendarDto.calendarSyncStatus,
-                syncToken = calendarDto.syncToken,
                 attachmentCollectionUrl = calendarDto.attachmentCollectionUrl
             )
             // insert, but if the entry exists, it will be ignored

@@ -7,11 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
+import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
@@ -30,13 +28,11 @@ import spectacled.shared.generated.resources.status_no_status
 @Composable
 fun JournalStatusPickerBottomSheet(
     status: Status?,
-    sheetState: SheetState,
     onStatusUpdated: (Status?) -> Unit,
     onDismiss: () -> Unit
 ) {
 
     BottomSheetWithMenu(
-        sheetState = sheetState,
         onDismiss = { onDismiss() },
         menuActionRight = {
             TextButton(
@@ -45,10 +41,6 @@ fun JournalStatusPickerBottomSheet(
                 Text(stringResource(Res.string.done))
             }
         },
-        menuActionLeft = { TextButton(onClick = {
-            onStatusUpdated(null)
-            onDismiss()
-        }) { Text(stringResource(Res.string.status_no_status)) } }
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -58,6 +50,14 @@ fun JournalStatusPickerBottomSheet(
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
+
+                FilterChip(
+                    leadingIcon = { StatusWithProgressIcon(null, null) },
+                    selected = status == null,
+                    onClick = { onStatusUpdated(null) },
+                    label = { Text(stringResource(Res.string.status_no_status)) }
+                )
+
                 val statusSet = setOf(Status.DRAFT, Status.FINAL, Status.CANCELLED)
 
                 statusSet.forEach { selectableStatus ->
@@ -74,7 +74,6 @@ fun JournalStatusPickerBottomSheet(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 private fun JournalStatusPickerBottomSheet_Preview() {
@@ -82,7 +81,20 @@ private fun JournalStatusPickerBottomSheet_Preview() {
         Scaffold {
             JournalStatusPickerBottomSheet(
                 status = Status.FINAL,
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
+                onStatusUpdated = {},
+                onDismiss = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun JournalStatusPickerBottomSheet_NO_STATUS_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            JournalStatusPickerBottomSheet(
+                status = null,
                 onStatusUpdated = {},
                 onDismiss = {}
             )

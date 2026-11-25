@@ -21,8 +21,8 @@ import kotlin.math.sin
 fun WavyHorizontalDivider(
     modifier: Modifier = Modifier,
     color: Color = DividerDefaults.color,
-    waveLength: Float = 150f,  // Distance for one complete wave cycle
-    waveAmplitude: Float = 7f // Height of the wave
+    waveLength: Float = 50f,  // Distance for one complete wave cycle
+    waveAmplitude: Float = 2f // Height of the wave
 ) {
     Canvas(modifier = modifier.fillMaxWidth().height((waveAmplitude * 2).dp)) {
         val path = Path()
@@ -56,7 +56,7 @@ fun WavyHorizontalDivider_Preview() {
             contentAlignment = Alignment.Center,
             modifier = Modifier.fillMaxWidth().height(100.dp)
         ) {
-            WavyHorizontalDivider()
+            WavyHorizontalDivider(waveLength = 50f, waveAmplitude = 2f)
         }
     }
 }

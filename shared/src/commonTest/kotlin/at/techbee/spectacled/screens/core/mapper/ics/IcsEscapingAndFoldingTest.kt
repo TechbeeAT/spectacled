@@ -124,6 +124,15 @@ class IcsEscapingAndFoldingTest {
     }
 
     @Test
+    fun unfoldLines_largeInlineAttachment() {
+        // Regression test: a ~1.5 MB folded BASE64 ATTACH used to be unfolded with String
+        // concatenation per fold (quadratic), which made syncing such entries take minutes.
+        val attach = "ATTACH;ENCODING=BASE64;VALUE=BINARY:" + "QUJDREVGR0g=".repeat(128_000)
+        val ics = "BEGIN:VTODO\r\n${foldIcsLine(attach)}\r\nUID:1\r\nEND:VTODO"
+        assertEquals(listOf("BEGIN:VTODO", attach, "UID:1", "END:VTODO"), unfoldLines(ics))
+    }
+
+    @Test
     fun unfoldLines_handlesBareNewlinesAsWell() {
         // Some servers send LF-only line endings.
         assertEquals(listOf("SUMMARY:abcdef"), unfoldLines("SUMMARY:abc\n def"))

@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
+import at.techbee.spectacled.screens.core.domain.Alarm
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.Classification
@@ -22,7 +23,7 @@ import kotlin.time.ExperimentalTime
 const val CATEGORY_SPLIT_DELIMITER = ","
 
 @OptIn(ExperimentalTime::class)
-fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList()): IcalEntry {
+fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList(), alarms: List<Alarm> = emptyList()): IcalEntry {
 
     val mapperJson = Json {
         ignoreUnknownKeys = true
@@ -49,12 +50,13 @@ fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList()): IcalEntr
         status = this.status?.let { Status.entries.find { vtodoStatus -> vtodoStatus.name == it } },
         priority = this.priority,
         percentComplete = this.percentComplete ?: 0L,
-        dtstamp = parseIcsDateTime(this.dtstamp) ?: IcsDateTime.now(),
+        dtstamp = parseIcsDateTime(this.dtstamp) ?: IcsDateTime.nowUtc(),
         categories = this.categories?.let { splitIcsList(it) } ?: emptyList(),
-        created = parseIcsDateTime(this.created) ?: IcsDateTime.now(),
-        lastModified = parseIcsDateTime(this.lastModified) ?: IcsDateTime.now(),
+        created = parseIcsDateTime(this.created) ?: IcsDateTime.nowUtc(),
+        lastModified = parseIcsDateTime(this.lastModified) ?: IcsDateTime.nowUtc(),
         extraProperties = extraProps,
         attachments = attachments,
+        alarms = alarms,
         orderNo = this.orderNo,
         syncState = this.syncState?.let { SyncState.entries.find { it.name == this.syncState } } ?: SyncState.LOCAL_MODIFIED,
         etag = this.etag,
@@ -62,7 +64,8 @@ fun IcalEntryDto.toDomain(attachments: List<Attachment> = emptyList()): IcalEntr
         calendarComponent = CalendarComponent.entries.find { it.name == this.calendarComponent } ?: CalendarComponent.VJOURNAL,
         parentUid = this.parentUid,
         relType = this.relType,
-        url = this.url?.let { Url(it) }
+        url = this.url?.let { Url(it) },
+        location = this.location
     )
 }
 
@@ -105,6 +108,7 @@ fun IcalEntry.toDto(): IcalEntryDto {
         calendarComponent = this.calendarComponent.name,
         parentUid = this.parentUid,
         relType = this.relType,
-        url = this.url?.toString()
+        url = this.url?.toString(),
+        location = this.location?.ifEmpty { null }
     )
 }

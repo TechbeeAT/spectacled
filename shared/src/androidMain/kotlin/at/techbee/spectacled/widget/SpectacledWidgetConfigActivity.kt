@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -171,7 +170,6 @@ class SpectacledWidgetConfigActivity : ComponentActivity(), KoinComponent {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WidgetConfigContent(
     calendars: List<Calendar>,
@@ -279,7 +277,7 @@ private fun WidgetConfigContent_tasks_filtered_Preview() {
         principals = listOf(Principal.getPrincipalForPreview()),
         selectedCalendarId = 0L,
         onCalendarIdSelected = { },
-        listFilterCriteria = ListFilterCriteria(searchCategory = "Category 1", hideCompletedTasks = true),
+        listFilterCriteria = ListFilterCriteria(searchCategories = listOf("Category 1"), hideCompletedTasks = true),
         onListFilterCriteriaChanged = { },
         allCategories = listOf("Category 1", "Category 2"),
         spectacledVariant = SpectacledVariant.TASKS,

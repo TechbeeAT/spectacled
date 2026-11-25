@@ -16,17 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Attachment
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.DatasetLinked
 import androidx.compose.material.icons.outlined.EditOff
-import androidx.compose.material.icons.outlined.Gesture
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -36,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,7 +35,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,12 +47,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
-import at.techbee.spectacled.screens.core.Platforms
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.getPlatform
@@ -70,29 +61,23 @@ import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWit
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
 import at.techbee.spectacled.screens.core.presentation.components.DatePickerBottomSheet
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
-import at.techbee.spectacled.screens.details.presentation.DetailsInitialAction
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
+import at.techbee.spectacled.screens.list.presentation.components.AddMoreDropdownMenuList
 import at.techbee.spectacled.screens.list.presentation.components.DeleteSelectedItemsDialog
 import at.techbee.spectacled.screens.list.presentation.components.DeriveEntriesBottomSheet
-import at.techbee.spectacled.screens.list.presentation.components.IcalEntryListTopBar
 import at.techbee.spectacled.screens.list.presentation.components.ListFilterElement
 import at.techbee.spectacled.screens.list.presentation.components.ListSearchBar
-import at.techbee.spectacled.screens.list.presentation.components.MoveSelectedItemsDialog
+import at.techbee.spectacled.screens.list.presentation.components.ListTopBar
+import at.techbee.spectacled.screens.list.presentation.components.MoveOrCopySelectedItemsDialog
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import kotlinx.coroutines.delay
-import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_attachment
-import spectacled.shared.generated.resources.add_drawing
-import spectacled.shared.generated.resources.add_from_gallery
-import spectacled.shared.generated.resources.add_photo
-import spectacled.shared.generated.resources.ai_create_entries
-import spectacled.shared.generated.resources.ai_provider_not_configured
 import spectacled.shared.generated.resources.done
-import spectacled.shared.generated.resources.link_file_by_url
 import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.read_only
 import kotlin.time.Duration.Companion.milliseconds
@@ -116,7 +101,7 @@ fun ListScreenRoot(
 
     val selectableDates = remember(state.icalEntries) {
         val allowedMillis = state.icalEntries.mapNotNull {
-            it.dtStart?.toDatePickerMillis(TimeZone.currentSystemDefault())
+            it.dtStart?.toDatePickerMillis()
         }.toSet()
         object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
@@ -125,8 +110,18 @@ fun ListScreenRoot(
         }
     }
 
-    MaterialTheme(colorScheme = getColorSchemeForSeedColor(state.calendar.color)) {
+    val backHandlerState = rememberNavigationEventState(NavigationEventInfo.None)
+    NavigationBackHandler(
+        state = backHandlerState,
+        isBackEnabled = state.multiselectItems != null || state.showSearchBar
+    ) {
+        if (state.multiselectItems != null)
+            listViewModel.onAction(ListAction.OnClearMultiselectItems)
+        else
+            listViewModel.onAction(ListAction.OnUpdateSearch(null))
+    }
 
+    MaterialTheme(colorScheme = getColorSchemeForSeedColor(state.calendar.color)) {
 
         LaunchedEffect(state.snackbarText) {
             state.snackbarText?.let { message ->
@@ -149,33 +144,65 @@ fun ListScreenRoot(
             }
         }
 
+        // Only an actual collapse dismisses the keyboard. This must not fire on first composition:
+        // in the two-pane layout (see SpectacledApp) this screen can enter composition while the
+        // details editor holds the keyboard, and hiding it there closes an editor the user just
+        // tapped, leaving the caret blinking with no keyboard.
+        var searchBarWasShown by remember { mutableStateOf(state.showSearchBar) }
         LaunchedEffect(state.showSearchBar) {
             if (state.showSearchBar) {
                 delay(300.milliseconds)
                 searchBarFocusRequester.requestFocus()
                 keyboardController?.show()
-            } else {
+            } else if (searchBarWasShown) {
                 keyboardController?.hide()
             }
+            searchBarWasShown = state.showSearchBar
         }
 
         if (state.showDeleteSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
-            DeleteSelectedItemsDialog(
-                multiselectItems = state.multiselectItems?: emptyList(),
-                onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
-                onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
-            )
+            if(state.multiselectItems?.size == 1)
+                DeleteIcalEntryDialog(
+                    icalEntry = state.multiselectItems?.first().let { id -> state.icalEntries.find { it.id == id } }!!,
+                    onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
+                    onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
+                )
+            else
+                DeleteSelectedItemsDialog(
+                    multiselectItems = state.multiselectItems?: emptyList(),
+                    onConfirm = { listViewModel.onAction(ListAction.OnDeleteSelectedItems) },
+                    onDismiss = { listViewModel.onAction(ListAction.OnShowDeleteSelectedItemsDialog(false)) }
+                )
         }
 
-        if (state.showMoveSelectedItemsDialog && state.multiselectItems?.isNotEmpty() == true) {
-            MoveSelectedItemsDialog(
+        if(state.showSwipeToDeleteDialog != null) {
+            state.icalEntries.find { it.id == state.showSwipeToDeleteDialog }?.let { icalEntry ->
+                DeleteIcalEntryDialog(
+                    icalEntry = icalEntry,
+                    onConfirm = { listViewModel.onAction(ListAction.OnDeleteEntry(icalEntry.id)) },
+                    onDismiss = { listViewModel.onAction(ListAction.OnShowSwipeToDeleteDialog(null)) }
+                )
+            }
+        }
+
+        val moveOrCopyMode = state.showMoveOrCopySelectedItemsDialog
+        if (moveOrCopyMode != null && state.multiselectItems?.isNotEmpty() == true) {
+            MoveOrCopySelectedItemsDialog(
                 itemCount = state.multiselectItems?.size ?: 0,
+                mode = moveOrCopyMode,
                 sourceCalendarId = state.calendar.id,
                 principals = state.allPrincipals,
                 homeCollections = state.allHomeCollections,
                 calendars = state.allCalendars.filter { it.canWriteContent() },
-                onConfirm = { targetCalendarId -> listViewModel.onAction(ListAction.OnMoveSelectedItems(targetCalendarId)) },
-                onDismiss = { listViewModel.onAction(ListAction.OnShowMoveSelectedItemsDialog(false)) }
+                onConfirm = { targetCalendarId ->
+                    listViewModel.onAction(
+                        when(moveOrCopyMode) {
+                            MoveOrCopyMode.COPY -> ListAction.OnCopySelectedItems(targetCalendarId)
+                            MoveOrCopyMode.MOVE -> ListAction.OnMoveSelectedItems(targetCalendarId)
+                        }
+                    )
+                },
+                onDismiss = { listViewModel.onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(null)) }
             )
         }
 
@@ -240,8 +267,7 @@ fun ListScreenRoot(
 
         if (state.showDateSelectorBottomSheet) {
             DatePickerBottomSheet(
-                icsDateTime = IcsDateTime.now(),
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
+                icsDateTime = IcsDateTime.nowFloating(),
                 allowNoDate = false,
                 selectableDates = selectableDates,
                 onDateSelected = { selectedDate -> listViewModel.onAction(ListAction.OnGoToSelectedDate(selectedDate)) },
@@ -252,7 +278,7 @@ fun ListScreenRoot(
 
         Scaffold(
             topBar = {
-                IcalEntryListTopBar(
+                ListTopBar(
                     state = state,
                     onAction = { action -> listViewModel.onAction(action) },
                     allSelectedPinned = state.multiselectItems?.all { selectedId ->
@@ -313,81 +339,14 @@ fun ListScreenRoot(
                                         contentDescription = stringResource(Res.string.more)
                                     )
 
-                                    DropdownMenu(
-                                        expanded = fabMoreExpanded,
-                                        onDismissRequest = { fabMoreExpanded = false }
-                                    ) {
-
-                                        // AI "create entries from text" - only when an Anthropic key is set and the
-                                        // collection is writable.
-                                        DropdownMenuItem(
-                                            text = {
-                                                Column {
-                                                    Text(stringResource(Res.string.ai_create_entries))
-                                                    if (!state.isAiProviderConfigured)
-                                                        Text(
-                                                            text = stringResource(Res.string.ai_provider_not_configured),
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontStyle = FontStyle.Italic
-                                                        )
-                                                }
-                                            },
-                                            leadingIcon = { Icon(Icons.Outlined.AutoAwesome, stringResource(Res.string.ai_create_entries)) },
-                                            enabled = state.isAiProviderConfigured,
-                                            onClick = {
-                                                listViewModel.onAction(ListAction.OnShowDeriveEntriesBottomSheet(true))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_attachment)) },
-                                            leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
-                                            onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_ATTACHMENT.name))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.link_file_by_url)) },
-                                            leadingIcon = { Icon(Icons.Outlined.DatasetLinked, stringResource(Res.string.link_file_by_url)) },
-                                            onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_ATTACHMENT_URL.name))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-
-                                        if (getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID)) {
-                                            DropdownMenuItem(
-                                                text = { Text(stringResource(Res.string.add_photo)) },
-                                                leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
-                                                onClick = {
-                                                    onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_PHOTO.name))
-                                                    fabMoreExpanded = false
-                                                },
-                                            )
-                                        }
-
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_from_gallery)) },
-                                            leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
-                                            onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_FROM_GALLERY.name))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-
-
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_drawing)) },
-                                            leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
-                                            onClick = {
-                                                onNavigate(IcalEntryDetails(0L, state.calendar.id, detailsInitialAction = DetailsInitialAction.ADD_DRAWING.name))
-                                                fabMoreExpanded = false
-                                            },
-                                        )
-                                    }
+                                    AddMoreDropdownMenuList(
+                                        addMoreExpanded = fabMoreExpanded,
+                                        calendarId = state.calendar.id,
+                                        isAiProviderConfigured = state.isAiProviderConfigured,
+                                        onDismiss = { fabMoreExpanded = false },
+                                        onNavigate = onNavigate,
+                                        onAction = { listViewModel.onAction(it) }
+                                    )
                                 }
                             }
                         }
@@ -454,6 +413,7 @@ fun ListScreenRoot(
                     }
 
                     PullToRefreshBox(
+                        enabled = getPlatform().platform.isMobile,
                         isRefreshing = state.isRefreshing,
                         onRefresh = { listViewModel.onAction(ListAction.OnTriggerSync) },
                         state = pullToRefreshState,

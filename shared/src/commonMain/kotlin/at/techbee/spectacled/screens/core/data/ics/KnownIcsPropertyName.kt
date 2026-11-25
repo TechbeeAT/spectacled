@@ -19,5 +19,6 @@ enum class KnownIcsPropertyName(val propertyName: String) {
     PERCENT_COMPLETE("PERCENT-COMPLETE"),
     RELATED_TO("RELATED-TO"),
     URL("URL"),
+    LOCATION("LOCATION"),
     ATTACH("ATTACH")
 }

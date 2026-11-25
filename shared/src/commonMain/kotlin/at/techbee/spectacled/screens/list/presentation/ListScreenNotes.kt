@@ -61,6 +61,18 @@ fun ListScreenNotes(
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
+    LaunchedEffect(state.scrollToTop) {
+        if(state.scrollToTop) {
+            // Reset in finally: a user gesture cancels the animation, and a flag left at true
+            // would keep the next scroll request from restarting this effect.
+            try {
+                lazyStaggeredGridState.animateScrollToItem(0)
+            } finally {
+                onAction(ListAction.OnScrollToTop(false))
+            }
+        }
+    }
+
     @Composable
     fun LazyStaggeredGridItemScope.getNoteListItem(
         icalEntry: IcalEntry,
@@ -92,8 +104,10 @@ fun ListScreenNotes(
                         onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
                 },
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
+                onSwipeToDelete = { onAction(ListAction.OnShowSwipeToDeleteDialog(icalEntry.id)) },
                 dragHandle = dragHandle,
-                onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+                deletePending = state.showSwipeToDeleteDialog == icalEntry.id,
+                allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState() && !icalEntry.isRecurring(),
                 modifier = Modifier
                     .widthIn(max = 700.dp)
                     .heightIn(min = 50.dp)
@@ -107,6 +121,7 @@ fun ListScreenNotes(
                     icalEntry = subtask,
                     isSelected = state.multiselectItems?.contains(subtask.id) == true || isDragging,
                     allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState() && !subtask.isRecurring(),
+                    deletePending = state.showSwipeToDeleteDialog == subtask.id,
                     onClick = {
                         if (state.multiselectItems == null)
                             onAction(ListAction.OnIcalEntryClicked(subtask.id))
@@ -115,7 +130,7 @@ fun ListScreenNotes(
                     },
                     onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                     onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
-                    onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+                    onSwipeToDelete = { onAction(ListAction.OnShowSwipeToDeleteDialog(subtask.id)) },
                     modifier = Modifier.padding(start = 48.dp).then(modifier)
                 )
             }

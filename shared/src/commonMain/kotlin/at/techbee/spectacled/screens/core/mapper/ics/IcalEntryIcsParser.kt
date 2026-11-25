@@ -27,18 +27,32 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 
 
-fun unfoldLines(input: String): List<String> =
-    input
-        .replace("\r\n", "\n")
-        .split("\n")
-        .fold(mutableListOf()) { acc, line ->
-            if (line.startsWith(" ") || line.startsWith("\t")) {
-                acc[acc.lastIndex] += line.drop(1)
-            } else {
-                acc.add(line)
-            }
-            acc
+/**
+ * Joins RFC 5545 folded lines (CRLF or LF followed by a space or tab) back into logical lines.
+ *
+ * Builds each logical line in a [StringBuilder]: appending continuation lines to a String instead
+ * copies the whole line again for every 75-character fold, which is quadratic. For an inline
+ * BASE64 ATTACH of a few hundred KB that meant gigabytes of garbage per entry and minutes of GC
+ * thrashing per sync.
+ */
+fun unfoldLines(input: String): List<String> {
+    val result = mutableListOf<String>()
+    val current = StringBuilder()
+    var hasCurrent = false
+    input.replace("\r\n", "\n").split("\n").forEach { line ->
+        if (line.startsWith(" ") || line.startsWith("\t")) {
+            current.append(line, 1, line.length)
+            hasCurrent = true
+        } else {
+            if (hasCurrent) result.add(current.toString())
+            current.clear()
+            current.append(line)
+            hasCurrent = true
         }
+    }
+    if (hasCurrent) result.add(current.toString())
+    return result
+}
 
 
 /**
@@ -248,7 +262,11 @@ fun parseIcalEntryBlock(
     val knownProps = mutableMapOf<String, MutableList<IcsProperty>>()
     val extraProps = mutableListOf<RawIcsProperty>()
 
-    lines.forEach { line ->
+    // Nested components (VALARM, ...) must not be read as properties of the entry itself.
+    val componentLines = splitNestedComponents(lines)
+    val alarms = componentLines.alarmBlocks.map { parseAlarm(it) }
+
+    componentLines.ownLines.forEach { line ->
         val name = line.substringBefore(':')
             .substringBefore(';')
 
@@ -261,6 +279,14 @@ fun parseIcalEntryBlock(
                 unfoldedLine = line
             )
         }
+    }
+    // Other nested components are kept verbatim; they go last since RFC 5545 puts all of a
+    // component's properties before its subcomponents.
+    componentLines.otherNestedLines.forEach { line ->
+        extraProps += RawIcsProperty(
+            name = line.substringBefore(':').substringBefore(';'),
+            unfoldedLine = line
+        )
     }
 
     val uid = knownProps[KnownIcsPropertyName.UID.propertyName]?.firstOrNull()?.value ?: return null
@@ -354,11 +380,13 @@ fun parseIcalEntryBlock(
         lastModified = lastModified,
         extraProperties = extraProps,
         attachments = attachments,
+        alarms = alarms,
         syncState = SyncState.SYNCED,
         calendarComponent = calendarComponent,
         parentUid = parentUid,
         relType = relType,
-        url = url
+        url = url,
+        location = knownProps[KnownIcsPropertyName.LOCATION.propertyName]?.firstOrNull()?.value?.ifEmpty { null }
     )
 }
 

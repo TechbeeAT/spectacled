@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
 import at.techbee.spectacled.screens.core.data.ai.AI_BATCH_CATEGORY_PREFIX
@@ -19,7 +20,6 @@ import at.techbee.spectacled.screens.core.data.ai.toIcalEntries
 import at.techbee.spectacled.screens.core.data.claude.KtorRemoteClaudeDataSource
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.domain.repository.IcalEntryRepository
 import at.techbee.spectacled.screens.core.ioDispatcher
@@ -34,8 +34,6 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.recurring_entry_read_only_snackbar
-import kotlin.time.ExperimentalTime
-import kotlin.uuid.ExperimentalUuidApi
 
 class ListViewModel(
     private val calendarRepository: CalendarRepository,
@@ -45,6 +43,7 @@ class ListViewModel(
     private val userAppPreferencesStore: PlatformUserAppPreferencesStore,
     private val moveIcalEntriesUseCase: MoveIcalEntriesUseCase,
     private val client: HttpClient,
+    private val alarmCoordinator: AlarmCoordinator,
     val spectacledVariant: SpectacledVariant
 ): ViewModel() {
 
@@ -54,9 +53,13 @@ class ListViewModel(
 
     private var observationJob: Job? = null
 
+    /** Set synchronously in [load], unlike `state.calendar`, which only follows once the calendar is read. */
+    private var loadedCalendarId: Long? = null
+
 
     fun load(calendarId: Long) {
         observationJob?.cancel()
+        loadedCalendarId = calendarId
 
         _state.update { it.copy(
             isRefreshing = true,
@@ -64,12 +67,15 @@ class ListViewModel(
             errorMessage = null,
             navigateUp = false,
             snackbarText = null,
+            multiselectItems = null,
             listSortedBy = userAppPreferencesStore.listSortedBy,
             listSortedByAscending = userAppPreferencesStore.listSortedByAscending,
             listLayout = userAppPreferencesStore.listLayout,
             listCollapsedGroups = userAppPreferencesStore.listCollapsedGroups,
+            listFilterCriteria = userAppPreferencesStore.listFilterCriteria[calendarId] ?: ListFilterCriteria(),
             spectacledVariant = spectacledVariant
         ).recompute() }
+        refreshDragAndDropList()   // drop whatever the previously opened calendar left behind
 
         userAppPreferencesStore.lastUsedCalendarId = calendarId
 
@@ -158,12 +164,21 @@ class ListViewModel(
                     snackbarText = null
                 ).recompute() }
 
-                dragAndDropList.apply {
-                    clear()
-                    addAll(_state.value.displayedEntries)
-                    sortBy { icalEntry -> icalEntry.orderNo }
-                }
+                refreshDragAndDropList()
             }
+    }
+
+    /**
+     * Re-seeds [dragAndDropList] from the entries the state currently displays.
+     * The drag-and-drop list is a snapshot list the UI mutates directly while dragging (that is what
+     * keeps the reorder jitter-free), so it is not derived from the state automatically.
+     */
+    private fun refreshDragAndDropList() {
+        dragAndDropList.apply {
+            clear()
+            addAll(_state.value.displayedEntries)
+            sortBy { icalEntry -> icalEntry.orderNo ?: Long.MAX_VALUE }
+        }
     }
 
     private suspend fun observeColors() {
@@ -185,17 +200,20 @@ class ListViewModel(
     }
 
 
-    @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     fun onAction(action: ListAction) {
         when(action) {
             is ListAction.OnListFilterCriteriaChanged -> {
                 updateList(_state.value.listSortedBy, _state.value.listSortedByAscending, action.listFilterCriteria)
+                loadedCalendarId?.let {
+                    userAppPreferencesStore.listFilterCriteria += (it to action.listFilterCriteria)
+                }
+
             }
             is ListAction.OnToggleFilterBar -> { _state.update { it.copy(showListFilterRow = !_state.value.showListFilterRow) } }
             is ListAction.OnTriggerSync -> syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             is ListAction.OnIcalEntryClicked -> {  _state.update { it.copy(navigateToIcalEntryId = action.id) } }
             is ListAction.OnSortedByChanged -> {
-                updateList(action.listSortedBy, action.listSortedByAscending, _state.value.listFilterCriteria)
+                updateList(action.listSortedBy, action.listSortedByAscending, _state.value.listFilterCriteria, true)
                 userAppPreferencesStore.listSortedBy = action.listSortedBy
                 userAppPreferencesStore.listSortedByAscending = action.listSortedByAscending
             }
@@ -203,14 +221,13 @@ class ListViewModel(
                 _state.update { it.copy(listLayout = action.listLayout) }
                 userAppPreferencesStore.listLayout = action.listLayout
             }
-            is ListAction.OnSearchBarExpanded -> {
+            is ListAction.OnUpdateSearch -> {
                 _state.update { it.copy(
                     listFilterCriteria = it.listFilterCriteria.copy(
-                        searchQuery = if(action.isExpanded) "" else null,
-                        searchCategory = if(action.isExpanded) "" else null,
-                        filterStatus = if(action.isExpanded) it.listFilterCriteria.filterStatus else null,
+                        searchQuery = action.searchString,
                     )
                 ).recompute() }
+                refreshDragAndDropList()
             }
             is ListAction.OnNavigateUp -> {
                 if(action.navigateUp)
@@ -223,8 +240,11 @@ class ListViewModel(
             ListAction.OnClearMultiselectItems -> { _state.update { it.copy(multiselectItems = null) } }
             is ListAction.OnShowDeleteSelectedItemsDialog -> { _state.update { it.copy(showDeleteSelectedItemsDialog = action.showDialog) }}
             ListAction.OnDeleteSelectedItems -> onDeleteSelectedItems()
-            is ListAction.OnShowMoveSelectedItemsDialog -> { _state.update { it.copy(showMoveSelectedItemsDialog = action.showDialog) }}
+            is ListAction.OnShowSwipeToDeleteDialog -> { _state.update { it.copy(showSwipeToDeleteDialog = action.icalEntryId) } }
+            is ListAction.OnDeleteEntry -> onDeleteEntry(action.icalEntryId)
+            is ListAction.OnShowMoveOrCopySelectedItemsDialog -> { _state.update { it.copy(showMoveOrCopySelectedItemsDialog = action.mode) }}
             is ListAction.OnMoveSelectedItems -> onMoveSelectedItems(action.targetCalendarId)
+            is ListAction.OnCopySelectedItems -> onCopySelectedItems(action.targetCalendarId)
             is ListAction.OnUpdateOrderNo -> onUpdateOrderNo(action.fromIndex, action.toIndex)
             ListAction.OnPersistOrderNo -> onPersistOrderNo()
             is ListAction.OnToggleListGroupExpanded -> onToggleListGroupExpanded(action.listGroup)
@@ -257,6 +277,7 @@ class ListViewModel(
             is ListAction.OnTogglePinEntry -> { onUpdatePinOfSelectedItems(action.pin) }
             is ListAction.OnGoToSelectedDate -> { onGoToDate(action.selectedDate) }
             is ListAction.OnToggleProgress -> { onUpdateProgress(action.icalEntryId) }
+            is ListAction.OnScrollToTop -> { _state.update { it.copy(scrollToTop = action.scroll) }}
         }
     }
 
@@ -302,7 +323,7 @@ class ListViewModel(
                 OpenAiCompatibleDataSource(client, baseUrl, model, userAppPreferencesStore.openAiApiKey)
             }
 
-            AiProvider.NONE -> object: AiDeriveEntriesDataSource {
+            AiProvider.DISABLED -> object: AiDeriveEntriesDataSource {
                 override suspend fun deriveEntries(
                     rawText: String,
                     variant: SpectacledVariant,
@@ -341,6 +362,7 @@ class ListViewModel(
                         it.toIcalEntries(calendarId, batchCategory, spectacledVariant, includeSubtasks = createSubtasks)
                     }
                     toInsert.forEach { icalEntryRepository.insertOrUpdateIcalEntry(it) }
+                    alarmCoordinator.reconcile()
 
                     if(toInsert.isNotEmpty()) {
                         syncTrigger.requestImmediate(listOf(calendarId))
@@ -386,8 +408,8 @@ class ListViewModel(
                         icalEntryRepository.updateCategory(
                             id = icalEntry.id,
                             categories = newCategories,
-                            lastModified = IcsDateTime.now(),
-                            syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+                            lastModified = IcsDateTime.nowUtc(),
+                            syncState = icalEntry.syncState.afterLocalEdit()
                         )
                     }
                 }
@@ -396,14 +418,21 @@ class ListViewModel(
     }
 
 
-    private fun updateList(listSortedBy: ListSortedBy, listSortedByAscending: Boolean, listFilterCriteria: ListFilterCriteria) {
+    private fun updateList(
+        listSortedBy: ListSortedBy,
+        listSortedByAscending: Boolean,
+        listFilterCriteria: ListFilterCriteria,
+        scrollToTop: Boolean = false
+    ) {
 
         _state.update { it.copy(
             listSortedBy = listSortedBy,
             listSortedByAscending = listSortedByAscending,
             listFilterCriteria = listFilterCriteria,
-            isRefreshing = false
+            isRefreshing = false,
+            scrollToTop = scrollToTop || it.scrollToTop  // don't cancel a scroll still pending
         ).recompute() }
+        refreshDragAndDropList()
     }
 
     private fun onDeleteSelectedItems() {
@@ -413,10 +442,28 @@ class ListViewModel(
 
         viewModelScope.launch {
             // Recurring entries are read-only, so exclude them even if a selection somehow contains one.
-            _state.value.multiselectItems?.let { icalEntryRepository.markAsDeleted(withoutRecurringEntries(it)) }
+            _state.value.multiselectItems?.let { selected ->
+                val ids = withoutRecurringEntries(selected)
+                icalEntryRepository.markAsDeleted(ids)
+                alarmCoordinator.onEntriesDoneOrDeleted(ids)
+            }
             syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
             _state.update { it.copy(multiselectItems = null, showDeleteSelectedItemsDialog = false) }
+        }
+    }
+
+    private fun onDeleteEntry(icalEntryId: Long) {
+        // Close the dialog first so it can neither stay open on missing write access nor hang on a failing delete
+        _state.update { it.copy(showSwipeToDeleteDialog = null) }
+        if(!state.value.calendar.canWriteContent())
+            return
+
+        viewModelScope.launch {
+            icalEntryRepository.markAsDeleted(listOf(icalEntryId))
+            alarmCoordinator.onEntriesDoneOrDeleted(listOf(icalEntryId))
+            syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
+            syncTrigger.triggerWidgetUpdate()
         }
     }
 
@@ -432,7 +479,21 @@ class ListViewModel(
         // Off the Main dispatcher: the use case may download attachments before the local move.
         viewModelScope.launch(ioDispatcher) {
             moveIcalEntriesUseCase.move(ids, targetCalendarId)
-            _state.update { it.copy(multiselectItems = null, showMoveSelectedItemsDialog = false) }
+            _state.update { it.copy(multiselectItems = null, showMoveOrCopySelectedItemsDialog = null) }
+        }
+    }
+
+    private fun onCopySelectedItems(targetCalendarId: Long) {
+
+        // No write access needed on the source: copying out of a read-only collection is allowed,
+        // the dialog only offers writable targets.
+        // Recurring entries are read-only, so exclude them like for a move.
+        val ids = _state.value.multiselectItems?.let { withoutRecurringEntries(it) } ?: return
+
+        // Off the Main dispatcher: the use case may download attachments before the local copy.
+        viewModelScope.launch(ioDispatcher) {
+            moveIcalEntriesUseCase.copy(ids, targetCalendarId)
+            _state.update { it.copy(multiselectItems = null, showMoveOrCopySelectedItemsDialog = null) }
         }
     }
 
@@ -452,11 +513,12 @@ class ListViewModel(
                     icalEntryRepository.updateColor(
                         id = icalEntry.id,
                         color = if(color == Color.Unspecified) null else color,
-                        lastModified = IcsDateTime.now(),
-                        syncState = if (icalEntry.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else icalEntry.syncState
+                        lastModified = IcsDateTime.nowUtc(),
+                        syncState = icalEntry.syncState.afterLocalEdit()
                     )
                 }
             }
+            syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
         }
     }
 
@@ -484,6 +546,11 @@ class ListViewModel(
                 lastModified = updatedEntry.lastModified,
                 syncState = updatedEntry.syncState
             )
+            if (updatedEntry.isDoneOrCancelled())
+                alarmCoordinator.onEntriesDoneOrDeleted(listOf(updatedEntry.id))
+            else
+                alarmCoordinator.reconcile()
+            syncTrigger.requestImmediate(listOf(_state.value.calendar.id))
             syncTrigger.triggerWidgetUpdate()
         }
     }

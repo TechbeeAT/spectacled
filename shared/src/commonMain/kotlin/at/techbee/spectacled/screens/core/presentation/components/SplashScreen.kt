@@ -20,21 +20,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.theme.AppTheme
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.no_entries_found_in_this_folder
+import spectacled.shared.generated.resources.no_matching_entries_found
 
 @Composable
 fun SplashScreen(
     spectacledVariant: SpectacledVariant,
+    modifier: Modifier = Modifier,
     showProgressIndicator: Boolean = false,
     size: Dp = 200.dp,
     reducedAlpha: Boolean = false,
     text: String? = null,
-    modifier: Modifier = Modifier
+    keepVariantSeedColor: Boolean = false
 ) {
 
     val alpha = if(reducedAlpha) 0.25f else 1f
@@ -61,7 +67,7 @@ fun SplashScreen(
                 modifier = Modifier
                     .size(size)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(if(keepVariantSeedColor) spectacledVariant.themeSeedColor else MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
 
@@ -81,13 +87,13 @@ fun SplashScreen(
                 text = it,
                 color = MaterialTheme.colorScheme.primary,
                 fontStyle = FontStyle.Italic,
+                textAlign = TextAlign.Center,
                 modifier = Modifier
                     .alpha(alpha * 2)
-                    .padding(bottom = 88.dp, top = 40.dp)
+                    .padding(bottom = 88.dp, top = 40.dp, start = 32.dp, end = 32.dp)
             )
         }
     }
-
 }
 
 @Preview
@@ -97,18 +103,33 @@ fun SplashScreen_Preview() {
         SplashScreen(
             spectacledVariant = SpectacledVariant.JOURNALS,
             showProgressIndicator = true,
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         )
     }
 }
 
-@Preview
+@Preview(uiMode = 32)   // 32 = UI_MODE_NIGHT_YES
 @Composable
 fun SplashScreen_no_progress_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
         SplashScreen(
             spectacledVariant = SpectacledVariant.NOTES,
             showProgressIndicator = false,
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            keepVariantSeedColor = true
+        )
+    }
+}
+
+@Preview
+@Composable
+fun SplashScreen_no_progress_withText_noMatchingEntries_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
+        SplashScreen(
+            spectacledVariant = SpectacledVariant.NOTES,
+            showProgressIndicator = false,
+            text = stringResource(Res.string.no_matching_entries_found),
+            reducedAlpha = true,
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
         )
     }
@@ -116,12 +137,26 @@ fun SplashScreen_no_progress_Preview() {
 
 @Preview
 @Composable
-fun SplashScreen_no_progress_withText_Preview() {
+fun SplashScreen_no_progress_withText_noEntriesFound_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
         SplashScreen(
             spectacledVariant = SpectacledVariant.NOTES,
             showProgressIndicator = false,
-            text = "This is a text",
+            text = stringResource(Res.string.no_entries_found_in_this_folder),
+            reducedAlpha = true,
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+        )
+    }
+}
+
+@Preview
+@Composable
+fun SplashScreen_no_progress_withLongText_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
+        SplashScreen(
+            spectacledVariant = SpectacledVariant.NOTES,
+            showProgressIndicator = false,
+            text = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren",
             reducedAlpha = true,
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
         )

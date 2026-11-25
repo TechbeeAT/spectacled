@@ -5,11 +5,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import at.techbee.spectacled.DeepLinkData
 import at.techbee.spectacled.DeepLinkHandler
+import at.techbee.spectacled.Shortcuts
 import at.techbee.spectacled.SpectacledVariant
-import at.techbee.spectacled.setupShortcuts
 import at.techbee.spectacled.widget.SpectacledWidget
 import kotlinx.coroutines.launch
 
@@ -19,7 +21,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        lifecycleScope.launch { setupShortcuts(this@MainActivity, SpectacledVariant.JOURNALS) }
+        // Only while started: setDynamicShortcuts is rate limited for background apps.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                Shortcuts.observe(this@MainActivity, SpectacledVariant.JOURNALS)
+            }
+        }
         processIntent(intent)
 
         setContent {
@@ -45,7 +52,7 @@ class MainActivity : ComponentActivity() {
             val data = intent.data
             val isAddDeepLink = data?.host == DeepLinkData.DEEPLINK_ADD_HOST || data?.path?.endsWith("/add") == true
             if (isAddDeepLink) {
-                description = data?.getQueryParameter(DeepLinkData.DEEPLINK_DESCRIPTION_PARAM)
+                description = data.getQueryParameter(DeepLinkData.DEEPLINK_DESCRIPTION_PARAM)
                 if (icalEntryId == null) {
                     icalEntryId = 0L
                 }

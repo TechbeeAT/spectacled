@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -59,7 +62,9 @@ fun MetaInfoCard(
                 text?.let {
                     Text(
                         text = it,
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -75,5 +80,16 @@ private fun MetaInfoCard_Preview() {
         icon = Icons.Outlined.Schedule,
         iconContentDescription = "Time",
         text = "Time"
+    )
+}
+
+@Composable
+@Preview
+private fun MetaInfoCard_Long_Category_Preview() {
+    MetaInfoCard(
+        icon = Icons.AutoMirrored.Outlined.Label,
+        iconContentDescription = "This is a long category name",
+        text = "This is a long category name",
+        modifier = Modifier.widthIn(max = 72.dp)
     )
 }

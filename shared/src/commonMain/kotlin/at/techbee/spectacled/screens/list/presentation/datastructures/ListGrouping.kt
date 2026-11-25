@@ -1,6 +1,10 @@
 package at.techbee.spectacled.screens.list.presentation.datastructures
 
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.StringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.grouping_due_30_plus_days
@@ -155,12 +159,26 @@ enum class ListGrouping(
          * bucket. A `null` result routes the entry to the list's dedicated "no criteria" section
          * instead of being forced into a catch-all bucket.
          */
-        fun getGrouping(baseGroups: Set<ListGrouping>, icsDateTime: IcsDateTime?): ListGrouping? {
+        fun getGrouping(
+            baseGroups: Set<ListGrouping>,
+            icsDateTime: IcsDateTime?,
+            deviceTimeZone: TimeZone = TimeZone.currentSystemDefault(),
+            now: Instant = Clock.System.now()
+        ): ListGrouping? {
             if (icsDateTime == null) return null
+            // Compare actual points in time: floating and DATE values are resolved in the device
+            // timezone, so "within 24 hours" means the same for them as for zoned values.
+            val instant = if (icsDateTime.isDateOnly && baseGroups == dueGroups) {
+                // A DATE due means "due by the end of that day", so it is only overdue from the next day on.
+                // A DATE start keeps start-of-day: a task that starts today has started.
+                icsDateTime.toLocalDateTime().date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(deviceTimeZone)
+            } else {
+                icsDateTime.resolvedInstant(deviceTimeZone)
+            }
             return baseGroups.find { group ->
-                val lowerIcsDateTime = IcsDateTime(group.lowerThreshold?.let { Clock.System.now().plus(it) } ?: Instant.DISTANT_PAST, false).toLocalDateTime()
-                val upperIcsDateTime = IcsDateTime(group.upperThreshold?.let { Clock.System.now().plus(it) } ?: Instant.DISTANT_FUTURE, false).toLocalDateTime()
-                icsDateTime.toLocalDateTime() in lowerIcsDateTime..upperIcsDateTime
+                val lower = group.lowerThreshold?.let { now.plus(it) } ?: Instant.DISTANT_PAST
+                val upper = group.upperThreshold?.let { now.plus(it) } ?: Instant.DISTANT_FUTURE
+                instant in lower..upper
             }
         }
     }

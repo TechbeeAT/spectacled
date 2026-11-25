@@ -18,16 +18,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
-import androidx.compose.material.icons.filled.FormatBold
-import androidx.compose.material.icons.filled.FormatItalic
-import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.RestoreFromTrash
-import androidx.compose.material.icons.outlined.SwipeDown
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
@@ -68,22 +65,31 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.data.ics.RawIcsProperty
 import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.CalendarComponent
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
-import at.techbee.spectacled.screens.core.presentation.MarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.MarkdownVisualTransformation
 import at.techbee.spectacled.screens.core.presentation.applyMarkdownFormat
 import at.techbee.spectacled.screens.core.presentation.components.WavyHorizontalDivider
+import at.techbee.spectacled.screens.details.presentation.components.AlarmCard
+import at.techbee.spectacled.screens.details.presentation.components.AlarmPermissionHint
 import at.techbee.spectacled.screens.details.presentation.components.AttachmentCard
 import at.techbee.spectacled.screens.details.presentation.components.DateTimeCard
+import at.techbee.spectacled.screens.details.presentation.components.FormattingBar
+import at.techbee.spectacled.screens.details.presentation.components.LocationCard
 import at.techbee.spectacled.screens.details.presentation.components.UrlCard
 import at.techbee.spectacled.screens.list.presentation.components.MetaInfoCard
 import at.techbee.spectacled.screens.list.presentation.components.TaskListItem
@@ -92,16 +98,16 @@ import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableColumn
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.alarm_exact_alarms_blocked
+import spectacled.shared.generated.resources.alarm_notifications_blocked
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.date_due
 import spectacled.shared.generated.resources.date_start
 import spectacled.shared.generated.resources.description
 import spectacled.shared.generated.resources.drag_handle
-import spectacled.shared.generated.resources.format_bold
-import spectacled.shared.generated.resources.format_italic
-import spectacled.shared.generated.resources.format_underline
 import spectacled.shared.generated.resources.recurring_entry_read_only_message
 import spectacled.shared.generated.resources.recurring_entry_read_only_title
+import spectacled.shared.generated.resources.show_deleted_subtasks
 import spectacled.shared.generated.resources.summary
 
 
@@ -110,20 +116,38 @@ fun DetailsScreen(
     state: DetailsState,
     onAction: (DetailsAction) -> Unit,
     modifier: Modifier = Modifier,
-    onEditorFocusChanged: (Boolean) -> Unit = {}
+    onEditorFocusChanged: (Boolean) -> Unit = {},
+    notificationsBlocked: Boolean = false,
+    onAllowNotifications: () -> Unit = {},
+    exactAlarmsBlocked: Boolean = false,
+    onAllowExactAlarms: () -> Unit = {}
 ) {
     // Deliberately not rememberSaveable: focus itself is not restored after process death, so a
     // saved `true` would show the formatting bar and hide the FAB with no keyboard up.
     var summaryIsFocused by remember { mutableStateOf(false) }
     var descriptionIsFocused by remember { mutableStateOf(false) }
 
-    // Report whether a text field is being edited so the caller can hide the FAB, which would
+    // hide deleted subtasks by default
+    var showDeletedSubtasks by remember { mutableStateOf(false) }
+
+    // Report whether a text field is being edited so the caller can hide the FAB (if space is short), which would
     // otherwise sit right above the keyboard and cover the field (SwiftUI resizes the view on iOS).
     val isEditorFocused = summaryIsFocused || descriptionIsFocused
     LaunchedEffect(isEditorFocused) { onEditorFocusChanged(isEditorFocused) }
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Take the first back press ourselves while an editor is focused. Letting the system swallow it
+    // hides the keyboard without clearing focus, which leaves imeAwarePadding reserving space for a
+    // keyboard that is no longer there. Ending the editing session is what the formatting bar's
+    // release button and the pull-down gesture already do.
+    val editorBackState = rememberNavigationEventState(NavigationEventInfo.None)
+    NavigationBackHandler(state = editorBackState, isBackEnabled = isEditorFocused) {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+    }
+
     val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
 
@@ -151,21 +175,13 @@ fun DetailsScreen(
     val descriptionFocusRequester = remember { FocusRequester() }
     var lastFocusedField by remember { mutableStateOf<EditorField?>(null) }
 
-    // Removes the keyboard when the user deliberately pulls down while already at the very top.
+    // removes the keyboard when user scrolls to the top
     val nestedScrollConnection = remember(scrollState, focusManager, keyboardController) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // available.y > 0 means pulling DOWN. Only a real finger drag counts: layout-driven
-                // scrolls arrive as NestedScrollSource.SideEffect, and on iOS the keyboard appearing
-                // makes SwiftUI resize the hosting ComposeView, which re-measures this scroll
-                // container and dispatches exactly such a scroll to bring the just-focused field
-                // back into view. Without the source check that would clear focus and close the
-                // keyboard again the instant it opened. The threshold additionally ignores the few
-                // pixels of finger drift a plain tap produces.
-                if (source == NestedScrollSource.UserInput
-                    && available.y > KEYBOARD_DISMISS_DRAG_THRESHOLD_PX
-                    && scrollState.value == 0
-                ) {
+                // available.y > 0 means pulling DOWN.
+                // If we are at the top (scrollState.value <= 0) and pulling more down
+                if (available.y > 0 && scrollState.value <= 0) {
                     focusManager.clearFocus()
                     keyboardController?.hide()
                 }
@@ -213,7 +229,7 @@ fun DetailsScreen(
                             headerText = stringResource(Res.string.date_start),
                             selectableDates = if (state.icalEntry.due == null) DatePickerDefaults.AllDates else object : SelectableDates {
                                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                    return utcTimeMillis < state.icalEntry.due.toDatePickerMillis(TimeZone.currentSystemDefault())
+                                    return utcTimeMillis < state.icalEntry.due.toDatePickerMillis()
                                 }
                             }
                         )
@@ -229,7 +245,7 @@ fun DetailsScreen(
                             selectableDates = if (state.icalEntry.dtStart == null) DatePickerDefaults.AllDates else object :
                                 SelectableDates {
                                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                    return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis(TimeZone.currentSystemDefault())
+                                    return utcTimeMillis > state.icalEntry.dtStart.toDatePickerMillis()
                                 }
                             }
                         )
@@ -277,7 +293,7 @@ fun DetailsScreen(
             Row(
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
             ) {
 
                 BasicTextField(
@@ -286,7 +302,7 @@ fun DetailsScreen(
                         summaryValue = it
                         onAction(DetailsAction.OnUpdateSummary(it.text))
                     },
-                    textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current),
+                    textStyle = MaterialTheme.typography.headlineMedium.copy(color = LocalContentColor.current, textDirection = TextDirection.Content),
                     enabled = state.allowEditing(),
                     onTextLayout = { summaryLayoutResult = it },
                     visualTransformation = MarkdownVisualTransformation(
@@ -306,6 +322,12 @@ fun DetailsScreen(
                             innerTextField()
                         }
                     },
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        autoCorrectEnabled = true,
+                        keyboardType = KeyboardType.LongMessage,
+                        showKeyboardOnFocus = true
+                    ),
                     modifier = Modifier
                         .focusRequester(summaryFocusRequester)
                         .onFocusChanged {
@@ -332,7 +354,7 @@ fun DetailsScreen(
                     descriptionValue = it
                     onAction(DetailsAction.OnUpdateDescription(it.text))
                 },
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalContentColor.current, textDirection = TextDirection.Content),
                 enabled = state.allowEditing(),
                 onTextLayout = { descriptionLayoutResult = it },
                 visualTransformation = MarkdownVisualTransformation(
@@ -352,8 +374,14 @@ fun DetailsScreen(
                         innerTextField()
                     }
                 },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    autoCorrectEnabled = true,
+                    keyboardType = KeyboardType.LongMessage,
+                    showKeyboardOnFocus = true
+                ),
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .weight(1f)
                     .heightIn(min = 200.dp)
                     .focusRequester(descriptionFocusRequester)
                     .onFocusChanged {
@@ -372,6 +400,49 @@ fun DetailsScreen(
                         onClick = onAction,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
+                }
+            }
+
+            AnimatedVisibility(state.icalEntry.location != null) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+
+                    LocationCard(
+                        location = state.icalEntry.location?:"",
+                        allowEditing = state.allowEditing(),
+                        onClick = onAction,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
+
+            AnimatedVisibility(state.icalEntry.alarms.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                ) {
+                    // Without notifications nothing shows at all, so that one comes first; the
+                    // exact alarm hint only matters once notifications are allowed.
+                    if (state.icalEntry.alarms.any { it.isNotifying() }) {
+                        when {
+                            notificationsBlocked -> AlarmPermissionHint(
+                                text = stringResource(Res.string.alarm_notifications_blocked),
+                                onAllow = onAllowNotifications
+                            )
+                            exactAlarmsBlocked -> AlarmPermissionHint(
+                                text = stringResource(Res.string.alarm_exact_alarms_blocked),
+                                onAllow = onAllowExactAlarms
+                            )
+                        }
+                    }
+
+                    state.icalEntry.alarms.forEach { alarm ->
+                        AlarmCard(
+                            alarm = alarm,
+                            icalEntry = state.icalEntry,
+                            allowEditing = state.allowEditing(),
+                            onAction = onAction
+                        )
+                    }
                 }
             }
 
@@ -401,7 +472,6 @@ fun DetailsScreen(
 
             val (deletedSubtasks, activeSortedSubtasks) = sortedSubtasks.partition { it.syncState.isDeletedState() }
 
-
             ReorderableColumn(
                 list = activeSortedSubtasks,
                 onSettle = { fromIndex, toIndex ->
@@ -421,6 +491,7 @@ fun DetailsScreen(
                             icalEntry = subtask,
                             isSelected = isDragging,
                             allowEditing = state.allowEditing() && !subtask.isRecurring(),
+                            deletePending = state.deleteSubtaskId == subtask.id,
                             onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(subtask.id)) },
                             onLongClick = {},
                             onToggleProgress = {
@@ -431,7 +502,10 @@ fun DetailsScreen(
                                     )
                                 )
                             },
-                            onFilterCategory = {},
+                            onSwipeToDelete = {
+                                if(state.allowEditing())
+                                    onAction(DetailsAction.OnShowDeleteSubtaskDialog(subtask.id))
+                            },
                             dragHandle = {
                                 if(state.allowEditing()) {
                                     IconButton(
@@ -452,32 +526,41 @@ fun DetailsScreen(
                 }
             }
 
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-            ) {
-                deletedSubtasks.forEach { deletedSubtask ->
-                    TaskListItem(
-                        icalEntry = deletedSubtask,
-                        isSelected = false,
-                        allowEditing = false,
-                        onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(deletedSubtask.id)) },
-                        onLongClick = {},
-                        onToggleProgress = {},
-                        onFilterCategory = {},
-                        dragHandle = {
-                            IconButton(
-                                onClick = {},
-                                enabled = false
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.RestoreFromTrash,
-                                    contentDescription = null
-                                )
+            AnimatedVisibility(!showDeletedSubtasks && deletedSubtasks.isNotEmpty()) {
+                TextButton(onClick = { showDeletedSubtasks = true }) {
+                    Text(stringResource(Res.string.show_deleted_subtasks))
+                }
+            }
+
+            AnimatedVisibility(showDeletedSubtasks && deletedSubtasks.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                ) {
+                    deletedSubtasks.forEach { deletedSubtask ->
+                        TaskListItem(
+                            icalEntry = deletedSubtask,
+                            isSelected = false,
+                            allowEditing = false,
+                            deletePending = false,
+                            onClick = { onAction(DetailsAction.OnNavigateToIcalEntryId(deletedSubtask.id)) },
+                            onLongClick = {},
+                            onToggleProgress = {},
+                            onSwipeToDelete = {},
+                            dragHandle = {
+                                IconButton(
+                                    onClick = {},
+                                    enabled = false
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.RestoreFromTrash,
+                                        contentDescription = null
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
 
@@ -512,7 +595,11 @@ fun DetailsScreen(
                 onReleaseFocus = {
                     focusManager.clearFocus()
                     keyboardController?.hide()
-                }
+                },
+                onUndo = { onAction(DetailsAction.OnUndo) },
+                allowUndo = state.changeBackstack.size > 1,
+                onRedo = { onAction(DetailsAction.OnRedo) },
+                allowRedo = state.allowRedo()
             )
         }
     }
@@ -559,12 +646,6 @@ private fun RecurringReadOnlyBanner(modifier: Modifier = Modifier) {
 private enum class EditorField { SUMMARY, DESCRIPTION }
 
 /**
- * How far the user has to pull down in one step, while already at the very top, before the keyboard
- * is dismissed. Large enough to ignore the finger drift of an ordinary tap.
- */
-private const val KEYBOARD_DISMISS_DRAG_THRESHOLD_PX = 16f
-
-/**
  * Opens a [LinkAnnotation.Url] when the user taps directly on it.
  *
  * The tap position is validated against the laid-out text before the link is resolved:
@@ -607,60 +688,6 @@ private fun Modifier.openLinkOnTap(
     }
 }
 
-/**
- * Slim formatting bar (bold / italic / underline) meant to sit just above the software keyboard.
- * The buttons are made non-focusable so tapping them does not steal focus from the editor and hide
- * the keyboard.
- */
-@Composable
-private fun FormattingBar(
-    onFormat: (MarkdownFormat) -> Unit,
-    onReleaseFocus: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        tonalElevation = 3.dp,
-        shadowElevation = 6.dp,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(horizontal = 4.dp).fillMaxWidth()
-        ) {
-            IconButton(
-                onClick = { onFormat(MarkdownFormat.BOLD) },
-                modifier = Modifier.focusProperties { canFocus = false }
-            ) {
-                Icon(Icons.Default.FormatBold, contentDescription = stringResource(Res.string.format_bold))
-            }
-            IconButton(
-                onClick = { onFormat(MarkdownFormat.ITALIC) },
-                modifier = Modifier.focusProperties { canFocus = false }
-            ) {
-                Icon(Icons.Default.FormatItalic, contentDescription = stringResource(Res.string.format_italic))
-            }
-            IconButton(
-                onClick = { onFormat(MarkdownFormat.UNDERLINE) },
-                modifier = Modifier.focusProperties { canFocus = false }
-            ) {
-                Icon(Icons.Default.FormatUnderlined, contentDescription = stringResource(Res.string.format_underline))
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(
-                onClick = { onReleaseFocus() },
-                modifier = Modifier.focusProperties { canFocus = false }
-            ) {
-                Icon(Icons.Outlined.SwipeDown, null)
-            }
-
-        }
-    }
-}
-
 
 @Preview
 @Composable
@@ -695,7 +722,7 @@ private fun ListScreen_with_dtstart_Preview() {
     DetailsScreen(
         state = DetailsState(
             icalEntry = IcalEntry.getSampleIcalEntry().copy(
-                dtStart = IcsDateTime.now(),
+                dtStart = IcsDateTime.nowFloating(),
                 url = Url("https://spectacled.techbee.at"),
                 attachments = listOf(Attachment(fileName = "test.pdf", size = 128000))
             ),
@@ -711,7 +738,7 @@ private fun ListScreen_with_dtstart_and_timezone_Preview() {
     DetailsScreen(
         state = DetailsState(
             icalEntry = IcalEntry.getSampleJournal().copy(
-                dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                dtStart = IcsDateTime.nowInZone(TimeZone.of("Europe/Vienna")),
                 status = Status.DRAFT
             ),
             originalIcalEntry = IcalEntry.getSampleIcalEntry()
@@ -728,7 +755,7 @@ private fun ListScreen_task_Preview() {
         state = DetailsState(
             icalEntry = IcalEntry.getSampleIcalEntry().copy(
                 calendarComponent = CalendarComponent.VTODO,
-                dtStart = IcsDateTime.now().copy(timeZone = TimeZone.of("Europe/Vienna")),
+                dtStart = IcsDateTime.nowInZone(TimeZone.of("Europe/Vienna")),
                 status = Status.IN_PROCESS,
                 percentComplete = 50
             ),

@@ -15,17 +15,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +48,6 @@ import spectacled.shared.generated.resources.timezone
 @Composable
 fun TimePickerBottomSheet(
     icsDateTime: IcsDateTime,
-    sheetState: SheetState,
     suggestedTimezones: List<TimeZone> = emptyList(),
     onTimeUpdated: (IcsDateTime) -> Unit,
     onDismiss: () -> Unit
@@ -64,7 +61,16 @@ fun TimePickerBottomSheet(
     )
     var showTimezoneDropdown by mutableStateOf(false)
 
+    // rememberTimePickerState() seeds hour/minute from the entry's current time, and
+    // LaunchedEffect runs immediately on first composition - without this guard, just opening
+    // the sheet (without touching the picker) would fire onTimeUpdated with that seeded value.
+    var hasHandledInitialTime by remember { mutableStateOf(false) }
+
     LaunchedEffect(timePickerState.minute, timePickerState.hour) {
+        if (!hasHandledInitialTime) {
+            hasHandledInitialTime = true
+            return@LaunchedEffect
+        }
         val newLocalDateTime = LocalDateTime(
             year = localDateTime.year,
             month = localDateTime.month,
@@ -77,7 +83,6 @@ fun TimePickerBottomSheet(
     }
 
     BottomSheetWithMenu(
-        sheetState = sheetState,
         onDismiss = { onDismiss() },
         menuActionRight = {
             TextButton(
@@ -168,15 +173,13 @@ fun TimePickerBottomSheet(
 
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 private fun TimePickerBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             TimePickerBottomSheet(
-                icsDateTime = IcsDateTime.now(),
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
+                icsDateTime = IcsDateTime.nowFloating(),
                 onTimeUpdated = {},
                 onDismiss = {}
             )

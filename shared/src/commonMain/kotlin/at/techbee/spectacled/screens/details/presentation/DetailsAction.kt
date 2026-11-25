@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.details.presentation
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.domain.Alarm
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
 import at.techbee.spectacled.screens.core.presentation.components.PathData
@@ -17,14 +18,23 @@ sealed interface DetailsAction {
     data class OnUpdateDtStart(val icsDateTime: IcsDateTime?): DetailsAction
     data class OnUpdateDue(val icsDateTime: IcsDateTime?): DetailsAction
     data class OnUpdateProgress(val percent: Long): DetailsAction
+    data class OnUpdatePriority(val priority: Long?): DetailsAction
     data class OnUpdateSubtaskProgress(val percent: Long, val subtaskIcalEntryId: Long): DetailsAction
     data class OnAddSubtask(val summary: String): DetailsAction
+    data class OnShowDeleteSubtaskDialog(val subtaskIcalEntryId: Long?): DetailsAction
+    data class OnDeleteSubtask(val subtaskIcalEntryId: Long): DetailsAction
     data class OnUpdateUrl(val url: Url?): DetailsAction
+    data class OnUpdateLocation(val location: String?): DetailsAction
     data class OnAddAttachment(val fileName: String, val bytes: ByteArray, val mimeType: String?): DetailsAction
     data class OnAddUrlAttachment(val url: Url): DetailsAction
+    data class OnAddAlarm(val alarm: Alarm): DetailsAction
+    data class OnDeleteAlarm(val alarm: Alarm): DetailsAction
     data class OnOpenAttachment(val attachmentUid: String): DetailsAction
+    data class OnShowDeleteAttachmentDialog(val attachmentUid: String?): DetailsAction
     data class OnDeleteAttachment(val attachmentUid: String): DetailsAction
     data class OnUpdateDrawing(val replaceAttachmentUid: String?, val paths: List<PathData>, val width: Float, val height: Float): DetailsAction
+    object OnUndo: DetailsAction
+    object OnRedo: DetailsAction
 
     data class OnNewCalendarIdSelected(val calendarId: Long): DetailsAction
 
@@ -40,7 +50,7 @@ sealed interface DetailsAction {
 
     object OnDelete: DetailsAction
     data class OnMove(val newCalendarId: Long): DetailsAction
-    object OnCreateCopy: DetailsAction
+    data class OnCreateCopy(val targetCalendarId: Long): DetailsAction
     object OnDispose: DetailsAction
     object OnRestoreEntry: DetailsAction
     object OnShare: DetailsAction

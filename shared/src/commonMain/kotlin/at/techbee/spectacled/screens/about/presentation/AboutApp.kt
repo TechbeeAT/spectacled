@@ -14,12 +14,14 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,11 +39,14 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about_codename
+import spectacled.shared.generated.resources.about_follow_on_mastodon
 import spectacled.shared.generated.resources.about_nlnet_thanks
 import spectacled.shared.generated.resources.about_version
 import spectacled.shared.generated.resources.copyright_info
+import spectacled.shared.generated.resources.logo_mastodon
 import spectacled.shared.generated.resources.logo_nlnet
 import spectacled.shared.generated.resources.logo_techbee_xml
+import spectacled.shared.generated.resources.privacy_policy
 import spectacled.shared.generated.resources.terms_conditions
 
 @Composable
@@ -63,7 +68,8 @@ fun AboutApp(
 
             SplashScreen(
                 spectacledVariant = spectacledVariant,
-                modifier = Modifier.padding(top = 32.dp)
+                modifier = Modifier.padding(top = 32.dp),
+                keepVariantSeedColor = true
             )
 
             Text(
@@ -86,6 +92,63 @@ fun AboutApp(
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    content = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.terms_conditions),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    },
+                    onClick = {
+                        try {
+                            uriHandler.openUri("https://spectacled.techbee.at/terms-of-service/")
+                        } catch (e: Exception) {
+                            Napier.w(e.stackTraceToString())
+                        }
+                    }
+                )
+
+                VerticalDivider(modifier = Modifier.height(24.dp))
+
+                TextButton(
+                    content = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.privacy_policy),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    },
+                    onClick = {
+                        try {
+                            uriHandler.openUri("https://spectacled.techbee.at/privacy-policy/")
+                        } catch (e: Exception) {
+                            Napier.w(e.stackTraceToString())
+                        }
+                    }
+                )
+            }
 
             TextButton(
                 content = {
@@ -93,25 +156,31 @@ fun AboutApp(
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Image(
+                            painter = painterResource(Res.drawable.logo_mastodon),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Text(
-                            text = stringResource(Res.string.terms_conditions),
+                            text = stringResource(Res.string.about_follow_on_mastodon),
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.OpenInNew, 
+                            imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
-                            )
+                        )
                     }
                 },
                 onClick = {
                     try {
-                        uriHandler.openUri("https://www.techbee.at/")   // TODO: Update URL
+                        uriHandler.openUri("https://mastodon.social/@spectacled")
                     } catch (e: Exception) {
                         Napier.w(e.stackTraceToString())
                     }
                 }
             )
+
             Text(
                 text = stringResource(Res.string.copyright_info),
                 style = MaterialTheme.typography.bodyLarge
@@ -131,6 +200,7 @@ fun AboutApp(
 
                      */
                 },
+                colors = CardDefaults.elevatedCardColors().copy(containerColor = MaterialTheme.colorScheme.primaryFixedDim),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -186,6 +256,7 @@ fun AboutApp(
                         Napier.w(e.stackTraceToString())
                     }
                 },
+                colors = CardDefaults.elevatedCardColors().copy(containerColor = MaterialTheme.colorScheme.primaryFixedDim),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -210,6 +281,17 @@ fun AboutApp_Preview(
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             AboutApp(spectacledVariant = SpectacledVariant.JOURNALS)
+        }
+    }
+}
+
+@Preview(uiMode = 32)   // 32 = UI_MODE_NIGHT_YES
+@Composable
+fun AboutApp_DARK_Preview(
+) {
+    AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
+        Scaffold {
+            AboutApp(spectacledVariant = SpectacledVariant.NOTES)
         }
     }
 }

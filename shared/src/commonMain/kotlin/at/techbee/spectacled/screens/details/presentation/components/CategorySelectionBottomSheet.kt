@@ -1,5 +1,6 @@
 package at.techbee.spectacled.screens.details.presentation.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -15,6 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -22,6 +24,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,14 +37,17 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.techbee.spectacled.SpectacledVariant
+import at.techbee.spectacled.screens.core.data.ai.AI_BATCH_CATEGORY_PREFIX
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.theme.AppTheme
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import spectacled.shared.generated.resources.Res
+import spectacled.shared.generated.resources.categories_show_all
 import spectacled.shared.generated.resources.category
 import spectacled.shared.generated.resources.create_category
 import spectacled.shared.generated.resources.done
@@ -61,6 +67,17 @@ fun CategorySelectionBottomSheet(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
+    var showAllCategories by remember { mutableStateOf(false) }
+    val initialMaxCategories = 5
+
+    val categoriesToShow by derivedStateOf {
+        allCategories
+            .filter { !it.startsWith(AI_BATCH_CATEGORY_PREFIX) }
+            .filter { searchQuery.isBlank() || it.contains(searchQuery, true) }
+            .sortedBy { it.uppercase() }
+            .sortedBy { !selectedCategories.contains(it) }
+    }
+
 
     LaunchedEffect(Unit) {
         delay(300.milliseconds)
@@ -83,16 +100,17 @@ fun CategorySelectionBottomSheet(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
         ) {
 
-
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().animateContentSize()
             ) {
-                allCategories
-                    .sortedBy { it.uppercase() }
-                    .forEach { category ->
+                categoriesToShow.forEachIndexed { index, category ->
+
+                        if(!showAllCategories && index > initialMaxCategories-1)
+                            return@forEachIndexed
+
                         FilterChip(
                             selected = selectedCategories.contains(category),
                             onClick = {
@@ -105,18 +123,27 @@ fun CategorySelectionBottomSheet(
                             leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Label, stringResource(Res.string.category)) }
                         )
                     }
+
+                if(!showAllCategories && categoriesToShow.size >= initialMaxCategories)
+                    TextButton(
+                        onClick = { showAllCategories = true }
+                    ) {
+                        Text(stringResource(Res.string.categories_show_all, categoriesToShow.size))
+                    }
             }
 
             TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 placeholder = { Text(stringResource(Res.string.search_add_category)) },
+                textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Content),
                 trailingIcon = {
                     IconButton(
                         onClick = {
                             if (searchQuery.isNotBlank()) {
                                 onCategoryAdded(searchQuery)
                                 searchQuery = ""
+                                showAllCategories = false
                             }
                             keyboardController?.hide()
                         },
@@ -135,6 +162,7 @@ fun CategorySelectionBottomSheet(
                         if (searchQuery.isNotBlank()) {
                             onCategoryAdded(searchQuery)
                             searchQuery = ""
+                            showAllCategories = false
                         }
                     }
                 ),
@@ -146,14 +174,13 @@ fun CategorySelectionBottomSheet(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun CategorySelectionBottomSheet_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
         Scaffold {
             CategorySelectionBottomSheet(
-                allCategories = listOf("Category 5", "Category 1", "Category 2", "Category 3", "Category 4"),
+                allCategories = listOf(AI_BATCH_CATEGORY_PREFIX + "test", "Category 5", "Category 1", "Category 2", "Category 3", "Category 4"),
                 selectedCategories = listOf("Category 2"),
                 onCategoryAdded = { },
                 onCategoryRemoved = { },
@@ -161,5 +188,20 @@ private fun CategorySelectionBottomSheet_Preview() {
             )
         }
     }
+}
 
+@Preview
+@Composable
+private fun CategorySelectionBottomSheet_3Categories_Preview() {
+    AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
+        Scaffold {
+            CategorySelectionBottomSheet(
+                allCategories = listOf(AI_BATCH_CATEGORY_PREFIX + "test", "Category 5", "Category 1"),
+                selectedCategories = listOf("Category 2"),
+                onCategoryAdded = { },
+                onCategoryRemoved = { },
+                onDismiss = { }
+            )
+        }
+    }
 }

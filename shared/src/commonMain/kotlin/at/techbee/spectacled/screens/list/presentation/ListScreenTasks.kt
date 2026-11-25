@@ -55,6 +55,18 @@ fun ListScreenTasks(
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
+    LaunchedEffect(state.scrollToTop) {
+        if(state.scrollToTop) {
+            // Reset in finally: a user gesture cancels the animation, and a flag left at true
+            // would keep the next scroll request from restarting this effect.
+            try {
+                lazyListState.animateScrollToItem(0)
+            } finally {
+                onAction(ListAction.OnScrollToTop(false))
+            }
+        }
+    }
+
     @Composable
     fun LazyItemScope.getTaskListItem(
         icalEntry: IcalEntry,
@@ -67,6 +79,7 @@ fun ListScreenTasks(
             icalEntry = icalEntry,
             isSelected = state.multiselectItems?.contains(icalEntry.id) == true || isDragging,
             allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState() && !icalEntry.isRecurring(),
+            deletePending = state.showSwipeToDeleteDialog == icalEntry.id,
             onClick = {
                 if (state.multiselectItems == null)
                     onAction(ListAction.OnIcalEntryClicked(icalEntry.id))
@@ -75,8 +88,8 @@ fun ListScreenTasks(
             },
             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
             onToggleProgress = { onAction(ListAction.OnToggleProgress(icalEntry.id)) },
+            onSwipeToDelete = { onAction(ListAction.OnShowSwipeToDeleteDialog(icalEntry.id)) },
             dragHandle = dragHandle,
-            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
             modifier = Modifier
                 .widthIn(max = 700.dp)
                 .heightIn(min = 50.dp)

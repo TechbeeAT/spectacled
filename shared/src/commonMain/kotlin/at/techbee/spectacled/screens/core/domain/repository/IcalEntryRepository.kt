@@ -6,8 +6,10 @@ import at.techbee.spectacled.screens.core.domain.Attachment
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.core.domain.UpcomingAlarm
 import io.ktor.http.Url
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Instant
 
 interface IcalEntryRepository {
 
@@ -45,6 +47,21 @@ interface IcalEntryRepository {
      */
     suspend fun moveIcalEntriesToCalendar(icalEntryIds: List<Long>, targetCalendarId: Long)
 
+    /**
+     * Copies the given entries (and, recursively, their subtasks) to [targetCalendarId], which may
+     * also be their current collection. Unlike a move, each copy gets a new uid (copied subtasks
+     * are re-linked to their copied parent) and the originals are left untouched. Entries of
+     * [icalEntryIds] copied within their own collection get [sameCalendarSummarySuffix] appended
+     * to their summary, so they can be told apart from the original.
+     * Returns the id of each copy keyed by the id of its original. The copies' attachments still
+     * point to the originals' local files.
+     */
+    suspend fun copyIcalEntriesToCalendar(
+        icalEntryIds: List<Long>,
+        targetCalendarId: Long,
+        sameCalendarSummarySuffix: String
+    ): Map<Long, Long>
+
     suspend fun updateProgress(id: Long, percentComplete: Long, status: Status?, lastModified: IcsDateTime?, syncState: SyncState)
     suspend fun updateOrderNo(sortedIcalEntryIds: List<Long>)
     suspend fun updateColor(id: Long, color: Color?, lastModified: IcsDateTime?, syncState: SyncState)
@@ -56,4 +73,34 @@ interface IcalEntryRepository {
     suspend fun insertOrUpdateAttachment(attachment: Attachment)
     suspend fun deleteAttachment(id: Long)
     suspend fun getAttachmentsForEntry(entryId: Long): List<Attachment>
+
+    // Alarms - stored and synced as part of the entry (IcalEntry.alarms), these only cover the
+    // local notification state.
+
+    /**
+     * Alarms that are due to be notified in [from] until [until] (exclusive), earliest first and
+     * at most [limit]. A snoozed alarm is due at its snooze time instead of its trigger time.
+     * Only alarms of tasks are returned - journals and notes may carry alarms from other clients,
+     * which are preserved but never notified. Skips alarms already notified, actions that don't notify (EMAIL, ...), and
+     * entries that are deleted, done, cancelled or recurring.
+     */
+    suspend fun getUpcomingAlarms(from: Instant, until: Instant, limit: Long): List<UpcomingAlarm>
+
+    /** Records that a notification was shown for the stored alarm [alarmId]. Local only, never synced. */
+    suspend fun markAlarmNotified(alarmId: Long, notifiedAt: Instant)
+
+    /**
+     * Makes the stored alarm [alarmKey] (see schedulingKey) of entry [icalEntryId] due again at
+     * [until]. Local only, never synced. Returns false if the entry has no such alarm (anymore).
+     */
+    suspend fun snoozeAlarm(icalEntryId: Long, alarmKey: String, until: Instant): Boolean
+
+    /** Marks every alarm due before [before] that was never notified, in one statement. */
+    suspend fun markAlarmsNotifiedBefore(before: Instant, notifiedAt: Instant)
+
+    /**
+     * Recomputes every stored trigger time from its entry. Needed after the device's time zone
+     * changed: all-day and floating dates are resolved in the device zone when the entry is saved.
+     */
+    suspend fun recomputeAlarmTriggerTimes()
 }

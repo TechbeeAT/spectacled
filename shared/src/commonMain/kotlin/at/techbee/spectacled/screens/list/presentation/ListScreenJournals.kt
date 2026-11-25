@@ -74,8 +74,10 @@ fun ListScreenJournals(
                     onAction(ListAction.OnToggleMultiselectItem(icalEntry.id))
             },
             onLongClick = { onAction(ListAction.OnToggleMultiselectItem(icalEntry.id)) },
-            onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+            onSwipeToDelete = { onAction(ListAction.OnShowSwipeToDeleteDialog(icalEntry.id)) },
             showDayBlock = showDayBlock,
+            deletePending = state.showSwipeToDeleteDialog == icalEntry.id,
+            allowEditing = state.calendar.canWriteContent() && !icalEntry.syncState.isDeletedState() && !icalEntry.isRecurring(),
             modifier = Modifier
                 .widthIn(max = 700.dp)
                 .heightIn(min = 50.dp)
@@ -90,6 +92,7 @@ fun ListScreenJournals(
                 icalEntry = subtask,
                 isSelected = state.multiselectItems?.contains(subtask.id) == true,
                 allowEditing = state.calendar.canWriteContent() && !subtask.syncState.isDeletedState() && !subtask.isRecurring(),
+                deletePending = state.showSwipeToDeleteDialog == subtask.id,
                 onClick = {
                     if (state.multiselectItems == null)
                         onAction(ListAction.OnIcalEntryClicked(subtask.id))
@@ -98,7 +101,7 @@ fun ListScreenJournals(
                 },
                 onLongClick = { onAction(ListAction.OnToggleMultiselectItem(subtask.id)) },
                 onToggleProgress = { onAction(ListAction.OnToggleProgress(subtask.id)) },
-                onFilterCategory = { onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchCategory = it))) },
+                onSwipeToDelete = { onAction(ListAction.OnShowSwipeToDeleteDialog(subtask.id)) },
                 modifier = Modifier.padding(start = 64.dp, end = 16.dp).then(modifier)
             )
         }
@@ -136,6 +139,18 @@ fun ListScreenJournals(
                 }
             }
             onAction(ListAction.OnGoToSelectedDate(null))
+        }
+    }
+
+    LaunchedEffect(state.scrollToTop) {
+        if(state.scrollToTop) {
+            // Reset in finally: a user gesture cancels the animation, and a flag left at true
+            // would keep the next scroll request from restarting this effect.
+            try {
+                lazyListState.animateScrollToItem(0)
+            } finally {
+                onAction(ListAction.OnScrollToTop(false))
+            }
         }
     }
 

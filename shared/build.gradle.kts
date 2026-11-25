@@ -64,6 +64,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.navigationevent.compose)
 
             implementation(libs.material.icons.extended)
             implementation(libs.navigation.compose)
@@ -82,6 +83,7 @@ kotlin {
 
             implementation(libs.aboutlibraries.core)
             implementation(libs.aboutlibraries.compose.m3)
+            implementation(libs.multiplatform.markdown.renderer.m3) // or -m2
 
             implementation(libs.compose.pipette)
 
@@ -172,6 +174,12 @@ sqldelight {
         create("SpectacledDatabase") {
             packageName.set("at.techbee.spectacled.db")
             generateAsync.set(true)
+            // Schema snapshots (<version>.db) used to verify that the .sqm migrations turn every
+            // older database into exactly the schema of the .sq files. 1.db is the schema before
+            // the first migration. After adding a migration, add the snapshot of the new version with
+            // `./gradlew :shared:generateCommonMainSpectacledDatabaseSchema` and keep the existing ones.
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            verifyMigrations.set(true)
         }
     }
 }

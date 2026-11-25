@@ -11,7 +11,9 @@ data class Credentials(
     val server: Url,
     val username: String,
     val password: String
-)
+) {
+    fun hasUsernameAndPassword() = username.isNotBlank() && password.isNotBlank()
+}
 
 interface CredentialStore {
     suspend fun save(credentials: Credentials)

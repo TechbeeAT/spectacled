@@ -3,7 +3,6 @@ package at.techbee.spectacled.screens.details.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -17,24 +16,15 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.automirrored.outlined.Redo
+import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.AddBox
-import androidx.compose.material.icons.outlined.AddLink
-import androidx.compose.material.icons.outlined.AddTask
-import androidx.compose.material.icons.outlined.Attachment
-import androidx.compose.material.icons.outlined.DatasetLinked
-import androidx.compose.material.icons.outlined.Gesture
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Restore
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -54,58 +44,71 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.Route.IcalEntryDetails
-import at.techbee.spectacled.screens.core.Platforms
-import at.techbee.spectacled.screens.core.domain.CalendarComponent
+import at.techbee.spectacled.screens.core.AppPermission
+import at.techbee.spectacled.screens.core.PermissionChecker
+import at.techbee.spectacled.screens.core.PermissionStatus
+import at.techbee.spectacled.screens.core.data.NOTIFICATION_PERMISSION_REQUESTED
+import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
 import at.techbee.spectacled.screens.core.domain.IcalEntry
-import at.techbee.spectacled.screens.core.domain.Status
 import at.techbee.spectacled.screens.core.domain.SyncState
-import at.techbee.spectacled.screens.core.getPlatform
 import at.techbee.spectacled.screens.core.presentation.components.BottomSheetWithMenu
 import at.techbee.spectacled.screens.core.presentation.components.CalendarSelectorBottomSheet
 import at.techbee.spectacled.screens.core.presentation.components.ColorSelectorElement
 import at.techbee.spectacled.screens.core.presentation.components.CustomBottomSnackbarHost
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.core.presentation.components.StatusWithProgressIcon
 import at.techbee.spectacled.screens.core.presentation.imeAwarePadding
 import at.techbee.spectacled.screens.core.rememberFilePicker
 import at.techbee.spectacled.screens.core.rememberImagePicker
+import at.techbee.spectacled.screens.core.rememberPermissionRequester
+import at.techbee.spectacled.screens.details.presentation.components.AddAlarmBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.AddMoreDropdownMenuDetails
 import at.techbee.spectacled.screens.details.presentation.components.AddSubtaskBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.AddUrlAttachmentBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.CategorySelectionBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.DeleteAttachmentDialog
 import at.techbee.spectacled.screens.details.presentation.components.DeleteIcalEntryDialog
-import at.techbee.spectacled.screens.details.presentation.components.DetailsMoreBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.DetailsTopBar
 import at.techbee.spectacled.screens.details.presentation.components.DrawingCanvasBottomSheet
+import at.techbee.spectacled.screens.details.presentation.components.EditLocationBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.EditUrlBottomSheet
 import at.techbee.spectacled.screens.details.presentation.components.JournalStatusPickerBottomSheet
-import at.techbee.spectacled.screens.details.presentation.components.MoveIcalEntryDialog
+import at.techbee.spectacled.screens.details.presentation.components.MoreActionsDropdownMenu
+import at.techbee.spectacled.screens.details.presentation.components.MoveOrCopyIcalEntryDialog
 import at.techbee.spectacled.screens.details.presentation.components.ResolveSyncConflictDialog
 import at.techbee.spectacled.screens.details.presentation.components.TaskStatusProgressPickerBottomSheet
 import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import spectacled.shared.generated.resources.Res
-import spectacled.shared.generated.resources.add_attachment
-import spectacled.shared.generated.resources.add_drawing
-import spectacled.shared.generated.resources.add_from_gallery
-import spectacled.shared.generated.resources.add_photo
-import spectacled.shared.generated.resources.add_subtask
-import spectacled.shared.generated.resources.add_url
 import spectacled.shared.generated.resources.category
-import spectacled.shared.generated.resources.color
 import spectacled.shared.generated.resources.done
-import spectacled.shared.generated.resources.link_file_by_url
 import spectacled.shared.generated.resources.more
+import spectacled.shared.generated.resources.redo
 import spectacled.shared.generated.resources.restore
-import spectacled.shared.generated.resources.subtask
-import spectacled.shared.generated.resources.subtasks_not_supported_in_collection
-import kotlin.time.ExperimentalTime
+import spectacled.shared.generated.resources.undo
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
+/**
+ * Below this content height (the space between the top bar and the keyboard/bottom edge), the FAB
+ * is hidden while a text field is being edited. 480dp is the Material compact/medium window-height
+ * breakpoint: a phone in portrait with the keyboard up (and any phone in landscape) falls below it,
+ * while a phone with the keyboard dismissed, tablets and desktop/web windows stay above it.
+ */
+private val MIN_CONTENT_HEIGHT_FOR_FAB_WHILE_EDITING = 480.dp
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreenRoot(
     detailsViewModel: DetailsViewModel,
@@ -116,10 +119,18 @@ fun DetailsScreenRoot(
 ) {
     val detailsState by detailsViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val density = LocalDensity.current
 
-    // Hide the FAB while a text field is focused: with SwiftUI keyboard resizing (and no bottom
-    // inset on iOS) the FAB would otherwise sit right above the keyboard and cover the field.
+    // Hide the FAB while a text field is focused AND the space left for the content is short: with
+    // the keyboard up (SwiftUI resizing on iOS, imePadding elsewhere) the FAB would otherwise sit
+    // right above it and cover the field. Focus alone is not enough - the keyboard can be hidden
+    // while the editor keeps focus, and desktop/web have no soft keyboard at all - so we also look
+    // at the measured content height, which shrinks with the keyboard on every platform.
     var isEditorFocused by remember { mutableStateOf(false) }
+    var contentHeight by remember { mutableStateOf(Dp.Unspecified) }
+    val hideFab = isEditorFocused
+            && contentHeight != Dp.Unspecified
+            && contentHeight < MIN_CONTENT_HEIGHT_FOR_FAB_WHILE_EDITING
 
     val filePicker = rememberFilePicker { pickedFile ->
         pickedFile?.let {
@@ -130,6 +141,37 @@ fun DetailsScreenRoot(
     val imagePicker = rememberImagePicker { pickedFile ->
         pickedFile?.let {
             detailsViewModel.onAction(DetailsAction.OnAddAttachment(it.name, it.bytes, it.mimeType))
+        }
+    }
+
+    // Alarms need the notification permission. It is asked for once on its own, as soon as an
+    // entry with an alarm is shown (opened, or an alarm was just added). After that only the
+    // "Allow" button above the alarms asks again - asking on every open would keep sending the
+    // user to the app settings once Android stops showing the dialog.
+    val permissionChecker = koinInject<PermissionChecker>()
+    val userAppPreferencesStore = koinInject<UserAppPreferencesStore>()
+    var notificationPermissionStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+    // Exact alarms are only ever asked for through the hint: granting them means a settings page.
+    var exactAlarmsStatus by remember { mutableStateOf(PermissionStatus.NOT_APPLICABLE) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        notificationPermissionStatus = permissionChecker.status(AppPermission.NOTIFICATIONS)
+        exactAlarmsStatus = permissionChecker.status(AppPermission.EXACT_ALARMS)
+    }
+    val permissionRequester = rememberPermissionRequester { permission, status ->
+        when (permission) {
+            AppPermission.NOTIFICATIONS -> notificationPermissionStatus = status
+            AppPermission.EXACT_ALARMS -> exactAlarmsStatus = status
+            AppPermission.LOCAL_NETWORK -> Unit
+        }
+    }
+    val hasNotifyingAlarm = detailsState.icalEntry.alarms.any { it.isNotifying() }
+    LaunchedEffect(hasNotifyingAlarm, notificationPermissionStatus) {
+        if (hasNotifyingAlarm
+            && notificationPermissionStatus == PermissionStatus.DENIED
+            && userAppPreferencesStore.load(NOTIFICATION_PERMISSION_REQUESTED) == null
+        ) {
+            userAppPreferencesStore.save(NOTIFICATION_PERMISSION_REQUESTED, "true")
+            permissionRequester.request(AppPermission.NOTIFICATIONS)
         }
     }
 
@@ -181,22 +223,22 @@ fun DetailsScreenRoot(
                     onConfirm = { detailsViewModel.onAction(DetailsAction.OnDelete) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
-            DetailsSheetOrDialog.MOVE ->
-                MoveIcalEntryDialog(
+            DetailsSheetOrDialog.MOVE, DetailsSheetOrDialog.COPY -> {
+                val isCopy = detailsState.showSheetOrDialog == DetailsSheetOrDialog.COPY
+                MoveOrCopyIcalEntryDialog(
                     icalEntry = detailsState.icalEntry,
+                    mode = if (isCopy) MoveOrCopyMode.COPY else MoveOrCopyMode.MOVE,
                     principals = detailsState.allPrincipals,
                     homeCollections = detailsState.allHomeCollections,
                     calendars = detailsState.allCalendars.filter { it.canWriteContent() },
-                    onConfirm = { newCalendarId -> detailsViewModel.onAction(DetailsAction.OnMove(newCalendarId)) },
+                    onConfirm = { calendarId ->
+                        detailsViewModel.onAction(
+                            if (isCopy) DetailsAction.OnCreateCopy(calendarId) else DetailsAction.OnMove(calendarId)
+                        )
+                    },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
-            DetailsSheetOrDialog.MORE ->
-                DetailsMoreBottomSheet(
-                    onAction = { action -> detailsViewModel.onAction(action) },
-                    icalEntry = detailsState.icalEntry,
-                    canWriteContent = detailsState.allowEditing(),
-                    claudeUserApiKeyProvided = !detailsState.claudeUserApiKey.isNullOrEmpty()
-                )
+            }
             DetailsSheetOrDialog.COLOR_SELECTOR ->
                 BottomSheetWithMenu(
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) },
@@ -227,7 +269,6 @@ fun DetailsScreenRoot(
             DetailsSheetOrDialog.JOURNAL_STATUS_PICKER ->
                 JournalStatusPickerBottomSheet(
                     status = detailsState.icalEntry.status,
-                    sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
                     onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
@@ -235,9 +276,10 @@ fun DetailsScreenRoot(
                 TaskStatusProgressPickerBottomSheet(
                     status = detailsState.icalEntry.status,
                     percentComplete = detailsState.icalEntry.percentComplete,
-                    sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded),
+                    priority = detailsState.icalEntry.priority,
                     onStatusUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateStatus(it)) },
                     onProgressUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdateProgress(it)) },
+                    onPriorityUpdated = { detailsViewModel.onAction(DetailsAction.OnUpdatePriority(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
             DetailsSheetOrDialog.ADD_SUBTASKS ->
@@ -251,13 +293,46 @@ fun DetailsScreenRoot(
                     onUrlEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateUrl(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
+            DetailsSheetOrDialog.EDIT_LOCATION ->
+                EditLocationBottomSheet(
+                    initialLocation = detailsState.icalEntry.location,
+                    onLocationEdited = { detailsViewModel.onAction(DetailsAction.OnUpdateLocation(it)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
             DetailsSheetOrDialog.ADD_ATTACHMENT_URL ->
                 AddUrlAttachmentBottomSheet(
                     onUrlConfirmed = { detailsViewModel.onAction(DetailsAction.OnAddUrlAttachment(it)) },
                     onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
                 )
+            DetailsSheetOrDialog.ADD_ALARM -> {
+                AddAlarmBottomSheet(
+                    icalEntry = detailsState.icalEntry,
+                    onAlarmConfirmed = { detailsViewModel.onAction(DetailsAction.OnAddAlarm(it)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(null)) }
+                )
+            }
             null -> {}
         }
+
+        detailsState.deleteAttachmentUid
+            ?.let { uid -> detailsState.icalEntry.attachments.find { it.uid == uid } }
+            ?.let { attachment ->
+                DeleteAttachmentDialog(
+                    attachment = attachment,
+                    onConfirm = { detailsViewModel.onAction(DetailsAction.OnDeleteAttachment(attachment.uid)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowDeleteAttachmentDialog(null)) }
+                )
+            }
+
+        detailsState.deleteSubtaskId
+            ?.let { id -> detailsState.subtasks.find { it.id == id } }
+            ?.let { subtask ->
+                DeleteIcalEntryDialog(
+                    icalEntry = subtask,
+                    onConfirm = { detailsViewModel.onAction(DetailsAction.OnDeleteSubtask(subtask.id)) },
+                    onDismiss = { detailsViewModel.onAction(DetailsAction.OnShowDeleteSubtaskDialog(null)) }
+                )
+            }
 
         if (detailsState.showDrawingCanvasBottomSheet.show) {
             DrawingCanvasBottomSheet(
@@ -274,7 +349,12 @@ fun DetailsScreenRoot(
 
         if(detailsState.icalEntry.calendarId == 0L && detailsState.isInitialized) {
             CalendarSelectorBottomSheet(
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded, confirmValueChange = { it != SheetValue.Hidden }),
+                // A new entry needs a folder, so the sheet must not be dismissable until one is picked
+                sheetState = rememberBottomSheetState(
+                    initialValue = SheetValue.Expanded,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                    confirmValueChange = { it != SheetValue.Hidden }
+                ),
                 principals = detailsState.allPrincipals,
                 homeCollections = detailsState.allHomeCollections,
                 calendars = detailsState.allCalendars.filter { it.canWriteContent() },
@@ -330,12 +410,14 @@ fun DetailsScreenRoot(
                     }
                 }
 
-                AnimatedVisibility(detailsState.allowEditing() && !detailsState.isLoading && !isEditorFocused) {
+                AnimatedVisibility(detailsState.allowEditing() && !detailsState.isLoading && !hideFab) {
                     ExtendedFloatingActionButton(
                         onClick = {},
                         // Lift the FAB by the bottom safe-area inset so it clears the iOS home
                         // indicator (the content still fills to the edge, only the FAB is padded).
-                        modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
+                        modifier = Modifier
+                            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
+                            .padding(bottom = if(isEditorFocused) 24.dp else 0.dp)
                     ) {
 
                         Row(
@@ -344,14 +426,23 @@ fun DetailsScreenRoot(
                         ) {
 
                             IconButton(
-                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.COLOR_SELECTOR)) },
-                                enabled = detailsState.allowEditing() && !detailsState.isLoading
+                                onClick = { detailsViewModel.onAction(DetailsAction.OnUndo) },
+                                enabled = detailsState.changeBackstack.size > 1,
+                                modifier = Modifier.focusProperties { canFocus = false }
                             ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Palette,
-                                    contentDescription = stringResource(Res.string.color)
-                                )
+                                Icon(Icons.AutoMirrored.Outlined.Undo, contentDescription = stringResource(Res.string.undo))
                             }
+
+                            AnimatedVisibility(detailsState.allowRedo()) {
+                                IconButton(
+                                    onClick = { detailsViewModel.onAction(DetailsAction.OnRedo) },
+                                    modifier = Modifier.focusProperties { canFocus = false }
+                                ) {
+                                    Icon(Icons.AutoMirrored.Outlined.Redo, contentDescription = stringResource(Res.string.redo))
+                                }
+                            }
+
+                            VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 8.dp))
 
                             IconButton(
                                 onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.CATEGORY_SELECTOR)) },
@@ -375,14 +466,14 @@ fun DetailsScreenRoot(
                                     enabled = detailsState.allowEditing() && !detailsState.isLoading
                                 ) {
                                     StatusWithProgressIcon(
-                                        status = detailsState.icalEntry.status
-                                            ?: if(detailsState.icalEntry.isTask()) Status.NEEDS_ACTION else Status.FINAL,
+                                        status = detailsState.icalEntry.status,
                                         percent = detailsState.icalEntry.percentComplete
                                     )
                                 }
                             }
 
                             var addMoreExpanded by remember { mutableStateOf(false) }
+                            var moreActionsExpanded by remember { mutableStateOf(false) }
 
                             IconButton(
                                 onClick = { addMoreExpanded = true },
@@ -390,106 +481,32 @@ fun DetailsScreenRoot(
                             ) {
                                 Icon(Icons.Outlined.AddBox, "Add more")
 
-                                DropdownMenu(
-                                    expanded = addMoreExpanded,
-                                    onDismissRequest = { addMoreExpanded = false }
-                                ) {
-
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.add_attachment)) },
-                                        leadingIcon = { Icon(Icons.Outlined.Attachment, stringResource(Res.string.add_attachment)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.FILE))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.link_file_by_url)) },
-                                        leadingIcon = { Icon(Icons.Outlined.DatasetLinked, stringResource(Res.string.link_file_by_url)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.ADD_ATTACHMENT_URL))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    if (getPlatform().platform in listOf(Platforms.IOS, Platforms.ANDROID)) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(Res.string.add_photo)) },
-                                            leadingIcon = { Icon(Icons.Outlined.PhotoCamera, stringResource(Res.string.add_photo)) },
-                                            onClick = {
-                                                detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.PHOTO))
-                                                addMoreExpanded = false
-                                            },
-                                        )
-                                    }
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.add_from_gallery)) },
-                                        leadingIcon = { Icon(Icons.Outlined.Image, stringResource(Res.string.add_from_gallery)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnLaunchPicker(AttachmentPickerAction.GALLERY))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.add_drawing)) },
-                                        leadingIcon = { Icon(Icons.Outlined.Gesture, stringResource(Res.string.add_drawing)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowDrawingCanvasBottomSheet(true, null, null))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.add_url)) },
-                                        leadingIcon = { Icon(Icons.Outlined.AddLink, stringResource(Res.string.add_url)) },
-                                        enabled = detailsState.icalEntry.url == null,
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.EDIT_URL))
-                                            addMoreExpanded = false
-                                        },
-                                    )
-
-                                    DropdownMenuItem(
-                                        text = {
-                                            Column {
-                                                Text(stringResource(Res.string.add_subtask))
-                                                if (detailsState.calendar?.isTasksSupported() != true)
-                                                    Text(
-                                                        text = stringResource(Res.string.subtasks_not_supported_in_collection),
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
-                                            }
-                                        },
-                                        leadingIcon = { Icon(Icons.Outlined.AddTask, stringResource(Res.string.subtask)) },
-                                        onClick = {
-                                            detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.ADD_SUBTASKS))
-                                            addMoreExpanded = false
-                                        },
-                                        enabled = detailsState.calendar?.supportedComponents?.contains(CalendarComponent.VTODO) == true
-                                    )
-                                }
+                                AddMoreDropdownMenuDetails(
+                                    addMoreExpanded = addMoreExpanded,
+                                    onDismiss = { addMoreExpanded = false },
+                                    onAction = { action -> detailsViewModel.onAction(action) },
+                                    hasLocation = detailsState.icalEntry.location != null,
+                                    hasUrl = detailsState.icalEntry.url != null,
+                                    isTask = detailsState.icalEntry.isTask(),
+                                    calendarSupportsTasks = detailsState.calendar?.isTasksSupported() == true
+                                )
                             }
 
-
-
-                            VerticalDivider(
-                                modifier = Modifier
-                                    .height(24.dp)
-                                    .padding(horizontal = 4.dp),
-                                color = IconButtonDefaults.iconButtonColors().contentColor
-                            )
+                            VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 8.dp))
 
                             IconButton(
-                                onClick = { detailsViewModel.onAction(DetailsAction.OnShowSheetOrDialog(DetailsSheetOrDialog.MORE)) }
+                                onClick = { moreActionsExpanded = true }
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.MoreVert,
                                     contentDescription = stringResource(Res.string.more)
+                                )
+                                MoreActionsDropdownMenu(
+                                    expanded = moreActionsExpanded,
+                                    icalEntry = detailsState.icalEntry,
+                                    canWriteContent = detailsState.allowEditing(),
+                                    onDismiss = { moreActionsExpanded = false },
+                                    onAction = { action -> detailsViewModel.onAction(action) }
                                 )
                             }
                         }
@@ -513,14 +530,21 @@ fun DetailsScreenRoot(
                     .consumeWindowInsets(paddingValues)
                     .padding(horizontal = 8.dp)
                     .imeAwarePadding()
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    // Measured after the IME padding, so this is the height actually left for the
+                    // content. The FAB overlays the content, so hiding it does not feed back here.
+                    .onSizeChanged { contentHeight = with(density) { it.height.toDp() } },
                 contentAlignment = Alignment.BottomCenter
             ) {
                 DetailsScreen(
                     state = detailsState,
                     onAction = { action -> detailsViewModel.onAction(action) },
                     modifier = Modifier.fillMaxSize(),
-                    onEditorFocusChanged = { isEditorFocused = it }
+                    onEditorFocusChanged = { isEditorFocused = it },
+                    notificationsBlocked = notificationPermissionStatus == PermissionStatus.DENIED,
+                    onAllowNotifications = { permissionRequester.request(AppPermission.NOTIFICATIONS) },
+                    exactAlarmsBlocked = exactAlarmsStatus == PermissionStatus.DENIED,
+                    onAllowExactAlarms = { permissionRequester.request(AppPermission.EXACT_ALARMS) }
                 )
 
                 CustomBottomSnackbarHost(snackbarHostState = snackbarHostState)
@@ -532,7 +556,7 @@ fun DetailsScreenRoot(
 
 @Preview
 @Composable
-private fun ListScreenRoot_Preview() {
+private fun DetailsScreenRoot_Preview() {
     DetailsScreenRoot(
         detailsViewModel = koinViewModel<DetailsViewModel>(),
         onNavigate = {},

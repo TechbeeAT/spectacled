@@ -28,6 +28,7 @@ import kotlin.uuid.Uuid
 
 
 enum class SyncState {
+    LOCAL_NEW,             /** A newly created entry the user has not touched yet. Not written to DB, not pushed to server. */
     LOCAL_MODIFIED,
     LOCAL_DELETED,
     CONFLICT_LOCAL_MODIFIED_SERVER_MODIFIED,
@@ -37,6 +38,13 @@ enum class SyncState {
     USER_DECIDED_SERVER_WINS,
     SYNCED,
     REMOTE_DELETED_LOCAL_TRASHBIN;
+
+    /**
+     * The state the entry is in after the user edited it locally: an entry that was in sync with
+     * the server - or a brand new one that was never persisted - becomes dirty, every other state
+     * (deleted, conflict, user decision) is kept as it is.
+     */
+    fun afterLocalEdit() = if (this == SYNCED || this == LOCAL_NEW) LOCAL_MODIFIED else this
 
     fun isDeletedState() = this == LOCAL_DELETED || this == REMOTE_DELETED_LOCAL_TRASHBIN
 
@@ -59,23 +67,25 @@ data class IcalEntry(
     val status: Status? = null,
     val percentComplete: Long = 0,
     val priority: Long? = null,
-    val dtstamp: IcsDateTime = IcsDateTime.now(),
+    val dtstamp: IcsDateTime = IcsDateTime.nowUtc(),
     val color: Color? = null,
     val sequence: Long? = null,
     val classification: Classification? = null,
     val categories: List<String> = emptyList(),
-    val created: IcsDateTime = IcsDateTime.now(),
-    val lastModified: IcsDateTime? = IcsDateTime.now(),
+    val created: IcsDateTime = IcsDateTime.nowUtc(),
+    val lastModified: IcsDateTime? = IcsDateTime.nowUtc(),
     val orderNo: Long? = null,
     val syncState: SyncState = SyncState.LOCAL_MODIFIED,
     val extraProperties: List<RawIcsProperty> = emptyList(),
     val attachments: List<Attachment> = emptyList(),
+    val alarms: List<Alarm> = emptyList(),
     val etag: String? = null,
     val href: Url? = null,
     val calendarComponent: CalendarComponent,
     val parentUid: String? = null,
     val relType: String? = null,
-    val url: Url? = null
+    val url: Url? = null,
+    val location: String? = null
     ) {
 
     companion object {
@@ -103,7 +113,7 @@ data class IcalEntry(
             "freestar"
         )
 
-        fun newJournal() = IcalEntry(dtStart = IcsDateTime.now(), calendarComponent = CalendarComponent.VJOURNAL)
+        fun newJournal() = IcalEntry(dtStart = IcsDateTime.nowInZone(), calendarComponent = CalendarComponent.VJOURNAL)
         fun newNote() = IcalEntry(calendarComponent = CalendarComponent.VJOURNAL)
         fun newTask() = IcalEntry(calendarComponent = CalendarComponent.VTODO)
 
@@ -117,7 +127,7 @@ data class IcalEntry(
         fun getSampleJournal()= newJournal().copy(
             summary = sampleParagraphs[0].substring(0, 30),
             description = sampleParagraphs[0],
-            dtStart = IcsDateTime.now(),
+            dtStart = IcsDateTime.nowInZone(),
             categories = listOf("Category 1", "Category 2"),
             calendarComponent = CalendarComponent.VJOURNAL
         )
@@ -125,8 +135,8 @@ data class IcalEntry(
         fun getSampleTask()= newTask().copy(
             summary = sampleParagraphs[0].substring(0, 30),
             description = sampleParagraphs[0],
-            dtStart = IcsDateTime.now(),
-            due = IcsDateTime.now(),
+            dtStart = IcsDateTime.nowFloating(),
+            due = IcsDateTime.nowFloating(),
             categories = listOf("Category 1", "Category 2"),
             calendarComponent = CalendarComponent.VTODO
         )
@@ -149,7 +159,7 @@ data class IcalEntry(
 
     fun isPinned() = categories.any { category -> category == PINNED_CATEGORY}
 
-    fun isDone() = isTask() && (percentComplete == 100L || status == Status.COMPLETED)
+    fun isDoneOrCancelled() = isTask() && (percentComplete == 100L || status == Status.COMPLETED || status == Status.CANCELLED)
 
     val categoriesWithoutPinned: List<String>
         get() = categories.filterNot { it == PINNED_CATEGORY }
@@ -164,10 +174,15 @@ data class IcalEntry(
                 100L -> Status.COMPLETED
                 else -> this.status
             },
-            lastModified = IcsDateTime.now(),
-            syncState = if (this.syncState == SyncState.SYNCED) SyncState.LOCAL_MODIFIED else this.syncState
+            lastModified = IcsDateTime.nowUtc(),
+            syncState = this.syncState.afterLocalEdit()
         )
     }
+
+    // Ignores bookkeeping the app/sync layer maintains on its own (row id, sync state, CalDAV
+    // etag/href, last-modified stamp) - true if nothing a user could see or edit differs.
+    fun hasSameContentAs(other: IcalEntry): Boolean =
+        this.copy(id = other.id, lastModified = other.lastModified, syncState = other.syncState, etag = other.etag, href = other.href) == other
 
     fun getProgressTriState() = when {
         status == Status.IN_PROCESS -> ToggleableState.Indeterminate
@@ -229,7 +244,7 @@ data class IcalEntry(
      */
     fun matches(listFilterCriteria: ListFilterCriteria): Boolean {
         val filterQuery = listFilterCriteria.searchQuery
-        val filterCategory = listFilterCriteria.searchCategory
+        val filterCategories = listFilterCriteria.searchCategories
         val filterStatus = listFilterCriteria.filterStatus
         val hideCompletedTasks = listFilterCriteria.hideCompletedTasks
 
@@ -240,15 +255,15 @@ data class IcalEntry(
         if (!matchesQuery)
             return false
 
-        val matchesCategory = filterCategory.isNullOrBlank() || categories.any { it.equals(filterCategory, ignoreCase = true) }
+        val matchesCategory = filterCategories.isEmpty() || categories.any { listFilterCriteria.isCategorySelected(it) }
         if (!matchesCategory)
             return false
 
-        val matchesStatus = filterStatus == null || status == filterStatus
+        val matchesStatus = filterStatus.isEmpty() || status in filterStatus
         if (!matchesStatus)
             return false
 
-        if (hideCompletedTasks && isDone())
+        if (hideCompletedTasks && isDoneOrCancelled())
             return false
 
         return true
@@ -263,7 +278,7 @@ data class IcalEntry(
         if (parentUid == null)
             this.matches(listFilterCriteria)
         else
-            !(listFilterCriteria.hideCompletedTasks && isDone())
+            !(listFilterCriteria.hideCompletedTasks && isDoneOrCancelled())
 }
 
 

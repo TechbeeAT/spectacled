@@ -133,7 +133,10 @@ compose.desktop {
         }
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            // Windows gets both: the .exe is the download for people (Explorer shows
+            // the app icon on it, an .msi always shows the generic Windows Installer
+            // one), the .msi stays for deployment via GPO/Intune.
+            targetFormats(TargetFormat.Dmg, TargetFormat.Exe, TargetFormat.Msi, TargetFormat.Deb)
 
             // jpackage trims the bundled runtime with jlink and can't see reflectively
             // loaded modules, so it drops these and the packaged app crashes at runtime:
@@ -144,15 +147,60 @@ compose.desktop {
             //     plain-JSON store.
             modules("java.sql", "jdk.unsupported")
 
-            packageName = "at.techbee.spectacled.notes"
-            packageVersion = libs.versions.appVersionString.get()
+            // Display name: passed to jpackage as --name, which becomes the "Name=" of the
+            // Linux .desktop entry, the macOS .app bundle name and the Windows install
+            // directory. Deliberately separate from the Debian package name below, which
+            // has to stay a lowercase identifier.
+            packageName = "spectacled Notes"
+            // jpackage accepts only numeric versions, so drop a "-beta"-style channel suffix.
+            packageVersion = libs.versions.appVersionString.get().substringBefore("-")
+            description = "Keep free-form notes and sync them over CalDAV"
+            vendor = "Techbee e.U."
+            // Deliberately ASCII: jpackage runs as a separate process and decodes its
+            // arguments with the platform locale, so a "©" turns into mojibake in the
+            // packages whenever the builder's locale is not UTF-8.
+            copyright = "Copyright (c) 2026 Techbee e.U."
 
-            linux { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_png.png")) }
-            windows { iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_ico.ico")) }
+            linux {
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_png.png"))
+
+                // Debian package identity: a conventional short lowercase name (Debian
+                // Policy 5.6.1), which is also the /opt/<name> installation path. The
+                // reverse-DNS id lives on in bundleID / applicationId, not here.
+                packageName = "spectacled-notes"
+                debMaintainer = "spectacled@techbee.at"   // -> "Techbee e.U. <spectacled@techbee.at>"
+                appCategory = "utils"                     // "Section:" of the deb control file
+                menuGroup = "Office;"                     // "Categories=" of the .desktop entry
+
+                // jpackage writes no .desktop file at all unless this is set, so without
+                // it the package installs without a launcher and the display name and
+                // categories above have nothing to apply to.
+                shortcut = true
+            }
+            windows {
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_ico.ico"))
+
+                // Without these the MSI installs the app with no Start menu entry and no
+                // desktop icon at all. jpackage always creates the desktop icon; the DSL
+                // has no equivalent of its --win-shortcut-prompt opt-out checkbox.
+                menu = true
+                menuGroup = "spectacled"
+                shortcut = true
+
+                // Identifies the product across versions. jpackage generates a random one
+                // when it is missing, which makes every new version install alongside the
+                // old one instead of upgrading it, so this must stay fixed forever.
+                upgradeUuid = "F7155635-D9FE-4A80-996A-C94F44678473"
+            }
             macOS {
                 dockName = "spectacled Notes"
                 iconFile.set(project.file("src/commonMain/composeResources/drawable/icon_notes_icns.icns"))
                 bundleID = "at.techbee.spectacled.notes"
+
+                // LSApplicationCategoryType and LSMinimumSystemVersion of the bundle:
+                // where the app is filed, and which macOS versions refuse to run it.
+                appCategory = "public.app-category.productivity"
+                minimumSystemVersion = "11.0"
 
                 // Sign the .app with the "Developer ID Application" certificate only when a
                 // signing identity is provided (CI release builds on macOS). Local and

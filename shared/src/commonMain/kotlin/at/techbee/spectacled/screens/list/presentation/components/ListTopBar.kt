@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
@@ -31,7 +32,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +59,7 @@ import at.techbee.spectacled.screens.core.domain.Calendar
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatus
 import at.techbee.spectacled.screens.core.domain.CalendarSyncStatusType
 import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.list.presentation.ListAction
 import at.techbee.spectacled.screens.list.presentation.ListState
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
@@ -72,6 +73,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.clear_selection
+import spectacled.shared.generated.resources.copy
 import spectacled.shared.generated.resources.date_selector
 import spectacled.shared.generated.resources.delete_selected
 import spectacled.shared.generated.resources.filter
@@ -95,9 +97,8 @@ import spectacled.shared.generated.resources.update_category
 import spectacled.shared.generated.resources.update_color
 import spectacled.shared.generated.resources.x_selected
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IcalEntryListTopBar(
+fun ListTopBar(
     state: ListState,
     onAction: (ListAction) -> Unit,
     allSelectedPinned: Boolean,
@@ -136,7 +137,7 @@ fun IcalEntryListTopBar(
                                     contentDescription = stringResource(Res.string.folders)
                                 )
                                 Text(
-                                    text = calendar.displayName ?: calendar.url.toString(),
+                                    text = calendar.displayLabel,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(end = 4.dp)
@@ -193,14 +194,7 @@ fun IcalEntryListTopBar(
 
                 Row {
                     TextButton(
-                        onClick = {
-                            if (state.showSearchBar) {
-                                onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchQuery = null)))
-                            } else {
-                                onAction(ListAction.OnListFilterCriteriaChanged(state.listFilterCriteria.copy(searchQuery = "")))
-                            }
-                        },
-                        //elevation = if (state.showSearchBar) ButtonDefaults.buttonElevation(defaultElevation = 1.dp) else null,
+                        onClick = { onAction(ListAction.OnUpdateSearch(if(state.showSearchBar) null else "")) },
                         colors = if (state.showSearchBar) ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) else ButtonDefaults.textButtonColors(),
                     ) {
                         Icon(
@@ -319,7 +313,7 @@ fun IcalEntryListTopBar(
                                                 if (state.listSortedBy.name == sortedByOption.name && state.listSortedBy != ListSortedBy.DRAGANDDROP)
                                                     onAction(ListAction.OnSortedByChanged(sortedByOption, !state.listSortedByAscending))
                                                 else
-                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, sortedByOption.defaultAsc))
+                                                    onAction(ListAction.OnSortedByChanged(sortedByOption, true))
                                             },
                                             leadingIcon = {
                                                 Icon(painterResource(sortedByOption.displayIcon), null)
@@ -421,7 +415,7 @@ fun IcalEntryListTopBar(
                                 Text(text = stringResource(Res.string.move))
                             },
                             enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
-                            onClick = { onAction(ListAction.OnShowMoveSelectedItemsDialog(true)) },
+                            onClick = { onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(MoveOrCopyMode.MOVE)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Outlined.DriveFileMove,
@@ -432,8 +426,26 @@ fun IcalEntryListTopBar(
 
                         DropdownMenuItem(
                             text = {
+                                Text(text = stringResource(Res.string.copy))
+                            },
+                            // no write access needed: copying out of a read-only collection is allowed
+                            enabled = state.multiselectItems?.isNotEmpty() == true,
+                            onClick = { onAction(ListAction.OnShowMoveOrCopySelectedItemsDialog(MoveOrCopyMode.COPY)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.FileCopy,
+                                    contentDescription = stringResource(Res.string.copy)
+                                )
+                            }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(8.dp))
+
+                        DropdownMenuItem(
+                            text = {
                                 Text(
-                                    text = stringResource(Res.string.delete_selected)
+                                    text = stringResource(Res.string.delete_selected),
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             },
                             enabled = state.multiselectItems?.isNotEmpty() == true && calendar.canWriteContent(),
@@ -441,7 +453,8 @@ fun IcalEntryListTopBar(
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.DeleteOutline,
-                                    contentDescription = stringResource(Res.string.delete_selected)
+                                    contentDescription = stringResource(Res.string.delete_selected),
+                                    tint = MaterialTheme.colorScheme.error
                                 )
                             }
                         )
@@ -459,7 +472,7 @@ fun IcalEntryListTopBar(
 private fun ListTopBar_Journal_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Journals"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -482,7 +495,7 @@ private fun ListTopBar_Journal_Preview() {
 private fun ListTopBar_Notes_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -504,7 +517,7 @@ private fun ListTopBar_Notes_Preview() {
 private fun ListTopBar_Tasks_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Tasks"),
                 listSortedBy = ListSortedBy.DRAGANDDROP,
@@ -527,7 +540,7 @@ private fun ListTopBar_Tasks_Preview() {
 private fun ListTopBar_blue_Preview() {
     MaterialTheme(colorScheme = dynamicColorScheme(Color.Blue, false)) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview()
                     .copy(displayName = "This is a very long folder name that shouldn't cause troubles"),
@@ -550,7 +563,7 @@ private fun ListTopBar_blue_Preview() {
 private fun ListTopBar_Journals_Multiselect_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.JOURNALS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -571,7 +584,7 @@ private fun ListTopBar_Journals_Multiselect_Preview() {
 private fun ListTopBar_Notes_Multiselect_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.NOTES) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -592,7 +605,7 @@ private fun ListTopBar_Notes_Multiselect_Preview() {
 private fun ListTopBar_Tasks_Multiselect_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(displayName = "Personal Notes"),
                 listSortedBy = ListSortedBy.CREATED,
@@ -614,7 +627,7 @@ private fun ListTopBar_Tasks_Multiselect_Preview() {
 private fun ListTopBar_sync_in_progress_Preview() {
     AppTheme(spectacledVariant = SpectacledVariant.TASKS) {
 
-        IcalEntryListTopBar(
+        ListTopBar(
             state = ListState(
                 calendar = Calendar.getCalendarForPreview().copy(
                     displayName = "This is a very long folder name that shouldn't cause troubles",

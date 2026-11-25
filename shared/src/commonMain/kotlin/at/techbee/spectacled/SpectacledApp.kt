@@ -3,18 +3,36 @@ package at.techbee.spectacled
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -26,7 +44,10 @@ import at.techbee.spectacled.screens.Route
 import at.techbee.spectacled.screens.account.presentation.AccountListScreenRoot
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.SPLIT_FRACTION_MAX
+import at.techbee.spectacled.screens.core.data.SPLIT_FRACTION_MIN
 import at.techbee.spectacled.screens.core.domain.repository.CalendarRepository
 import at.techbee.spectacled.screens.core.koin.sharedModule
 import at.techbee.spectacled.screens.details.presentation.DetailsScreenRoot
@@ -34,23 +55,32 @@ import at.techbee.spectacled.screens.details.presentation.DetailsViewModel
 import at.techbee.spectacled.screens.list.presentation.ListScreenRoot
 import at.techbee.spectacled.screens.list.presentation.ListViewModel
 import at.techbee.spectacled.theme.AppTheme
+import at.techbee.spectacled.theme.getColorSchemeForSeedColor
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.CancellationException
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import org.koin.mp.KoinPlatform
-import kotlin.time.ExperimentalTime
 
 
-var isNapierInitialized = false
+private var isNapierInitialized = false
 
-fun doInitKoin(spectacledVariant: SpectacledVariant) {
+/**
+ * Installs the Napier antilog exactly once per process. Napier.base() *adds* an antilog on every
+ * call, so calling it from both the Android Application and doInitKoin printed every log line twice.
+ */
+fun initLogging() {
     if (!isNapierInitialized) {
         Napier.base(DebugAntilog())
         isNapierInitialized = true
     }
+}
+
+fun doInitKoin(spectacledVariant: SpectacledVariant) {
+    initLogging()
 
     if (KoinPlatform.getKoinOrNull() == null) {
         startKoin {
@@ -62,7 +92,6 @@ fun doInitKoin(spectacledVariant: SpectacledVariant) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun SpectacledApp(
     spectacledVariant: SpectacledVariant,
@@ -73,18 +102,21 @@ fun SpectacledApp(
     val syncTrigger = koinInject<PlatformSyncTrigger>()
     val userAppPreferencesStore = koinInject<PlatformUserAppPreferencesStore>()
     val calendarRepository = koinInject<CalendarRepository>()
+    val alarmCoordinator = koinInject<AlarmCoordinator>()
 
     val accountListViewModel = koinViewModel<AccountListViewModel>()
     val listViewModel = koinViewModel<ListViewModel>()
     val detailsViewModel: DetailsViewModel = koinViewModel<DetailsViewModel>()
 
 
+    // Created outside of AppTheme: AppTheme rebuilds its content when the language changes,
+    // the navigation state must survive that.
+    //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
+    val navController = rememberNavController()
+
     AppTheme(
         spectacledVariant = spectacledVariant
     ) {
-
-        //TODO: Check https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html#support-for-browser-navigation-in-web-apps for wasm
-        val navController = rememberNavController()
 
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -100,7 +132,8 @@ fun SpectacledApp(
                     composable<Route.AccountsList> {
                         AccountListScreenRoot(
                             viewModel = accountListViewModel,
-                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } }
+                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 
@@ -120,21 +153,34 @@ fun SpectacledApp(
                         // BoxWithConstraints observes the window size and will trigger a recomposition
                         // whenever the orientation or size changes.
                         BoxWithConstraints {
-                            val isLandscape = (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
+                            val isLandscape = rememberIsLandscape()
+                            val splitFraction = remember { mutableFloatStateOf(userAppPreferencesStore.splitFractionAccountsList) }
+                            val density = LocalDensity.current
+                            val maxWidthPx = with(density) { maxWidth.toPx() }
 
                             Row(modifier = Modifier.fillMaxSize()) {
 
-                                if(isLandscape) {
-                                    AccountListScreenRoot(
-                                        viewModel = accountListViewModel,
-                                        onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
-                                        removeSafeAreaPaddingValues = isLandscape,
-                                        modifier = Modifier.weight(0.4f)
-                                    )
+                                if (isLandscape) {
 
-                                    VerticalDivider()
+                                    Box(
+                                        contentAlignment = Alignment.TopEnd,
+                                        modifier = Modifier.weight(splitFraction.floatValue)
+                                    ) {
+                                        AccountListScreenRoot(
+                                            viewModel = accountListViewModel,
+                                            onNavigate = { route -> try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { } },
+                                            removeSafeAreaPaddingValues = isLandscape,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+
+                                        DraggableVerticalDivider(
+                                            splitFraction = splitFraction,
+                                            maxWidthPx = maxWidthPx,
+                                            onDragStopped = { userAppPreferencesStore.splitFractionAccountsList = it }
+                                        )
+                                    }
+
                                 }
-
 
                                 ListScreenRoot(
                                     listViewModel = listViewModel,
@@ -144,7 +190,7 @@ fun SpectacledApp(
                                             onCloseApp()
                                     },
                                     removeSafeAreaPaddingValues = isLandscape,
-                                    modifier = Modifier.weight(if(isLandscape) 0.6f else 1.0f)
+                                    modifier = Modifier.weight(if (isLandscape) 1f - splitFraction.floatValue else 1.0f)
                                 )
                             }
 
@@ -170,7 +216,10 @@ fun SpectacledApp(
                         // BoxWithConstraints observes the window size and will trigger a recomposition
                         // whenever the orientation or size changes.
                         BoxWithConstraints {
-                            val isLandscape = (maxWidth > maxHeight) || maxWidth > 700.dp  // large tablets have enough space to always show landscape layout
+                            val isLandscape = rememberIsLandscape()
+                            val splitFraction = remember { mutableFloatStateOf(userAppPreferencesStore.splitFractionListDetails) }
+                            val density = LocalDensity.current
+                            val maxWidthPx = with(density) { maxWidth.toPx() }
 
                             Row(modifier = Modifier.fillMaxSize()) {
 
@@ -187,20 +236,35 @@ fun SpectacledApp(
                                 // show list for landscape mode only and only when initialized
                                 if (isLandscape && listState.isInitialized && listState.calendar.id == detailsState.calendar?.id) {
 
-                                    ListScreenRoot(
-                                        listViewModel = listViewModel,
-                                        onNavigate = { route ->
-                                            try { navController.navigate(route) { launchSingleTop = true } } catch (_: IllegalStateException) { }
-                                        },
-                                        onNavigateUp = {
-                                            if (!navController.popBackStack())
-                                                onCloseApp()
-                                        },
-                                        removeSafeAreaPaddingValues = isLandscape,
-                                        modifier = Modifier.weight(0.4f)
-                                    )
+                                    Box(
+                                        contentAlignment = Alignment.TopEnd,
+                                        modifier = Modifier.weight(splitFraction.floatValue)
+                                    ) {
+                                        ListScreenRoot(
+                                            listViewModel = listViewModel,
+                                            onNavigate = { route ->
+                                                try {
+                                                    navController.navigate(route) { launchSingleTop = true }
+                                                } catch (_: IllegalStateException) {
+                                                }
+                                            },
+                                            onNavigateUp = {
+                                                if (!navController.popBackStack())
+                                                    onCloseApp()
+                                            },
+                                            removeSafeAreaPaddingValues = isLandscape,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
 
-                                    VerticalDivider()
+                                        val dividerColor = getColorSchemeForSeedColor(listViewModel.state.value.calendar.color).primary
+
+                                        DraggableVerticalDivider(
+                                            splitFraction = splitFraction,
+                                            maxWidthPx = maxWidthPx,
+                                            onDragStopped = { userAppPreferencesStore.splitFractionListDetails = it },
+                                            color = dividerColor
+                                        )
+                                    }
                                 }
 
                                 DetailsScreenRoot(
@@ -217,7 +281,7 @@ fun SpectacledApp(
                                             onCloseApp()
                                     },
                                     removeSafeAreaPaddingValues = isLandscape,
-                                    modifier = Modifier.weight(if (isLandscape) 0.6f else 1.0f)
+                                    modifier = Modifier.weight(if (isLandscape) 1f - splitFraction.floatValue else 1.0f)
                                 )
                             }
                         }
@@ -225,57 +289,118 @@ fun SpectacledApp(
                 }
             }
         }
+    }
 
-        LaunchedEffect(Unit) {
-            syncTrigger.schedulePeriodic()
-            syncTrigger.requestImmediate()
+    // Start-up logic, outside of AppTheme so that it does not run again when AppTheme rebuilds
+    // its content after a language change.
+    LaunchedEffect(Unit) {
+        syncTrigger.schedulePeriodic()
+        syncTrigger.requestImmediate()
+        // Pick up alarms that were missed while the app wasn't running and refresh the schedule.
+        // An exception escaping a LaunchedEffect takes down the whole composition (in the browser
+        // the app just stops reacting), so a failing reconcile must not get past here.
+        try {
+            alarmCoordinator.reconcile()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Napier.e("Reconciling alarms at start failed", e)
         }
+    }
 
-        LaunchedEffect(Unit) {
-            //Only move to last used calendar if NO deep link was ever seen
-            if (DeepLinkHandler.deepLinkData.isEmpty()) {
-                userAppPreferencesStore.lastUsedCalendarId?.let { calendarId ->
-                    // Only navigate if the calendar still exists. It may have been deleted
-                    // (account removed/unsubscribed, or dropped by a sync) since it was last
-                    // used, in which case we must not open the list view of a phantom calendar.
-                    if (calendarRepository.getCalendarById(calendarId) != null)
-                        navController.navigate(Route.IcalEntryList(calendarId))
-                    else
-                        userAppPreferencesStore.lastUsedCalendarId = null
+    LaunchedEffect(Unit) {
+        //Only move to last used calendar if NO deep link was ever seen
+        if (DeepLinkHandler.deepLinkData.isEmpty()) {
+            userAppPreferencesStore.lastUsedCalendarId?.let { calendarId ->
+                // Only navigate if the calendar still exists. It may have been deleted
+                // (account removed/unsubscribed, or dropped by a sync) since it was last
+                // used, in which case we must not open the list view of a phantom calendar.
+                if (calendarRepository.getCalendarById(calendarId) != null)
+                    navController.navigate(Route.IcalEntryList(calendarId))
+                else
+                    userAppPreferencesStore.lastUsedCalendarId = null
+            }
+        }
+    }
+
+    LaunchedEffect(DeepLinkHandler.deepLinkData) {
+        val deepLinkData = DeepLinkHandler.deepLinkData
+
+        // Handle reactive navigation for already open app (or late-arriving deep links on iOS)
+        val newRoute = if (!deepLinkData.isEmpty()) {
+            if (deepLinkData.initialIcalEntryId != null) {
+                if (deepLinkData.initialIcalEntryId == 0L) {
+                    Route.IcalEntryDetails(
+                        icalEntryId = 0L,
+                        newIcalEntryCalendarId = deepLinkData.initialCalendarId ?: 0L,
+                        newIcalEntryInitialDescription = deepLinkData.initialIcalEntryDescription
+                    )
+                } else {
+                    Route.IcalEntryDetails(deepLinkData.initialIcalEntryId)
                 }
-            }
-        }
-
-        LaunchedEffect(DeepLinkHandler.deepLinkData) {
-            val deepLinkData = DeepLinkHandler.deepLinkData
-
-            // Handle reactive navigation for already open app (or late-arriving deep links on iOS)
-            val newRoute = if (!deepLinkData.isEmpty()) {
-                if (deepLinkData.initialIcalEntryId != null) {
-                    if (deepLinkData.initialIcalEntryId == 0L) {
-                        Route.IcalEntryDetails(
-                            icalEntryId = 0L,
-                            newIcalEntryCalendarId = deepLinkData.initialCalendarId ?: 0L,
-                            newIcalEntryInitialDescription = deepLinkData.initialIcalEntryDescription
-                        )
-                    } else {
-                        Route.IcalEntryDetails(deepLinkData.initialIcalEntryId)
-                    }
-                } else if (deepLinkData.initialCalendarId != null) {
-                    Route.IcalEntryList(deepLinkData.initialCalendarId)
-                } else null
+            } else if (deepLinkData.initialCalendarId != null) {
+                Route.IcalEntryList(deepLinkData.initialCalendarId)
             } else null
+        } else null
 
-            newRoute?.let {
-                navController.navigate(it)
-                DeepLinkHandler.consume()
-            }
+        newRoute?.let {
+            navController.navigate(it)
+            DeepLinkHandler.consume()
         }
     }
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
+/**
+ * Whether to use the two-pane (landscape) layout.
+ *
+ * Derived from the tallest height seen at the current width rather than from [maxHeight] directly.
+ * The host view shrinks while the software keyboard is up - SwiftUI keyboard avoidance on iOS (see
+ * imeAwarePadding), `adjustResize` on Android - and measuring against the shrunken height flips a
+ * portrait screen into the landscape layout mid-edit. That remounts the second pane, and a pane
+ * entering composition dismisses the keyboard, so tapping a text field closed the keyboard the
+ * instant it opened. A real rotation changes [maxWidth], which re-latches the height.
+ */
+@Composable
+private fun BoxWithConstraintsScope.rememberIsLandscape(): Boolean {
+    var tallestHeight by remember(maxWidth) { mutableStateOf(maxHeight) }
+    SideEffect { if (maxHeight > tallestHeight) tallestHeight = maxHeight }
+    // large tablets have enough space to always show landscape layout
+    return maxWidth > maxOf(tallestHeight, maxHeight) || maxWidth > 700.dp
+}
+
+@Composable
+private fun DraggableVerticalDivider(
+    splitFraction: MutableFloatState,
+    maxWidthPx: Float,
+    onDragStopped: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = DividerDefaults.color
+) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .width(8.dp)
+            .pointerHoverIcon(PointerIcon.Hand)
+            .draggable(
+                orientation = Orientation.Horizontal,
+                state = rememberDraggableState { delta ->
+                    // Read the state object itself (not a recomposition snapshot) so that several
+                    // deltas arriving within one frame accumulate instead of overwriting each other.
+                    if (maxWidthPx > 0f) {
+                        splitFraction.floatValue = (splitFraction.floatValue + delta / maxWidthPx)
+                            .coerceIn(SPLIT_FRACTION_MIN, SPLIT_FRACTION_MAX)
+                    }
+                },
+                // Persist once per gesture rather than on every delta.
+                onDragStopped = { onDragStopped(splitFraction.floatValue) }
+            ),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        VerticalDivider(thickness = 2.dp, color = color)
+    }
+}
+
 @Composable
 @Preview
 private fun SpectacledApp_Preview() {

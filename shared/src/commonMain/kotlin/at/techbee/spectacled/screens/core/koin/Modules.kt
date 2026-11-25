@@ -3,8 +3,12 @@ package at.techbee.spectacled.screens.core.koin
 import at.techbee.spectacled.screens.about.presentation.AboutViewModel
 import at.techbee.spectacled.screens.account.presentation.AccountListViewModel
 import at.techbee.spectacled.screens.core.MoveIcalEntriesUseCase
+import at.techbee.spectacled.screens.core.SetTaskDoneUseCase
+import at.techbee.spectacled.screens.core.getPlatform
+import at.techbee.spectacled.screens.core.alarm.AlarmCoordinator
 import at.techbee.spectacled.screens.core.data.HttpClientFactory
 import at.techbee.spectacled.screens.core.data.UserAppPreferencesStore
+import at.techbee.spectacled.screens.core.data.WebProxyPolicy
 import at.techbee.spectacled.screens.core.data.getPlatformEngine
 import at.techbee.spectacled.screens.core.data.repository.CalendarRepositoryImpl
 import at.techbee.spectacled.screens.core.data.repository.IcalEntryRepositoryImpl
@@ -29,7 +33,9 @@ val sharedModule = module {
             engine = getPlatformEngine(),
             // No proxy until the user picks one: on the web that makes an unconfigured app fail
             // visibly at the browser instead of quietly aiming at a localhost that is not running.
-            proxyUrlProvider = { preferences.userProxyServer }
+            // Off the official origin, no proxy is also a deliberate choice: a direct connection to a
+            // same-origin or CORS-enabled CalDAV server (see WebProxyPolicy).
+            proxyUrlProvider = { WebProxyPolicy.effectiveProxyUrl(getPlatform().webOrigin, preferences.userProxyServer) }
         )
     }
     singleOf(::CalendarRepositoryImpl) { bind<CalendarRepository>() }
@@ -39,6 +45,9 @@ val sharedModule = module {
     singleOf(::DefaultWebDavRemoteIcalEntryDataSource) { bind<WebDavRemoteIcalEntryDataSource>() }
 
     singleOf(::MoveIcalEntriesUseCase)
+    singleOf(::SetTaskDoneUseCase)
+    // Not singleOf: Koin would try to resolve the defaulted Clock parameter too.
+    single { AlarmCoordinator(get(), get()) }
 
     viewModelOf(::ListViewModel)
     viewModelOf(::AccountListViewModel)

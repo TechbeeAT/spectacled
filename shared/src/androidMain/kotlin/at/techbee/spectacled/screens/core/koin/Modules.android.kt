@@ -3,12 +3,16 @@ package at.techbee.spectacled.screens.core.koin
 import at.techbee.spectacled.screens.core.DatabaseDriverFactory
 import at.techbee.spectacled.screens.core.FileLauncher
 import at.techbee.spectacled.screens.core.FileManager
+import at.techbee.spectacled.screens.core.PermissionChecker
 import at.techbee.spectacled.screens.core.PlatformFileLauncher
 import at.techbee.spectacled.screens.core.PlatformFileManager
+import at.techbee.spectacled.screens.core.PlatformPermissionChecker
 import at.techbee.spectacled.screens.core.PlatformShareManager
 import at.techbee.spectacled.screens.core.PlatformSyncTrigger
 import at.techbee.spectacled.screens.core.ShareManager
 import at.techbee.spectacled.screens.core.SyncTrigger
+import at.techbee.spectacled.screens.core.alarm.AlarmScheduler
+import at.techbee.spectacled.screens.core.alarm.PlatformAlarmScheduler
 import at.techbee.spectacled.screens.core.data.CredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformCredentialStore
 import at.techbee.spectacled.screens.core.data.PlatformUserAppPreferencesStore
@@ -22,7 +26,9 @@ actual val platformModule = module {
     single<PlatformCredentialStore> { PlatformCredentialStore(androidContext()) }.bind<CredentialStore>()
     single<PlatformUserAppPreferencesStore> { PlatformUserAppPreferencesStore(androidContext(), get()) }.bind<UserAppPreferencesStore>()
     single<PlatformSyncTrigger> { PlatformSyncTrigger(androidContext()) }.bind<SyncTrigger>()
+    single<PlatformAlarmScheduler> { PlatformAlarmScheduler(androidContext()) }.bind<AlarmScheduler>()
     single<PlatformShareManager> { PlatformShareManager(androidContext()) }.bind<ShareManager>()
     single<PlatformFileManager> { PlatformFileManager(androidContext()) }.bind<FileManager>()
     single<PlatformFileLauncher> { PlatformFileLauncher(androidContext()) }.bind<FileLauncher>()
+    single<PlatformPermissionChecker> { PlatformPermissionChecker(androidContext()) }.bind<PermissionChecker>()
 }

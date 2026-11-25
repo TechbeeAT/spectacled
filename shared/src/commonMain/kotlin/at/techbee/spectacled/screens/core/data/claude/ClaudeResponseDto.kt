@@ -28,6 +28,7 @@ data class ClaudeResponseDto(
                 description = data.description ?: icalEntry.description,
                 dtStart = if(icalEntry.isTask() || icalEntry.isJournal()) parseIcsDateTime(data.dtstart) else null,
                 due = if(icalEntry.isTask()) parseIcsDateTime(data.due) else null,
+                location = data.location ?: icalEntry.location,
                 categories = data.categories ?: icalEntry.categories
             )
         } catch (e: Exception) {
@@ -52,7 +53,7 @@ data class ClaudeIcalDataDto(
     @SerialName("description") val description: String? = null,
     @SerialName("dtstart") val dtstart: String? = null,
     @SerialName("due") val due: String? = null,
-    @SerialName("location") val location: String? = null, // Note: IcalEntry currently doesn't have a location field
+    @SerialName("location") val location: String? = null,
     @SerialName("categories") val categories: List<String>? = null
 )
 

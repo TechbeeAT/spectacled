@@ -4,12 +4,16 @@ import at.techbee.spectacled.SpectacledVariant
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
 import at.techbee.spectacled.screens.core.domain.IcalEntry
 import at.techbee.spectacled.screens.core.domain.SyncState
+import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSection
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.datetime.TimeZone
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 
 class ListStateSectionsTest {
 
@@ -50,7 +54,7 @@ class ListStateSectionsTest {
      *  of bucketing it under "now" (the previous `?: IcsDateTime.now()` behaviour). */
     @Test
     fun taskWithoutDueDateGoesToNoCriteria() {
-        val taskWithDue = IcalEntry.newTask().copy(due = IcsDateTime.now())
+        val taskWithDue = IcalEntry.newTask().copy(due = IcsDateTime.nowFloating())
         val taskNoDue = IcalEntry.newTask().copy(due = null)
 
         val state = ListState(
@@ -66,5 +70,74 @@ class ListStateSectionsTest {
         assertTrue(grouped.isNotEmpty())
         assertTrue(grouped.none { section -> section.entries.any { it.uid == taskNoDue.uid } })
         assertTrue(grouped.any { section -> section.entries.any { it.uid == taskWithDue.uid } })
+    }
+
+    /** Sorted by drag-and-drop, the entries the list renders are the filtered ones: this is the feed the
+     *  view model copies into its drag-and-drop list, so a filter that didn't reach here couldn't reach
+     *  the Tasks/Notes list either. */
+    @Test
+    fun displayedEntriesRespectFiltersWhenSortedByDragAndDrop() {
+        val openTask = IcalEntry.newTask().copy(summary = "open", categories = listOf("work"))
+        val doneTask = IcalEntry.newTask().copy(summary = "done", percentComplete = 100L)
+        val otherCategoryTask = IcalEntry.newTask().copy(summary = "other", categories = listOf("home"))
+
+        val state = ListState(
+            icalEntries = listOf(openTask, doneTask, otherCategoryTask),
+            spectacledVariant = SpectacledVariant.TASKS,
+            listSortedBy = ListSortedBy.DRAGANDDROP
+        )
+
+        assertEquals(
+            setOf(openTask.uid, doneTask.uid, otherCategoryTask.uid),
+            state.recompute().displayedEntries.map { it.uid }.toSet()
+        )
+
+        val hidingCompleted = state.copy(
+            listFilterCriteria = ListFilterCriteria(hideCompletedTasks = true)
+        ).recompute()
+        assertEquals(
+            setOf(openTask.uid, otherCategoryTask.uid),
+            hidingCompleted.displayedEntries.map { it.uid }.toSet()
+        )
+
+        val filteredByCategory = state.copy(
+            listFilterCriteria = ListFilterCriteria(searchCategories = listOf("work"))
+        ).recompute()
+        assertEquals(listOf(openTask.uid), filteredByCategory.displayedEntries.map { it.uid })
+    }
+
+    @Test
+    fun entriesWithoutOrderNoSortLastUnderDragAndDrop() {
+        val unordered = IcalEntry.newTask().copy(summary = "never dragged", orderNo = null)
+        val ordered = IcalEntry.newTask().copy(summary = "dragged", orderNo = 1L)
+
+        val state = ListState(
+            icalEntries = listOf(unordered, ordered),
+            spectacledVariant = SpectacledVariant.TASKS,
+            listSortedBy = ListSortedBy.DRAGANDDROP
+        ).recompute()
+
+        assertEquals(listOf(ordered.uid, unordered.uid), state.displayedEntries.map { it.uid })
+    }
+
+    /** Due dates sort like the other date fields: "ascending" puts the latest due date first, and
+     *  descending the soonest. All three are 30+ days out so they share one group and keep sort order. */
+    @Test
+    fun dueSortOrderFollowsAscendingFlag() {
+        val now = Clock.System.now()
+        fun dueIn(days: Int) = IcalEntry.newTask().copy(due = IcsDateTime(now.plus(days.days), false, TimeZone.UTC))
+        val soon = dueIn(40)
+        val mid = dueIn(50)
+        val late = dueIn(60)
+
+        fun order(ascending: Boolean) = ListState(
+            icalEntries = listOf(mid, soon, late),
+            spectacledVariant = SpectacledVariant.TASKS,
+            listSortedBy = ListSortedBy.DUE,
+            listSortedByAscending = ascending
+        ).recompute().displayedEntries.map { it.uid }
+
+        assertEquals(listOf(late.uid, mid.uid, soon.uid), order(ascending = true))
+        assertEquals(listOf(soon.uid, mid.uid, late.uid), order(ascending = false))
     }
 }

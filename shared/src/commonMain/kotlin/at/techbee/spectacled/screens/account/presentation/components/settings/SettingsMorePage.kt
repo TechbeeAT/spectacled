@@ -3,7 +3,6 @@ package at.techbee.spectacled.screens.account.presentation.components.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,7 +23,6 @@ import spectacled.shared.generated.resources.more
 import spectacled.shared.generated.resources.settings_proxy_server
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsMorePage(
     userAppPreferencesStore: UserAppPreferencesStore,
@@ -56,7 +54,6 @@ fun SettingsMorePage(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun SettingsMorePage_Preview() {

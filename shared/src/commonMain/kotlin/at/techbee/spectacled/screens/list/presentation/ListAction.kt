@@ -2,6 +2,7 @@ package at.techbee.spectacled.screens.list.presentation
 
 import androidx.compose.ui.graphics.Color
 import at.techbee.spectacled.screens.core.data.ics.IcsDateTime
+import at.techbee.spectacled.screens.core.presentation.components.MoveOrCopyMode
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListFilterCriteria
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListLayout
 import at.techbee.spectacled.screens.list.presentation.datastructures.ListSortedBy
@@ -13,7 +14,7 @@ sealed interface ListAction {
     data class OnSortedByChanged(val listSortedBy: ListSortedBy, val listSortedByAscending: Boolean): ListAction
     data class OnViewModeChanged(val listLayout: ListLayout): ListAction
     object OnTriggerSync: ListAction
-    data class OnSearchBarExpanded(val isExpanded: Boolean): ListAction
+    data class OnUpdateSearch(val searchString: String?): ListAction
     data class OnNavigateUp(val navigateUp: Boolean): ListAction
     data class OnToggleProgress(val icalEntryId: Long): ListAction
     data class OnUpdateSnackbar(val message: String?): ListAction
@@ -23,8 +24,11 @@ sealed interface ListAction {
     object OnSelectAllMultiselectItems: ListAction
     data class OnShowDeleteSelectedItemsDialog(val showDialog: Boolean): ListAction
     object OnDeleteSelectedItems: ListAction
-    data class OnShowMoveSelectedItemsDialog(val showDialog: Boolean): ListAction
+    data class OnShowSwipeToDeleteDialog(val icalEntryId: Long?): ListAction
+    data class OnDeleteEntry(val icalEntryId: Long): ListAction
+    data class OnShowMoveOrCopySelectedItemsDialog(val mode: MoveOrCopyMode?): ListAction
     data class OnMoveSelectedItems(val targetCalendarId: Long): ListAction
+    data class OnCopySelectedItems(val targetCalendarId: Long): ListAction
 
     data class OnShowDateSelectorBottomSheet(val show: Boolean): ListAction
     data class OnShowUpdateColorOfSelectedBottomSheet(val show: Boolean): ListAction
@@ -42,4 +46,7 @@ sealed interface ListAction {
     data class OnToggleListGroupExpanded(val listGroup: String): ListAction
     data class OnTogglePinEntry(val pin: Boolean): ListAction
     data class OnDraggingIcalEntry(val icalEntryId: Long?): ListAction
+
+    data class OnScrollToTop(val scroll: Boolean): ListAction
+
 }

@@ -11,9 +11,9 @@ import org.jetbrains.compose.resources.StringResource
 import spectacled.shared.generated.resources.Res
 import spectacled.shared.generated.resources.about
 import spectacled.shared.generated.resources.about_contributors
+import spectacled.shared.generated.resources.about_donate
 import spectacled.shared.generated.resources.about_libraries
 import spectacled.shared.generated.resources.about_release_notes
-import spectacled.shared.generated.resources.about_sponsor
 
 
 sealed class AboutTabDestination (
@@ -21,21 +21,14 @@ sealed class AboutTabDestination (
     val icon: ImageVector,
     //val badgeCount: Int?
 ) {
-    data object Jtx: AboutTabDestination(
+    data object General: AboutTabDestination(
         titleResource = Res.string.about,
         icon = Icons.Outlined.Info,
     )
     data object Sponsor: AboutTabDestination(
-        titleResource = Res.string.about_sponsor,
+        titleResource = Res.string.about_donate,
         icon = Icons.Outlined.VolunteerActivism,
     )
-    /*
-    data object JtxBoardPro: AboutTabDestination(
-        titleResource = R.string.buypro_initial_dialog_title,
-        icon = Icons.Outlined.CardGiftcard,
-    )
-
-     */
     data object ReleaseNotes: AboutTabDestination(
         titleResource = Res.string.about_release_notes,
         icon = Icons.Outlined.NewReleases,
