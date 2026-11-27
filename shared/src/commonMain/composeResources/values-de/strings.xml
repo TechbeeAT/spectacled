@@ -458,4 +458,13 @@
     <string name="folder_create_failed_conflict">Übergeordnetes Element kann nicht gefunden werden oder der Ordner existiert bereits.</string>
     <string name="server_inferred">Abgeleitet: %1$s</string>
     <string name="settings_proxy_server_info">Nur Web. Browser blockieren cross-origin CalDAV (WebDAV) Anfragen, sodass die Web-App sie durch diesen Proxy schleusen muss, der die benötigten CORS Header hinzufügt. Der Proxy kann Ihre Anmeldeinformationen bei der Weiterleitung sehen - verwenden Sie besser einen, den Sie selbst hosten.</string>
+    <string name="language">Sprache</string>
+    <string name="language_system_default">Standard (System)</string>
+    <string name="ai_provider_disabled">Deaktiviert</string>
+    <string name="settings_proxy_option_direct">Kein Proxy (Direktverbindung)</string>
+    <string name="settings_proxy_option_direct_info">Funktioniert nur, wenn diese Web-App von derselben URL (Schema, Host und Port) wie Ihr CalDAV-Server betrieben wird - z.B. auf https://cloud.example.com/spectacled/ und CalDAV auf https://cloud.example.com/remote.php/dav - oder wenn Ihr CalDAV-Server CORS-Header sendet, die diese Quelle zulassen.</string>
+    <string name="settings_proxy_option_direct_badge">Erweitert</string>
+    <string name="settings_proxy_own_empty_connects_directly">Noch kein Proxy eingegeben - bis Sie einen hinzufügen, verbindet sich die App direkt.</string>
+    <string name="add_account_proxy_direct">Direkte Verbindung, kein Proxy</string>
+    <string name="direct_connection_cors_hint">Kein Proxy ist eingerichtet, so dass der Browser den Server direkt kontaktiert. Sofern diese Web-App unter der gleichen URL wie Ihr CalDAV-Server betrieben wird, oder der Server CORS-Header sendet, wird die Verbindung erlaubt, andernfalls blockiert der Server die Anfrage. Stellen Sie einen Proxy in den Einstellungen ein oder passen Sie die CORS-Konfiguration Ihres Servers an.</string>
 </resources>

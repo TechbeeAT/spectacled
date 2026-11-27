@@ -93,6 +93,7 @@ data class ListState(
 
     val draggingIcalEntryId: Long? = null,
     val scrollToDate: IcsDateTime? = null,
+    val scrollToTop: Boolean = false,
 
     val listCollapsedGroups: Set<String> = emptySet(),
     val spectacledVariant: SpectacledVariant = SpectacledVariant.NOTES,  // must be overwritten immediately on load
@@ -189,7 +190,7 @@ data class ListState(
             ListSortedBy.DUE -> {
                 val comparator = compareBy<IcalEntry> { it.due?.toLocalDateTime() }
                 // switching ascending and descending for date fields as this is more intuitive for users
-                val order = if (ascending) comparator else comparator.reversed()
+                val order = if (ascending) comparator.reversed() else comparator
                 icalEntries.sortedWith(compareBy<IcalEntry> { it.due == null }.then(order))
             }
             ListSortedBy.ALPHABETICALLY -> {

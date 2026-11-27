@@ -142,6 +142,18 @@ fun ListScreenJournals(
         }
     }
 
+    LaunchedEffect(state.scrollToTop) {
+        if(state.scrollToTop) {
+            // Reset in finally: a user gesture cancels the animation, and a flag left at true
+            // would keep the next scroll request from restarting this effect.
+            try {
+                lazyListState.animateScrollToItem(0)
+            } finally {
+                onAction(ListAction.OnScrollToTop(false))
+            }
+        }
+    }
+
 
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(0.dp),

@@ -61,6 +61,18 @@ fun ListScreenNotes(
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
+    LaunchedEffect(state.scrollToTop) {
+        if(state.scrollToTop) {
+            // Reset in finally: a user gesture cancels the animation, and a flag left at true
+            // would keep the next scroll request from restarting this effect.
+            try {
+                lazyStaggeredGridState.animateScrollToItem(0)
+            } finally {
+                onAction(ListAction.OnScrollToTop(false))
+            }
+        }
+    }
+
     @Composable
     fun LazyStaggeredGridItemScope.getNoteListItem(
         icalEntry: IcalEntry,
